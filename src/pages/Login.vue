@@ -39,8 +39,8 @@ const handleSubmit = async () => {
 <template>
   <div class="login-page">
     <a-card class="login-card" :bordered="false">
-      <div class="title">Sky Web</div>
-      <div class="subtitle">Vite + Vue3 + Arco Design 管理后台</div>
+      <div class="title">XH-TEC</div>
+      <div class="subtitle">云数据平台</div>
       <a-form :model="form" layout="vertical" @submit.prevent="handleSubmit">
         <a-form-item field="companyId" label="公司ID">
           <a-input-number v-model="form.companyId" placeholder="请输入公司ID" style="width: 100%" />

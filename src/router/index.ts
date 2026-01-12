@@ -15,6 +15,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
+    name: 'root',
     component: BasicLayout,
     meta: { requiresAuth: true },
     children: [
@@ -56,6 +57,14 @@ router.beforeEach(async (to, from, next) => {
       } catch (e) {
         Message.error('加载菜单失败')
       }
+    }
+    // 确保动态路由已注册
+    menuStore.ensureRoutes(router)
+
+    // 刷新后访问动态路由时，可能初始未匹配到；重新导航一次以匹配新注册的路由
+    if (to.matched.length === 0) {
+      next({ ...to, replace: true })
+      return
     }
   }
 
