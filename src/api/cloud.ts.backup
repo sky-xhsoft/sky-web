@@ -1,0 +1,251 @@
+﻿import api from './http'
+
+export type Folder = {
+  id: number
+  name: string
+  parentId: number | null
+  ownerId?: number
+  path?: string
+  fileCount?: number
+  totalSize?: number
+  isActive?: string
+  children?: Folder[]
+  createTime?: string
+}
+
+export type FileItem = {
+  ID: number
+  FileName: string
+  FileSize: number
+  FileType: string
+  FileExt?: string
+  FolderID: number
+  UserID: number
+  CreateTime?: string
+  StoragePath?: string
+  AccessURL?: string
+}
+
+export type QuotaInfo = {
+  UserID: number
+  TotalQuota: number
+  UsedQuota: number
+  AvailableQuota: number
+  UsagePercentage: number
+  FileCount: number
+  FolderCount?: number
+  MaxFileSize?: number
+  QuotaType?: string
+}
+
+export async function fetchFolders(parentId?: number) {
+  const { data } = await api.get('/cloud/folders', { params: parentId !== undefined ? { parentId } : {} })
+  return data?.data as Folder[]
+}
+
+export async function fetchFolderTree() {
+  const { data } = await api.get('/cloud/folders/tree')
+  return (data?.data as Folder[]) || []
+}
+
+export async function createFolder(folderName: string, parentId = 0) {
+  const payload: Record<string, any> = { folderName }
+  if (parentId && parentId !== 0) {
+    payload.parentId = parentId
+  }
+  const { data } = await api.post('/cloud/folders', payload)
+  return data?.data as Folder
+}
+
+export async function deleteFolder(id: number) {
+  await api.delete(`/cloud/folders/${id}`)
+}
+
+export async function renameFolder(id: number, newName: string) {
+  await api.put(`/cloud/folders/${id}/rename`, { newName })
+}
+
+export type FileListResponse = {
+  data: FileItem[] | null
+  page: number
+  pageSize: number
+  total: number
+}
+
+export async function fetchFiles(folderId = 0) {
+  const { data } = await api.get('/cloud/files', { params: { folderId } })
+  const payload = data?.data as any
+  const list = (payload?.data || []) as any[]
+  // 统一字段命名为大写驼峰，便于前端使用
+  return list.map((item) => ({
+    ID: item.id,
+    FileName: item.fileName || item.name || '',
+    FileSize: item.fileSize || 0,
+    FileType: item.fileType || '',
+    FileExt: item.fileExt || '',
+    FolderID: item.folderId ?? 0,
+    UserID: item.ownerId ?? 0,
+    CreateTime: item.createTime,
+    StoragePath: item.storagePath,
+    AccessURL: item.accessUrl,
+  })) as FileItem[]
+}
+
+export async function uploadFile(
+  file: File,
+  folderId = 0,
+  onProgress?: (percent: number, loaded?: number, total?: number) => void,
+  signal?: AbortSignal
+) {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('folderId', String(folderId))
+  const { data } = await api.post('/cloud/files/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 0, // 大文件上传不限制超时
+    signal,
+    onUploadProgress: (event) => {
+      if (!onProgress) return
+      const total = event.total || file.size || 0
+      let pct = 0
+      if (total > 0) {
+        pct = Math.min(100, Math.max(0, Math.round((event.loaded / total) * 100)))
+      } else if (typeof (event as any).progress === 'number') {
+        pct = Math.min(100, Math.max(0, Math.round((event as any).progress * 100)))
+      }
+      onProgress(pct, event.loaded, total || event.total)
+    },
+  })
+  return data?.data as FileItem
+}
+
+import { API_BASE_URL } from '../config'
+import { getAccessToken } from '../utils/token'
+
+export async function downloadFileAuth(id: number, filename?: string) {
+  const path = `/cloud/files/${id}/download`
+  const token = getAccessToken()
+  const base = (API_BASE_URL || '').replace(/\/$/, '')
+
+  const triggerDownload = (href: string) => {
+    const link = document.createElement('a')
+    link.href = href
+    link.download = filename || `file-${id}`
+    link.rel = 'noopener'
+    link.target = '_blank'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  // 1) 优先尝试带 token 的直链，避免前端持有完整文件
+  const directUrl = `${base}${path}${token ? `?token=${encodeURIComponent(token)}` : ''}`
+  try {
+    const headResp = await fetch(directUrl, { method: 'HEAD', credentials: 'include' })
+    if (headResp.ok) {
+      triggerDownload(directUrl)
+      return
+    }
+  } catch {
+    // ignore
+  }
+
+  // 2) 带 Authorization 头流式获取，再触发保存
+  const downloadBlob = async () => {
+    const headers: Record<string, string> = {}
+    if (token) headers.Authorization = `Bearer ${token}`
+    const url = `${base}${path}`
+    const resp = await fetch(url, { method: 'GET', headers, credentials: 'include' })
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => '')
+      throw new Error(text || `下载失败，状态码 ${resp.status}`)
+    }
+    const blob = await resp.blob()
+    if (!blob || blob.size === 0) throw new Error('下载内容为空或被拒绝')
+    const blobUrl = window.URL.createObjectURL(blob)
+    triggerDownload(blobUrl)
+    window.URL.revokeObjectURL(blobUrl)
+  }
+
+  try {
+    await downloadBlob()
+  } catch (e: any) {
+    // 3) 回退 axios，关闭超时限制
+    const response = await api.get(path, { responseType: 'blob', timeout: 0 })
+    const blob = response.data as Blob
+    if (!blob || blob.size === 0) {
+      throw new Error(e?.message || '下载失败，请稍后重试')
+    }
+    const blobUrl = window.URL.createObjectURL(blob)
+    triggerDownload(blobUrl)
+    window.URL.revokeObjectURL(blobUrl)
+  }
+}
+
+export async function fetchFileBlob(id: number) {
+  const response = await api.get(`/cloud/files/${id}/download`, { responseType: 'blob' })
+  return response.data as Blob
+}
+
+export async function deleteFile(id: number) {
+  await api.delete(`/cloud/files/${id}`)
+}
+
+export async function moveFile(id: number, targetFolderId: number) {
+  await api.put(`/cloud/files/${id}/move`, { targetFolderId })
+}
+
+export async function renameFile(id: number, newName: string) {
+  await api.put(`/cloud/files/${id}/rename`, { newName })
+}
+
+export type ShareInfo = {
+  ID: number
+  FileID: number
+  ShareCode: string
+  Password?: string
+  ExpireTime?: string
+  UserID: number
+  CreateTime?: string
+}
+
+export async function createShare(fileId: number, expireDays = 0, password?: string) {
+  const { data } = await api.post('/cloud/shares', { fileId, expireDays, password })
+  return data?.data as ShareInfo
+}
+
+export async function createFolderShare(folderId: number, expireDays = 0, password?: string) {
+  // 假设后端支持 folder 分享，使用同一路径并传 resourceType
+  const { data } = await api.post('/cloud/shares', { resourceType: 'folder', resourceId: folderId, expireDays, password })
+  return data?.data as ShareInfo
+}
+
+export async function getQuota() {
+  const { data } = await api.get('/cloud/quota')
+  const payload = (data?.data || {}) as any
+  const totalQuota = Number(payload.totalQuota ?? payload.TotalQuota ?? 0)
+  const usedQuota = Number(payload.usedSpace ?? payload.usedQuota ?? payload.UsedQuota ?? 0)
+  const availableQuotaRaw = payload.availableQuota ?? payload.AvailableQuota
+  const availableQuota =
+    availableQuotaRaw !== undefined && availableQuotaRaw !== null
+      ? Number(availableQuotaRaw)
+      : Math.max(0, totalQuota - usedQuota)
+  const usagePercentage =
+    payload.usagePercentage !== undefined && payload.usagePercentage !== null
+      ? Number(payload.usagePercentage)
+      : totalQuota > 0
+        ? Math.min(100, Math.max(0, (usedQuota / totalQuota) * 100))
+        : 0
+
+  return {
+    UserID: payload.userId ?? payload.UserID ?? 0,
+    TotalQuota: totalQuota,
+    UsedQuota: usedQuota,
+    AvailableQuota: availableQuota,
+    UsagePercentage: usagePercentage,
+    FileCount: payload.fileCount ?? payload.FileCount ?? 0,
+    FolderCount: payload.folderCount ?? payload.FolderCount ?? 0,
+    MaxFileSize: payload.maxFileSize ?? payload.MaxFileSize ?? 0,
+    QuotaType: payload.quotaType ?? payload.QuotaType,
+  } as QuotaInfo
+}

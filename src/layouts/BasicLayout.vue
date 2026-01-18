@@ -33,9 +33,17 @@ const mapMenu = (items: any[]): NavItem[] => {
 }
 
 const navItems = computed<NavItem[]>(() => {
-  if (menuStore.navMenus.length) return mapMenu(menuStore.navMenus)
-  if (menuStore.menus.length) return mapMenu(menuStore.menus)
-  return [{ key: 'dashboard', title: '首页', path: '/' }]
+  const mapped =
+    menuStore.navMenus.length ? mapMenu(menuStore.navMenus) : menuStore.menus.length ? mapMenu(menuStore.menus) : []
+  const defaults: NavItem[] = [
+    { key: 'dashboard', title: '首页', path: '/' },
+    { key: 'cloud', title: '云盘', path: '/cloud' },
+  ]
+  const merged = [...mapped]
+  defaults.forEach((item) => {
+    if (!merged.some((m) => m.key === item.key)) merged.push(item)
+  })
+  return merged
 })
 
 const keyPathMap = computed(() => {
@@ -265,6 +273,7 @@ watch(
 .brand-subtitle {
   font-size: 12px;
   color: #6b7280;
+  text-align: center;
 }
 .root-menu-bar :deep(.arco-menu-horizontal) {
   background: transparent;

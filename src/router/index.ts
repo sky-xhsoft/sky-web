@@ -3,6 +3,7 @@ import { Message } from '@arco-design/web-vue'
 import BasicLayout from '../layouts/BasicLayout.vue'
 import Dashboard from '../pages/Dashboard.vue'
 import Login from '../pages/Login.vue'
+import Cloud from '../pages/Cloud.vue'
 import { useAuthStore } from '../stores/auth'
 import { useMenuStore } from '../stores/menu'
 
@@ -24,6 +25,12 @@ const routes: RouteRecordRaw[] = [
         name: 'dashboard',
         component: Dashboard,
         meta: { title: '首页', requiresAuth: true },
+      },
+      {
+        path: 'cloud',
+        name: 'cloud',
+        component: Cloud,
+        meta: { title: '云盘', requiresAuth: true },
       },
     ],
   },

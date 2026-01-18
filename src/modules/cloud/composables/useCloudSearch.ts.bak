@@ -1,0 +1,232 @@
+/**
+ * 云盘搜索 Composable
+ *
+ * 封装文件搜索逻辑
+ */
+
+import { ref, computed, watch } from 'vue'
+import { useCloudStore } from '@/modules/cloud/stores/cloudStore'
+import { searchFiles } from '@/modules/cloud/api'
+import type { FileItem, FileSearchParams } from '@/modules/cloud/types'
+import { debounce, memoize } from '@/modules/cloud/utils/performance'
+
+/**
+ * 云盘搜索功能
+ */
+export function useCloudSearch() {
+  const store = useCloudStore()
+
+  // 搜索状态
+  const searchQuery = computed({
+    get: () => store.searchQuery,
+    set: (value) => store.setSearchQuery(value),
+  })
+  const searching = ref(false)
+  const searchResults = ref<FileItem[]>([])
+
+  // 高级搜索参数
+  const searchFolderId = ref<number>()
+  const searchFileType = ref<string>()
+
+  /**
+   * 执行搜索（前端过滤）
+   * @param query 搜索关键词
+   */
+  function searchLocal(query: string) {
+    store.setSearchQuery(query)
+    return store.filteredAndSortedFiles
+  }
+
+  /**
+   * 执行搜索（后端API）
+   * @param params 搜索参数
+   */
+  async function searchRemote(params: FileSearchParams) {
+    searching.value = true
+    try {
+      const results = await searchFiles(params)
+      searchResults.value = results
+      return results
+    } catch (e: any) {
+      console.error('搜索失败:', e)
+      searchResults.value = []
+      return []
+    } finally {
+      searching.value = false
+    }
+  }
+
+  /**
+   * 智能搜索（优先前端，可选后端）
+   * @param query 搜索关键词
+   * @param useBackend 是否使用后端搜索（默认false）
+   */
+  async function search(query: string, useBackend = false) {
+    if (!query.trim()) {
+      clearSearch()
+      return []
+    }
+
+    if (useBackend) {
+      // 后端搜索
+      return await searchRemote({
+        keyword: query,
+        folderId: searchFolderId.value,
+        fileType: searchFileType.value,
+      })
+    } else {
+      // 前端搜索
+      return searchLocal(query)
+    }
+  }
+
+  /**
+   * 清空搜索
+   */
+  function clearSearch() {
+    store.setSearchQuery('')
+    searchResults.value = []
+    searchFolderId.value = undefined
+    searchFileType.value = undefined
+  }
+
+  /**
+   * 高亮搜索结果中的关键词
+   * @param text 原始文本
+   * @param keyword 关键词
+   */
+  function highlightKeyword(text: string, keyword: string): string {
+    if (!keyword.trim()) return text
+
+    const regex = new RegExp(`(${keyword})`, 'gi')
+    return text.replace(regex, '<mark>$1</mark>')
+  }
+
+  /**
+   * 按文件类型过滤
+   * @param fileType 文件类型（MIME type或扩展名）
+   */
+  function filterByType(fileType: string) {
+    searchFileType.value = fileType
+  }
+
+  /**
+   * 按文件夹过滤
+   * @param folderId 文件夹ID
+   */
+  function filterByFolder(folderId: number) {
+    searchFolderId.value = folderId
+  }
+
+  /**
+   * 获取搜索建议（基于文件名）
+   * @param query 部分关键词
+   * @param limit 返回数量限制
+   */
+  const getSearchSuggestions = memoize(
+    (query: string, limit = 5): string[] => {
+      if (!query.trim()) return []
+
+      const lowerQuery = query.toLowerCase()
+      const suggestions = new Set<string>()
+
+      store.files.forEach((file) => {
+        const fileName = file.FileName.toLowerCase()
+        if (fileName.includes(lowerQuery)) {
+          // 提取文件名（去除扩展名）作为建议
+          const nameWithoutExt = file.FileName.replace(/\.[^.]+$/, '')
+          suggestions.add(nameWithoutExt)
+        }
+      })
+
+      return Array.from(suggestions).slice(0, limit)
+    },
+    (query, limit) => `${query}-${limit}` // 缓存键生成器
+  )
+
+  /**
+   * 获取热门搜索（最近修改的文件）
+   * @param limit 返回数量限制
+   */
+  function getPopularSearches(limit = 10): FileItem[] {
+    return [...store.files]
+      .sort((a, b) => {
+        const aTime = new Date(a.CreateTime || 0).getTime()
+        const bTime = new Date(b.CreateTime || 0).getTime()
+        return bTime - aTime
+      })
+      .slice(0, limit)
+  }
+
+  /**
+   * 搜索结果数量
+   */
+  const resultCount = computed(() => {
+    return searchQuery.value ? store.filteredAndSortedFiles.length : 0
+  })
+
+  /**
+   * 是否有搜索结果
+   */
+  const hasResults = computed(() => resultCount.value > 0)
+
+  /**
+   * 是否正在搜索
+   */
+  const isSearching = computed(() => searching.value || !!searchQuery.value)
+
+  /**
+   * 搜索摘要信息
+   */
+  const searchSummary = computed(() => {
+    if (!searchQuery.value) return ''
+    return `找到 ${resultCount.value} 个结果`
+  })
+
+  // 使用优化的防抖函数
+  const debouncedSearchLocal = debounce((query: string) => {
+    if (query.trim()) {
+      searchLocal(query)
+    }
+  }, 300)
+
+  // 监听搜索关键词变化（防抖）
+  watch(searchQuery, (newQuery) => {
+    debouncedSearchLocal(newQuery)
+  })
+
+  return {
+    // 搜索操作
+    search,
+    searchLocal,
+    searchRemote,
+    clearSearch,
+
+    // 过滤操作
+    filterByType,
+    filterByFolder,
+
+    // 辅助功能
+    highlightKeyword,
+    getSearchSuggestions,
+    getPopularSearches,
+
+    // 搜索状态（响应式）
+    searchQuery,
+    searching,
+    searchResults,
+    searchFolderId,
+    searchFileType,
+
+    // 计算属性
+    resultCount,
+    hasResults,
+    isSearching,
+    searchSummary,
+
+    // Store状态
+    filteredAndSortedFiles: () => store.filteredAndSortedFiles,
+  }
+}
+
+export default useCloudSearch

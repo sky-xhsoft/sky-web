@@ -11,7 +11,7 @@ const authStore = useAuthStore()
 const form = reactive({
   username: '',
   password: '',
-  companyId: 1,
+  companyId: 0,
 })
 
 const submitting = ref(false)
@@ -42,9 +42,6 @@ const handleSubmit = async () => {
       <div class="title">XH-TEC</div>
       <div class="subtitle">云数据平台</div>
       <a-form :model="form" layout="vertical" @submit.prevent="handleSubmit">
-        <a-form-item field="companyId" label="公司ID">
-          <a-input-number v-model="form.companyId" placeholder="请输入公司ID" style="width: 100%" />
-        </a-form-item>
         <a-form-item field="username" label="用户名">
           <a-input v-model="form.username" placeholder="请输入用户名" />
         </a-form-item>

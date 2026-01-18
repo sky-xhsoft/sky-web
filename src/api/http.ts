@@ -1,7 +1,26 @@
-﻿import axios from 'axios'
+import axios from 'axios'
 import { API_BASE_URL } from '../config'
 import { clearAuth, getAccessToken, getDeviceId, getRefreshToken, getStoredUser, saveAuth } from '../utils/token'
 import { refreshAccessToken } from './auth'
+
+const TOKEN_INVALID_CODES = [20003, 401]
+let redirectingToLogin = false
+
+const redirectToLogin = () => {
+  if (redirectingToLogin) return
+  redirectingToLogin = true
+  clearAuth()
+
+  if (typeof window !== 'undefined' && window.location) {
+    const { pathname, search, hash } = window.location
+    const current = `${pathname}${search}${hash}`
+    const target =
+      current && !pathname.startsWith('/login')
+        ? `/login?redirect=${encodeURIComponent(current)}`
+        : '/login'
+    window.location.replace(target)
+  }
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -19,13 +38,28 @@ api.interceptors.request.use((config) => {
 let refreshing: Promise<string | null> | null = null
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const payload = response?.data
+    const code = payload?.code !== undefined ? Number(payload.code) : null
+    if (code && TOKEN_INVALID_CODES.includes(code)) {
+      redirectToLogin()
+      return Promise.reject(new Error(payload?.message || '登录已过期，请重新登录'))
+    }
+    return response
+  },
   async (error) => {
     const { response, config } = error
-    if (response?.status === 401 && config && !(config as any).__isRetryRequest) {
+    const isUnauthorized = response?.status === 401
+    const isRefreshRequest = config?.url?.includes('/auth/refresh')
+    if (isUnauthorized && config && !(config as any).__isRetryRequest) {
+      if (isRefreshRequest) {
+        redirectToLogin()
+        return Promise.reject(error)
+      }
+
       const refreshToken = getRefreshToken()
       if (!refreshToken) {
-        clearAuth()
+        redirectToLogin()
         return Promise.reject(error)
       }
 
@@ -55,6 +89,15 @@ api.interceptors.response.use(
         config.headers.Authorization = `Bearer ${newToken}`
         return api(config)
       }
+
+      redirectToLogin()
+      return Promise.reject(error)
+    }
+
+    const payload = response?.data
+    const code = payload?.code !== undefined ? Number(payload.code) : null
+    if (code && TOKEN_INVALID_CODES.includes(code)) {
+      redirectToLogin()
     }
 
     return Promise.reject(error)
@@ -62,4 +105,3 @@ api.interceptors.response.use(
 )
 
 export default api
-

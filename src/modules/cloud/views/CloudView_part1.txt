@@ -1,0 +1,373 @@
+<template>
+  <div class="cloud-view">
+    <!-- 头部 -->
+    <CloudHeader title="我的云盘">
+      <template #actions>
+        <a-button @click="handleOpenShareManager">
+          <icon-share-alt />
+          我的分享
+        </a-button>
+      </template>
+    </CloudHeader>
+
+    <!-- 面包屑 -->
+    <CloudBreadcrumb
+      :items="store.breadcrumbs"
+      :current-id="store.currentFolderId"
+      @navigate="handleBreadcrumbNavigate"
+    />
+
+    <!-- 主内容区 -->
+    <div class="cloud-view__content">
+      <!-- 左侧边栏 -->
+      <aside class="cloud-view__sidebar">
+        <!-- 配额信息 -->
+        <CloudQuotaBar :quota="store.quota" />
+
+        <!-- 文件夹树（可选） -->
+        <div class="sidebar-section">
+          <h4 class="sidebar-title">文件夹</h4>
+          <a-tree
+            :data="folderTreeData"
+            :selected-keys="[store.currentFolderId]"
+            @select="handleTreeSelect"
+          >
+            <template #icon>
+              <span class="tree-folder-icon">📁</span>
+            </template>
+          </a-tree>
+        </div>
+      </aside>
+
+      <!-- 主区域 -->
+      <main ref="dropZoneRef" class="cloud-view__main" :class="{ 'drag-over': dragUpload.isDragging.value }">
+        <!-- 拖拽上传提示覆盖层 -->
+        <div v-if="dragUpload.isDragging.value" class="drag-overlay">
+          <div class="drag-overlay-content">
+            <icon-cloud-download :size="64" />
+            <div class="drag-overlay-text">释放文件以上传</div>
+            <div class="drag-overlay-hint">支持多个文件同时上传</div>
+          </div>
+        </div>
+
+        <!-- 工具栏 -->
+        <CloudToolbar
+          :view-mode="store.viewMode"
+          :refreshing="refreshing"
+          @upload="handleUpload"
+          @create-folder="handleShowCreateFolderDialog"
+          @refresh="handleRefresh"
+          @view-mode-change="handleViewModeChange"
+        >
+          <template #search>
+            <CloudSearchBar
+              v-model="searchQuery"
+              :searching="search.searching.value"
+              :result-count="search.resultCount.value"
+              @search="handleSearch"
+              @clear="handleClearSearch"
+            />
+          </template>
+          <template #sort>
+            <CloudSortDropdown
+              :sort-by="store.sortBy"
+              :sort-order="store.sortOrder"
+              @sort-by-change="handleSortByChange"
+              @sort-order-toggle="handleSortOrderToggle"
+            />
+          </template>
+        </CloudToolbar>
+
+        <!-- 文件展示区 -->
+        <div class="cloud-view__files">
+          <!-- 网格视图 -->
+          <CloudFileGrid
+            v-if="store.viewMode === 'grid'"
+            :items="store.gridItems"
+            :loading="store.loading.files"
+            :selected-ids="allSelectedIds"
+            :selectable="selection.selectedCount.value > 0"
+            @click="handleItemClick"
+            @dblclick="handleItemDoubleClick"
+            @select="handleItemSelect"
+            @action="handleItemAction"
+          />
+
+          <!-- 列表视图 -->
+          <CloudFileList
+            v-else
+            :items="store.gridItems"
+            :loading="store.loading.files"
+            :selected-ids="allSelectedIds"
+            :selectable="selection.selectedCount.value > 0"
+            @click="handleItemClick"
+            @dblclick="handleItemDoubleClick"
+            @select="handleListSelect"
+            @action="handleItemAction"
+          />
+        </div>
+      </main>
+    </div>
+
+    <!-- 批量操作栏 -->
+    <CloudBatchActions
+      :visible="selection.selectedCount.value > 0"
+      :selected-count="selection.selectedCount.value"
+      :selected-size="selection.selectedTotalSize.value"
+      :total-count="store.files.length + store.currentFolderChildren.length"
+      :has-selected-files="selection.getSelectedFiles().length > 0"
+      @select-all="handleSelectAll"
+      @clear="handleClearSelection"
+      @download="handleBatchDownload"
+      @move="handleShowMoveDialog"
+      @delete="handleShowBatchDeleteDialog"
+    />
+
+    <!-- 上传进度 -->
+    <CloudUploadProgress
+      :upload-queue="store.uploadQueue"
+      :has-uploading-tasks="store.hasUploadingTasks"
+      :overall-progress="store.uploadProgress"
+      @retry="handleRetryUpload"
+      @remove="handleRemoveUpload"
+      @clear-completed="handleClearCompletedUploads"
+    />
+
+    <!-- 对话框们 -->
+    <CreateFolderDialog
+      v-model:visible="dialogs.createFolder"
+      :loading="folder.creatingFolder.value"
+      @confirm="handleCreateFolder"
+    />
+
+    <RenameDialog
+      v-model:visible="dialogs.rename"
+      :loading="currentRenameType === 'file' ? file.renamingFile.value : folder.renamingFolder.value"
+      :old-name="currentRenameName"
+      :item-type="currentRenameType"
+      @confirm="handleRename"
+    />
+
+    <MoveFileDialog
+      v-model:visible="dialogs.move"
+      :loading="file.movingFile.value"
+      :folder-tree="store.folderTree"
+      :selected-count="selection.selectedCount.value"
+      :current-folder-id="store.currentFolderId"
+      @confirm="handleMove"
+    />
+
+    <CreateShareDialog
+      v-model:visible="dialogs.share"
+      :loading="share.creatingShare.value"
+      :item-name="currentShareName"
+      :item-type="currentShareType"
+      @confirm="handleCreateShare"
+    />
+
+    <EditShareDialog
+      v-model:visible="dialogs.editShare"
+      :loading="share.updatingShare.value"
+      :share="currentShare"
+      @confirm="handleEditShare"
+    />
+
+    <ShareStatsDialog
+      v-model:visible="dialogs.shareStats"
+      :share="currentShare"
+    />
+
+    <ConfirmDeleteDialog
+      v-model:visible="dialogs.delete"
+      :loading="currentDeleteType === 'file' ? file.deletingFile.value : folder.deletingFolder.value"
+      :item-name="currentDeleteName"
+      :count="currentDeleteCount"
+      :details="currentDeleteDetails"
+      @confirm="handleDelete"
+    />
+
+    <!-- 批量操作进度对话框 -->
+    <CloudBatchProgressDialog
+      v-model:visible="selection.batchProgress.value.visible"
+      :title="selection.batchProgress.value.title"
+      :total="selection.batchProgress.value.total"
+      :completed="selection.batchProgress.value.completed"
+      :success-count="selection.batchProgress.value.successCount"
+      :failed="selection.batchProgress.value.failed"
+      :failed-items="selection.batchProgress.value.failedItems"
+      :in-progress="selection.batchProgress.value.inProgress"
+      @close="selection.closeBatchProgress()"
+      @retry="selection.retryBatchOperation()"
+    />
+
+    <!-- 文件预览对话框 -->
+    <FilePreviewDialog
+      v-model:visible="dialogs.preview"
+      :file="currentItem?.file || null"
+      :category="currentItem?.file ? preview.getFileCategory(currentItem.file) : 'unknown'"
+      :can-navigate="true"
+      :has-previous="hasPreviewPrevious"
+      :has-next="hasPreviewNext"
+      @previous="handlePreviewPrevious"
+      @next="handlePreviewNext"
+      @download="handlePreviewDownload"
+    />
+
+    <!-- 分享管理抽屉 -->
+    <a-drawer
+      v-model:visible="shareManagerVisible"
+      title="分享管理"
+      width="600px"
+      :footer="false"
+    >
+      <CloudShareManager
+        :shares="store.myShares"
+        :loading="store.loading.shares"
+        @refresh="handleRefreshShares"
+        @copy="handleCopyShareLink"
+        @edit="handleOpenEditShare"
+        @view-stats="handleOpenShareStats"
+        @delete="handleDeleteShare"
+      />
+    </a-drawer>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted } from 'vue'
+import { Message } from '@arco-design/web-vue'
+import { IconShareAlt, IconCloudDownload } from '@arco-design/web-vue/es/icon'
+import type { TreeNodeData } from '@arco-design/web-vue'
+
+// 导入组件
+import {
+  CloudHeader,
+  CloudBreadcrumb,
+  CloudQuotaBar,
+  CloudToolbar,
+  CloudSearchBar,
+  CloudSortDropdown,
+  CloudFileGrid,
+  CloudFileList,
+  CloudBatchActions,
+  CloudUploadProgress,
+  CloudShareManager,
+  CreateFolderDialog,
+  RenameDialog,
+  MoveFileDialog,
+  CreateShareDialog,
+  EditShareDialog,
+  ShareStatsDialog,
+  ConfirmDeleteDialog,
+  CloudBatchProgressDialog,
+  FilePreviewDialog,
+} from '@/modules/cloud/components'
+
+// 导入composables
+import {
+  useCloudNavigation,
+  useCloudFolder,
+  useCloudFile,
+  useCloudUpload,
+  useCloudPreview,
+  useCloudShare,
+  useCloudSearch,
+  useCloudSort,
+  useCloudSelection,
+  useDragUpload,
+} from '@/modules/cloud/composables'
+
+// 导入store
+import { useCloudStore } from '@/modules/cloud/stores/cloudStore'
+import type { GridItem, Folder as FolderType, ShareCreateParams, ShareListItem } from '@/modules/cloud/types'
+
+// ==================== 初始化 ====================
+const store = useCloudStore()
+const navigation = useCloudNavigation()
+const folder = useCloudFolder()
+const file = useCloudFile()
+const upload = useCloudUpload()
+const preview = useCloudPreview()
+const share = useCloudShare()
+const search = useCloudSearch()
+const sort = useCloudSort()
+const selection = useCloudSelection()
+
+// 拖拽上传区域引用
+const dropZoneRef = ref<HTMLElement>()
+
+// 拖拽上传功能
+const dragUpload = useDragUpload(dropZoneRef, {
+  multiple: true,
+  maxFiles: 100,
+  maxFileSize: 2 * 1024 * 1024 * 1024, // 2GB
+  onUpload: async (files: File[]) => {
+    await upload.batchUpload(files, store.currentFolderId)
+  },
+})
+
+// ==================== 状态 ====================
+const refreshing = ref(false)
+const shareManagerVisible = ref(false)
+
+// 搜索关键词（双向绑定）
+const searchQuery = computed({
+  get: () => search.searchQuery.value,
+  set: (value) => {
+    search.searchQuery.value = value
+  },
+})
+
+// 对话框状态
+const dialogs = reactive({
+  createFolder: false,
+  rename: false,
+  move: false,
+  share: false,
+  editShare: false,
+  shareStats: false,
+  delete: false,
+  preview: false,
+})
+
+// 当前操作的项
+const currentItem = ref<GridItem | null>(null)
+const currentRenameType = ref<'file' | 'folder'>('file')
+const currentRenameName = ref('')
+const currentShareType = ref<'file' | 'folder'>('file')
+const currentShareName = ref('')
+const currentShare = ref<ShareListItem | null>(null)
+const currentDeleteType = ref<'file' | 'folder'>('file')
+const currentDeleteName = ref('')
+const currentDeleteCount = ref(1)
+const currentDeleteDetails = ref<{ fileCount?: number; folderCount?: number; totalSize?: number }>({})
+
+// ==================== 计算属性 ====================
+
+// 文件夹树数据（转换为Arco Tree格式）
+const folderTreeData = computed<TreeNodeData[]>(() => {
+  const convertToTreeData = (folders: FolderType[]): TreeNodeData[] => {
+    return folders.map((f) => ({
+      key: f.ID,
+      title: f.Name,
+      children: f.Children ? convertToTreeData(f.Children) : [],
+    }))
+  }
+
+  return [
+    {
+      key: 0,
+      title: '根目录',
+      children: convertToTreeData(store.folderTree),
+    },
+  ]
+})
+
+// 所有选中的ID（文件+文件夹）
+// Fix: Use composite keys (type-id) to prevent ID collision between files and folders
+const allSelectedIds = computed(() => {
+  const ids = new Set<string>()
+  store.selectedFileIds.forEach((id) => ids.add(`file-${id}`))
+  store.selectedFolderIds.forEach((id) => ids.add(`folder-${id}`))
+  return ids
+})

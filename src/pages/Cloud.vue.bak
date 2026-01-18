@@ -1,0 +1,1012 @@
+﻿<script setup lang="ts">
+import { onMounted, reactive, ref, computed, h } from 'vue'
+import {
+  fetchFolderTree,
+  fetchFiles,
+  createFolder,
+  deleteFolder,
+  renameFolder,
+  uploadFile,
+  deleteFile,
+  renameFile,
+  downloadFileAuth,
+  fetchFileBlob,
+  createShare,
+  getQuota,
+  type Folder,
+  type FileItem,
+  type QuotaInfo,
+} from '../api/cloud'
+import { Message, Modal, Input, Select } from '@arco-design/web-vue'
+import { IconClose } from '@arco-design/web-vue/es/icon'
+import { getAccessToken } from '../utils/token'
+
+const folders = ref<Folder[]>([])
+const files = ref<FileItem[]>([])
+const loading = reactive({ tree: false, list: false, uploading: false })
+const uploadBytesDone = ref(0)
+const uploadBytesTotal = ref(0)
+const uploadController = ref<AbortController | null>(null)
+const uploadPercent = computed(() => {
+  if (uploadBytesTotal.value > 0) {
+    const pct = (uploadBytesDone.value / uploadBytesTotal.value) * 100
+    return Math.min(100, Math.max(0, pct))
+  }
+  return 0
+})
+const uploadStatusText = computed(() => {
+  if (!loading.uploading) return '待上传'
+  if (uploadBytesTotal.value > 0) {
+    return `${formatSize(uploadBytesDone.value)} / ${formatSize(uploadBytesTotal.value)}`
+  }
+  return '准备中...'
+})
+const currentFolderId = ref<number>(0)
+const quota = ref<QuotaInfo | null>(null)
+const pathStack = ref<number[]>([])
+const quotaText = computed(() => {
+  if (!quota.value) return '未获取'
+  if (quota.value.TotalQuota > 0) {
+    return `${formatSize(quota.value.UsedQuota)} / ${formatSize(quota.value.TotalQuota)}`
+  }
+  return '未获取'
+})
+const quotaUsagePercent = computed(() => {
+  if (!quota.value) return 0
+  const total = Number(quota.value.TotalQuota) || 0
+  const used = Number(quota.value.UsedQuota) || 0
+  if (total > 0) {
+    return Math.min(100, Math.max(0, (used / total) * 100))
+  }
+  return Math.min(100, Math.max(0, Number(quota.value.UsagePercentage) || 0))
+})
+
+const currentFolderName = computed(() => {
+  const findName = (nodes: Folder[], id: number): string | null => {
+    for (const n of nodes) {
+      if (n.id === id) return n.name
+      if (n.children?.length) {
+        const res = findName(n.children, id)
+        if (res) return res
+      }
+    }
+    return null
+  }
+  return idLabel(currentFolderId.value) || findName(folders.value, currentFolderId.value) || '根目录'
+})
+
+const idLabel = (id: number) => (id === 0 ? '根目录' : '')
+
+const findPath = (nodes: Folder[], targetId: number, trail: Folder[] = []): Folder[] => {
+  for (const n of nodes) {
+    const currentTrail = [...trail, n]
+    if (n.id === targetId) return currentTrail
+    if (n.children?.length) {
+      const res = findPath(n.children, targetId, currentTrail)
+      if (res.length) return res
+    }
+  }
+  return []
+}
+
+const formatSize = (size: number) => {
+  if (!size) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let s = size
+  let i = 0
+  while (s >= 1024 && i < units.length - 1) {
+    s /= 1024
+    i++
+  }
+  return `${s.toFixed(1)} ${units[i]}`
+}
+
+const formatDate = (val?: string | number | Date | null) => {
+  if (!val) return ''
+  const d = new Date(val)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const loadTree = async () => {
+  loading.tree = true
+  try {
+    const data = await fetchFolderTree()
+    folders.value = data || []
+  } catch (e: any) {
+    Message.error(e?.message || '加载文件夹失败')
+  } finally {
+    loading.tree = false
+  }
+}
+
+const loadFiles = async (folderId = currentFolderId.value) => {
+  loading.list = true
+  try {
+    const data = await fetchFiles(folderId)
+    files.value = data || []
+  } catch (e: any) {
+    Message.error(e?.message || '加载文件失败')
+  } finally {
+    loading.list = false
+  }
+}
+
+const switchFolder = async (id: number) => {
+  if (id !== currentFolderId.value && currentFolderId.value !== 0) {
+    pathStack.value.push(currentFolderId.value)
+  }
+  currentFolderId.value = id
+  await loadFiles(id)
+}
+
+const goRoot = async () => {
+  pathStack.value = []
+  currentFolderId.value = 0
+  await loadFiles(0)
+}
+
+const onCreateFolder = async () => {
+  const folderName = ref('')
+  let modal: any = null
+  modal = Modal.confirm({
+    title: '新建文件夹',
+    simple: true,
+    content: () =>
+      h(Input, {
+        placeholder: '输入文件夹名称',
+        modelValue: folderName.value,
+        'onUpdate:modelValue': (v) => (folderName.value = v as string),
+      }),
+    onOk: async () => {
+      const name = folderName.value.trim()
+      if (!name) {
+        Message.warning('请输入文件夹名称')
+        return false
+      }
+      try {
+        await createFolder(name, currentFolderId.value)
+        Message.success('创建成功')
+        await Promise.all([loadTree(), loadFiles()])
+        modal && modal.close()
+      } catch (e: any) {
+        Message.error(e?.message || '创建失败')
+        return false
+      }
+    },
+  })
+}
+
+const onUpload = async (evt: Event) => {
+  const input = evt.target as HTMLInputElement
+  if (!input.files || !input.files.length) return
+  loading.uploading = true
+  uploadBytesDone.value = 0
+  uploadBytesTotal.value = Array.from(input.files).reduce((sum, f) => sum + (f.size || 0), 0)
+  uploadController.value = new AbortController()
+  let completedBytes = 0
+  try {
+    for (const file of Array.from(input.files)) {
+      await uploadFile(file, currentFolderId.value, (p, loaded, total) => {
+        const totalForFile = total || file.size || 0
+        if (loaded !== undefined && totalForFile) {
+          uploadBytesDone.value = Math.min(uploadBytesTotal.value || totalForFile, completedBytes + loaded)
+          return
+        }
+        // fallback: 使用百分比估算
+        const percent = Number(p) || 0
+        uploadBytesDone.value = Math.min(uploadBytesTotal.value, ((percent / 100) * uploadBytesTotal.value))
+      }, uploadController.value?.signal)
+      completedBytes += file.size || 0
+      uploadBytesDone.value = Math.min(uploadBytesTotal.value, completedBytes)
+    }
+    Message.success('上传完成')
+    await loadFiles()
+    await loadQuota()
+  } catch (e: any) {
+    if (e?.name === 'CanceledError' || e?.message === 'canceled') {
+      Message.info('上传已取消')
+    } else {
+      const msg =
+        e?.code === 'ECONNABORTED'
+          ? '上传超时，请检查网络或减小文件大小'
+          : e?.response?.data?.message || e?.message || '上传失败'
+      Message.error(msg)
+    }
+  } finally {
+    loading.uploading = false
+    uploadController.value = null
+    input.value = ''
+    uploadBytesDone.value = 0
+    uploadBytesTotal.value = 0
+    completedBytes = 0
+  }
+}
+
+const cancelUpload = () => {
+  if (uploadController.value) {
+    uploadController.value.abort()
+  }
+}
+
+const onDeleteFile = async (id: number) => {
+  Modal.confirm({
+    title: '删除文件',
+    content: '确认删除该文件吗？',
+    async onOk() {
+      await deleteFile(id)
+      Message.success('删除成功')
+      await loadFiles()
+      await loadQuota()
+    },
+  })
+}
+
+const onRenameFile = async (file: FileItem) => {
+  const newName = ref(file.FileName)
+  let modal: any = null
+  modal = Modal.confirm({
+    title: '重命名文件',
+    simple: true,
+    content: () =>
+      h(Input, {
+        modelValue: newName.value,
+        'onUpdate:modelValue': (v) => (newName.value = v as string),
+      }),
+    onOk: async () => {
+      const name = newName.value.trim()
+      if (!name) {
+        Message.warning('请输入文件名')
+        return false
+      }
+      await renameFile(file.ID, name)
+      Message.success('重命名成功')
+      await loadFiles()
+      modal && modal.close()
+    },
+  })
+}
+
+const onCreateShare = async (file: FileItem) => {
+  const expire = ref<number | null>(null)
+  const password = ref('')
+  let modal: any = null
+  modal = Modal.confirm({
+    title: '创建分享',
+    simple: true,
+    content: () =>
+      h(
+        'div',
+        { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+        [
+          h(Input, {
+            type: 'number',
+            min: 0,
+            placeholder: '过期天数(0为永久)',
+            modelValue: expire.value,
+            'onUpdate:modelValue': (v) => (expire.value = Number(v)),
+          }),
+          h(Input, {
+            placeholder: '访问密码(可选)',
+            modelValue: password.value,
+            'onUpdate:modelValue': (v) => (password.value = v as string),
+          }),
+        ]
+      ),
+    onOk: async () => {
+      const days = Number(expire.value || 0)
+      const res = await createShare(file.ID, days, password.value || undefined)
+      const link = `${window.location.origin}/share/${res.ShareCode}`
+      navigator.clipboard?.writeText(link).catch(() => null)
+      Message.success(`分享创建成功，已复制链接：${link}`)
+      modal && modal.close()
+    },
+  })
+}
+
+const onCreateFolderShare = async (folderId: number, folderName: string) => {
+  const expire = ref<number | null>(null)
+  const password = ref('')
+  let modal: any = null
+  modal = Modal.confirm({
+    title: `分享文件夹 - ${folderName}`,
+    simple: true,
+    content: () =>
+      h(
+        'div',
+        { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+        [
+          h(Input, {
+            type: 'number',
+            min: 0,
+            placeholder: '过期天数(0为永久)',
+            modelValue: expire.value,
+            'onUpdate:modelValue': (v) => (expire.value = Number(v)),
+          }),
+          h(Input, {
+            placeholder: '访问密码(可选)',
+            modelValue: password.value,
+            'onUpdate:modelValue': (v) => (password.value = v as string),
+          }),
+        ]
+      ),
+    onOk: async () => {
+      const days = Number(expire.value || 0)
+      const res = await createShare(folderId, days, password.value || undefined) // 若后端需要 resourceType, 使用 createFolderShare
+      const link = `${window.location.origin}/share/${res.ShareCode}`
+      navigator.clipboard?.writeText(link).catch(() => null)
+      Message.success(`分享创建成功，已复制链接：${link}`)
+      modal && modal.close()
+    },
+  })
+}
+
+const onDeleteFolder = async (id: number) => {
+  Modal.confirm({
+    title: '删除文件夹',
+    content: '删除将级联删除子内容，确认继续？',
+    async onOk() {
+      await deleteFolder(id)
+      Message.success('删除成功')
+      if (currentFolderId.value === id) currentFolderId.value = 0
+      await Promise.all([loadTree(), loadFiles(currentFolderId.value)])
+      await loadQuota()
+    },
+  })
+}
+
+const onRenameFolder = async (folder: Folder) => {
+  const newName = ref(folder.name)
+  let modal: any = null
+  modal = Modal.confirm({
+    title: '重命名文件夹',
+    simple: true,
+    content: () =>
+      h(Input, {
+        modelValue: newName.value,
+        'onUpdate:modelValue': (v) => (newName.value = v as string),
+      }),
+    onOk: async () => {
+      const name = newName.value.trim()
+      if (!name) {
+        Message.warning('请输入文件夹名称')
+        return false
+      }
+      await renameFolder((folder as any).ID ?? folder.id, name)
+      Message.success('重命名成功')
+      await loadTree()
+      modal && modal.close()
+    },
+  })
+}
+
+const loadQuota = async () => {
+  try {
+    quota.value = await getQuota()
+  } catch (e) {
+    // ignore
+  }
+}
+
+const currentChildren = computed(() => {
+  const findChildren = (nodes: Folder[], id: number): Folder[] | undefined => {
+    for (const n of nodes) {
+      if (n.id === id) return n.children || []
+      if (n.children?.length) {
+        const found = findChildren(n.children, id)
+        if (found) return found
+      }
+    }
+    return []
+  }
+  if (currentFolderId.value === 0) {
+    return folders.value || []
+  }
+  return findChildren(folders.value, currentFolderId.value) || []
+})
+
+const breadcrumbs = computed(() => {
+  if (currentFolderId.value === 0) {
+    return [{ id: 0, name: '全部文件' }]
+  }
+  const path = findPath(folders.value, currentFolderId.value)
+  return [{ id: 0, name: '全部文件' }, ...path.map((p) => ({ id: p.id, name: p.name }))]
+})
+
+const flatFolders = computed(() => {
+  const res: { id: number; name: string; level: number }[] = []
+  const walk = (nodes: Folder[] | undefined, level: number) => {
+    if (!nodes) return
+    nodes.forEach((n) => {
+      res.push({ id: n.id, name: n.name, level })
+      if (n.children?.length) walk(n.children, level + 1)
+    })
+  }
+  walk(folders.value, 0)
+  return res
+})
+
+type GridItem =
+  | {
+      type: 'folder'
+      id: number
+      name: string
+      meta: string
+      icon: string
+      color: string
+      bg: string
+      folder: Folder
+    }
+  | {
+      type: 'file'
+      id: number
+      name: string
+      meta: string
+      icon: string
+      color: string
+      bg: string
+      file: FileItem
+    }
+
+const defaultFolderIcon = { icon: '📂', color: '#165dff', bg: '#f0f4ff' }
+
+const resolveFileIcon = (file: FileItem) => {
+  const ext = (file.FileExt || '').toLowerCase()
+  const type = (file.FileType || '').toLowerCase()
+  const pick = (icon: string, color: string, bg: string) => ({ icon, color, bg })
+
+  if (type.startsWith('image') || ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg'].includes(ext))
+    return pick('🖼', '#1e88e5', '#e8f3ff')
+  if (type.startsWith('video') || ['.mp4', '.mov', '.avi', '.mkv', '.webm'].includes(ext))
+    return pick('🎞', '#f97316', '#fff4e6')
+  if (type.startsWith('audio') || ['.mp3', '.wav', '.flac', '.aac', '.ogg'].includes(ext))
+    return pick('🎧', '#10b981', '#e6f7f1')
+  if (ext === '.pdf') return pick('📕', '#ef4444', '#fff1f0')
+  if (['.doc', '.docx'].includes(ext)) return pick('📄', '#2563eb', '#e8f1ff')
+  if (['.xls', '.xlsx', '.csv'].includes(ext)) return pick('📊', '#16a34a', '#e8f8ef')
+  if (['.ppt', '.pptx'].includes(ext)) return pick('📑', '#f97316', '#fff4e6')
+  if (['.zip', '.rar', '.7z', '.tar', '.gz'].includes(ext)) return pick('🗜', '#9333ea', '#f5e8ff')
+  if (
+    ['.js', '.ts', '.vue', '.json', '.sql', '.html', '.css', '.scss', '.md'].includes(ext) ||
+    type.startsWith('text')
+  )
+    return pick('⌨', '#0ea5e9', '#e6f6ff')
+  return pick('📁', '#4b5563', '#f3f4f6')
+}
+
+const gridItems = computed<GridItem[]>(() => {
+  const folderCards = currentChildren.value.map((f) => ({
+    type: 'folder' as const,
+    id: f.id,
+    name: f.name,
+    meta: formatDate((f as any).createTime || (f as any).CreateTime) || '',
+    icon: defaultFolderIcon.icon,
+    color: defaultFolderIcon.color,
+    bg: defaultFolderIcon.bg,
+    folder: f,
+  }))
+  const fileCards = files.value.map((f) => {
+    const iconInfo = resolveFileIcon(f)
+    return {
+      type: 'file' as const,
+      id: f.ID,
+      name: f.FileName,
+      meta: `${formatSize(f.FileSize)}${f.CreateTime ? ' · ' + formatDate(f.CreateTime) : ''}`,
+      icon: iconInfo.icon,
+      color: iconInfo.color,
+      bg: iconInfo.bg,
+      file: f,
+    }
+  })
+  return [...folderCards, ...fileCards]
+})
+
+const onOpenItem = (item: GridItem) => {
+  if (item.type === 'folder') {
+    switchFolder(item.id)
+  } else {
+    handleDownload(item.file)
+  }
+}
+
+const goBack = async () => {
+  if (pathStack.value.length === 0) {
+    currentFolderId.value = 0
+    await loadFiles(0)
+    return
+  }
+  const parentId = pathStack.value.pop() as number
+  currentFolderId.value = parentId
+  await loadFiles(parentId)
+}
+
+const onBreadcrumbClick = async (id: number, index: number) => {
+  if (id === currentFolderId.value) return
+  const stacks = breadcrumbs.value.slice(1, index).map((c) => c.id).filter((n) => n !== 0)
+  pathStack.value = stacks
+  currentFolderId.value = id
+  await loadFiles(id)
+}
+
+const onMoveFile = async (file: FileItem) => {
+  const targetId = ref<number | null>(null)
+  let modal: any = null
+  modal = Modal.confirm({
+    title: '移动文件',
+    simple: true,
+    content: () =>
+      h(
+        Select,
+        {
+          placeholder: '选择目标文件夹',
+          modelValue: targetId.value,
+          'onUpdate:modelValue': (v) => (targetId.value = v as number),
+          style: 'width: 100%',
+          allowClear: true,
+        },
+        () =>
+          flatFolders.value.map((f) =>
+            h(
+              Select.Option,
+              { value: f.id, label: `${'· '.repeat(f.level)}${f.name}` },
+              () => `${'· '.repeat(f.level)}${f.name}`
+            )
+          )
+      ),
+    onOk: async () => {
+      if (targetId.value === null || targetId.value === undefined) {
+        Message.warning('请选择目标文件夹')
+        return false
+      }
+      await moveFile(file.ID, targetId.value)
+      Message.success('移动成功')
+      await loadFiles()
+      modal && modal.close()
+    },
+  })
+}
+
+const onPreviewFile = async (file: FileItem) => {
+  try {
+    const type = file.FileType?.toLowerCase() || ''
+    const ext = (file.FileExt || '').toLowerCase()
+    const token = getAccessToken()
+    const appendToken = (url: string) => {
+      if (!url) return url
+      if (url.includes('token=')) return url
+      return token ? `${url}${url.includes('?') ? '&' : '?'}token=${token}` : url
+    }
+
+    // 优先使用后端返回的访问地址，避免大文件预览时完整下载
+    const directUrl = file.AccessURL ? appendToken(file.AccessURL) : ''
+
+    // 文本/SQL/日志直接拉取文本
+    if (type.startsWith('text') || ext === '.sql' || ext === '.txt' || ext === '.log') {
+      const blob = await fetchFileBlob(file.ID)
+      const text = await blob.text()
+      Modal.info({
+        title: file.FileName,
+        simple: true,
+        closable: true,
+        width: '80vw',
+        content: () =>
+          h('pre', {
+            style: 'max-height:70vh; overflow:auto; background:#f7f8fa; padding:12px; white-space:pre-wrap;',
+          }, text),
+      })
+      return
+    }
+
+    // 图片
+    if (type.startsWith('image')) {
+      const url = directUrl || URL.createObjectURL(await fetchFileBlob(file.ID))
+      Modal.info({
+        title: file.FileName,
+        simple: true,
+        closable: true,
+        width: '80vw',
+        content: () => h('img', { src: url, style: 'max-width: 100%; max-height: 70vh; display: block; margin: 0 auto;' }),
+      })
+      return
+    }
+
+    // 视频
+    if (type.startsWith('video')) {
+      const url = directUrl || URL.createObjectURL(await fetchFileBlob(file.ID))
+      Modal.info({
+        title: file.FileName,
+        simple: true,
+        closable: true,
+        width: '80vw',
+        content: () =>
+          h('video', {
+            src: url,
+            controls: true,
+            style: 'width: 100%; max-height: 70vh;',
+          }),
+      })
+      return
+    }
+
+    // 其他类型直接下载
+    downloadFileAuth(file.ID, file.FileName)
+  } catch (error: any) {
+    Message.error(error?.message || '预览失败，将尝试下载文件')
+    downloadFileAuth(file.ID, file.FileName)
+  }
+}
+
+const handleDownload = async (file: FileItem) => {
+  try {
+    await downloadFileAuth(file.ID, file.FileName)
+  } catch (error: any) {
+    Message.error(error?.message || '下载失败，请稍后重试')
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([loadTree(), loadFiles(), loadQuota()])
+})
+</script>
+
+<template>
+  <div class="cloud-page">
+    <div class="cloud-header">
+      <div class="header-left">
+        <div class="title">云盘</div>
+        <div class="subtitle">文件存储、分享与配额管理</div>
+      </div>
+      <div class="actions">
+        <a-button type="primary" size="small" class="upload-btn" :loading="loading.uploading">
+          <input type="file" class="upload-input" multiple @change="onUpload" />
+          上传文件
+        </a-button>
+        <a-button size="small" @click="onCreateFolder">新建文件夹</a-button>
+        <a-button size="small" @click="() => loadFiles()">刷新</a-button>
+      </div>
+    </div>
+
+    <div v-if="loading.uploading" class="upload-progress-bar" :class="{ active: loading.uploading }">
+      <div class="upload-bar-left">
+        <span class="upload-label">上传进度</span>
+        <span class="upload-percent">{{ uploadPercent.toFixed(0) }}%</span>
+        <span class="upload-bytes">{{ uploadStatusText }}</span>
+      </div>
+      <div class="upload-progress-track">
+        <div class="upload-progress-fill" :style="{ width: `${uploadPercent}%` }"></div>
+      </div>
+      <a-button type="text" size="mini" class="upload-cancel" @click="cancelUpload">
+        <IconClose />
+      </a-button>
+    </div>
+
+    <div class="cloud-body">
+      <div class="content full">
+        <div class="content-header">
+          <div class="breadcrumbs">
+            <a-button type="text" size="mini" @click="goBack">返回上一级</a-button>
+            <span class="sep">|</span>
+            <template v-for="(item, index) in breadcrumbs" :key="item.id">
+              <span
+                class="crumb"
+                :class="{ active: item.id === currentFolderId }"
+                @click="onBreadcrumbClick(item.id, index)"
+              >
+                {{ item.name }}
+              </span>
+              <span v-if="index < breadcrumbs.length - 1" class="sep">&gt;</span>
+            </template>
+          </div>
+          <div class="quota" v-if="quota">
+            <span>已用：{{ quotaText }}</span>
+            <a-progress
+              :percent="quotaUsagePercent"
+              :show-text="false"
+              size="small"
+              style="width: 140px"
+            />
+          </div>
+        </div>
+
+        <a-spin :loading="loading.list || loading.tree">
+          <div class="folder-grid">
+            <div
+              v-for="item in gridItems"
+              :key="`${item.type}-${item.id}`"
+              class="folder-card"
+              @dblclick="onOpenItem(item)"
+            >
+              <div class="folder-icon" :style="{ background: item.bg, color: item.color }">
+                <span>{{ item.icon }}</span>
+              </div>
+              <div class="folder-meta">
+                <div class="folder-name" @click="onOpenItem(item)">{{ item.name }}</div>
+                <div class="folder-meta-sub">{{ item.meta }}</div>
+                <div class="folder-meta-actions">
+                  <template v-if="item.type === 'folder'">
+                    <a-dropdown trigger="click" position="bl">
+                      <a-button type="text" size="mini" @click.stop>更多</a-button>
+                      <template #content>
+                        <a-doption @click.stop="() => onRenameFolder(item.folder)">重命名</a-doption>
+                        <a-doption @click.stop="() => onCreateFolderShare(item.id, item.name)">分享</a-doption>
+                        <a-doption @click.stop="() => onDeleteFolder(item.id)" style="color: #f53f3f">删除</a-doption>
+                      </template>
+                    </a-dropdown>
+                  </template>
+                  <template v-else>
+                    <a-dropdown trigger="click" position="bl">
+                      <a-button type="text" size="mini" @click.stop>更多</a-button>
+                      <template #content>
+                        <a-doption @click.stop="() => onPreviewFile(item.file)">预览</a-doption>
+                        <a-doption @click.stop="() => handleDownload(item.file)">下载</a-doption>
+                        <a-doption @click.stop="() => onRenameFile(item.file)">重命名</a-doption>
+                        <a-doption @click.stop="() => onMoveFile(item.file)">移动</a-doption>
+                        <a-doption @click.stop="() => onCreateShare(item.file)">分享</a-doption>
+                        <a-doption @click.stop="() => onDeleteFile(item.id)" style="color: #f53f3f">删除</a-doption>
+                      </template>
+                    </a-dropdown>
+                  </template>
+                </div>
+              </div>
+            </div>
+            <div v-if="!gridItems.length && !loading.list" class="empty">当前文件夹为空，创建文件夹后开始使用。</div>
+          </div>
+        </a-spin>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.cloud-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cloud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.title {
+  font-size: 18px;
+  font-weight: 700;
+}
+.subtitle {
+  color: var(--color-text-2);
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.upload-btn {
+  position: relative;
+  overflow: hidden;
+}
+.upload-btn .upload-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.cloud-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.content {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+}
+.upload-progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: #f7f9ff;
+  border: 1px solid #e4e9f2;
+  border-radius: 8px;
+  min-width: 240px;
+  max-width: 720px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+.upload-cancel {
+  padding: 0 4px;
+  color: var(--color-text-2);
+}
+.upload-cancel:hover {
+  color: #f53f3f;
+}
+.upload-progress-bar.active {
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.08);
+  border-color: rgba(22, 93, 255, 0.35);
+}
+.upload-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 160px;
+  flex-wrap: wrap;
+}
+.upload-label {
+  font-weight: 600;
+}
+.upload-percent {
+  color: #165dff;
+  font-weight: 700;
+}
+.upload-bytes {
+  color: var(--color-text-2);
+  font-size: 12px;
+}
+.upload-progress-track {
+  position: relative;
+  flex: 1;
+  min-width: 160px;
+  height: 8px;
+  background: #e6ebf5;
+  border-radius: 999px;
+  overflow: hidden;
+  max-width: 520px;
+}
+.upload-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #4caf50);
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+.folder-grid {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  flex-wrap: wrap;
+  overflow-x: auto;
+}
+.folder-card {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  flex: 1 1 220px;
+  min-width: 200px;
+  max-width: 260px;
+}
+.folder-card:hover {
+  border-color: rgba(22, 93, 255, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+.folder-icon {
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #f0f4ff;
+  color: #165dff;
+}
+.folder-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.folder-name {
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.folder-meta-sub {
+  font-size: 12px;
+  color: var(--color-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.folder-meta-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-2);
+}
+.crumb {
+  cursor: pointer;
+  color: var(--color-text-2);
+}
+.crumb.active {
+  color: #165dff;
+  font-weight: 700;
+}
+.sep {
+  color: var(--color-text-3, #c0c4cc);
+}
+.quota {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-2);
+  white-space: nowrap;
+}
+.empty {
+  text-align: center;
+  padding: 24px 0;
+  color: var(--color-text-2);
+}
+
+@media (max-width: 900px) {
+  .content-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .actions {
+    justify-content: flex-start;
+  }
+  .folder-card {
+    flex: 1 1 calc(50% - 12px);
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 600px) {
+  .cloud-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .actions {
+    width: 100%;
+  }
+  .folder-grid {
+    overflow-x: visible;
+  }
+  .folder-card {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+  .upload-progress-bar {
+    align-items: flex-start;
+  }
+  .upload-bar-left {
+    width: 100%;
+  }
+  .upload-progress-track {
+    width: 100%;
+    min-width: 0;
+  }
+}
+</style>

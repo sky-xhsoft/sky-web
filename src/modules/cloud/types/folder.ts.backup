@@ -1,0 +1,71 @@
+/**
+ * 文件夹相关类型定义
+ *
+ * 根据后端 API 文档，后端统一使用 PascalCase 命名
+ */
+
+/**
+ * 文件夹信息
+ */
+export interface Folder {
+  ID: number
+  Name: string  // Backend returns "Name" instead of "FolderName"
+  ParentID: number
+  UserID: number
+  CreateTime: string
+  UpdateTime?: string
+  Children?: Folder[]  // 树形结构使用
+}
+
+/**
+ * 文件夹列表响应
+ */
+export interface FolderListResponse {
+  code: number
+  message: string
+  data: Folder[]
+}
+
+/**
+ * 文件夹树响应
+ */
+export interface FolderTreeResponse {
+  code: number
+  message: string
+  data: Folder[]
+}
+
+/**
+ * 文件夹创建参数
+ */
+export interface FolderCreateParams {
+  parentId: number
+  folderName: string
+}
+
+/**
+ * 文件夹重命名参数
+ */
+export interface FolderRenameParams {
+  newName: string
+}
+
+/**
+ * 文件夹操作结果
+ */
+export interface FolderOperationResult {
+  code: number
+  message: string
+  data: {
+    message: string
+  }
+}
+
+/**
+ * 面包屑导航项
+ */
+export interface BreadcrumbItem {
+  id: number
+  name: string
+  path: string
+}
