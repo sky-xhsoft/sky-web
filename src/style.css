@@ -34,25 +34,38 @@ a {
   text-decoration: none;
 }
 
-/* Message 提示框显示在右上角 - 使用更高优先级选择器 */
-body .arco-message-wrapper {
-  position: fixed !important;
+/* Message 提示框显示在右上角 */
+/* 覆盖 ArcoDesign 的内联样式和默认样式 */
+[class*="message"][class*="wrapper"],
+div[style*="position"][style*="fixed"]:has(.arco-message) {
   left: auto !important;
   right: 20px !important;
   top: 20px !important;
-  transform: translateX(0) translateY(0) !important;
+  transform: none !important;
   width: auto !important;
-  max-width: 400px !important;
+  max-width: 420px !important;
 }
 
-/* 确保所有 message 都靠右对齐 */
-body .arco-message-wrapper > div {
+/* 针对具体的 arco-message-wrapper 类 */
+.arco-message-wrapper {
+  left: auto !important;
+  right: 20px !important;
+  top: 20px !important;
+  transform: none !important;
+  width: auto !important;
+}
+
+/* Message 容器内部布局 */
+.arco-message-wrapper > div,
+.arco-message-list {
   display: flex !important;
   flex-direction: column !important;
   align-items: flex-end !important;
+  width: 100% !important;
 }
 
-body .arco-message {
-  margin-bottom: 8px;
+/* 单个 Message 样式 */
+.arco-message {
+  margin-bottom: 10px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }

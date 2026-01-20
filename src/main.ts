@@ -13,3 +13,20 @@ app.use(router)
 app.use(ArcoVue)
 app.use(ArcoVueIcon)
 app.mount('#app')
+
+// 修改 Message 容器位置
+setTimeout(() => {
+  const observer = new MutationObserver(() => {
+    const messageWrapper = document.querySelector('.arco-message-wrapper') as HTMLElement
+    if (messageWrapper && messageWrapper.style.left) {
+      messageWrapper.style.left = 'auto'
+      messageWrapper.style.right = '20px'
+      messageWrapper.style.transform = 'none'
+    }
+  })
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  })
+}, 0)
