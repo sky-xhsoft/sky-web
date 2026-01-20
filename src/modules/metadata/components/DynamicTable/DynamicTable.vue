@@ -183,7 +183,6 @@
       :data="records"
       :loading="loading"
       :pagination="paginationConfig"
-      :row-selection="rowSelectionConfig"
       :bordered="bordered"
       :stripe="stripe"
       :hoverable="hoverable"
@@ -193,18 +192,30 @@
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
       @sorter-change="handleSorterChange"
-      @selection-change="handleSelectionChange"
     >
-      <!-- 自定义选择列标题 -->
-      <template #th-selection-cell>
-        序号
+      <!-- 选择+序号列表头 -->
+      <template #selection-index-title>
+        <div class="selection-index-header">
+          <a-checkbox
+            :model-value="isAllSelected"
+            :indeterminate="hasSelection && !isAllSelected"
+            @change="handleSelectAll"
+          />
+          <span>序号</span>
+        </div>
       </template>
 
-      <!-- 自定义选择列内容：显示序号 -->
-      <template #td-selection-cell="{ rowIndex }">
-        <span class="row-number">
-          {{ (pagination.page - 1) * pagination.pageSize + rowIndex + 1 }}
-        </span>
+      <!-- 选择+序号列 -->
+      <template #__selection_index__="{ record, rowIndex }">
+        <div class="selection-index-cell">
+          <a-checkbox
+            :model-value="selectedRowKeys.includes(record[pkField])"
+            @change="(checked) => handleSingleSelect(record[pkField], checked)"
+          />
+          <span class="row-number">
+            {{ (pagination.page - 1) * pagination.pageSize + rowIndex + 1 }}
+          </span>
+        </div>
       </template>
 
       <!-- 状态列自定义渲染 -->
@@ -419,7 +430,16 @@ const visibleQueryColumns = computed(() => {
 const columns = computed<TableColumnData[]>(() => {
   const cols: TableColumnData[] = []
 
-  // 不再添加独立的序号列，序号将与复选框合并显示
+  // 添加自定义选择+序号列
+  cols.push({
+    title: '序号',
+    dataIndex: '__selection_index__',
+    width: 80,
+    align: 'center',
+    slotName: '__selection_index__',
+    titleSlotName: 'selection-index-title',
+    fixed: 'left'
+  })
 
   // 业务列
   tableColumns.value.forEach(column => {
@@ -468,7 +488,9 @@ const visibleColumns = computed(() => {
   if (selectedColumnKeys.value.length === 0) {
     return columns.value
   }
+
   return columns.value.filter(col =>
+    col.dataIndex === '__selection_index__' ||
     col.dataIndex === 'actions' ||
     selectedColumnKeys.value.includes(col.dataIndex as string)
   )
@@ -487,18 +509,6 @@ const paginationConfig = computed(() => ({
   pageSizeOptions: [10, 20, 50, 100],
   // 自定义总数显示
   showTotalText: (total: number) => `共 ${total} 条数据`
-}))
-
-/**
- * 行选择配置
- */
-const rowSelectionConfig = computed(() => ({
-  type: 'checkbox' as const,
-  showCheckedAll: true,
-  selectedRowKeys: selectedRowKeys.value,
-  title: '序号',
-  width: 80,
-  fixed: true
 }))
 
 /**
@@ -745,9 +755,36 @@ function handleSorterChange(dataIndex: string, direction: string) {
 }
 
 /**
- * 选中变化
+ * 是否全选
  */
-function handleSelectionChange(keys: (string | number)[]) {
+const isAllSelected = computed(() => {
+  return records.value.length > 0 && selectedRowKeys.value.length === records.value.length
+})
+
+/**
+ * 处理单行选择
+ */
+function handleSingleSelect(key: string | number, checked: boolean) {
+  const keys = [...selectedRowKeys.value]
+  if (checked) {
+    if (!keys.includes(key)) {
+      keys.push(key)
+    }
+  } else {
+    const index = keys.indexOf(key)
+    if (index > -1) {
+      keys.splice(index, 1)
+    }
+  }
+  onSelectionChange(keys)
+  emit('selection-change', keys)
+}
+
+/**
+ * 处理全选
+ */
+function handleSelectAll(checked: boolean) {
+  const keys = checked ? records.value.map(r => r[pkField.value]) : []
   onSelectionChange(keys)
   emit('selection-change', keys)
 }
@@ -765,149 +802,23 @@ function handleApplyColumnSettings() {
  */
 function initColumnSettings() {
   allColumns.value = columns.value.filter(col =>
-    col.dataIndex !== 'index' && col.dataIndex !== 'actions'
+    col.dataIndex !== '__selection_index__' && col.dataIndex !== 'actions'
   )
   selectedColumnKeys.value = allColumns.value.map(col => col.dataIndex as string)
 }
 
 // ==================== 生命周期 ====================
 
-/**
- * 设置单个单元格的宽度
- */
-function setCellWidth(el: HTMLElement, width: number) {
-  const widthPx = `${width}px`
-  // 使用 cssText 完全覆盖样式，并添加 !important
-  el.style.cssText = `width: ${widthPx} !important; min-width: ${widthPx} !important; max-width: ${widthPx} !important; flex: 0 0 ${widthPx} !important;`
-  // 再次强制设置，确保生效
-  el.setAttribute('width', String(width))
-}
-
-/**
- * 强制设置选择框和序号列宽度
- */
-async function forceSetColumnWidth() {
-  await nextTick()
-
-  // 再次延迟确保 ArcoDesign 完成渲染
-  setTimeout(() => {
-    console.log('[DynamicTable] 开始设置列宽')
-    const container = document.querySelector('.dynamic-table')
-    if (!container) {
-      console.warn('[DynamicTable] 未找到容器')
-      return
-    }
-
-    // 设置表格为 100% 宽度
-    const tableElements = container.querySelectorAll('.arco-table-element')
-    tableElements.forEach(table => {
-      const el = table as HTMLElement
-      el.style.width = '100%'
-      el.style.minWidth = '100%'
-
-      // 使用 colgroup 设置列宽
-      let colgroup = table.querySelector('colgroup')
-      if (!colgroup) {
-        colgroup = document.createElement('colgroup')
-        table.insertBefore(colgroup, table.firstChild)
-      }
-
-      // 清空现有 col
-      colgroup.innerHTML = ''
-
-      // 获取列数
-      const headerRow = table.querySelector('thead tr')
-      if (headerRow) {
-        const colCount = headerRow.children.length
-
-        for (let i = 0; i < colCount; i++) {
-          const col = document.createElement('col')
-          if (i === 0) {
-            // 第一列：选择框
-            col.style.width = '50px'
-            col.setAttribute('width', '50')
-          } else if (i === 1) {
-            // 第二列：序号
-            col.style.width = '70px'
-            col.setAttribute('width', '70')
-          }
-          // 其他列不设置宽度，让它们自动分配
-          colgroup.appendChild(col)
-        }
-      }
-    })
-
-    // 设置所有第一列（选择框）
-    const firstCols = container.querySelectorAll('th:first-child, td:first-child')
-    console.log('[DynamicTable] 第一列单元格数量:', firstCols.length)
-    firstCols.forEach(cell => {
-      setCellWidth(cell as HTMLElement, 50)
-    })
-
-    // 设置所有第二列（序号）
-    const secondCols = container.querySelectorAll('th:nth-child(2), td:nth-child(2)')
-    console.log('[DynamicTable] 第二列单元格数量:', secondCols.length)
-    secondCols.forEach(cell => {
-      const el = cell as HTMLElement
-      setCellWidth(el, 70)
-      if (el.classList.contains('arco-table-col-fixed-left')) {
-        el.style.left = '50px'
-      }
-    })
-
-    console.log('[DynamicTable] 列宽设置完成')
-
-    // 使用 MutationObserver 监控样式变化并强制重设
-    const observer = new MutationObserver(() => {
-      const firstColsCheck = container.querySelectorAll('th:first-child, td:first-child')
-      firstColsCheck.forEach(cell => {
-        const el = cell as HTMLElement
-        if (el.style.width !== '50px') {
-          setCellWidth(el, 50)
-        }
-      })
-
-      const secondColsCheck = container.querySelectorAll('th:nth-child(2), td:nth-child(2)')
-      secondColsCheck.forEach(cell => {
-        const el = cell as HTMLElement
-        if (el.style.width !== '70px') {
-          setCellWidth(el, 70)
-          if (el.classList.contains('arco-table-col-fixed-left')) {
-            el.style.left = '50px'
-          }
-        }
-      })
-    })
-
-    // 开始监控
-    observer.observe(container, {
-      attributes: true,
-      attributeFilter: ['style'],
-      subtree: true
-    })
-
-    console.log('[DynamicTable] 开始监控列宽变化')
-  }, 200)
-}
-
 onMounted(() => {
   initColumnSettings()
-  forceSetColumnWidth()
 })
 
-// 监听数据变化后重新设置列宽
+// 监听列变化 - 当业务列加载后重新初始化
 watch(
-  () => records.value,
-  () => {
-    forceSetColumnWidth()
-  }
-)
-
-// 监听列变化
-watch(
-  () => columns.value,
-  () => {
-    if (selectedColumnKeys.value.length === 0) {
+  () => columns.value.length,
+  (newLength, oldLength) => {
+    // 当列数量增加时（业务列加载完成），重新初始化
+    if (newLength > oldLength) {
       initColumnSettings()
     }
   }
@@ -932,21 +843,26 @@ defineExpose({
   flex-direction: column;
 }
 
-/* 序号样式 */
-.row-number {
-  display: inline-block;
-  margin-left: 8px;
-  color: #86909c;
-  font-size: 14px;
+/* 选择+序号列样式 */
+.selection-index-header,
+.selection-index-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-/* 选择列宽度 */
-.dynamic-table :deep(.arco-table-th-selection),
-.dynamic-table :deep(.arco-table-td-selection) {
-  width: 80px !important;
-  min-width: 80px !important;
-  max-width: 80px !important;
+.selection-index-header span {
+  font-weight: 600;
 }
+
+.row-number {
+  color: #86909c;
+  font-size: 14px;
+  min-width: 24px;
+  text-align: center;
+}
+
 
 /* 查询区域 */
 .dynamic-table__query {
@@ -1081,28 +997,6 @@ defineExpose({
   background: rgba(var(--primary-6), 0.1);
 }
 
-/* 选择框列宽度固定 */
-.dynamic-table :deep(.arco-table-th.arco-table-operation),
-.dynamic-table :deep(.arco-table-td.arco-table-operation),
-.dynamic-table :deep(.arco-table-th.arco-table-col-fixed-left:nth-of-type(1)),
-.dynamic-table :deep(.arco-table-td.arco-table-col-fixed-left:nth-of-type(1)) {
-  width: 50px !important;
-  min-width: 50px !important;
-  max-width: 50px !important;
-  flex: 0 0 50px !important;
-}
-
-/* 序号列宽度固定 */
-.dynamic-table :deep(.arco-table-th.arco-table-col-fixed-left-last),
-.dynamic-table :deep(.arco-table-td.arco-table-col-fixed-left-last),
-.dynamic-table :deep(.arco-table-th.arco-table-col-fixed-left:nth-of-type(2)),
-.dynamic-table :deep(.arco-table-td.arco-table-col-fixed-left:nth-of-type(2)) {
-  width: 70px !important;
-  min-width: 70px !important;
-  max-width: 70px !important;
-  flex: 0 0 70px !important;
-  left: 50px !important;
-}
 
 /* 固定列样式 - 使用 Arco Design 原生支持 */
 .dynamic-table :deep(.arco-table-th-fixed-left),
