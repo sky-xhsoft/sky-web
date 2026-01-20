@@ -405,7 +405,8 @@ function handleEdit(record: any) {
  * 删除
  */
 function handleDelete(record: any) {
-  Message.success(`删除成功: ${record.DISPLAY_NAME || record.NAME}`)
+  // 删除成功提示已在 DynamicTable 的 composable 中处理
+  // 这里可以做一些额外的处理，比如记录日志
 }
 
 // ==================== 生命周期 ====================
