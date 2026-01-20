@@ -112,6 +112,34 @@
         </a-empty>
       </div>
     </main>
+
+    <!-- 表单抽屉 -->
+    <a-drawer
+      v-model:visible="formDrawerVisible"
+      :title="formDrawerTitle"
+      :width="800"
+      :footer="formMode !== 'view'"
+      @cancel="handleFormDrawerClose"
+    >
+      <DynamicForm
+        v-if="formDrawerVisible && currentTable"
+        ref="formRef"
+        :table-id="currentTable.ID"
+        :record-id="currentRecordId"
+        :mode="formMode"
+        :label-col-span="6"
+        :wrapper-col-span="18"
+        @submit="handleFormSubmit"
+      />
+      <template #footer>
+        <a-space>
+          <a-button @click="handleFormDrawerClose">取消</a-button>
+          <a-button type="primary" @click="handleFormSave" :loading="formSaving">
+            保存
+          </a-button>
+        </a-space>
+      </template>
+    </a-drawer>
   </div>
 </template>
 
@@ -130,9 +158,9 @@ import {
   IconMenuFold,
   IconMenuUnfold
 } from '@arco-design/web-vue/es/icon'
-import { DynamicTable } from '@/modules/metadata'
+import { DynamicTable, DynamicForm } from '@/modules/metadata'
 import { useMetadataStore } from '@/modules/metadata'
-import type { TreeNode, SysTable, Subsystem, TableCategory, SysColumn } from '@/modules/metadata'
+import type { TreeNode, SysTable, Subsystem, TableCategory, SysColumn, FormMode } from '@/modules/metadata'
 
 // ==================== Props ====================
 
@@ -168,8 +196,28 @@ const currentCategory = ref<TableCategory | null>(null)
 const currentTable = ref<SysTable | null>(null)
 
 const tableRef = ref()
+const formRef = ref()
+
+// 表单抽屉相关状态
+const formDrawerVisible = ref(false)
+const formMode = ref<FormMode>('create')
+const currentRecordId = ref<number | undefined>()
+const formSaving = ref(false)
 
 // ==================== 计算属性 ====================
+
+/**
+ * 表单抽屉标题
+ */
+const formDrawerTitle = computed(() => {
+  if (!currentTable.value) return ''
+  const tableName = currentTable.value.DISPLAY_NAME
+  if (formMode.value === 'create') return `新增${tableName}`
+  if (formMode.value === 'edit') return `编辑${tableName}`
+  return `查看${tableName}`
+})
+
+// ==================== 原有计算属性 ====================
 
 /**
  * 树形数据
@@ -367,8 +415,9 @@ function handleReset() {
 function handleCreate() {
   if (!currentTable.value) return
 
-  Message.info('新增功能开发中')
-  // TODO: 实现表单弹窗
+  formMode.value = 'create'
+  currentRecordId.value = undefined
+  formDrawerVisible.value = true
 }
 
 /**
@@ -377,8 +426,9 @@ function handleCreate() {
 function handleView(record: any) {
   if (!currentTable.value) return
 
-  Message.info('查看功能开发中')
-  // TODO: 实现查看弹窗
+  formMode.value = 'view'
+  currentRecordId.value = record.ID
+  formDrawerVisible.value = true
 }
 
 /**
@@ -387,8 +437,44 @@ function handleView(record: any) {
 function handleEdit(record: any) {
   if (!currentTable.value) return
 
-  Message.info('编辑功能开发中')
-  // TODO: 实现编辑弹窗
+  formMode.value = 'edit'
+  currentRecordId.value = record.ID
+  formDrawerVisible.value = true
+}
+
+/**
+ * 关闭表单抽屉
+ */
+function handleFormDrawerClose() {
+  formDrawerVisible.value = false
+  currentRecordId.value = undefined
+}
+
+/**
+ * 保存表单
+ */
+async function handleFormSave() {
+  if (!formRef.value) return
+
+  try {
+    formSaving.value = true
+    await formRef.value.submit()
+  } catch (error: any) {
+    // 错误已在表单组件中处理
+  } finally {
+    formSaving.value = false
+  }
+}
+
+/**
+ * 表单提交成功
+ */
+async function handleFormSubmit(data: any) {
+  Message.success('保存成功')
+  formDrawerVisible.value = false
+  currentRecordId.value = undefined
+  // 刷新列表
+  await tableRef.value?.refresh()
 }
 
 /**
