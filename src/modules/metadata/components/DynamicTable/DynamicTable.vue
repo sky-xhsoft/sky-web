@@ -722,12 +722,8 @@ function handleBatchDelete() {
     okButtonProps: { status: 'danger' },
     onOk: async () => {
       // 用户点击确定按钮后执行
-      try {
-        await onBatchDelete()
-        Message.success('批量删除成功')
-      } catch (error: any) {
-        Message.error(error.message || '批量删除失败')
-      }
+      // onBatchDelete 内部已经处理了成功/失败提示
+      await onBatchDelete()
     },
     onCancel: () => {
       // 用户点击取消按钮，不执行任何操作
