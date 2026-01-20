@@ -317,14 +317,23 @@ async function handleSave() {
       )
       Message.success('新增成功')
 
-      // 跳转到查看页
-      router.replace({
-        name: 'MetadataFormView',
-        params: {
-          tableId: tableId.value,
-          id: result.ID
-        }
-      })
+      // 使用 navigationStore 跳转到查看页（如果是通过 props 传入的参数）
+      if (props.tableId) {
+        navigationStore.navigateTo('MetadataFormView', `查看${tableConfig.value!.table.DISPLAY_NAME}`, {
+          tableId: props.tableId,
+          recordId: result.ID,
+          mode: 'view'
+        })
+      } else {
+        // 兼容路由模式
+        router.replace({
+          name: 'MetadataFormView',
+          params: {
+            tableId: tableId.value,
+            id: result.ID
+          }
+        })
+      }
     } else {
       await formStore.updateRecord(
         (tableConfig.value!.table as any).NAME || (tableConfig.value!.table as any).name,
