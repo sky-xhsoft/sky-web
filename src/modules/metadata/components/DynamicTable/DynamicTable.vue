@@ -195,9 +195,11 @@
       @sorter-change="handleSorterChange"
       @selection-change="handleSelectionChange"
     >
-      <!-- 序号列 -->
-      <template #index="{ rowIndex }">
-        {{ (pagination.page - 1) * pagination.pageSize + rowIndex + 1 }}
+      <!-- 自定义选择列：复选框 + 序号 -->
+      <template #selection-cell="{ rowIndex }">
+        <div class="selection-cell">
+          {{ (pagination.page - 1) * pagination.pageSize + rowIndex + 1 }}
+        </div>
       </template>
 
       <!-- 状态列自定义渲染 -->
@@ -412,15 +414,7 @@ const visibleQueryColumns = computed(() => {
 const columns = computed<TableColumnData[]>(() => {
   const cols: TableColumnData[] = []
 
-  // 序号列
-  cols.push({
-    title: '序号',
-    dataIndex: 'index',
-    width: 70,
-    align: 'center',
-    fixed: 'left',
-    slotName: 'index'
-  })
+  // 不再添加独立的序号列，序号将与复选框合并显示
 
   // 业务列
   tableColumns.value.forEach(column => {
@@ -470,7 +464,6 @@ const visibleColumns = computed(() => {
     return columns.value
   }
   return columns.value.filter(col =>
-    col.dataIndex === 'index' ||
     col.dataIndex === 'actions' ||
     selectedColumnKeys.value.includes(col.dataIndex as string)
   )
@@ -929,6 +922,14 @@ defineExpose({
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
+}
+
+/* 选择列：复选框 + 序号 */
+.selection-cell {
+  display: inline-block;
+  margin-left: 8px;
+  color: #86909c;
+  font-size: 14px;
 }
 
 /* 查询区域 */
