@@ -447,10 +447,10 @@ const columns = computed<TableColumnData[]>(() => {
     const col: TableColumnData = {
       title: column.title,
       dataIndex: column.dataIndex,
-      // 不设置固定宽度，让列动态分配剩余空间
-      // width: column.width || 150,
-      ellipsis: column.ellipsis,
-      tooltip: column.tooltip,
+      // 使用配置的宽度，如果没有配置则使用默认值 150px
+      width: column.width || 150,
+      ellipsis: true,  // 启用省略号，避免内容过长
+      tooltip: true,   // 鼠标悬停显示完整内容
       sortable: column.sortable ? { sortDirections: ['ascend', 'descend'] } : undefined,
       align: getColumnAlign(column.dataIndex)
     }
@@ -516,9 +516,14 @@ const paginationConfig = computed(() => ({
  * 滚动配置
  */
 const scrollConfig = computed(() => {
+  // 计算所有列的总宽度
+  const totalWidth = columns.value.reduce((sum, col) => {
+    return sum + (col.width || 150)
+  }, 0)
+
   return {
-    x: '100%',  // 水平滚动：使用百分比而不是固定宽度
-    y: 'calc(100vh - 380px)'  // 竖向滚动：根据视口高度自动计算（减去顶部导航、面包屑、查询区、工具栏、分页的高度）
+    x: totalWidth,  // 水平滚动：设置为所有列宽度之和
+    y: 'calc(100vh - 380px)'  // 竖向滚动：根据视口高度自动计算
   }
 })
 
@@ -958,21 +963,15 @@ defineExpose({
   align-items: center;
 }
 
-/* 表格容器 - 支持固定列 */
+/* 表格容器 - 支持固定列和滚动 */
 .dynamic-table :deep(.arco-table-container) {
   flex: 1;
   overflow: auto;
 }
 
-.dynamic-table :deep(.arco-table) {
-  width: 100%;
-  table-layout: auto;
-}
-
+/* 表格布局 - 使用固定布局以确保列对齐 */
 .dynamic-table :deep(.arco-table-element) {
-  table-layout: auto !important;
-  width: 100% !important;
-  min-width: 100% !important;
+  table-layout: fixed !important;
 }
 
 /* 表格样式优化 */
