@@ -50,15 +50,22 @@ const mapMenu = (items: any[]): NavItem[] => {
 const navItems = computed<NavItem[]>(() => {
   const mapped =
     menuStore.navMenus.length ? mapMenu(menuStore.navMenus) : menuStore.menus.length ? mapMenu(menuStore.menus) : []
-  const defaults: NavItem[] = [
-    { key: 'dashboard', title: '首页', path: '/' },
-    { key: 'cloud', title: '云盘', path: '/cloud' },
-  ]
-  const merged = [...mapped]
-  defaults.forEach((item) => {
-    if (!merged.some((m) => m.key === item.key)) merged.push(item)
-  })
-  return merged
+
+  // 定义默认菜单项
+  const dashboard = { key: 'dashboard', title: '首页', path: '/' }
+  const cloud = { key: 'cloud', title: '云盘', path: '/cloud' }
+
+  // 过滤掉后端返回的首页和云盘（如果存在）
+  const filtered = mapped.filter((m) => m.key !== 'dashboard' && m.key !== 'cloud')
+
+  // 确保首页始终排第一，云盘排第二（如果后端没有返回）
+  const result = [dashboard]
+  if (!mapped.some((m) => m.key === 'cloud')) {
+    result.push(cloud)
+  }
+  result.push(...filtered)
+
+  return result
 })
 
 const keyPathMap = computed(() => {
