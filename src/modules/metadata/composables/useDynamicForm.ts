@@ -25,6 +25,7 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
   const submitting = ref(false)
   const tableConfig = ref<TableConfig | null>(null)
   const formData = ref<FormData>({})
+  const originalData = ref<FormData>({})  // 保存原始数据，用于对比变更
   const errors = ref<Record<string, string>>({})
 
   // ==================== 计算属性 ====================
@@ -155,7 +156,13 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
     try {
       const tableName = tableConfig.value!.table.TABLE_NAME || tableConfig.value!.table.NAME
       const record = await formStore.loadRecord(tableName, recordId)
+
+      // 保存原始数据（深拷贝）
+      originalData.value = JSON.parse(JSON.stringify(record))
+
+      // 设置表单数据
       formData.value = { ...record }
+
       return record
     } catch (error: any) {
       Message.error(error.message || '加载数据失败')
@@ -393,6 +400,59 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
     return rules
   }
 
+  /**
+   * 获取变更的字段（只返回修改过的字段）
+   */
+  function getChangedFields(): FormData {
+    const changedFields: FormData = {}
+
+    // 遍历当前表单数据
+    for (const key in formData.value) {
+      const currentValue = formData.value[key]
+      const originalValue = originalData.value[key]
+
+      // 比较值是否变化
+      if (!isEqual(currentValue, originalValue)) {
+        changedFields[key] = currentValue
+      }
+    }
+
+    console.log('[useDynamicForm] 检测到变更的字段：', Object.keys(changedFields))
+    return changedFields
+  }
+
+  /**
+   * 深度比较两个值是否相等
+   */
+  function isEqual(value1: any, value2: any): boolean {
+    // 处理 null 和 undefined
+    if (value1 === value2) return true
+    if (value1 == null && value2 == null) return true
+    if (value1 == null || value2 == null) return false
+
+    // 处理日期对象
+    if (value1 instanceof Date && value2 instanceof Date) {
+      return value1.getTime() === value2.getTime()
+    }
+
+    // 处理数组
+    if (Array.isArray(value1) && Array.isArray(value2)) {
+      if (value1.length !== value2.length) return false
+      return value1.every((item, index) => isEqual(item, value2[index]))
+    }
+
+    // 处理对象
+    if (typeof value1 === 'object' && typeof value2 === 'object') {
+      const keys1 = Object.keys(value1)
+      const keys2 = Object.keys(value2)
+      if (keys1.length !== keys2.length) return false
+      return keys1.every(key => isEqual(value1[key], value2[key]))
+    }
+
+    // 基本类型比较
+    return value1 === value2
+  }
+
   // ==================== 监听 ====================
 
   // 监听字段变化，自动验证
@@ -433,6 +493,7 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
     clearErrors,
     setFieldValue,
     getFieldValue,
+    getChangedFields,
     submitForm,
     resetForm,
     shouldShowField,

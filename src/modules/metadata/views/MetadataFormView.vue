@@ -306,11 +306,11 @@ async function handleSave() {
 
     saving.value = true
 
-    // 获取表单数据
-    const formData = formRef.value.getFormData()
-
     // 保存
     if (mode.value === 'create') {
+      // 新增模式：提交所有字段
+      const formData = formRef.value.getFormData()
+
       const result = await formStore.createRecord(
         (tableConfig.value!.table as any).NAME || (tableConfig.value!.table as any).name,
         formData
@@ -335,10 +335,22 @@ async function handleSave() {
         })
       }
     } else {
+      // 编辑模式：只提交变更的字段
+      const changedFields = formRef.value.getChangedFields()
+
+      // 如果没有字段变更，提示用户
+      if (Object.keys(changedFields).length === 0) {
+        Message.info('没有字段被修改')
+        saving.value = false
+        return
+      }
+
+      console.log('[MetadataFormView] 提交变更的字段：', changedFields)
+
       await formStore.updateRecord(
         (tableConfig.value!.table as any).NAME || (tableConfig.value!.table as any).name,
         Number(recordId.value),
-        formData
+        changedFields  // 只提交变更的字段
       )
       Message.success('保存成功')
       hasChanges.value = false

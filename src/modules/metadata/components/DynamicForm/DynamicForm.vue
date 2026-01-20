@@ -159,6 +159,7 @@ const {
   validateField,
   validateForm,
   setFieldValue,
+  getChangedFields,
   submitForm,
   shouldShowField,
   isFieldReadonly,
@@ -376,6 +377,7 @@ watch(
 defineExpose({
   validate,
   getFormData,
+  getChangedFields,  // 获取变更的字段
   setFormData,
   reset,
   loadData: loadRecordData,  // 暴露加载数据方法
