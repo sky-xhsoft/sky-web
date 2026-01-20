@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>检查表格宽度</title>
+    <script>
+        // 在浏览器控制台运行这些命令来检查问题
+        console.log('=== 检查表格容器 ===');
+        
+        // 1. 检查 dynamic-table 容器
+        const dynamicTable = document.querySelector('.dynamic-table');
+        console.log('dynamic-table:', {
+            width: dynamicTable?.offsetWidth,
+            scrollWidth: dynamicTable?.scrollWidth,
+            overflow: getComputedStyle(dynamicTable).overflow
+        });
+        
+        // 2. 检查 arco-table-container
+        const tableContainer = document.querySelector('.arco-table-container');
+        console.log('arco-table-container:', {
+            width: tableContainer?.offsetWidth,
+            scrollWidth: tableContainer?.scrollWidth,
+            overflowX: getComputedStyle(tableContainer).overflowX
+        });
+        
+        // 3. 检查表格本身
+        const table = document.querySelector('.arco-table');
+        console.log('arco-table:', {
+            width: table?.offsetWidth,
+            scrollWidth: table?.scrollWidth
+        });
+        
+        // 4. 检查滚动配置
+        console.log('表格是否应该滚动:', tableContainer?.scrollWidth > tableContainer?.offsetWidth);
+    </script>
+</head>
+<body>
+    <p>请在浏览器中打开开发者工具（F12），然后在列表页面的控制台中粘贴上面的代码运行</p>
+</body>
+</html>
