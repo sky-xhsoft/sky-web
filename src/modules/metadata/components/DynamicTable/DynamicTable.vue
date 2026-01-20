@@ -188,6 +188,7 @@
       :hoverable="hoverable"
       :row-key="pkField"
       :size="size"
+      :scroll="scrollConfig"
       style="width: 100%;"
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
@@ -515,9 +516,9 @@ const paginationConfig = computed(() => ({
  * 滚动配置
  */
 const scrollConfig = computed(() => {
-  // 不设置固定总宽度，让表格自适应
   return {
-    x: '100%'  // 使用百分比而不是固定宽度
+    x: '100%',  // 水平滚动：使用百分比而不是固定宽度
+    y: 'calc(100vh - 380px)'  // 竖向滚动：根据视口高度自动计算（减去顶部导航、面包屑、查询区、工具栏、分页的高度）
   }
 })
 
@@ -824,6 +825,27 @@ watch(
     // 当列数量增加时（业务列加载完成），重新初始化
     if (newLength > oldLength) {
       initColumnSettings()
+    }
+  }
+)
+
+// 监听 tableId 变化 - 切换表时清空查询表单
+watch(
+  () => props.tableId,
+  (newTableId, oldTableId) => {
+    if (newTableId !== oldTableId && oldTableId !== undefined) {
+      console.log('[DynamicTable] tableId 变化：', oldTableId, '->', newTableId)
+      console.log('[DynamicTable] 清空前 queryForm=', JSON.stringify(queryForm.value))
+
+      // 清空查询表单，避免旧表的查询字段带入新表
+      queryForm.value = {}
+
+      console.log('[DynamicTable] 清空后 queryForm=', JSON.stringify(queryForm.value))
+
+      // 同时清空 store 的 filters（因为可能之前点过查询按钮）
+      const tableStore = useDynamicTableStore()
+      tableStore.filters = {}
+      console.log('[DynamicTable] 已清空 tableStore.filters')
     }
   }
 )

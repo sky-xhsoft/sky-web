@@ -60,12 +60,20 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     loading.value = true
     error.value = null
     try {
-      const result = await api.fetchRecords(tableName, {
+      console.log('[useDynamicTableStore] loadRecords 被调用')
+      console.log('  tableName=', tableName)
+      console.log('  filters.value=', JSON.stringify(filters.value))
+      console.log('  params=', JSON.stringify(params))
+
+      const requestParams = {
         page: pagination.value.page,
         pageSize: pagination.value.pageSize,
         ...filters.value,
         ...params
-      })
+      }
+      console.log('  最终请求参数=', JSON.stringify(requestParams))
+
+      const result = await api.fetchRecords(tableName, requestParams)
 
       records.value = result.list
       pagination.value = {

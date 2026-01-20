@@ -93,6 +93,7 @@
         <a-card :bordered="false" class="table-card">
           <DynamicTable
             ref="tableRef"
+            :key="currentTable.ID"
             :table-id="currentTable.ID"
             :filters="currentFilters"
             @create="handleCreate"
@@ -431,9 +432,12 @@ onMounted(async () => {
 watch(
   () => props.tableId || route.params.tableId,
   async (newTableId, oldTableId) => {
+    console.log('[MetadataListView] props.tableId 变化：', oldTableId, '->', newTableId)
+
     if (newTableId && newTableId !== oldTableId) {
       const tableId = Number(newTableId)
       if (!isNaN(tableId)) {
+        // 加载新表配置
         await loadTableById(tableId)
       }
     } else if (!newTableId) {
@@ -442,6 +446,13 @@ watch(
       currentCategory.value = null
       currentSubsystem.value = null
       selectedKeys.value = []
+      currentFilters.value = {}
+      filterForm.value = {}
+
+      // 同时重置 DynamicTable 的 store 状态
+      const { useDynamicTableStore } = await import('@/modules/metadata/stores/useDynamicTableStore')
+      const tableStore = useDynamicTableStore()
+      tableStore.reset()
     }
   }
 )
@@ -451,9 +462,22 @@ watch(
  */
 async function loadTableById(tableId: number) {
   try {
-    // 隐式路由模式：直接从 API 加载表单配置，不依赖树结构
+    console.log('[MetadataListView] loadTableById 开始，tableId=', tableId)
+
+    // 1. 先重置 DynamicTable 的 store（同步操作，确保在新组件挂载前完成）
+    const { useDynamicTableStore } = await import('@/modules/metadata/stores/useDynamicTableStore')
+    const tableStore = useDynamicTableStore()
+    tableStore.reset()
+    console.log('[MetadataListView] 已重置 tableStore，filters=', JSON.stringify(tableStore.filters))
+
+    // 2. 清空本地查询条件
+    currentFilters.value = {}
+    filterForm.value = {}
+
+    // 3. 加载表单配置（这会触发 currentTable.ID 变化，导致 DynamicTable 重新挂载）
     const config = await metadataStore.loadTableConfig(tableId)
     currentTable.value = config.table
+    console.log('[MetadataListView] 已设置 currentTable.ID=', currentTable.value?.ID)
   } catch (error: any) {
     Message.error(error.message || '加载表单失败')
   }
