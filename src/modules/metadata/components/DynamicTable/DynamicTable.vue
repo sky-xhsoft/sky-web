@@ -710,24 +710,29 @@ async function handleDelete(record: FormData) {
 /**
  * 批量删除
  */
-async function handleBatchDelete() {
-  try {
-    await Modal.confirm({
-      title: '确认批量删除',
-      content: `确定要删除选中的 ${selectedCount.value} 条记录吗？此操作不可恢复。`,
-      okButtonProps: { status: 'danger' }
-    })
-
-    // 用户点击确认后才执行到这里
-    try {
-      await onBatchDelete()
-      Message.success('批量删除成功')
-    } catch (error: any) {
-      // 错误已在 composable 中处理
-    }
-  } catch {
-    // 用户点击取消或关闭对话框，不执行任何操作
+function handleBatchDelete() {
+  if (!hasSelection.value) {
+    Message.warning('请先选择要删除的记录')
+    return
   }
+
+  Modal.confirm({
+    title: '确认批量删除',
+    content: `确定要删除选中的 ${selectedCount.value} 条记录吗？此操作不可恢复。`,
+    okButtonProps: { status: 'danger' },
+    onOk: async () => {
+      // 用户点击确定按钮后执行
+      try {
+        await onBatchDelete()
+        Message.success('批量删除成功')
+      } catch (error: any) {
+        Message.error(error.message || '批量删除失败')
+      }
+    },
+    onCancel: () => {
+      // 用户点击取消按钮，不执行任何操作
+    }
+  })
 }
 
 /**
