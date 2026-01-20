@@ -163,6 +163,19 @@ import { useMetadataStore } from '../stores/useMetadataStore'
 import { useDynamicFormStore } from '../stores/useDynamicFormStore'
 import { useDynamicTableStore } from '../stores/useDynamicTableStore'
 import type { FormMode, TableConfig, FormData } from '../types'
+import { useNavigationStore } from '@/stores/navigation'
+
+// ==================== Props ====================
+
+interface Props {
+  tableId?: number
+  recordId?: number
+  mode?: FormMode
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  mode: 'create'
+})
 
 // ==================== Router ====================
 
@@ -174,6 +187,7 @@ const router = useRouter()
 const metadataStore = useMetadataStore()
 const formStore = useDynamicFormStore()
 const tableStore = useDynamicTableStore()
+const navigationStore = useNavigationStore()
 
 // ==================== 状态 ====================
 
@@ -181,9 +195,11 @@ const formRef = ref()
 const loading = ref(false)
 const saving = ref(false)
 
-const tableId = computed(() => route.params.tableId as string)
-const recordId = computed(() => route.params.id as string | undefined)
+// 优先使用 props，如果没有则从路由获取（兼容旧的路由模式）
+const tableId = computed(() => props.tableId ? String(props.tableId) : route.params.tableId as string)
+const recordId = computed(() => props.recordId ? String(props.recordId) : route.params.id as string | undefined)
 const mode = computed<FormMode>(() => {
+  if (props.mode) return props.mode
   if (recordId.value) {
     return route.name === 'MetadataFormView' ? 'view' : 'edit'
   }
@@ -396,7 +412,14 @@ async function handleBack() {
     if (!confirmed) return
   }
 
-  router.back()
+  // 使用 navigationStore 返回列表视图
+  if (props.tableId) {
+    navigationStore.navigateTo('MetadataListView', '数据列表', {
+      tableId: props.tableId
+    })
+  } else {
+    router.back()
+  }
 }
 
 /**

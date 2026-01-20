@@ -187,6 +187,23 @@ onMounted(async () => {
   openKeys.value = defaultOpenKeys.value
 })
 
+// 监听 navigationStore 的变化，处理组件切换
+watch(
+  () => navigationStore.current.componentName,
+  async (componentName) => {
+    if (componentName === 'MetadataFormView') {
+      // 动态加载表单视图组件
+      const MetadataFormView = (await import('../modules/metadata/views/MetadataFormView.vue')).default
+      currentComponent.value = MetadataFormView
+    } else if (componentName === 'MetadataListView') {
+      // 动态加载列表视图组件
+      const MetadataListView = (await import('../modules/metadata/views/MetadataListView.vue')).default
+      currentComponent.value = MetadataListView
+    }
+    // 其他组件已在 componentRegistry 中或通过 loadComponent 处理
+  }
+)
+
 watch(
   () => rootMenus.value,
   (val) => {
