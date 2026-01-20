@@ -175,12 +175,7 @@ const tableRef = ref()
  * 树形数据
  */
 const treeData = computed(() => {
-  const tree = metadataStore.subsystemTree
-  console.log('[View] treeData computed 执行，树节点数量:', tree.length)
-  if (tree.length > 0) {
-    console.log('[View] 第一个节点:', tree[0].title, '子节点数:', tree[0].children?.length || 0)
-  }
-  return tree
+  return metadataStore.subsystemTree
 })
 
 /**
@@ -188,12 +183,10 @@ const treeData = computed(() => {
  */
 const filteredTree = computed(() => {
   if (!searchKeyword.value) {
-    console.log('[View] filteredTree: 无搜索关键词，返回完整树，节点数:', treeData.value.length)
     return treeData.value
   }
 
   const keyword = searchKeyword.value.toLowerCase()
-  console.log('[View] filteredTree: 搜索关键词:', keyword)
 
   function filterNode(nodes: TreeNode[]): TreeNode[] {
     return nodes
@@ -212,9 +205,7 @@ const filteredTree = computed(() => {
       .filter(Boolean) as TreeNode[]
   }
 
-  const result = filterNode(treeData.value)
-  console.log('[View] filteredTree: 过滤后节点数:', result.length)
-  return result
+  return filterNode(treeData.value)
 })
 
 /**
@@ -235,20 +226,13 @@ const filterColumns = computed(() => {
 async function loadTreeData() {
   treeLoading.value = true
   try {
-    console.log('loadTreeData 开始')
     await metadataStore.reloadTree()
-    console.log('reloadTree 完成')
-    console.log('子系统数量:', metadataStore.subsystems.length)
-    console.log('表单分类数量:', metadataStore.tableCategories.size)
-    console.log('表单数量:', metadataStore.tables.size)
 
     // 默认展开第一层
     if (treeData.value.length > 0) {
       expandedKeys.value = [treeData.value[0].key as string]
-      console.log('默认展开第一层:', expandedKeys.value)
     }
   } catch (error: any) {
-    console.error('加载树数据失败:', error)
     Message.error(error.message || '加载树数据失败')
   } finally {
     treeLoading.value = false
@@ -431,29 +415,19 @@ function handleDelete(record: any) {
 // ==================== 生命周期 ====================
 
 onMounted(async () => {
-  console.log('=== MetadataListView onMounted 开始 ===')
-  console.log('当前路由 params:', route.params)
-
   // 隐式路由模式下，跳过加载树数据（树已在 BasicLayout 的菜单中显示）
   // 避免调用不存在的 /metadata/subsystems 等接口
-  console.log('[MetadataListView] 隐式路由模式，跳过 loadTreeData')
 
   // 优先使用 props 传入的 tableId，如果没有则从 URL 参数获取
   const tableIdParam = props.tableId || route.params.tableId
-  console.log('tableId 来源:', props.tableId ? 'props' : 'route', '值:', tableIdParam)
 
   if (tableIdParam) {
     const tableId = Number(tableIdParam)
     if (!isNaN(tableId)) {
-      console.log('开始加载表单，tableId:', tableId)
       // 加载表单配置
       await loadTableById(tableId)
     }
-  } else {
-    console.log('未找到 tableId 参数')
   }
-
-  console.log('=== MetadataListView onMounted 完成 ===')
 })
 
 // 监听 props.tableId 和路由变化
@@ -480,24 +454,10 @@ watch(
  */
 async function loadTableById(tableId: number) {
   try {
-    console.log('loadTableById 开始，tableId:', tableId)
-
     // 隐式路由模式：直接从 API 加载表单配置，不依赖树结构
     const config = await metadataStore.loadTableConfig(tableId)
-    console.log('表单配置加载完成:', config.table.DISPLAY_NAME || config.table.NAME)
-    console.log('表单 ID:', config.table.ID)
-    console.log('表单对象:', config.table)
-
     currentTable.value = config.table
-
-    // 不需要查找分类和子系统，因为树结构已在 BasicLayout 菜单中
-    // 简化后只需要表单配置即可
-
-    console.log('表单加载成功，字段数量:', config.columns?.length || 0)
-    console.log('currentTable.value:', currentTable.value)
-    console.log('currentTable.ID:', currentTable.value?.ID)
   } catch (error: any) {
-    console.error('加载表单失败:', error)
     Message.error(error.message || '加载表单失败')
   }
 }

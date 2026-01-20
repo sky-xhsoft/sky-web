@@ -102,15 +102,12 @@ const openKeys = ref<string[]>([])
  * 动态加载组件
  */
 async function loadComponent(path: string) {
-  console.log('[BasicLayout] loadComponent - path:', path)
-
   // 根据路径判断需要加载的组件
   if (path.startsWith('/metadata/')) {
     // 元数据系统
     const match = path.match(/\/metadata\/(?:list|browse)\/(\d+)/)
     if (match) {
       const tableId = match[1]
-      console.log('[BasicLayout] 加载元数据列表视图, tableId:', tableId)
       const MetadataListView = (await import('../modules/metadata/views/MetadataListView.vue')).default
       currentComponent.value = MetadataListView
       navigationStore.navigateTo('MetadataListView', '数据列表', { tableId: Number(tableId) })
@@ -121,19 +118,16 @@ async function loadComponent(path: string) {
   // 其他路由
   switch (path) {
     case '/':
-      console.log('[BasicLayout] 加载首页')
       currentComponent.value = componentRegistry.Dashboard
       navigationStore.navigateTo('Dashboard', '首页')
       break
     case '/cloud':
-      console.log('[BasicLayout] 加载云盘')
       currentComponent.value = componentRegistry.Cloud
       navigationStore.navigateTo('Cloud', '云盘')
       break
     default:
       // 动态表单路由 /tables/xxx
       if (path.startsWith('/tables/')) {
-        console.log('[BasicLayout] 加载动态表单视图')
         const TableView = (await import('../pages/TableView.vue')).default
         currentComponent.value = TableView
         navigationStore.navigateTo('TableView', '表单', { tablePath: path })
@@ -142,15 +136,11 @@ async function loadComponent(path: string) {
 }
 
 const onMenuClick = async (key: string) => {
-  console.log('[BasicLayout] onMenuClick - key:', key)
   currentMenuKey.value = key
   const targetPath = keyPathMap.value.get(key)
-  console.log('[BasicLayout] onMenuClick - targetPath:', targetPath)
   if (targetPath) {
     // 不使用路由跳转，而是动态加载组件
     await loadComponent(targetPath)
-  } else {
-    console.warn('[BasicLayout] onMenuClick - 未找到路径映射')
   }
 }
 
@@ -175,28 +165,19 @@ const goHome = async () => {
 }
 
 onMounted(async () => {
-  console.log('[BasicLayout] onMounted - 开始初始化')
-
   if (!menuStore.menus.length && authStore.isAuthenticated) {
     try {
       await menuStore.loadMenus()
-      console.log('[BasicLayout] 菜单加载完成, 数量:', menuStore.menus.length)
     } catch (e) {
       Message.error('加载菜单失败')
-      console.error('[BasicLayout] 菜单加载失败:', e)
     }
   }
 
   if (!selectedRootKey.value && rootMenus.value.length) {
     selectedRootKey.value = rootMenus.value[0].key
-    console.log('[BasicLayout] 设置默认根菜单:', selectedRootKey.value)
   }
 
   openKeys.value = defaultOpenKeys.value
-
-  // 确保初始组件已加载
-  console.log('[BasicLayout] 当前组件:', currentComponent.value)
-  console.log('[BasicLayout] navigation状态:', navigationStore.current)
 })
 
 watch(

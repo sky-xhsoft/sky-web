@@ -323,37 +323,23 @@ export const useMetadataStore = defineStore('metadata', () => {
    * 重新加载整个树结构
    */
   async function reloadTree() {
-    console.log('[MetadataStore] reloadTree 开始')
-
     // 先清除缓存
     clearCache()
-    console.log('[MetadataStore] 缓存已清除')
 
     // 重新加载子系统
     const subs = await loadSubsystems(true)
-    console.log('[MetadataStore] 子系统加载完成，数量:', subs.length)
 
     // 并行加载所有表类别
     await Promise.all(
       subs.map(sub => loadTableCategories(sub.ID, true))
     )
-    console.log('[MetadataStore] 表类别加载完成，分类总数:', tableCategories.value.size)
 
     // 并行加载所有表单
     const allCategories = Array.from(tableCategories.value.values()).flat()
-    console.log('[MetadataStore] 开始加载表单，分类数量:', allCategories.length)
 
     await Promise.all(
       allCategories.map(cat => loadTables(cat.ID, true))
     )
-    console.log('[MetadataStore] 表单加载完成，表单总数:', tables.value.size)
-
-    // 打印每个分类下的表单数量
-    for (const [categoryId, tableList] of tables.value.entries()) {
-      console.log(`[MetadataStore] 分类 ${categoryId} 包含 ${tableList.length} 个表单`)
-    }
-
-    console.log('[MetadataStore] reloadTree 完成')
   }
 
   // ==================== 返回 ====================
