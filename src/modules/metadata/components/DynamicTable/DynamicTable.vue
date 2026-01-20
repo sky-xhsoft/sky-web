@@ -195,11 +195,16 @@
       @sorter-change="handleSorterChange"
       @selection-change="handleSelectionChange"
     >
-      <!-- 自定义选择列：复选框 + 序号 -->
-      <template #selection-cell="{ rowIndex }">
-        <div class="selection-cell">
+      <!-- 自定义选择列标题 -->
+      <template #th-selection-cell>
+        序号
+      </template>
+
+      <!-- 自定义选择列内容：显示序号 -->
+      <template #td-selection-cell="{ rowIndex }">
+        <span class="row-number">
           {{ (pagination.page - 1) * pagination.pageSize + rowIndex + 1 }}
-        </div>
+        </span>
       </template>
 
       <!-- 状态列自定义渲染 -->
@@ -490,7 +495,10 @@ const paginationConfig = computed(() => ({
 const rowSelectionConfig = computed(() => ({
   type: 'checkbox' as const,
   showCheckedAll: true,
-  selectedRowKeys: selectedRowKeys.value
+  selectedRowKeys: selectedRowKeys.value,
+  title: '序号',
+  width: 80,
+  fixed: true
 }))
 
 /**
@@ -924,12 +932,20 @@ defineExpose({
   flex-direction: column;
 }
 
-/* 选择列：复选框 + 序号 */
-.selection-cell {
+/* 序号样式 */
+.row-number {
   display: inline-block;
   margin-left: 8px;
   color: #86909c;
   font-size: 14px;
+}
+
+/* 选择列宽度 */
+.dynamic-table :deep(.arco-table-th-selection),
+.dynamic-table :deep(.arco-table-td-selection) {
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
 }
 
 /* 查询区域 */
