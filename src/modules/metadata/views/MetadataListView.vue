@@ -367,12 +367,8 @@ function handleReset() {
 function handleCreate() {
   if (!currentTable.value) return
 
-  router.push({
-    name: 'MetadataFormCreate',
-    params: {
-      tableId: currentTable.value.ID
-    }
-  })
+  Message.info('新增功能开发中')
+  // TODO: 实现表单弹窗
 }
 
 /**
@@ -381,13 +377,8 @@ function handleCreate() {
 function handleView(record: any) {
   if (!currentTable.value) return
 
-  router.push({
-    name: 'MetadataFormView',
-    params: {
-      tableId: currentTable.value.ID,
-      id: record.ID
-    }
-  })
+  Message.info('查看功能开发中')
+  // TODO: 实现查看弹窗
 }
 
 /**
@@ -396,13 +387,8 @@ function handleView(record: any) {
 function handleEdit(record: any) {
   if (!currentTable.value) return
 
-  router.push({
-    name: 'MetadataFormEdit',
-    params: {
-      tableId: currentTable.value.ID,
-      id: record.ID
-    }
-  })
+  Message.info('编辑功能开发中')
+  // TODO: 实现编辑弹窗
 }
 
 /**
@@ -564,7 +550,6 @@ async function loadTableById(tableId: number) {
 }
 
 .main-breadcrumb {
-  padding: 16px 24px;
   background: #fff;
   border-bottom: 1px solid #e8e8e8;
 }
@@ -585,7 +570,6 @@ async function loadTableById(tableId: number) {
 
 .main-table {
   flex: 1;
-  padding: 16px 24px;
   overflow-y: auto;
   min-height: 0;
 }
@@ -645,8 +629,6 @@ async function loadTableById(tableId: number) {
   .main-breadcrumb,
   .main-filter,
   .main-table {
-    padding-left: 16px;
-    padding-right: 16px;
   }
 
   .filter-card :deep(.arco-col) {
