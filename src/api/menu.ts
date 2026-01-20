@@ -6,6 +6,7 @@ export type MenuTreeNode = {
   displayName?: string
   orderno?: number
   type?: string
+  url?: string
   children?: MenuTreeNode[]
 }
 

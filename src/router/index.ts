@@ -20,17 +20,13 @@ const routes: RouteRecordRaw[] = [
     component: BasicLayout,
     meta: { requiresAuth: true },
     children: [
+      // 使用隐式路由方案，所有页面都在这个路由下
+      // 实际的页面切换由 BasicLayout 中的动态组件控制
       {
         path: '',
-        name: 'dashboard',
-        component: Dashboard,
-        meta: { title: '首页', requiresAuth: true },
-      },
-      {
-        path: 'cloud',
-        name: 'cloud',
-        component: Cloud,
-        meta: { title: '云盘', requiresAuth: true },
+        name: 'app',
+        component: Dashboard,  // 默认组件，实际不会用到
+        meta: { title: '应用', requiresAuth: true },
       },
     ],
   },
@@ -65,14 +61,8 @@ router.beforeEach(async (to, from, next) => {
         Message.error('加载菜单失败')
       }
     }
-    // 确保动态路由已注册
+    // 仍然需要注册路由，但不会真正使用它们（用于兼容性）
     menuStore.ensureRoutes(router)
-
-    // 刷新后访问动态路由时，可能初始未匹配到；重新导航一次以匹配新注册的路由
-    if (to.matched.length === 0) {
-      next({ ...to, replace: true })
-      return
-    }
   }
 
   next()

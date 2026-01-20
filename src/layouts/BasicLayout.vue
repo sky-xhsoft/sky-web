@@ -1,15 +1,30 @@
 ﻿<script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch, shallowRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Menu, Message } from '@arco-design/web-vue'
 import { IconApps } from '@arco-design/web-vue/es/icon'
 import { useMenuStore } from '../stores/menu'
 import { useAuthStore } from '../stores/auth'
+import { useNavigationStore } from '../stores/navigation'
+
+// 导入常用组件
+import Dashboard from '../pages/Dashboard.vue'
+import Cloud from '../pages/Cloud.vue'
 
 const router = useRouter()
 const route = useRoute()
 const menuStore = useMenuStore()
 const authStore = useAuthStore()
+const navigationStore = useNavigationStore()
+
+// 组件映射表
+const componentRegistry: Record<string, any> = {
+  Dashboard,
+  Cloud,
+}
+
+// 当前显示的组件（使用 shallowRef 提高性能）
+const currentComponent = shallowRef(Dashboard)
 
 type NavItem = {
   key: string
@@ -58,9 +73,11 @@ const keyPathMap = computed(() => {
   return map
 })
 
+// 当前选中的菜单项
+const currentMenuKey = ref('dashboard')
+
 const selectedKeys = computed(() => {
-  const matched = Array.from(keyPathMap.value.entries()).find(([, p]) => p === route.path)
-  return matched ? [matched[0]] : []
+  return [currentMenuKey.value]
 })
 
 const rootMenus = computed(() => navItems.value)
@@ -81,18 +98,69 @@ const defaultOpenKeys = computed(() => {
 })
 const openKeys = ref<string[]>([])
 
-const onMenuClick = (key: string) => {
-  const targetPath = keyPathMap.value.get(key)
-  if (targetPath) {
-    router.push(targetPath)
+/**
+ * 动态加载组件
+ */
+async function loadComponent(path: string) {
+  console.log('[BasicLayout] loadComponent - path:', path)
+
+  // 根据路径判断需要加载的组件
+  if (path.startsWith('/metadata/')) {
+    // 元数据系统
+    const match = path.match(/\/metadata\/(?:list|browse)\/(\d+)/)
+    if (match) {
+      const tableId = match[1]
+      console.log('[BasicLayout] 加载元数据列表视图, tableId:', tableId)
+      const MetadataListView = (await import('../modules/metadata/views/MetadataListView.vue')).default
+      currentComponent.value = MetadataListView
+      navigationStore.navigateTo('MetadataListView', '数据列表', { tableId: Number(tableId) })
+      return
+    }
+  }
+
+  // 其他路由
+  switch (path) {
+    case '/':
+      console.log('[BasicLayout] 加载首页')
+      currentComponent.value = componentRegistry.Dashboard
+      navigationStore.navigateTo('Dashboard', '首页')
+      break
+    case '/cloud':
+      console.log('[BasicLayout] 加载云盘')
+      currentComponent.value = componentRegistry.Cloud
+      navigationStore.navigateTo('Cloud', '云盘')
+      break
+    default:
+      // 动态表单路由 /tables/xxx
+      if (path.startsWith('/tables/')) {
+        console.log('[BasicLayout] 加载动态表单视图')
+        const TableView = (await import('../pages/TableView.vue')).default
+        currentComponent.value = TableView
+        navigationStore.navigateTo('TableView', '表单', { tablePath: path })
+      }
   }
 }
 
-const onRootClick = (key: string) => {
+const onMenuClick = async (key: string) => {
+  console.log('[BasicLayout] onMenuClick - key:', key)
+  currentMenuKey.value = key
+  const targetPath = keyPathMap.value.get(key)
+  console.log('[BasicLayout] onMenuClick - targetPath:', targetPath)
+  if (targetPath) {
+    // 不使用路由跳转，而是动态加载组件
+    await loadComponent(targetPath)
+  } else {
+    console.warn('[BasicLayout] onMenuClick - 未找到路径映射')
+  }
+}
+
+const onRootClick = async (key: string) => {
   selectedRootKey.value = key
+  currentMenuKey.value = key
   const targetPath = keyPathMap.value.get(key)
   if (targetPath) {
-    router.push(targetPath)
+    // 不使用路由跳转，而是动态加载组件
+    await loadComponent(targetPath)
   }
 }
 
@@ -101,22 +169,34 @@ const handleLogout = async () => {
   router.push({ name: 'login' })
 }
 
-const goHome = () => {
-  router.push({ path: '/' })
+const goHome = async () => {
+  currentMenuKey.value = 'dashboard'
+  await loadComponent('/')
 }
 
 onMounted(async () => {
+  console.log('[BasicLayout] onMounted - 开始初始化')
+
   if (!menuStore.menus.length && authStore.isAuthenticated) {
     try {
       await menuStore.loadMenus()
+      console.log('[BasicLayout] 菜单加载完成, 数量:', menuStore.menus.length)
     } catch (e) {
       Message.error('加载菜单失败')
+      console.error('[BasicLayout] 菜单加载失败:', e)
     }
   }
+
   if (!selectedRootKey.value && rootMenus.value.length) {
     selectedRootKey.value = rootMenus.value[0].key
+    console.log('[BasicLayout] 设置默认根菜单:', selectedRootKey.value)
   }
+
   openKeys.value = defaultOpenKeys.value
+
+  // 确保初始组件已加载
+  console.log('[BasicLayout] 当前组件:', currentComponent.value)
+  console.log('[BasicLayout] navigation状态:', navigationStore.current)
 })
 
 watch(
@@ -203,7 +283,13 @@ watch(
       </a-layout-sider>
       <a-layout>
         <a-layout-content class="app-content">
-          <router-view />
+          <!-- 使用动态组件，传递 navigationStore 中的参数 -->
+          <!-- key 确保每次切换都创建新实例 -->
+          <component
+            :is="currentComponent"
+            v-bind="navigationStore.current.params"
+            :key="navigationStore.current.componentName + '-' + JSON.stringify(navigationStore.current.params)"
+          />
         </a-layout-content>
       </a-layout>
     </a-layout>
