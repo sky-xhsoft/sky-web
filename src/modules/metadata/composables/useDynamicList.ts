@@ -154,6 +154,46 @@ export function useDynamicList(tableId: number) {
     return maskValue ? maskValue.includes('Q') : false
   })
 
+  /**
+   * 是否可以提交
+   */
+  const canSubmit = computed(() => {
+    const maskValue = mask.value
+    return maskValue ? maskValue.includes('S') : false
+  })
+
+  /**
+   * 是否可以反提交
+   */
+  const canUnsubmit = computed(() => {
+    const maskValue = mask.value
+    return maskValue ? maskValue.includes('U') : false
+  })
+
+  /**
+   * 是否可以打印
+   */
+  const canPrint = computed(() => {
+    const maskValue = mask.value
+    return maskValue ? maskValue.includes('P') : false
+  })
+
+  /**
+   * 是否可以导入
+   */
+  const canImport = computed(() => {
+    const maskValue = mask.value
+    return maskValue ? maskValue.includes('I') : false
+  })
+
+  /**
+   * 是否可以导出
+   */
+  const canExport = computed(() => {
+    const maskValue = mask.value
+    return maskValue ? maskValue.includes('E') : false
+  })
+
   // ==================== 方法 ====================
 
   /**
@@ -400,6 +440,11 @@ export function useDynamicList(tableId: number) {
     canEdit,
     canDelete,
     canQuery,
+    canSubmit,
+    canUnsubmit,
+    canPrint,
+    canImport,
+    canExport,
 
     // 方法
     loadTableConfig,

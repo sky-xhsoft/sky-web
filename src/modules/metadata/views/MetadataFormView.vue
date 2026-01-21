@@ -51,7 +51,7 @@
 
           <!-- 打印 -->
           <a-button
-            v-if="mode !== 'create'"
+            v-if="mode !== 'create' && canPrint"
             @click="handlePrint"
           >
             <template #icon><icon-printer /></template>
@@ -238,8 +238,16 @@ const mask = computed(() => {
   if (!tableConfig.value?.table) return ''
   return (tableConfig.value.table as any).MASK || (tableConfig.value.table as any).mask || ''
 })
-const canCreate = computed(() => mask.value.includes('A'))
-const canEdit = computed(() => mask.value.includes('M'))
+
+// 按钮权限
+const canCreate = computed(() => mask.value.includes('A'))     // Add - 新增
+const canEdit = computed(() => mask.value.includes('M'))       // Modify - 修改
+const canDelete = computed(() => mask.value.includes('D'))     // Delete - 删除
+const canSubmit = computed(() => mask.value.includes('S'))     // Submit - 提交
+const canUnsubmit = computed(() => mask.value.includes('U'))   // Unsubmit - 反提交
+const canPrint = computed(() => mask.value.includes('P'))      // Print - 打印
+const canImport = computed(() => mask.value.includes('I'))     // Import - 导入
+const canExport = computed(() => mask.value.includes('E'))     // Export - 导出
 
 /**
  * 子表配置

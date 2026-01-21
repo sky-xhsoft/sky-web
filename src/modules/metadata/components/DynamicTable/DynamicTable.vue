@@ -133,25 +133,6 @@
             新增
           </a-button>
 
-          <!-- 批量删除按钮 -->
-          <a-button
-            v-if="canDelete && hasSelection"
-            status="danger"
-            @click="handleBatchDelete"
-          >
-            <template #icon><icon-delete /></template>
-            批量删除 ({{ selectedCount }})
-          </a-button>
-
-          <!-- 导出按钮 -->
-          <a-button
-            v-if="showExport"
-            @click="handleExport"
-          >
-            <template #icon><icon-download /></template>
-            导出
-          </a-button>
-
           <!-- 自定义工具栏插槽 -->
           <slot name="toolbar-left" />
         </a-space>
@@ -159,18 +140,108 @@
 
       <div class="toolbar-right">
         <a-space>
+          <!-- 提交按钮 -->
+          <a-button
+            v-if="canSubmit"
+            type="primary"
+            @click="handleSubmit"
+          >
+            提交
+          </a-button>
+
+          <!-- 反提交按钮 -->
+          <a-button
+            v-if="canUnsubmit"
+            @click="handleUnsubmit"
+          >
+            反提交
+          </a-button>
+
           <!-- 自定义工具栏右侧插槽 -->
           <slot name="toolbar-right" />
 
-          <!-- 列设置 -->
-          <a-tooltip content="列设置">
-            <a-button
-              type="text"
-              @click="showColumnSettings = true"
-            >
-              <template #icon><icon-settings /></template>
+          <!-- 更多操作 -->
+          <a-dropdown :popup-max-height="false">
+            <a-button type="text">
+              <template #icon><icon-more /></template>
+              更多
             </a-button>
-          </a-tooltip>
+            <template #content>
+              <a-doption v-if="canDelete" status="danger" @click="handleBatchDelete">
+                <template #icon><icon-delete /></template>
+                删除
+              </a-doption>
+              <a-doption v-if="canImport" @click="handleImport">
+                <template #icon><icon-upload /></template>
+                导入
+              </a-doption>
+              <a-doption v-if="canExport" @click="handleExport">
+                <template #icon><icon-download /></template>
+                导出
+              </a-doption>
+              <a-doption v-if="canPrint" @click="handlePrint">
+                <template #icon><icon-printer /></template>
+                套打
+              </a-doption>
+              <a-doption @click="handleCopy">
+                <template #icon><icon-copy /></template>
+                复制
+              </a-doption>
+              <a-doption @click="handleBatchEdit">
+                <template #icon><icon-edit /></template>
+                修改选中行
+              </a-doption>
+              <a-doption @click="handleBatchEditAll">
+                <template #icon><icon-edit /></template>
+                修改结果集
+              </a-doption>
+            </template>
+          </a-dropdown>
+
+          <!-- 列设置 -->
+          <a-popover
+            v-model:popup-visible="showColumnSettings"
+            trigger="click"
+            position="bl"
+            :popup-container="'body'"
+          >
+            <a-tooltip content="列设置">
+              <a-button type="text">
+                <template #icon><icon-settings /></template>
+              </a-button>
+            </a-tooltip>
+            <template #content>
+              <div class="column-settings-popover">
+                <div class="settings-header">
+                  <span>列设置</span>
+                </div>
+                <div class="settings-body">
+                  <div
+                    v-for="(column, index) in allColumns"
+                    :key="column.dataIndex"
+                    class="column-item"
+                    draggable="true"
+                    @dragstart="handleDragStart(index)"
+                    @dragover.prevent
+                    @drop="handleDrop(index)"
+                  >
+                    <icon-drag-dot-vertical class="drag-handle" />
+                    <a-checkbox
+                      :model-value="selectedColumnKeys.includes(column.dataIndex as string)"
+                      @change="(checked) => handleColumnToggle(column.dataIndex as string, checked)"
+                    >
+                      {{ column.title }}
+                    </a-checkbox>
+                  </div>
+                </div>
+                <div class="settings-footer">
+                  <a-button type="text" size="small" @click="handleResetColumns">
+                    重置
+                  </a-button>
+                </div>
+              </div>
+            </template>
+          </a-popover>
 
           <!-- 刷新 -->
           <a-tooltip content="刷新">
@@ -317,28 +388,6 @@
         />
       </template>
     </a-table>
-
-    <!-- 列设置抽屉 -->
-    <a-drawer
-      v-model:visible="showColumnSettings"
-      title="列设置"
-      width="400px"
-      @ok="handleApplyColumnSettings"
-      @cancel="showColumnSettings = false"
-    >
-      <a-checkbox-group
-        v-model="selectedColumnKeys"
-        direction="vertical"
-      >
-        <a-checkbox
-          v-for="column in allColumns"
-          :key="column.dataIndex"
-          :value="column.dataIndex"
-        >
-          {{ column.title }}
-        </a-checkbox>
-      </a-checkbox-group>
-    </a-drawer>
   </div>
 </template>
 
@@ -349,11 +398,18 @@ import {
   IconPlus,
   IconDelete,
   IconDownload,
+  IconUpload,
+  IconMore,
   IconSettings,
   IconRefresh,
   IconSearch,
   IconDown,
-  IconUp
+  IconUp,
+  IconInfoCircle,
+  IconPrinter,
+  IconCopy,
+  IconEdit,
+  IconDragDotVertical
 } from '@arco-design/web-vue/es/icon'
 import { useDynamicList } from '../../composables'
 import { useDynamicTableStore } from '../../stores'
@@ -417,6 +473,11 @@ const {
   canCreate,
   canEdit,
   canDelete,
+  canExport,
+  canImport,
+  canPrint,
+  canSubmit,
+  canUnsubmit,
   loadData,
   refresh,
   handlePageChange,
@@ -432,6 +493,7 @@ const {
 const showColumnSettings = ref(false)
 const selectedColumnKeys = ref<string[]>([])
 const allColumns = ref<TableColumnData[]>([])
+const draggedIndex = ref<number>(-1)
 
 // 查询相关状态
 const queryForm = ref<Record<string, any>>({})
@@ -520,18 +582,31 @@ const columns = computed<TableColumnData[]>(() => {
 })
 
 /**
- * 可见列
+ * 可见列（按 allColumns 顺序排列）
  */
 const visibleColumns = computed(() => {
   if (selectedColumnKeys.value.length === 0) {
     return columns.value
   }
 
-  return columns.value.filter(col =>
-    col.dataIndex === '__selection_index__' ||
-    col.dataIndex === 'actions' ||
-    selectedColumnKeys.value.includes(col.dataIndex as string)
+  // 固定列（选择列和操作列）
+  const fixedCols = columns.value.filter(col =>
+    col.dataIndex === '__selection_index__' || col.dataIndex === 'actions'
   )
+
+  // 业务列按 allColumns 顺序排列
+  const businessCols = allColumns.value
+    .filter(col => selectedColumnKeys.value.includes(col.dataIndex as string))
+
+  // 组合：选择列 + 业务列（按顺序） + 操作列
+  const selectionCol = fixedCols.find(col => col.dataIndex === '__selection_index__')
+  const actionCol = fixedCols.find(col => col.dataIndex === 'actions')
+
+  return [
+    ...(selectionCol ? [selectionCol] : []),
+    ...businessCols,
+    ...(actionCol ? [actionCol] : [])
+  ]
 })
 
 /**
@@ -783,11 +858,79 @@ function handleBatchDelete() {
 }
 
 /**
+ * 导入
+ */
+function handleImport() {
+  Message.info('导入功能开发中')
+  // TODO: 实现导入逻辑
+}
+
+/**
  * 导出
  */
 function handleExport() {
   Message.info('导出功能开发中')
   // TODO: 实现导出逻辑
+}
+
+/**
+ * 套打
+ */
+function handlePrint() {
+  Message.info('套打功能开发中')
+  // TODO: 实现套打逻辑
+}
+
+/**
+ * 复制
+ */
+function handleCopy() {
+  Message.info('复制功能开发中')
+  // TODO: 实现复制逻辑
+}
+
+/**
+ * 修改选中行
+ */
+function handleBatchEdit() {
+  if (!hasSelection.value) {
+    Message.warning('请先选择要修改的记录')
+    return
+  }
+  Message.info('修改选中行功能开发中')
+  // TODO: 实现批量修改选中行逻辑
+}
+
+/**
+ * 修改结果集
+ */
+function handleBatchEditAll() {
+  Message.info('修改结果集功能开发中')
+  // TODO: 实现批量修改结果集逻辑
+}
+
+/**
+ * 提交
+ */
+function handleSubmit() {
+  if (!hasSelection.value) {
+    Message.warning('请先选择要提交的记录')
+    return
+  }
+  Message.info('提交功能开发中')
+  // TODO: 实现提交逻辑
+}
+
+/**
+ * 反提交
+ */
+function handleUnsubmit() {
+  if (!hasSelection.value) {
+    Message.warning('请先选择要反提交的记录')
+    return
+  }
+  Message.info('反提交功能开发中')
+  // TODO: 实现反提交逻辑
 }
 
 /**
@@ -845,11 +988,49 @@ function handleSelectAll(checked: boolean) {
 }
 
 /**
- * 应用列设置
+ * 列复选框切换
  */
-function handleApplyColumnSettings() {
-  showColumnSettings.value = false
-  Message.success('列设置已保存')
+function handleColumnToggle(key: string, checked: boolean) {
+  if (checked) {
+    if (!selectedColumnKeys.value.includes(key)) {
+      selectedColumnKeys.value.push(key)
+    }
+  } else {
+    const index = selectedColumnKeys.value.indexOf(key)
+    if (index > -1) {
+      selectedColumnKeys.value.splice(index, 1)
+    }
+  }
+}
+
+/**
+ * 拖拽开始
+ */
+function handleDragStart(index: number) {
+  draggedIndex.value = index
+}
+
+/**
+ * 拖拽放下
+ */
+function handleDrop(targetIndex: number) {
+  if (draggedIndex.value === -1 || draggedIndex.value === targetIndex) return
+
+  const draggedItem = allColumns.value[draggedIndex.value]
+  const newColumns = [...allColumns.value]
+  newColumns.splice(draggedIndex.value, 1)
+  newColumns.splice(targetIndex, 0, draggedItem)
+  allColumns.value = newColumns
+
+  draggedIndex.value = -1
+}
+
+/**
+ * 重置列设置
+ */
+function handleResetColumns() {
+  initColumnSettings()
+  Message.success('已重置为默认设置')
 }
 
 /**
@@ -1162,5 +1343,65 @@ defineExpose({
     flex-wrap: wrap;
     gap: 8px;
   }
+}
+
+/* 列设置 Popover 样式 */
+.column-settings-popover {
+  width: 150px;
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5e6eb;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1d2129;
+}
+
+.settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.column-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: move;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.column-item:hover {
+  background-color: #f7f8fa;
+}
+
+.drag-handle {
+  margin-right: 8px;
+  color: #86909c;
+  font-size: 14px;
+  cursor: grab;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.column-item :deep(.arco-checkbox) {
+  flex: 1;
+}
+
+.settings-footer {
+  padding: 8px 12px;
+  border-top: 1px solid #e5e6eb;
+  text-align: center;
+}
+
+.settings-footer :deep(.arco-btn-text) {
+  color: #3370ff;
 }
 </style>

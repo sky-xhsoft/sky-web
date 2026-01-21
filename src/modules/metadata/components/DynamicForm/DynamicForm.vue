@@ -259,21 +259,37 @@ function getFieldColSpan(column: SysColumn): number {
     return column.FORM_COLSPAN
   }
 
-  // 根据控件类型自动计算
+  // 根据表的 SYS_OBJUICONF_ID 配置计算默认列数
+  // 1: 1列(24), 2: 2列(12), 3: 3列(8), 4: 4列(6)
+  const objUiConfId = tableConfig.value?.table?.SYS_OBJUICONF_ID ||
+                      (tableConfig.value?.table as any)?.sysObjuiconfId ||
+                      2 // 默认2列
+
+  let defaultSpan = 12 // 默认2列
+  switch (objUiConfId) {
+    case 1:
+      defaultSpan = 24 // 1列
+      break
+    case 2:
+      defaultSpan = 12 // 2列
+      break
+    case 3:
+      defaultSpan = 8  // 3列
+      break
+    case 4:
+      defaultSpan = 6  // 4列
+      break
+  }
+
+  // 根据控件类型调整（某些控件强制占满一行）
   switch (column.CONTROL_TYPE) {
     case 'textarea':
       return 24  // 文本域占满一行
-    case 'text':
-    case 'number':
-    case 'select':
-    case 'date':
-    case 'datetime':
-      return 12  // 默认占半行
     case 'checkbox':
     case 'radio':
-      return 8   // 复选框/单选框占1/3行
+      return Math.min(defaultSpan, 8) // 复选框/单选框最多占1/3行
     default:
-      return 12
+      return defaultSpan
   }
 }
 
