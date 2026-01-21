@@ -182,6 +182,8 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
     const errorMsg = column.ERROR_MSG || (column as any).errorMsg
     const regExpression = column.REG_EXPRESSION || (column as any).regExpression
     const length = column.LENGTH || (column as any).length
+    const colType = column.COL_TYPE || (column as any).colType
+    const colLength = column.COL_LENGTH || (column as any).colLength
 
     // 必填验证
     if (nullAble === 'N') {
@@ -189,6 +191,15 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
         return errorMsg || `${displayName}不能为空`
       }
     }
+
+    // 如果值为空且非必填，跳过后续验证
+    if (value === null || value === undefined || value === '') {
+      return null
+    }
+
+    // 数据类型验证
+    const typeError = validateDataType(colType, value, displayName, colLength)
+    if (typeError) return typeError
 
     // 正则表达式验证
     if (regExpression && value) {
@@ -207,6 +218,59 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
       const strValue = String(value)
       if (strValue.length > length) {
         return `${displayName}长度不能超过${length}个字符`
+      }
+    }
+
+    return null
+  }
+
+  /**
+   * 验证数据类型
+   */
+  function validateDataType(colType: string, value: any, displayName: string, colLength?: number): string | null {
+    if (!colType) return null
+
+    const type = colType.toLowerCase()
+
+    // 整数类型
+    if (type === 'int' || type === 'integer' || type === 'bigint' || type === 'tinyint' || type === 'smallint') {
+      const num = Number(value)
+      if (isNaN(num) || !Number.isInteger(num)) {
+        return `${displayName}必须是整数`
+      }
+      // 检查范围
+      if (type === 'tinyint' && (num < -128 || num > 127)) {
+        return `${displayName}超出范围（-128 到 127）`
+      }
+      if (type === 'smallint' && (num < -32768 || num > 32767)) {
+        return `${displayName}超出范围（-32768 到 32767）`
+      }
+      if (type === 'int' && (num < -2147483648 || num > 2147483647)) {
+        return `${displayName}超出范围（-2147483648 到 2147483647）`
+      }
+    }
+
+    // 浮点数类型
+    if (type === 'float' || type === 'double' || type === 'decimal' || type === 'numeric') {
+      const num = Number(value)
+      if (isNaN(num)) {
+        return `${displayName}必须是数字`
+      }
+    }
+
+    // 日期类型
+    if (type === 'date' || type === 'datetime' || type === 'timestamp') {
+      const dateValue = value instanceof Date ? value : new Date(value)
+      if (isNaN(dateValue.getTime())) {
+        return `${displayName}日期格式不正确`
+      }
+    }
+
+    // 字符串长度（varchar/char）
+    if ((type === 'varchar' || type === 'char') && colLength) {
+      const strValue = String(value)
+      if (strValue.length > colLength) {
+        return `${displayName}长度不能超过${colLength}个字符`
       }
     }
 

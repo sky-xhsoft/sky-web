@@ -593,7 +593,7 @@ watch(
 .metadata-form-view__main {
   width: 100%;
   flex: 1;
-  padding: 16px 24px;
+  padding: 4px 4px;
   overflow-y: auto;
 }
 

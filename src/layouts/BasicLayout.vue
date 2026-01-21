@@ -311,8 +311,6 @@ watch(
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 12px;
-  padding-top: 12px;
-  padding-bottom: 12px;
   background: #ffffff;
   color: #1f2937;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);

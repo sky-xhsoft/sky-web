@@ -11,6 +11,7 @@ export function useForeignKey(column: SysColumn) {
   const options = ref<ForeignKeyOption[]>([])
   const loading = ref(false)
   const searchKeyword = ref('')
+  const isDropdownMode = ref(true) // 默认为下拉框模式
 
   // 选项缓存
   const optionsCache = new Map<string, ForeignKeyOption[]>()
@@ -19,7 +20,9 @@ export function useForeignKey(column: SysColumn) {
    * 是否为外键字段
    */
   const isForeignKey = computed(() => {
-    return column.SET_VALUE_TYPE === 'fk' && column.REF_TABLE_ID
+    const setValueType = column.SET_VALUE_TYPE || (column as any).setValueType
+    const refTableId = column.REF_TABLE_ID || (column as any).refTableId
+    return setValueType === 'fk' && refTableId
   })
 
   /**
@@ -40,9 +43,12 @@ export function useForeignKey(column: SysColumn) {
 
     loading.value = true
     try {
+      const refTableId = column.REF_TABLE_ID || (column as any).refTableId
+      const refColumnId = column.REF_COLUMN_ID || (column as any).refColumnId
+
       const result = await api.getForeignKeyOptions({
-        tableId: column.REF_TABLE_ID!,
-        columnId: column.REF_COLUMN_ID,
+        tableId: refTableId!,
+        columnId: refColumnId,
         search: params?.search || searchKeyword.value,
         page: params?.page || 1,
         pageSize: params?.pageSize || 100
@@ -50,6 +56,9 @@ export function useForeignKey(column: SysColumn) {
 
       options.value = result.list
       optionsCache.set(cacheKey, result.list)
+
+      // 设置是否为下拉框模式（默认 Y 表示下拉框）
+      isDropdownMode.value = result.isDropdown !== 'N'
     } catch (error: any) {
       Message.error(error.message || '加载选项失败')
       console.error('[useForeignKey] 加载选项失败:', error)
@@ -76,12 +85,15 @@ export function useForeignKey(column: SysColumn) {
     const option = options.value.find(opt => opt.value === value)
     if (option) return option.label
 
-    // 如果没找到，单独请求
+    // 如果没找到,单独请求
     try {
+      const refTableId = column.REF_TABLE_ID || (column as any).refTableId
+      const refColumnId = column.REF_COLUMN_ID || (column as any).refColumnId
+
       const result = await api.getForeignKeyDisplayValue(
-        column.REF_TABLE_ID!,
+        refTableId!,
         value,
-        column.REF_COLUMN_ID
+        refColumnId
       )
       return result
     } catch (error) {
@@ -94,6 +106,7 @@ export function useForeignKey(column: SysColumn) {
     options,
     loading,
     isForeignKey,
+    isDropdownMode,
     loadOptions,
     searchOptions,
     getDisplayValue

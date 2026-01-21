@@ -30,8 +30,9 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
    * 获取字段渲染组件名称
    */
   const componentName = computed(() => {
-    // 优先判断 SET_VALUE_TYPE（赋值方式）
-    if (column.SET_VALUE_TYPE === 'fk') {
+    // 优先判断 SET_VALUE_TYPE（赋值方式）- 兼容大小写
+    const setValueType = column.SET_VALUE_TYPE || (column as any).setValueType
+    if (setValueType === 'fk') {
       return 'ForeignKeyField'
     }
 

@@ -27,7 +27,11 @@ async function fetchDisplayValue() {
 
   const column: SysColumn = props.columnConfig.originalColumn
 
-  if (column.SET_VALUE_TYPE !== 'fk' || !column.REF_TABLE_ID) {
+  const setValueType = column.SET_VALUE_TYPE || (column as any).setValueType
+  const refTableId = column.REF_TABLE_ID || (column as any).refTableId
+  const refColumnId = column.REF_COLUMN_ID || (column as any).refColumnId
+
+  if (setValueType !== 'fk' || !refTableId) {
     displayValue.value = String(props.value)
     return
   }
@@ -35,9 +39,9 @@ async function fetchDisplayValue() {
   loading.value = true
   try {
     const result = await api.getForeignKeyDisplayValue(
-      column.REF_TABLE_ID,
+      refTableId,
       props.value,
-      column.REF_COLUMN_ID
+      refColumnId
     )
     displayValue.value = result
   } catch (error) {

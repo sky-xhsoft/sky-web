@@ -339,8 +339,8 @@ export async function getForeignKeyOptions(params: {
   page?: number
   pageSize?: number
   filters?: Record<string, any>
-}): Promise<PageResponse<ForeignKeyOption>> {
-  const { data } = await api.get<ApiResponse<PageResponse<ForeignKeyOption>>>(
+}): Promise<PageResponse<ForeignKeyOption> & { isDropdown?: string }> {
+  const { data } = await api.get<ApiResponse<PageResponse<ForeignKeyOption> & { isDropdown?: string }>>(
     '/metadata/foreign-key-options',
     { params }
   )

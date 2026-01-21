@@ -16,34 +16,43 @@
         <a-row :gutter="[16, 16]" class="query-row">
           <a-col
             v-for="column in visibleQueryColumns"
-            :key="column.DB_NAME"
+            :key="column.DB_NAME || column.dbName"
             :span="6"
           >
             <a-form-item
-              :label="column.DISPLAY_NAME"
-              :field="column.DB_NAME"
+              :label="column.DISPLAY_NAME || column.displayName"
+              :field="column.DB_NAME || column.dbName"
             >
+              <!-- 外键下拉选择 -->
+              <ForeignKeyField
+                v-if="isForeignKeyColumn(column)"
+                :column="column"
+                :model-value="queryForm[column.DB_NAME || column.dbName]"
+                mode="edit"
+                @update:model-value="val => queryForm[column.DB_NAME || column.dbName] = val"
+              />
+
               <!-- 文本输入 -->
               <a-input
-                v-if="column.CONTROL_TYPE === 'text' || column.CONTROL_TYPE === 'email' || column.CONTROL_TYPE === 'url'"
-                v-model="queryForm[column.DB_NAME]"
-                :placeholder="`请输入${column.DISPLAY_NAME}`"
+                v-else-if="column.CONTROL_TYPE === 'text' || column.CONTROL_TYPE === 'email' || column.CONTROL_TYPE === 'url'"
+                v-model="queryForm[column.DB_NAME || column.dbName]"
+                :placeholder="`请输入${column.DISPLAY_NAME || column.displayName}`"
                 allow-clear
               />
 
               <!-- 数字输入 -->
               <a-input-number
                 v-else-if="column.CONTROL_TYPE === 'number'"
-                v-model="queryForm[column.DB_NAME]"
-                :placeholder="`请输入${column.DISPLAY_NAME}`"
+                v-model="queryForm[column.DB_NAME || column.dbName]"
+                :placeholder="`请输入${column.DISPLAY_NAME || column.displayName}`"
                 style="width: 100%"
               />
 
               <!-- 下拉选择 -->
               <a-select
                 v-else-if="column.CONTROL_TYPE === 'select'"
-                v-model="queryForm[column.DB_NAME]"
-                :placeholder="`请选择${column.DISPLAY_NAME}`"
+                v-model="queryForm[column.DB_NAME || column.dbName]"
+                :placeholder="`请选择${column.DISPLAY_NAME || column.displayName}`"
                 allow-clear
               >
                 <!-- TODO: 加载字典数据 -->
@@ -54,8 +63,8 @@
               <!-- 日期选择 -->
               <a-date-picker
                 v-else-if="column.CONTROL_TYPE === 'date'"
-                v-model="queryForm[column.DB_NAME]"
-                :placeholder="`请选择${column.DISPLAY_NAME}`"
+                v-model="queryForm[column.DB_NAME || column.dbName]"
+                :placeholder="`请选择${column.DISPLAY_NAME || column.displayName}`"
                 allow-clear
                 style="width: 100%"
               />
@@ -63,8 +72,8 @@
               <!-- 日期时间选择 -->
               <a-date-picker
                 v-else-if="column.CONTROL_TYPE === 'datetime'"
-                v-model="queryForm[column.DB_NAME]"
-                :placeholder="`请选择${column.DISPLAY_NAME}`"
+                v-model="queryForm[column.DB_NAME || column.dbName]"
+                :placeholder="`请选择${column.DISPLAY_NAME || column.displayName}`"
                 show-time
                 allow-clear
                 style="width: 100%"
@@ -73,8 +82,8 @@
               <!-- 默认文本输入 -->
               <a-input
                 v-else
-                v-model="queryForm[column.DB_NAME]"
-                :placeholder="`请输入${column.DISPLAY_NAME}`"
+                v-model="queryForm[column.DB_NAME || column.dbName]"
+                :placeholder="`请输入${column.DISPLAY_NAME || column.displayName}`"
                 allow-clear
               />
             </a-form-item>
@@ -241,7 +250,13 @@
 
       <!-- 外键列自定义渲染 -->
       <template #foreignkey="{ record, column }">
+        <!-- 优先使用后端返回的 _display 字段 -->
+        <span v-if="record[column.dataIndex + '_display']">
+          {{ record[column.dataIndex + '_display'] }}
+        </span>
+        <!-- 降级到前端查询 -->
         <ForeignKeyCell
+          v-else
           :column-config="column"
           :value="record[column.dataIndex]"
         />
@@ -344,8 +359,9 @@ import { useDynamicList } from '../../composables'
 import { useDynamicTableStore } from '../../stores'
 import { formatDate as formatDateUtil, formatDateTime as formatDateTimeUtil } from '@/utils/format'
 import ForeignKeyCell from './ForeignKeyCell.vue'
+import ForeignKeyField from '../FieldRenderers/ForeignKeyField.vue'
 import type { TableColumnData } from '@arco-design/web-vue'
-import type { FormData } from '../../types'
+import type { FormData, SysColumn } from '../../types'
 
 // ==================== Props ====================
 
@@ -465,10 +481,14 @@ const columns = computed<TableColumnData[]>(() => {
     }
 
     // 获取原始列配置（用于判断外键等特殊类型）
-    const originalColumn = tableConfig.value?.columns.find(c => c.DB_NAME === column.dataIndex)
+    const originalColumn = tableConfig.value?.columns.find(c => {
+      const dbName = c.DB_NAME || (c as any).dbName
+      return dbName === column.dataIndex
+    })
 
     // 自定义渲染
-    if (originalColumn?.SET_VALUE_TYPE === 'fk') {
+    const setValueType = originalColumn?.SET_VALUE_TYPE || (originalColumn as any)?.setValueType
+    if (setValueType === 'fk') {
       // 外键列
       col.slotName = 'foreignkey'
       // 保存原始列配置到 col，供 slot 使用
@@ -545,6 +565,14 @@ const scrollConfig = computed(() => {
 })
 
 // ==================== 方法 ====================
+
+/**
+ * 判断是否为外键列
+ */
+function isForeignKeyColumn(column: SysColumn): boolean {
+  const setValueType = column.SET_VALUE_TYPE || (column as any).setValueType
+  return setValueType === 'fk'
+}
 
 /**
  * 判断是否为状态列
@@ -919,7 +947,6 @@ defineExpose({
   background: #fff;
   border: 1px solid #e5e6eb;
   border-radius: 4px;
-  margin-bottom: 16px;
 }
 
 .query-header {
@@ -970,7 +997,7 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 6px;
   border-bottom: 1px solid #e8e8e8;
 }
 

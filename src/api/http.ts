@@ -100,7 +100,14 @@ api.interceptors.response.use(
       redirectToLogin()
     }
 
-    return Promise.reject(error)
+    // 提取后端返回的详细错误信息
+    const errorMessage = payload?.message || error.message || '请求失败'
+    const enhancedError = new Error(errorMessage)
+    ;(enhancedError as any).response = response
+    ;(enhancedError as any).code = code
+    ;(enhancedError as any).data = payload
+
+    return Promise.reject(enhancedError)
   }
 )
 
