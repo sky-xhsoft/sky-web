@@ -95,9 +95,13 @@ export interface SysColumn {
   DICT_DISPLAY_FIELD?: string // 字典显示字段
 
   // 外键关联
-  FK_TABLE_ID?: number      // 外键表ID
-  FK_VALUE_FIELD?: string   // 外键值字段
-  FK_DISPLAY_FIELD?: string // 外键显示字段
+  SET_VALUE_TYPE?: string       // 赋值方式（fk: 外键关联）
+  REF_TABLE_ID?: number         // 关联表ID（数据库字段：REF_TABLE_ID）
+  REF_COLUMN_ID?: number        // 关联显示字段ID（数据库字段：REF_COLUMN_ID）
+  REF_ON_DELETE?: 'noAction' | 'cascade' | 'setNull'  // 删除动作（数据库字段：REF_ON_DELETE）
+  FK_TABLE_ID?: number          // 外键表ID（旧字段，向后兼容）
+  FK_VALUE_FIELD?: string       // 外键值字段（旧字段，向后兼容）
+  FK_DISPLAY_FIELD?: string     // 外键显示字段（旧字段，向后兼容）
 
   // 验证规则
   NULL_ABLE?: 'Y' | 'N'     // 是否可空
@@ -220,6 +224,15 @@ export interface TreeNode {
   title: string
   children?: TreeNode[]
   [key: string]: any
+}
+
+/**
+ * 外键选项
+ */
+export interface ForeignKeyOption {
+  value: number | string
+  label: string
+  record?: Record<string, any>
 }
 
 // ==================== 组件 Props 类型 ====================

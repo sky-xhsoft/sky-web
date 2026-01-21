@@ -45,6 +45,7 @@ const SelectField = defineAsyncComponent(() => import('../FieldRenderers/SelectF
 const CheckboxField = defineAsyncComponent(() => import('../FieldRenderers/CheckboxField.vue'))
 const DateField = defineAsyncComponent(() => import('../FieldRenderers/DateField.vue'))
 const DatetimeField = defineAsyncComponent(() => import('../FieldRenderers/DatetimeField.vue'))
+const ForeignKeyField = defineAsyncComponent(() => import('../FieldRenderers/ForeignKeyField.vue'))
 
 // 组件映射
 const COMPONENT_MAP: Record<string, any> = {
@@ -54,7 +55,8 @@ const COMPONENT_MAP: Record<string, any> = {
   SelectField,
   CheckboxField,
   DateField,
-  DatetimeField
+  DatetimeField,
+  ForeignKeyField
 }
 
 // ==================== Props ====================

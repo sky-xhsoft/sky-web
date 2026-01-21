@@ -13,7 +13,8 @@ import type {
   SysColumn,
   SysDict,
   TableConfig,
-  FormData
+  FormData,
+  ForeignKeyOption
 } from '../types'
 
 // ==================== 子系统 ====================
@@ -324,4 +325,41 @@ export async function unsubmitRecord(tableName: string, id: number): Promise<voi
  */
 export async function voidRecord(tableName: string, id: number): Promise<void> {
   await api.post(`/metadata/data/${tableName}/${id}/void`)
+}
+
+// ==================== 外键 ====================
+
+/**
+ * 获取外键选项列表
+ */
+export async function getForeignKeyOptions(params: {
+  tableId: number
+  columnId?: number
+  search?: string
+  page?: number
+  pageSize?: number
+  filters?: Record<string, any>
+}): Promise<PageResponse<ForeignKeyOption>> {
+  const { data } = await api.get<ApiResponse<PageResponse<ForeignKeyOption>>>(
+    '/metadata/foreign-key-options',
+    { params }
+  )
+  return data.data
+}
+
+/**
+ * 获取外键显示值
+ */
+export async function getForeignKeyDisplayValue(
+  tableId: number,
+  value: number | string,
+  columnId?: number
+): Promise<string> {
+  const { data } = await api.get<ApiResponse<string>>(
+    '/metadata/foreign-key-display-value',
+    {
+      params: { tableId, value, columnId }
+    }
+  )
+  return data.data
 }

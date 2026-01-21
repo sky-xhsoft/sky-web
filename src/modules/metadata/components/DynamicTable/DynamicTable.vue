@@ -239,6 +239,14 @@
         <!-- DEBUG: column={{ column.dataIndex }}, value={{ record[column.dataIndex] }} -->
       </template>
 
+      <!-- 外键列自定义渲染 -->
+      <template #foreignkey="{ record, column }">
+        <ForeignKeyCell
+          :column-config="column"
+          :value="record[column.dataIndex]"
+        />
+      </template>
+
       <!-- 操作列 -->
       <template #actions="{ record }">
         <a-space>
@@ -335,6 +343,7 @@ import {
 import { useDynamicList } from '../../composables'
 import { useDynamicTableStore } from '../../stores'
 import { formatDate as formatDateUtil, formatDateTime as formatDateTimeUtil } from '@/utils/format'
+import ForeignKeyCell from './ForeignKeyCell.vue'
 import type { TableColumnData } from '@arco-design/web-vue'
 import type { FormData } from '../../types'
 
@@ -455,8 +464,16 @@ const columns = computed<TableColumnData[]>(() => {
       align: getColumnAlign(column.dataIndex)
     }
 
+    // 获取原始列配置（用于判断外键等特殊类型）
+    const originalColumn = tableConfig.value?.columns.find(c => c.DB_NAME === column.dataIndex)
+
     // 自定义渲染
-    if (isStatusColumn(column.dataIndex)) {
+    if (originalColumn?.SET_VALUE_TYPE === 'fk') {
+      // 外键列
+      col.slotName = 'foreignkey'
+      // 保存原始列配置到 col，供 slot 使用
+      ;(col as any).originalColumn = originalColumn
+    } else if (isStatusColumn(column.dataIndex)) {
       col.slotName = 'status'
     } else if (isDateColumn(column.dataIndex)) {
       col.slotName = 'date'

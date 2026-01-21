@@ -30,6 +30,11 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
    * 获取字段渲染组件名称
    */
   const componentName = computed(() => {
+    // 优先判断 SET_VALUE_TYPE（赋值方式）
+    if (column.SET_VALUE_TYPE === 'fk') {
+      return 'ForeignKeyField'
+    }
+
     // 特殊处理：系统时间字段
     const timeFields = ['CREATE_TIME', 'UPDATE_TIME', 'CREATED_AT', 'UPDATED_AT']
     if (timeFields.includes(column.DB_NAME)) {
