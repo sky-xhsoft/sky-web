@@ -183,15 +183,15 @@
                 <template #icon><icon-printer /></template>
                 套打
               </a-doption>
-              <a-doption @click="handleCopy">
+              <a-doption v-if="canCreate" @click="handleCopy">
                 <template #icon><icon-copy /></template>
                 复制
               </a-doption>
-              <a-doption @click="handleBatchEdit">
+              <a-doption v-if="canEdit" @click="handleBatchEdit">
                 <template #icon><icon-edit /></template>
                 修改选中行
               </a-doption>
-              <a-doption @click="handleBatchEditAll">
+              <a-doption v-if="canEdit" @click="handleBatchEditAll">
                 <template #icon><icon-edit /></template>
                 修改结果集
               </a-doption>
@@ -269,6 +269,7 @@
       :row-key="pkField"
       :size="size"
       :scroll="scrollConfig"
+      show-sorter-tooltip
       style="width: 100%;"
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
@@ -387,6 +388,33 @@
           :column="column"
         />
       </template>
+
+      <!-- 动态表头插槽 - 显示排序序号和箭头 -->
+      <template
+        v-for="column in tableColumns"
+        :key="`title-${column.dataIndex}`"
+        #[`title-${column.dataIndex}`]
+      >
+        <span
+          style="display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none;"
+          @click="handleHeaderClick(column.dataIndex)"
+        >
+          <span>{{ column.title }}</span>
+          <template v-if="columnSorters[column.dataIndex]">
+            <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; background: #3370ff; color: white; border-radius: 2px; font-size: 12px; line-height: 1;">
+              {{ columnSorters[column.dataIndex]?.priority }}
+            </span>
+            <icon-arrow-up
+              v-if="columnSorters[column.dataIndex]?.direction === 'ascend'"
+              style="font-size: 12px; color: #3370ff; flex-shrink: 0;"
+            />
+            <icon-arrow-down
+              v-else
+              style="font-size: 12px; color: #3370ff; flex-shrink: 0;"
+            />
+          </template>
+        </span>
+      </template>
     </a-table>
   </div>
 </template>
@@ -409,7 +437,10 @@ import {
   IconPrinter,
   IconCopy,
   IconEdit,
-  IconDragDotVertical
+  IconDragDotVertical,
+  IconClose,
+  IconArrowUp,
+  IconArrowDown
 } from '@arco-design/web-vue/es/icon'
 import { useDynamicList } from '../../composables'
 import { useDynamicTableStore } from '../../stores'
@@ -495,11 +526,22 @@ const selectedColumnKeys = ref<string[]>([])
 const allColumns = ref<TableColumnData[]>([])
 const draggedIndex = ref<number>(-1)
 
+// 排序状态（跟踪多字段排序）
+// 存储格式：{ field: { direction, priority } }
+const columnSorters = ref<Record<string, { direction: 'ascend' | 'descend', priority: number }>>({})
+
 // 查询相关状态
 const queryForm = ref<Record<string, any>>({})
 const showAdvancedQuery = ref(false)
 
 // ==================== 计算属性 ====================
+
+/**
+ * 已排序的列（用于显示表头插槽）
+ */
+const sortedColumns = computed(() => {
+  return tableColumns.value.filter(col => columnSorters.value[col.dataIndex])
+})
 
 /**
  * 可见的查询字段（支持展开/收起）
@@ -531,15 +573,20 @@ const columns = computed<TableColumnData[]>(() => {
 
   // 业务列
   tableColumns.value.forEach(column => {
+    const sorterInfo = columnSorters.value[column.dataIndex]
+
     const col: TableColumnData = {
       title: column.title,
       dataIndex: column.dataIndex,
-      // 使用配置的宽度，如果没有配置则使用默认值 150px
-      width: column.width || 150,
-      ellipsis: true,  // 启用省略号，避免内容过长
-      tooltip: true,   // 鼠标悬停显示完整内容
-      sortable: column.sortable ? { sortDirections: ['ascend', 'descend'] } : undefined,
+      width: column.width || 180,
+      ellipsis: true,
+      tooltip: true,
       align: getColumnAlign(column.dataIndex)
+    }
+
+    // 如果列可排序，添加自定义表头插槽
+    if (column.sortable) {
+      col.titleSlotName = `title-${column.dataIndex}`
     }
 
     // 获取原始列配置（用于判断外键等特殊类型）
@@ -594,9 +641,13 @@ const visibleColumns = computed(() => {
     col.dataIndex === '__selection_index__' || col.dataIndex === 'actions'
   )
 
-  // 业务列按 allColumns 顺序排列
+  // 业务列按 allColumns 顺序排列，但使用 columns.value 中的最新配置（包含排序序号）
   const businessCols = allColumns.value
     .filter(col => selectedColumnKeys.value.includes(col.dataIndex as string))
+    .map(col => {
+      // 从 columns.value 中找到对应的列配置（包含排序序号）
+      return columns.value.find(c => c.dataIndex === col.dataIndex) || col
+    })
 
   // 组合：选择列 + 业务列（按顺序） + 操作列
   const selectionCol = fixedCols.find(col => col.dataIndex === '__selection_index__')
@@ -630,13 +681,27 @@ const paginationConfig = computed(() => ({
 const scrollConfig = computed(() => {
   // 计算所有列的总宽度
   const totalWidth = columns.value.reduce((sum, col) => {
-    return sum + (col.width || 150)
+    return sum + (col.width || 180)
   }, 0)
 
   return {
     x: totalWidth,  // 水平滚动：设置为所有列宽度之和
     y: 'calc(100vh - 380px)'  // 竖向滚动：根据视口高度自动计算
   }
+})
+
+/**
+ * 默认排序配置（用于显示多排序序号）
+ */
+const defaultSorters = computed(() => {
+  const result = Object.entries(columnSorters.value)
+    .sort(([, a], [, b]) => a.priority - b.priority)
+    .map(([field, sorter]) => ({
+      dataIndex: field,
+      direction: sorter.direction
+    }))
+  console.log('[DynamicTable] defaultSorters computed:', result)
+  return result
 })
 
 // ==================== 方法 ====================
@@ -938,6 +1003,13 @@ function handleUnsubmit() {
  */
 async function handleRefresh() {
   try {
+    // 清空排序状态
+    columnSorters.value = {}
+
+    // 清空 store 中的排序
+    const tableStore = useDynamicTableStore()
+    tableStore.sorters = []
+
     await refresh()
   } catch (error: any) {
     // 错误已在 composable 中处理
@@ -945,11 +1017,149 @@ async function handleRefresh() {
 }
 
 /**
- * 排序变化
+ * 排序变化（支持多字段排序）
  */
-function handleSorterChange(dataIndex: string, direction: string) {
-  const order = direction === 'ascend' ? 'asc' : direction === 'descend' ? 'desc' : null
-  handleSortChange(dataIndex, order as any)
+function handleSorterChange(dataIndex: string, direction: string, sorterResult: any) {
+  console.log('[DynamicTable] 排序事件触发:', { dataIndex, direction, sorterResult })
+
+  const tableStore = useDynamicTableStore()
+
+  // 更新当前字段的排序状态
+  if (direction) {
+    // 如果字段已存在，只更新方向，保持优先级
+    if (columnSorters.value[dataIndex]) {
+      columnSorters.value[dataIndex].direction = direction as 'ascend' | 'descend'
+    } else {
+      // 新增排序字段，优先级为当前最大优先级+1
+      const maxPriority = Math.max(
+        0,
+        ...Object.values(columnSorters.value).map(s => s.priority)
+      )
+      columnSorters.value[dataIndex] = {
+        direction: direction as 'ascend' | 'descend',
+        priority: maxPriority + 1
+      }
+    }
+  } else {
+    // 取消排序，删除该字段
+    delete columnSorters.value[dataIndex]
+
+    // 重新调整优先级，保持连续性
+    const sortedEntries = Object.entries(columnSorters.value)
+      .sort(([, a], [, b]) => a.priority - b.priority)
+
+    columnSorters.value = {}
+    sortedEntries.forEach(([field, sorter], index) => {
+      columnSorters.value[field] = {
+        direction: sorter.direction,
+        priority: index + 1
+      }
+    })
+  }
+
+  // 按优先级排序，收集所有有排序的字段
+  const sorters = Object.entries(columnSorters.value)
+    .sort(([, a], [, b]) => a.priority - b.priority)
+    .map(([field, sorter]) => ({
+      field,
+      direction: sorter.direction
+    }))
+
+  console.log('[DynamicTable] 当前排序状态:', columnSorters.value)
+  console.log('[DynamicTable] 发送排序参数:', sorters)
+
+  // 发送到后端
+  tableStore.updateSorters(tableName.value, sorters)
+}
+
+/**
+ * 取消单个字段的排序
+ */
+function handleCancelSort(dataIndex: string) {
+  // 删除该字段的排序
+  delete columnSorters.value[dataIndex]
+
+  // 重新调整优先级，保持连续性
+  const sortedEntries = Object.entries(columnSorters.value)
+    .sort(([, a], [, b]) => a.priority - b.priority)
+
+  columnSorters.value = {}
+  sortedEntries.forEach(([field, sorter], index) => {
+    columnSorters.value[field] = {
+      direction: sorter.direction,
+      priority: index + 1
+    }
+  })
+
+  // 按优先级排序，收集所有有排序的字段
+  const sorters = Object.entries(columnSorters.value)
+    .sort(([, a], [, b]) => a.priority - b.priority)
+    .map(([field, sorter]) => ({
+      field,
+      direction: sorter.direction
+    }))
+
+  console.log('[DynamicTable] 取消排序:', dataIndex)
+  console.log('[DynamicTable] 当前排序状态:', columnSorters.value)
+  console.log('[DynamicTable] 发送排序参数:', sorters)
+
+  // 发送到后端
+  const tableStore = useDynamicTableStore()
+  tableStore.updateSorters(tableName.value, sorters)
+}
+
+/**
+ * 处理表头点击（切换排序）
+ */
+function handleHeaderClick(dataIndex: string) {
+  console.log('[DynamicTable] 表头点击:', dataIndex)
+
+  const tableStore = useDynamicTableStore()
+  const current = columnSorters.value[dataIndex]
+
+  if (!current) {
+    // 没有排序，添加升序
+    const maxPriority = Math.max(
+      0,
+      ...Object.values(columnSorters.value).map(s => s.priority)
+    )
+    columnSorters.value[dataIndex] = {
+      direction: 'ascend',
+      priority: maxPriority + 1
+    }
+  } else if (current.direction === 'ascend') {
+    // 升序 -> 降序
+    columnSorters.value[dataIndex].direction = 'descend'
+  } else {
+    // 降序 -> 取消排序
+    delete columnSorters.value[dataIndex]
+
+    // 重新调整优先级
+    const sortedEntries = Object.entries(columnSorters.value)
+      .sort(([, a], [, b]) => a.priority - b.priority)
+
+    columnSorters.value = {}
+    sortedEntries.forEach(([field, sorter], index) => {
+      columnSorters.value[field] = {
+        direction: sorter.direction,
+        priority: index + 1
+      }
+    })
+  }
+
+  // 按优先级排序，收集所有有排序的字段
+  const sorters = Object.entries(columnSorters.value)
+    .sort(([, a], [, b]) => a.priority - b.priority)
+    .map(([field, sorter]) => ({
+      field,
+      direction: sorter.direction
+    }))
+
+  console.log('[DynamicTable] 当前排序状态:', columnSorters.value)
+  console.log('[DynamicTable] 发送排序参数:', sorters)
+
+  // 发送到后端
+  tableStore.updateSorters(tableName.value, sorters)
 }
 
 /**
@@ -1299,6 +1509,11 @@ defineExpose({
 .dynamic-table :deep(.arco-pagination) {
   padding: 16px;
   justify-content: flex-end;
+}
+
+/* 隐藏默认的排序图标 */
+.dynamic-table :deep(.arco-table-sorter) {
+  display: none;
 }
 
 /* 状态标签样式 */

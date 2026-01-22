@@ -27,8 +27,8 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   // 筛选条件
   const filters = ref<Record<string, any>>({})
 
-  // 排序条件
-  const sorter = ref<{ field: string; order: 'asc' | 'desc' } | null>(null)
+  // 排序条件（支持多字段排序）
+  const sorters = ref<Array<{ field: string; order: 'asc' | 'desc' }>>([])
 
   // 选中的行
   const selectedRowKeys = ref<(string | number)[]>([])
@@ -63,12 +63,21 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       console.log('[useDynamicTableStore] loadRecords 被调用')
       console.log('  tableName=', tableName)
       console.log('  filters.value=', JSON.stringify(filters.value))
+      console.log('  sorters.value=', JSON.stringify(sorters.value))
       console.log('  params=', JSON.stringify(params))
+
+      // 构建排序参数（多字段用逗号分隔）
+      const sortParams: Record<string, any> = {}
+      if (sorters.value.length > 0) {
+        sortParams.orderBy = sorters.value.map(s => s.field).join(',')
+        sortParams.order = sorters.value.map(s => s.order).join(',')
+      }
 
       const requestParams = {
         page: pagination.value.page,
         pageSize: pagination.value.pageSize,
         ...filters.value,
+        ...sortParams,
         ...params
       }
       console.log('  最终请求参数=', JSON.stringify(requestParams))
@@ -134,7 +143,23 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   }
 
   /**
-   * 更新排序
+   * 更新排序（支持多字段排序）
+   */
+  async function updateSorters(
+    tableName: string,
+    newSorters: Array<{ field: string; direction: 'ascend' | 'descend' }>
+  ) {
+    // 转换排序方向
+    sorters.value = newSorters.map(s => ({
+      field: s.field,
+      order: s.direction === 'ascend' ? 'asc' : 'desc'
+    }))
+    pagination.value.page = 1
+    return await loadRecords(tableName)
+  }
+
+  /**
+   * 更新单个字段排序（兼容旧代码）
    */
   async function updateSorter(
     tableName: string,
@@ -142,9 +167,9 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     order: 'asc' | 'desc' | null
   ) {
     if (order === null) {
-      sorter.value = null
+      sorters.value = []
     } else {
-      sorter.value = { field, order }
+      sorters.value = [{ field, order }]
     }
     pagination.value.page = 1
     return await loadRecords(tableName)
@@ -235,7 +260,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       total: 0
     }
     filters.value = {}
-    sorter.value = null
+    sorters.value = []
     selectedRowKeys.value = []
     error.value = null
   }
@@ -247,7 +272,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     records,
     pagination,
     filters,
-    sorter,
+    sorters,
     selectedRowKeys,
     loading,
     error,
@@ -264,6 +289,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     updateFilters,
     resetFilters,
     updateSorter,
+    updateSorters,
     selectRows,
     toggleSelectAll,
     clearSelection,
