@@ -36,6 +36,11 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
       return 'ForeignKeyField'
     }
 
+    // 特殊处理：select 类型统一使用 SelectField
+    if (setValueType === 'select') {
+      return 'SelectField'
+    }
+
     // 特殊处理：系统时间字段
     const timeFields = ['CREATE_TIME', 'UPDATE_TIME', 'CREATED_AT', 'UPDATED_AT']
     if (timeFields.includes(column.DB_NAME)) {
@@ -55,6 +60,12 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
     // 字段本身配置为只读
     if (column.IS_READONLY === 'Y') return true
 
+    // 根据 MODIFI_ABLE 检查是否可修改
+    const modifiAble = column.MODIFI_ABLE || (column as any).modifiAble
+    if (modifiAble === 'N') {
+      return true
+    }
+
     // 根据 MASK 检查是否可编辑
     const mask = column.MASK || (column as any).mask
     if (mask && mask.length >= 4) {
@@ -64,12 +75,16 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
 
       if (mode === 'create') {
         // 新增模式：检查第 2 位（索引 1）
-        if (mask[1] !== '1') {
+        const canEdit = mask[1] === '1'
+        console.log(`[useFieldRenderer] ${column.DB_NAME} 新增模式: mask=${mask}, mask[1]=${mask[1]}, canEdit=${canEdit}`)
+        if (!canEdit) {
           return true  // 不可编辑 = 只读
         }
       } else if (mode === 'edit') {
         // 修改模式：检查第 4 位（索引 3）
-        if (mask[3] !== '1') {
+        const canEdit = mask[3] === '1'
+        console.log(`[useFieldRenderer] ${column.DB_NAME} 编辑模式: mask=${mask}, mask[3]=${mask[3]}, canEdit=${canEdit}`)
+        if (!canEdit) {
           return true  // 不可编辑 = 只读
         }
       }

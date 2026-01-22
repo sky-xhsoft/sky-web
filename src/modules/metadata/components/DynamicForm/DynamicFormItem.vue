@@ -15,6 +15,7 @@
       :is="fieldComponent"
       :column="column"
       :model-value="modelValue"
+      :mode="mode"
       :disabled="isDisabled"
       :readonly="isReadonly"
       @update:model-value="handleChange"
@@ -42,6 +43,7 @@ const TextField = defineAsyncComponent(() => import('../FieldRenderers/TextField
 const TextareaField = defineAsyncComponent(() => import('../FieldRenderers/TextareaField.vue'))
 const NumberField = defineAsyncComponent(() => import('../FieldRenderers/NumberField.vue'))
 const SelectField = defineAsyncComponent(() => import('../FieldRenderers/SelectField.vue'))
+const RadioField = defineAsyncComponent(() => import('../FieldRenderers/RadioField.vue'))
 const CheckboxField = defineAsyncComponent(() => import('../FieldRenderers/CheckboxField.vue'))
 const DateField = defineAsyncComponent(() => import('../FieldRenderers/DateField.vue'))
 const DatetimeField = defineAsyncComponent(() => import('../FieldRenderers/DatetimeField.vue'))
@@ -53,6 +55,7 @@ const COMPONENT_MAP: Record<string, any> = {
   TextareaField,
   NumberField,
   SelectField,
+  RadioField,
   CheckboxField,
   DateField,
   DatetimeField,
@@ -103,7 +106,9 @@ const fieldComponent = computed(() => {
  * 是否禁用
  */
 const isDisabled = computed(() => {
-  return props.mode === 'view'
+  const result = props.mode === 'view'
+  console.log(`[DynamicFormItem] ${props.column.DB_NAME} isDisabled=${result}, mode=${props.mode}`)
+  return result
 })
 
 /**

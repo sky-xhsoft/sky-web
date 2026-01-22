@@ -55,9 +55,13 @@
                 :placeholder="`请选择${column.DISPLAY_NAME || column.displayName}`"
                 allow-clear
               >
-                <!-- TODO: 加载字典数据 -->
-                <a-option value="Y">是</a-option>
-                <a-option value="N">否</a-option>
+                <a-option
+                  v-for="option in getDictOptions(column)"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </a-option>
               </a-select>
 
               <!-- 日期选择 -->
@@ -269,6 +273,7 @@
       :row-key="pkField"
       :size="size"
       :scroll="scrollConfig"
+      :row-class="getRowClass"
       show-sorter-tooltip
       style="width: 100%;"
       @page-change="handlePageChange"
@@ -322,16 +327,45 @@
 
       <!-- 外键列自定义渲染 -->
       <template #foreignkey="{ record, column }">
-        <!-- 优先使用后端返回的 _display 字段 -->
-        <span v-if="record[column.dataIndex + '_display']">
-          {{ record[column.dataIndex + '_display'] }}
+        <div class="fk-cell">
+          <!-- 显示文本 -->
+          <span
+            v-if="record[column.dataIndex + '_display']"
+            class="fk-text"
+            :class="{ 'has-link': record[column.dataIndex + '_ref'] }"
+            :title="record[column.dataIndex + '_ref'] ? '点击查看关联记录' : ''"
+            @click="record[column.dataIndex + '_ref'] && handleForeignKeyJump(record[column.dataIndex + '_ref'])"
+          >
+            {{ record[column.dataIndex + '_display'] }}
+          </span>
+          <!-- 降级到前端查询 -->
+          <ForeignKeyCell
+            v-else
+            :column-config="column"
+            :value="record[column.dataIndex]"
+          />
+        </div>
+      </template>
+
+      <!-- 下拉选择列自定义渲染 -->
+      <template #select="{ record, column }">
+        <template v-if="getDictLabelWithStyle(column.dataIndex, record[column.dataIndex]).cssClass">
+          <a-tag
+            v-if="['success', 'danger', 'warning', 'primary', 'info'].includes(getDictLabelWithStyle(column.dataIndex, record[column.dataIndex]).cssClass!)"
+            :color="getDictLabelWithStyle(column.dataIndex, record[column.dataIndex]).cssClass"
+          >
+            {{ getDictLabelWithStyle(column.dataIndex, record[column.dataIndex]).label }}
+          </a-tag>
+          <span
+            v-else
+            :class="`dict-label-${getDictLabelWithStyle(column.dataIndex, record[column.dataIndex]).cssClass}`"
+          >
+            {{ getDictLabelWithStyle(column.dataIndex, record[column.dataIndex]).label }}
+          </span>
+        </template>
+        <span v-else>
+          {{ getDictLabelWithStyle(column.dataIndex, record[column.dataIndex]).label }}
         </span>
-        <!-- 降级到前端查询 -->
-        <ForeignKeyCell
-          v-else
-          :column-config="column"
-          :value="record[column.dataIndex]"
-        />
       </template>
 
       <!-- 操作列 -->
@@ -416,12 +450,51 @@
         </span>
       </template>
     </a-table>
+
+    <!-- 图例 -->
+    <div v-if="legendItems.length > 0" class="table-legend">
+      <span class="legend-title">图例</span>
+      <div
+        v-for="legend in legendItems"
+        :key="legend.fieldName"
+        class="legend-group"
+      >
+        <span class="legend-field-label">{{ legend.fieldLabel }}:</span>
+        <span
+          v-for="item in legend.items"
+          :key="item.value"
+          class="legend-item"
+        >
+          <!-- 有 CSS 样式的项 -->
+          <template v-if="item.cssClass">
+            <a-tag
+              v-if="item.isTag"
+              :color="item.cssClass"
+              size="small"
+            >
+              {{ item.label }}
+            </a-tag>
+            <span
+              v-else
+              :class="`dict-label-${item.cssClass}`"
+            >
+              {{ item.label }}
+            </span>
+          </template>
+          <!-- 没有 CSS 样式的项（默认样式） -->
+          <span v-else class="legend-default">
+            {{ item.label }}
+          </span>
+        </span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
+import { useNavigationStore } from '@/stores/navigation'
 import {
   IconPlus,
   IconDelete,
@@ -440,7 +513,8 @@ import {
   IconDragDotVertical,
   IconClose,
   IconArrowUp,
-  IconArrowDown
+  IconArrowDown,
+  IconExport
 } from '@arco-design/web-vue/es/icon'
 import { useDynamicList } from '../../composables'
 import { useDynamicTableStore } from '../../stores'
@@ -485,6 +559,10 @@ const emit = defineEmits<{
   delete: [record: FormData]
   'selection-change': [keys: (string | number)[]]
 }>()
+
+// ==================== Router ====================
+
+const navigationStore = useNavigationStore()
 
 // ==================== 使用 Composable ====================
 
@@ -602,6 +680,10 @@ const columns = computed<TableColumnData[]>(() => {
       col.slotName = 'foreignkey'
       // 保存原始列配置到 col，供 slot 使用
       ;(col as any).originalColumn = originalColumn
+    } else if (setValueType === 'select') {
+      // 下拉选择列
+      col.slotName = 'select'
+      ;(col as any).originalColumn = originalColumn
     } else if (isStatusColumn(column.dataIndex)) {
       col.slotName = 'status'
     } else if (isDateColumn(column.dataIndex)) {
@@ -702,6 +784,65 @@ const defaultSorters = computed(() => {
     }))
   console.log('[DynamicTable] defaultSorters computed:', result)
   return result
+})
+
+/**
+ * 图例项（按字段分组显示所有字典值）
+ */
+const legendItems = computed(() => {
+  if (!tableConfig.value?.dictData || !tableConfig.value?.columns) return []
+
+  const legends: Array<{
+    fieldName: string
+    fieldLabel: string
+    items: Array<{
+      value: string
+      label: string
+      cssClass?: string
+      isTag: boolean
+    }>
+  }> = []
+
+  // 查找所有 select 类型的列
+  const selectColumns = tableConfig.value.columns.filter(col => {
+    const setValueType = col.SET_VALUE_TYPE || (col as any).setValueType
+    return setValueType === 'select'
+  })
+
+  console.log('[legendItems] selectColumns:', selectColumns.map(c => c.DB_NAME || (c as any).dbName))
+
+  // 为每个 select 列生成图例
+  selectColumns.forEach(column => {
+    const sysDictID = column.SYS_DICT_ID || (column as any).sysDictId
+    if (!sysDictID) return
+
+    const dictID = typeof sysDictID === 'string' ? parseInt(sysDictID, 10) : sysDictID
+    const dictItems = tableConfig.value!.dictData[dictID]
+
+    console.log(`[legendItems] column=${column.DB_NAME || (column as any).dbName}, dictID=${dictID}, dictItems:`, dictItems)
+
+    if (!dictItems || dictItems.length === 0) return
+
+    const items = dictItems.map(item => {
+      const cssClass = item.CSS_CLASS || (item as any).cssClass
+      const isTag = cssClass ? ['success', 'danger', 'warning', 'primary', 'info'].includes(cssClass) : false
+      return {
+        value: item.VALUE || (item as any).value,
+        label: item.DISPLAY_NAME || (item as any).displayName,
+        cssClass: cssClass || undefined,
+        isTag
+      }
+    })
+
+    legends.push({
+      fieldName: column.DB_NAME || (column as any).dbName,
+      fieldLabel: column.DISPLAY_NAME || (column as any).displayName,
+      items
+    })
+  })
+
+  console.log('[legendItems] legends:', legends)
+  return legends
 })
 
 // ==================== 方法 ====================
@@ -819,6 +960,98 @@ function formatDateTime(value: any): string {
 }
 
 /**
+ * 获取字典标签（包含样式）
+ */
+function getDictLabelWithStyle(dataIndex: string, value: any): { label: string; cssClass?: string } {
+  if (!value) return { label: '-' }
+
+  // 获取列配置
+  const column = tableConfig.value?.columns.find(c => {
+    const dbName = c.DB_NAME || (c as any).dbName
+    return dbName === dataIndex
+  })
+
+  if (!column) return { label: String(value) }
+
+  // 特殊处理 check 类型（只有 Y/N）
+  const displayType = column.DISPLAY_TYPE || (column as any).displayType
+  if (displayType === 'check') {
+    return {
+      label: value === 'Y' ? '是' : value === 'N' ? '否' : String(value),
+      cssClass: value === 'Y' ? 'success' : 'danger'
+    }
+  }
+
+  // 获取字典ID
+  const sysDictID = column.SYS_DICT_ID || (column as any).sysDictId
+  if (!sysDictID || !tableConfig.value?.dictData) {
+    return { label: String(value) }
+  }
+
+  // 转换字典ID为数字
+  const dictID = typeof sysDictID === 'string' ? parseInt(sysDictID, 10) : sysDictID
+  const dictItems = tableConfig.value.dictData[dictID]
+
+  if (!dictItems) return { label: String(value) }
+
+  // 查找匹配的字典项
+  const item = dictItems.find(item => {
+    const itemValue = item.VALUE || (item as any).value
+    return itemValue === String(value)
+  })
+
+  if (item) {
+    const displayName = item.DISPLAY_NAME || (item as any).displayName
+    const cssClass = item.CSS_CLASS || (item as any).cssClass
+    return {
+      label: displayName || String(value),
+      cssClass: cssClass || undefined
+    }
+  }
+
+  return { label: String(value) }
+}
+
+/**
+ * 获取字典标签（仅文本，向后兼容）
+ */
+function getDictLabel(dataIndex: string, value: any): string {
+  return getDictLabelWithStyle(dataIndex, value).label
+}
+
+/**
+ * 获取字段的字典选项
+ */
+function getDictOptions(column: SysColumn): Array<{ value: string; label: string }> {
+  // 特殊处理 check 类型（只有 Y/N）
+  const displayType = column.DISPLAY_TYPE || (column as any).displayType
+  if (displayType === 'check') {
+    return [
+      { value: 'Y', label: '是' },
+      { value: 'N', label: '否' }
+    ]
+  }
+
+  // 获取字典ID
+  const sysDictID = column.SYS_DICT_ID || (column as any).sysDictId
+  if (!sysDictID || !tableConfig.value?.dictData) {
+    return []
+  }
+
+  // 转换字典ID为数字
+  const dictID = typeof sysDictID === 'string' ? parseInt(sysDictID, 10) : sysDictID
+  const dictItems = tableConfig.value.dictData[dictID]
+
+  if (!dictItems) return []
+
+  // 转换为选项格式
+  return dictItems.map(item => ({
+    value: item.VALUE || (item as any).value,
+    label: item.DISPLAY_NAME || (item as any).displayName
+  }))
+}
+
+/**
  * 查询
  */
 async function handleQuery() {
@@ -884,6 +1117,34 @@ function handleView(record: FormData) {
  */
 function handleEdit(record: FormData) {
   emit('edit', record)
+}
+
+/**
+ * 外键跳转 - 跳转到关联记录的查看页面
+ */
+function handleForeignKeyJump(refInfo: any) {
+  console.log('[FK Jump] refInfo:', refInfo)
+
+  if (!refInfo || !refInfo.table_id || !refInfo.record_id) {
+    Message.warning('无法跳转：缺少关联信息')
+    return
+  }
+
+  console.log('[FK Jump] Navigating to:', {
+    componentName: 'MetadataFormView',
+    params: {
+      tableId: refInfo.table_id,
+      recordId: refInfo.record_id,
+      mode: 'view'
+    }
+  })
+
+  // 使用 navigationStore 跳转到关联记录的查看页面
+  navigationStore.navigateTo('MetadataFormView', '查看关联记录', {
+    tableId: refInfo.table_id,
+    recordId: refInfo.record_id,
+    mode: 'view'
+  })
 }
 
 /**
@@ -1195,6 +1456,81 @@ function handleSelectAll(checked: boolean) {
   const keys = checked ? records.value.map(r => r[pkField.value]) : []
   onSelectionChange(keys)
   emit('selection-change', keys)
+}
+
+/**
+ * 获取行样式类（根据字典项的 CSS_CLASS 给整行添加样式）
+ */
+function getRowClass(record: FormData, rowIndex: number): string | string[] {
+  if (!tableConfig.value?.dictData) {
+    console.log('[getRowClass] No dictData')
+    return ''
+  }
+
+  // 查找所有 select 类型的列
+  const selectColumns = tableColumns.value.filter(col => {
+    const originalColumn = tableConfig.value?.columns.find(c => {
+      const dbName = c.DB_NAME || (c as any).dbName
+      return dbName === col.dataIndex
+    })
+    const setValueType = originalColumn?.SET_VALUE_TYPE || (originalColumn as any)?.setValueType
+    return setValueType === 'select'
+  })
+
+  console.log('[getRowClass] rowIndex:', rowIndex, 'selectColumns:', selectColumns.map(c => c.dataIndex))
+
+  // 遍历所有 select 列，找到第一个有 CSS_CLASS 的值
+  for (const column of selectColumns) {
+    const value = record[column.dataIndex]
+    console.log(`[getRowClass] column=${column.dataIndex}, value=${value}, type=${typeof value}, isEmpty=${!value}`)
+    if (!value) {
+      console.log(`[getRowClass] Skipping column ${column.dataIndex} because value is empty`)
+      continue
+    }
+
+    const originalColumn = tableConfig.value?.columns.find(c => {
+      const dbName = c.DB_NAME || (c as any).dbName
+      return dbName === column.dataIndex
+    })
+
+    console.log(`[getRowClass] originalColumn:`, originalColumn)
+
+    const sysDictID = originalColumn?.SYS_DICT_ID || (originalColumn as any)?.sysDictId
+    console.log(`[getRowClass] sysDictID=${sysDictID}`)
+    if (!sysDictID) {
+      console.log(`[getRowClass] No sysDictID for column ${column.dataIndex}`)
+      continue
+    }
+
+    const dictID = typeof sysDictID === 'string' ? parseInt(sysDictID, 10) : sysDictID
+    const dictItems = tableConfig.value.dictData[dictID]
+    console.log(`[getRowClass] dictID=${dictID}, dictItems:`, dictItems)
+    if (!dictItems) continue
+
+    const item = dictItems.find(item => {
+      const itemValue = item.VALUE || (item as any).value
+      return itemValue === String(value)
+    })
+
+    console.log(`[getRowClass] Found item:`, item)
+
+    if (item) {
+      const cssClass = item.CSS_CLASS || (item as any).cssClass
+      console.log(`[getRowClass] cssClass=${cssClass}`)
+      if (cssClass) {
+        // 如果是 Arco tag 颜色，转换为行样式类
+        if (['success', 'danger', 'warning', 'primary', 'info'].includes(cssClass)) {
+          console.log(`[getRowClass] Returning row-${cssClass}`)
+          return `row-${cssClass}`
+        }
+        // 自定义样式类
+        console.log(`[getRowClass] Returning row-dict-label-${cssClass}`)
+        return `row-dict-label-${cssClass}`
+      }
+    }
+  }
+
+  return ''
 }
 
 /**
@@ -1618,5 +1954,293 @@ defineExpose({
 
 .settings-footer :deep(.arco-btn-text) {
   color: #3370ff;
+}
+
+/* 外键单元格样式 */
+.fk-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fk-text {
+  display: inline-block;
+}
+
+/* 有链接的文本样式 */
+.fk-text.has-link {
+  color: #3370ff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fk-text.has-link:hover {
+  color: #0e42d2;
+  text-decoration: underline;
+}
+
+/* 字典标签自定义样式 */
+/* 禁用/停用状态 - 灰色斜体 */
+.dict-label-disabled {
+  color: #999;
+  font-style: italic;
+}
+
+/* 非活动状态 - 灰色斜体 + 删除线 */
+.dict-label-inactive {
+  color: #999;
+  font-style: italic;
+  text-decoration: line-through;
+}
+
+/* 草稿状态 - 浅灰色 */
+.dict-label-draft {
+  color: #bbb;
+}
+
+/* 待审核状态 - 橙色 */
+.dict-label-pending {
+  color: #ff7d00;
+}
+
+/* 已完成状态 - 绿色加粗 */
+.dict-label-completed {
+  color: #00b42a;
+  font-weight: 600;
+}
+
+/* 已拒绝状态 - 红色 */
+.dict-label-rejected {
+  color: #f53f3f;
+}
+
+/* 已过期状态 - 灰色 + 删除线 */
+.dict-label-expired {
+  color: #999;
+  text-decoration: line-through;
+}
+
+/* 表格行样式 - 根据字典项 CSS_CLASS */
+/* Arco tag 颜色对应的行样式 */
+.dynamic-table :deep(tr.row-success),
+.dynamic-table :deep(.arco-table-tr.row-success) {
+  background-color: rgba(0, 180, 42, 0.05) !important;
+}
+
+.dynamic-table :deep(tr.row-success:hover),
+.dynamic-table :deep(.arco-table-tr.row-success:hover) {
+  background-color: rgba(0, 180, 42, 0.1) !important;
+}
+
+.dynamic-table :deep(tr.row-danger),
+.dynamic-table :deep(.arco-table-tr.row-danger) {
+  background-color: rgba(245, 63, 63, 0.05) !important;
+}
+
+.dynamic-table :deep(tr.row-danger:hover),
+.dynamic-table :deep(.arco-table-tr.row-danger:hover) {
+  background-color: rgba(245, 63, 63, 0.1) !important;
+}
+
+.dynamic-table :deep(tr.row-warning),
+.dynamic-table :deep(.arco-table-tr.row-warning) {
+  background-color: rgba(255, 125, 0, 0.05) !important;
+}
+
+.dynamic-table :deep(tr.row-warning:hover),
+.dynamic-table :deep(.arco-table-tr.row-warning:hover) {
+  background-color: rgba(255, 125, 0, 0.1) !important;
+}
+
+.dynamic-table :deep(tr.row-primary),
+.dynamic-table :deep(.arco-table-tr.row-primary) {
+  background-color: rgba(51, 112, 255, 0.05) !important;
+}
+
+.dynamic-table :deep(tr.row-primary:hover),
+.dynamic-table :deep(.arco-table-tr.row-primary:hover) {
+  background-color: rgba(51, 112, 255, 0.1) !important;
+}
+
+.dynamic-table :deep(tr.row-info),
+.dynamic-table :deep(.arco-table-tr.row-info) {
+  background-color: rgba(134, 144, 156, 0.05) !important;
+}
+
+.dynamic-table :deep(tr.row-info:hover),
+.dynamic-table :deep(.arco-table-tr.row-info:hover) {
+  background-color: rgba(134, 144, 156, 0.1) !important;
+}
+
+/* 自定义样式类对应的行样式 */
+.dynamic-table :deep(tr.row-dict-label-disabled),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-disabled) {
+  color: #999 !important;
+  font-style: italic !important;
+  background-color: rgba(153, 153, 153, 0.05) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-disabled:hover),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-disabled:hover) {
+  background-color: rgba(153, 153, 153, 0.1) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-disabled td),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-disabled td) {
+  color: #999 !important;
+  font-style: italic !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-inactive),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-inactive) {
+  color: #999 !important;
+  font-style: italic !important;
+  text-decoration: line-through !important;
+  background-color: rgba(153, 153, 153, 0.05) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-inactive:hover),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-inactive:hover) {
+  background-color: rgba(153, 153, 153, 0.1) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-inactive td),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-inactive td) {
+  color: #999 !important;
+  font-style: italic !important;
+  text-decoration: line-through !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-draft),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-draft) {
+  color: #bbb !important;
+  background-color: rgba(187, 187, 187, 0.03) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-draft:hover),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-draft:hover) {
+  background-color: rgba(187, 187, 187, 0.08) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-draft td),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-draft td) {
+  color: #bbb !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-pending),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-pending) {
+  color: #ff7d00 !important;
+  background-color: rgba(255, 125, 0, 0.05) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-pending:hover),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-pending:hover) {
+  background-color: rgba(255, 125, 0, 0.1) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-pending td),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-pending td) {
+  color: #ff7d00 !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-completed),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-completed) {
+  color: #00b42a !important;
+  font-weight: 600 !important;
+  background-color: rgba(0, 180, 42, 0.05) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-completed:hover),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-completed:hover) {
+  background-color: rgba(0, 180, 42, 0.1) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-completed td),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-completed td) {
+  color: #00b42a !important;
+  font-weight: 600 !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-rejected),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-rejected) {
+  color: #f53f3f !important;
+  background-color: rgba(245, 63, 63, 0.05) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-rejected:hover),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-rejected:hover) {
+  background-color: rgba(245, 63, 63, 0.1) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-rejected td),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-rejected td) {
+  color: #f53f3f !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-expired),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-expired) {
+  color: #999 !important;
+  text-decoration: line-through !important;
+  background-color: rgba(153, 153, 153, 0.05) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-expired:hover),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-expired:hover) {
+  background-color: rgba(153, 153, 153, 0.1) !important;
+}
+
+.dynamic-table :deep(tr.row-dict-label-expired td),
+.dynamic-table :deep(.arco-table-tr.row-dict-label-expired td) {
+  color: #999 !important;
+  text-decoration: line-through !important;
+}
+
+/* 图例样式 */
+.table-legend {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 12px 16px;
+  background: #f7f8fa;
+  border-top: 1px solid #e5e6eb;
+  border-radius: 0 0 4px 4px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.legend-title {
+  font-weight: 600;
+  color: #1d2129;
+  flex-shrink: 0;
+}
+
+.legend-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.legend-field-label {
+  font-weight: 500;
+  color: #4e5969;
+  flex-shrink: 0;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.legend-item:not(:last-child)::after {
+  content: '|';
+  margin-left: 8px;
+  color: #c9cdd4;
+}
+
+.legend-default {
+  color: #1d2129;
+  padding: 0 4px;
 }
 </style>

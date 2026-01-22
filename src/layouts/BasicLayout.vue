@@ -109,6 +109,9 @@ const openKeys = ref<string[]>([])
  * 动态加载组件
  */
 async function loadComponent(path: string) {
+  // 菜单点击时清空历史栈，因为这是顶级导航
+  navigationStore.clearHistory()
+
   // 根据路径判断需要加载的组件
   if (path.startsWith('/metadata/')) {
     // 元数据系统
@@ -117,7 +120,7 @@ async function loadComponent(path: string) {
       const tableId = match[1]
       const MetadataListView = (await import('../modules/metadata/views/MetadataListView.vue')).default
       currentComponent.value = MetadataListView
-      navigationStore.navigateTo('MetadataListView', '数据列表', { tableId: Number(tableId) })
+      navigationStore.navigateTo('MetadataListView', '数据列表', { tableId: Number(tableId) }, false)
       return
     }
   }
@@ -126,18 +129,18 @@ async function loadComponent(path: string) {
   switch (path) {
     case '/':
       currentComponent.value = componentRegistry.Dashboard
-      navigationStore.navigateTo('Dashboard', '首页')
+      navigationStore.navigateTo('Dashboard', '首页', {}, false)
       break
     case '/cloud':
       currentComponent.value = componentRegistry.Cloud
-      navigationStore.navigateTo('Cloud', '云盘')
+      navigationStore.navigateTo('Cloud', '云盘', {}, false)
       break
     default:
       // 动态表单路由 /tables/xxx
       if (path.startsWith('/tables/')) {
         const TableView = (await import('../pages/TableView.vue')).default
         currentComponent.value = TableView
-        navigationStore.navigateTo('TableView', '表单', { tablePath: path })
+        navigationStore.navigateTo('TableView', '表单', { tablePath: path }, false)
       }
   }
 }

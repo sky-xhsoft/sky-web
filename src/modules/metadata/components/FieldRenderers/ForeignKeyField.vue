@@ -1,13 +1,27 @@
 <template>
   <div class="foreign-key-field">
-    <!-- 查看模式：统一显示只读文本 -->
-    <a-input
-      v-if="isDisabled"
-      :model-value="displayValue"
-      :placeholder="placeholder"
-      disabled
-      readonly
-    />
+    <!-- 查看模式：统一显示只读文本 + 跳转图标 -->
+    <div v-if="isDisabled" class="foreign-key-field__view">
+      <a-input
+        :model-value="displayValue"
+        :placeholder="placeholder"
+        disabled
+        readonly
+      />
+      <!-- 跳转图标 - 仅当有值且有关联表信息时显示 -->
+      <a-button
+        v-if="currentValue && refTableId"
+        type="text"
+        size="small"
+        class="foreign-key-field__jump-btn"
+        title="查看关联记录"
+        @click="handleJumpToRecord"
+      >
+        <template #icon>
+          <icon-share-internal />
+        </template>
+      </a-button>
+    </div>
 
     <!-- 下拉框模式：IS_DROPDOWN = 'Y' 或空（编辑模式）-->
     <a-select
@@ -61,10 +75,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { IconSearch, IconClose } from '@arco-design/web-vue/es/icon'
+import { IconSearch, IconClose, IconShareInternal } from '@arco-design/web-vue/es/icon'
+import { Message } from '@arco-design/web-vue'
+import { useNavigationStore } from '@/stores/navigation'
 import { useForeignKey } from '../../composables/useForeignKey'
 import ForeignKeyLookupDialog from '../ForeignKeyLookupDialog.vue'
 import type { SysColumn, FormMode, ForeignKeyOption } from '../../types'
+
+const navigationStore = useNavigationStore()
 
 const props = defineProps<{
   column: SysColumn
@@ -182,10 +200,53 @@ function handleSelectFromDialog(row: { value: any; label: string }) {
   }
   handleChange(row.value)
 }
+
+// 跳转到关联记录
+function handleJumpToRecord() {
+  if (!currentValue.value || !refTableId.value) {
+    Message.warning('无法跳转：缺少关联信息')
+    return
+  }
+
+  console.log('[ForeignKeyField] 跳转到关联记录:', {
+    tableId: refTableId.value,
+    recordId: currentValue.value
+  })
+
+  // 使用 navigationStore 跳转到关联记录的查看页面
+  navigationStore.navigateTo('MetadataFormView', '查看关联记录', {
+    tableId: refTableId.value,
+    recordId: currentValue.value,
+    mode: 'view'
+  })
+}
 </script>
 
 <style scoped>
 .foreign-key-field {
   width: 100%;
+}
+
+/* 查看模式容器 */
+.foreign-key-field__view {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.foreign-key-field__view .a-input {
+  flex: 1;
+}
+
+/* 跳转按钮 */
+.foreign-key-field__jump-btn {
+  flex-shrink: 0;
+  color: #f53f3f;
+  transition: all 0.2s;
+}
+
+.foreign-key-field__jump-btn:hover {
+  color: #cb272d;
+  background-color: rgba(245, 63, 63, 0.1);
 }
 </style>

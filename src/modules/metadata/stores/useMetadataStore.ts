@@ -230,6 +230,13 @@ export const useMetadataStore = defineStore('metadata', () => {
   }
 
   /**
+   * 获取表单配置（从缓存）
+   */
+  function getTableConfig(tableId: number): TableConfig | undefined {
+    return tableConfigs.value.get(tableId)
+  }
+
+  /**
    * 获取表单字段列表
    */
   function getTableColumns(tableId: number): SysColumn[] {
@@ -364,6 +371,7 @@ export const useMetadataStore = defineStore('metadata', () => {
     loadTableCategories,
     loadTables,
     loadTableConfig,
+    getTableConfig,
     getTableColumns,
     getColumn,
     getVisibleColumns,

@@ -88,8 +88,11 @@
               >
                 <DynamicFormItem
                   :column="column"
-                  :mode="'view'"
+                  :mode="mode"
                   :model-value="formData[column.DB_NAME]"
+                  :error="errors[column.DB_NAME]"
+                  @update:model-value="handleFieldChange(column.DB_NAME, $event)"
+                  @blur="handleFieldBlur(column)"
                 />
               </a-col>
             </a-row>
@@ -116,6 +119,7 @@ import type { FormMode, SysColumn } from '../../types'
 interface Props {
   tableId: number                // 表单ID
   recordId?: number              // 记录ID（编辑/查看模式）
+  copyFrom?: number              // 复制来源记录ID（新增模式）
   mode?: FormMode                // 表单模式
   labelColSpan?: number          // 标签列宽度
   wrapperColSpan?: number        // 输入列宽度
@@ -188,26 +192,23 @@ const wrapperColProps = computed(() => ({
 
 /**
  * 系统字段列表
+ * 规则：orderno > 1000 的字段都归类为系统字段
  */
-const systemFieldNames = [
-  'CREATE_BY', 'CREATE_TIME', 'UPDATE_BY', 'UPDATE_TIME',
-  'IS_ACTIVE', 'REMARK', 'LOG'
-]
-
 const systemFields = computed(() => {
-  return formColumns.value.filter(c =>
-    systemFieldNames.includes(c.DB_NAME)
-  )
+  return formColumns.value.filter(c => {
+    const orderno = c.ORDERNO || (c as any).orderno || 0
+    return orderno > 1000
+  })
 })
 
 /**
- * 基础字段（非系统字段，非折叠字段）
+ * 基础字段（orderno <= 1000，非折叠字段）
  */
 const basicFields = computed(() => {
-  return formColumns.value.filter(c =>
-    !systemFieldNames.includes(c.DB_NAME) &&
-    !isCollapsibleField(c)
-  )
+  return formColumns.value.filter(c => {
+    const orderno = c.ORDERNO || (c as any).orderno || 0
+    return orderno <= 1000 && !isCollapsibleField(c)
+  })
 })
 
 /**
@@ -367,9 +368,18 @@ onMounted(async () => {
   // 加载表单配置
   await loadTableConfig()
 
-  // 如果有 recordId，加载数据
+  // 如果有 recordId，加载数据（编辑/查看模式）
   if (props.recordId) {
     await loadRecordData(props.recordId)
+  }
+  // 如果有 copyFrom，加载源记录数据用于复制（新增模式）
+  else if (props.copyFrom && props.mode === 'create') {
+    await loadRecordData(props.copyFrom)
+    // 清除系统字段，让它们重新生成
+    const systemFieldsToClear = ['ID', 'CREATE_BY', 'CREATE_TIME', 'UPDATE_BY', 'UPDATE_TIME']
+    systemFieldsToClear.forEach(field => {
+      delete formData.value[field]
+    })
   }
 
   // 触发 loaded 事件
@@ -381,9 +391,38 @@ onMounted(async () => {
 // 监听 recordId 变化
 watch(
   () => props.recordId,
-  async (newId) => {
-    if (newId) {
+  async (newId, oldId) => {
+    if (newId && newId !== oldId) {
       await loadRecordData(newId)
+    }
+  }
+)
+
+// 监听 mode 变化（查看 -> 编辑切换）
+watch(
+  () => props.mode,
+  async (newMode, oldMode) => {
+    if (newMode && oldMode && newMode !== oldMode) {
+      console.log('[DynamicForm] mode 变化:', oldMode, '->', newMode)
+      // 如果有 recordId，重新加载数据以确保字段正确填充
+      if (props.recordId) {
+        await loadRecordData(props.recordId)
+      }
+    }
+  }
+)
+
+// 监听 copyFrom 变化
+watch(
+  () => props.copyFrom,
+  async (newCopyFrom) => {
+    if (newCopyFrom && props.mode === 'create') {
+      await loadRecordData(newCopyFrom)
+      // 清除系统字段
+      const systemFieldsToClear = ['ID', 'CREATE_BY', 'CREATE_TIME', 'UPDATE_BY', 'UPDATE_TIME']
+      systemFieldsToClear.forEach(field => {
+        delete formData.value[field]
+      })
     }
   }
 )

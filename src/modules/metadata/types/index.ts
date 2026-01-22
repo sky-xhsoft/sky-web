@@ -93,15 +93,19 @@ export interface SysColumn {
   DICT_TABLE_ID?: number    // 字典表ID
   DICT_VALUE_FIELD?: string // 字典值字段
   DICT_DISPLAY_FIELD?: string // 字典显示字段
+  SYS_DICT_ID?: string      // 字典ID（用于 select 类型）
 
   // 外键关联
-  SET_VALUE_TYPE?: string       // 赋值方式（fk: 外键关联）
+  SET_VALUE_TYPE?: string       // 赋值方式（fk: 外键关联, select: 下拉选择）
   REF_TABLE_ID?: number         // 关联表ID（数据库字段：REF_TABLE_ID）
   REF_COLUMN_ID?: number        // 关联显示字段ID（数据库字段：REF_COLUMN_ID）
   REF_ON_DELETE?: 'noAction' | 'cascade' | 'setNull'  // 删除动作（数据库字段：REF_ON_DELETE）
   FK_TABLE_ID?: number          // 外键表ID（旧字段，向后兼容）
   FK_VALUE_FIELD?: string       // 外键值字段（旧字段，向后兼容）
   FK_DISPLAY_FIELD?: string     // 外键显示字段（旧字段，向后兼容）
+
+  // 显示类型
+  DISPLAY_TYPE?: string         // 显示类型（blank,button,hr,check,file,image,select,text,textarea,date,datetime,clob,xml,json）
 
   // 验证规则
   NULL_ABLE?: 'Y' | 'N'     // 是否可空
@@ -150,6 +154,23 @@ export interface SysDict {
   UPDATE_TIME?: string
 }
 
+/**
+ * 数据字典项
+ */
+export interface SysDictItem {
+  ID: number
+  SYS_DICT_ID: number       // 字典ID
+  DISPLAY_NAME: string      // 显示名称
+  VALUE: string             // 值
+  ORDERNO?: number          // 排序号
+  CSS_CLASS?: string        // CSS类
+  IS_DEFAULT_VALUE?: 'Y' | 'N'  // 是否默认值
+  CREATE_BY?: string
+  CREATE_TIME?: string
+  UPDATE_BY?: string
+  UPDATE_TIME?: string
+}
+
 // ==================== 组合类型 ====================
 
 /**
@@ -158,6 +179,7 @@ export interface SysDict {
 export interface TableConfig {
   table: SysTable
   columns: SysColumn[]
+  dictData?: Record<number, SysDictItem[]>  // 字典数据，key为字典ID
   props?: Record<string, any>  // 解析后的扩展属性
 }
 

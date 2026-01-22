@@ -20,10 +20,19 @@ export const useNavigationStore = defineStore('navigation', () => {
     params: {}
   })
 
+  // 导航历史栈
+  const history = ref<NavigationState[]>([])
+
   /**
    * 导航到指定组件
+   * @param pushToHistory 是否将当前页面推入历史栈（默认true）
    */
-  function navigateTo(componentName: string, title: string, params?: Record<string, any>) {
+  function navigateTo(componentName: string, title: string, params?: Record<string, any>, pushToHistory: boolean = true) {
+    // 将当前页面推入历史栈
+    if (pushToHistory && current.value.componentName !== 'Dashboard') {
+      history.value.push({ ...current.value })
+    }
+
     current.value = {
       componentName,
       title,
@@ -31,8 +40,40 @@ export const useNavigationStore = defineStore('navigation', () => {
     }
   }
 
+  /**
+   * 返回上一页
+   * @returns 是否成功返回（如果历史栈为空则返回false）
+   */
+  function goBack(): boolean {
+    if (history.value.length > 0) {
+      const previous = history.value.pop()!
+      // 不推入历史栈，避免循环
+      current.value = previous
+      return true
+    }
+    return false
+  }
+
+  /**
+   * 清空历史栈
+   */
+  function clearHistory() {
+    history.value = []
+  }
+
+  /**
+   * 获取历史栈长度
+   */
+  function getHistoryLength(): number {
+    return history.value.length
+  }
+
   return {
     current,
-    navigateTo
+    history,
+    navigateTo,
+    goBack,
+    clearHistory,
+    getHistoryLength
   }
 })

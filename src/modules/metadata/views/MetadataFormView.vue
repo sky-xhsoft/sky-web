@@ -106,6 +106,7 @@
             ref="formRef"
             :table-id="Number(tableId)"
             :record-id="recordId ? Number(recordId) : undefined"
+            :copy-from="copyFrom ? Number(copyFrom) : undefined"
             :mode="mode"
             :label-col-span="6"
             :wrapper-col-span="18"
@@ -171,6 +172,7 @@ interface Props {
   tableId?: number
   recordId?: number
   mode?: FormMode
+  copyFrom?: number  // 复制来源记录ID
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -198,6 +200,11 @@ const saving = ref(false)
 // 优先使用 props，如果没有则从路由获取（兼容旧的路由模式）
 const tableId = computed(() => props.tableId ? String(props.tableId) : route.params.tableId as string)
 const recordId = computed(() => props.recordId ? String(props.recordId) : route.params.id as string | undefined)
+const copyFrom = computed(() => {
+  if (props.copyFrom) return String(props.copyFrom)
+  if (route.query.copyFrom) return route.query.copyFrom as string
+  return undefined
+})
 const mode = computed<FormMode>(() => {
   if (props.mode) return props.mode
   if (recordId.value) {
@@ -331,7 +338,7 @@ async function handleSave() {
           tableId: props.tableId,
           recordId: result.ID,
           mode: 'view'
-        })
+        }, false) // 不推入历史栈，直接替换当前页面
       } else {
         // 兼容路由模式
         router.replace({
@@ -384,12 +391,10 @@ async function handleFormSubmit(data: FormData) {
  * 编辑
  */
 function handleEdit() {
-  router.push({
-    name: 'MetadataFormEdit',
-    params: {
-      tableId: tableId.value,
-      id: recordId.value
-    }
+  navigationStore.navigateTo('MetadataFormView', '编辑', {
+    tableId: Number(tableId.value),
+    recordId: Number(recordId.value),
+    mode: 'edit'
   })
 }
 
@@ -399,18 +404,17 @@ function handleEdit() {
 async function handleCopy() {
   if (!formRef.value) return
 
-  const confirmed = await Modal.confirm({
+  Modal.confirm({
     title: '确认复制',
-    content: '确定要复制当前记录吗？'
+    content: '确定要复制当前记录吗？',
+    onOk: () => {
+      navigationStore.navigateTo('MetadataFormView', '新增', {
+        tableId: Number(tableId.value),
+        mode: 'create',
+        copyFrom: Number(recordId.value)
+      })
+    }
   })
-
-  if (confirmed) {
-    router.push({
-      name: 'MetadataFormCreate',
-      params: { tableId: tableId.value },
-      query: { copyFrom: recordId.value }
-    })
-  }
 }
 
 /**
@@ -434,20 +438,40 @@ async function handleRefresh() {
  */
 async function handleBack() {
   if (hasChanges.value) {
-    const confirmed = await Modal.confirm({
+    Modal.confirm({
       title: '提示',
-      content: '表单有未保存的修改，确定要离开吗？'
+      content: '表单有未保存的修改，确定要离开吗？',
+      onOk: () => {
+        // 用户点击确定后再返回
+        // 优先使用历史栈返回
+        const hasHistory = navigationStore.goBack()
+        if (!hasHistory) {
+          // 如果没有历史记录，返回到当前表的列表页
+          if (props.tableId) {
+            navigationStore.navigateTo('MetadataListView', '数据列表', {
+              tableId: props.tableId
+            }, false) // 不推入历史栈
+          } else {
+            router.back()
+          }
+        }
+      }
     })
-    if (!confirmed) return
+    return
   }
 
-  // 使用 navigationStore 返回列表视图
-  if (props.tableId) {
-    navigationStore.navigateTo('MetadataListView', '数据列表', {
-      tableId: props.tableId
-    })
-  } else {
-    router.back()
+  // 没有修改，直接返回
+  // 优先使用历史栈返回
+  const hasHistory = navigationStore.goBack()
+  if (!hasHistory) {
+    // 如果没有历史记录，返回到当前表的列表页
+    if (props.tableId) {
+      navigationStore.navigateTo('MetadataListView', '数据列表', {
+        tableId: props.tableId
+      }, false) // 不推入历史栈
+    } else {
+      router.back()
+    }
   }
 }
 
@@ -522,12 +546,10 @@ function handleDetailCreate(detailTable: any) {
  * 子表 - 编辑
  */
 function handleDetailEdit(detailTable: any, record: any) {
-  router.push({
-    name: 'MetadataFormEdit',
-    params: {
-      tableId: detailTable.id,
-      id: record.ID
-    }
+  navigationStore.navigateTo('MetadataFormView', '编辑', {
+    tableId: detailTable.id,
+    recordId: record.ID,
+    mode: 'edit'
   })
 }
 
@@ -558,6 +580,19 @@ watch(
     if (route.name?.toString().startsWith('MetadataForm')) {
       hasChanges.value = false
       loadRecordList()
+    }
+  }
+)
+
+// 监听 props.mode 变化（查看 -> 编辑切换）
+watch(
+  () => props.mode,
+  (newMode, oldMode) => {
+    if (newMode && oldMode && newMode !== oldMode) {
+      console.log('[MetadataFormView] mode 变化:', oldMode, '->', newMode)
+      // 模式切换时重置 hasChanges
+      hasChanges.value = false
+      // DynamicForm 组件会自己处理数据加载
     }
   }
 )

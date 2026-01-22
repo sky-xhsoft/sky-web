@@ -134,10 +134,39 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
 
     // 设置默认值
     formColumns.value.forEach(column => {
-      if (column.DEFAULT_VALUE) {
-        data[column.DB_NAME] = column.DEFAULT_VALUE
+      const dbName = column.DB_NAME || (column as any).dbName
+      const defaultValue = column.DEFAULT_VALUE || (column as any).defaultValue
+
+      // 优先使用字段配置的默认值
+      if (defaultValue) {
+        data[dbName] = defaultValue
       } else {
-        data[column.DB_NAME] = null
+        // 检查是否有字典默认值
+        const sysDictId = column.SYS_DICT_ID || (column as any).sysDictId
+        if (sysDictId && tableConfig.value.dictData) {
+          const dictID = typeof sysDictId === 'string' ? parseInt(sysDictId, 10) : sysDictId
+          const dictItems = tableConfig.value.dictData[dictID]
+
+          if (dictItems && dictItems.length > 0) {
+            // 查找标记为默认值的字典项
+            const defaultItem = dictItems.find(item => {
+              const isDefaultValue = item.IS_DEFAULT_VALUE || (item as any).isDefaultValue
+              return isDefaultValue === 'Y'
+            })
+
+            if (defaultItem) {
+              const value = defaultItem.VALUE || (defaultItem as any).value
+              data[dbName] = value
+              console.log(`[useDynamicForm] ${dbName} 使用字典默认值: ${value}`)
+            } else {
+              data[dbName] = null
+            }
+          } else {
+            data[dbName] = null
+          }
+        } else {
+          data[dbName] = null
+        }
       }
     })
 
