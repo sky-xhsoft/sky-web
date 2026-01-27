@@ -56,7 +56,15 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   /**
    * 加载数据列表
    */
+  let loadingRequest: Promise<any> | null = null  // 防止重复请求
   async function loadRecords(tableName: string, params?: Partial<PageRequest>) {
+    // 如果正在加载同一个表，返回已有的 Promise
+    const requestKey = `${tableName}_${JSON.stringify(params || {})}`
+    if (loadingRequest) {
+      console.log('[useDynamicTableStore] 已有正在进行的请求，等待完成')
+      return loadingRequest
+    }
+
     loading.value = true
     error.value = null
     try {
@@ -82,7 +90,8 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       }
       console.log('  最终请求参数=', JSON.stringify(requestParams))
 
-      const result = await api.fetchRecords(tableName, requestParams)
+      loadingRequest = api.fetchRecords(tableName, requestParams)
+      const result = await loadingRequest
 
       records.value = result.list
       pagination.value = {
@@ -97,6 +106,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
       throw err
     } finally {
       loading.value = false
+      loadingRequest = null
     }
   }
 

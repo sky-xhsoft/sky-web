@@ -31,6 +31,7 @@
                   :mode="mode"
                   :model-value="formData[column.DB_NAME]"
                   :error="errors[column.DB_NAME]"
+                  :record="formData"
                   @update:model-value="handleFieldChange(column.DB_NAME, $event)"
                   @blur="handleFieldBlur(column)"
                 />
@@ -63,6 +64,7 @@
                   :mode="mode"
                   :model-value="formData[column.DB_NAME]"
                   :error="errors[column.DB_NAME]"
+                  :record="formData"
                   @update:model-value="handleFieldChange(column.DB_NAME, $event)"
                   @blur="handleFieldBlur(column)"
                 />
@@ -70,6 +72,99 @@
             </a-row>
           </a-collapse-item>
         </a-collapse>
+      </template>
+
+      <!-- 子表区域 -->
+      <template v-if="childTables.length > 0">
+        <div class="dynamic-form__group dynamic-form__group--child-tables">
+          <div class="dynamic-form__group-header">
+            <icon-unordered-list />
+            <span>明细信息</span>
+          </div>
+          <div class="dynamic-form__group-body">
+            <a-tabs v-if="childTables.length > 1" default-active-key="0">
+              <a-tab-pane
+                v-for="(childTable, index) in childTables"
+                :key="String(index)"
+                :title="childTable.ref.displayName || childTable.ref.DISPLAY_NAME || childTable.table.DISPLAY_NAME || childTable.table.displayName"
+              >
+                <!-- 新增模式提示：需要先保存主表 -->
+                <a-alert
+                  v-if="mode === 'create'"
+                  type="info"
+                  style="margin-bottom: 16px;"
+                >
+                  请先保存主表信息后，再添加明细数据
+                </a-alert>
+
+                <!-- 根据 EDIT_TYPE 决定使用哪种组件 -->
+                <!-- Y: 标准（内嵌编辑）, A: 仅显示新增字段（内嵌编辑） -->
+                <ChildTableInlinePanel
+                  v-if="shouldUseInlineEdit(childTable) && mode !== 'create'"
+                  :ref="el => setChildTableRef(index, el)"
+                  :parent-table-id="tableId"
+                  :parent-record-id="recordId"
+                  :child-table="childTable"
+                  :mode="mode"
+                  @change="handleChildTableChange(index, $event)"
+                  @refresh="handleChildTableRefresh"
+                />
+                <!-- NP: 非内嵌，允许弹出, NS: 非内嵌，禁止弹出（仅编辑/查看模式显示） -->
+                <ChildTablePanel
+                  v-else-if="shouldUsePopupEdit(childTable) && mode !== 'create'"
+                  :parent-table-id="tableId"
+                  :parent-record-id="recordId"
+                  :child-table="childTable"
+                  :mode="mode"
+                />
+                <!-- N: 无（只读显示，仅编辑/查看模式） -->
+                <ChildTablePanel
+                  v-else-if="mode !== 'create' && recordId"
+                  :parent-table-id="tableId"
+                  :parent-record-id="recordId"
+                  :child-table="childTable"
+                  :mode="'view'"
+                />
+              </a-tab-pane>
+            </a-tabs>
+            <template v-else-if="childTables.length === 1">
+              <!-- 新增模式提示：需要先保存主表 -->
+              <a-alert
+                v-if="mode === 'create'"
+                type="info"
+                style="margin-bottom: 16px;"
+              >
+                请先保存主表信息后，再添加明细数据
+              </a-alert>
+
+              <!-- 根据 EDIT_TYPE 决定使用哪种组件 -->
+              <ChildTableInlinePanel
+                v-if="shouldUseInlineEdit(childTables[0]) && mode !== 'create'"
+                :ref="el => setChildTableRef(0, el)"
+                :parent-table-id="tableId"
+                :parent-record-id="recordId"
+                :child-table="childTables[0]"
+                :mode="mode"
+                @change="handleChildTableChange(0, $event)"
+                @refresh="handleChildTableRefresh"
+              />
+              <ChildTablePanel
+                v-else-if="shouldUsePopupEdit(childTables[0]) && mode !== 'create'"
+                :parent-table-id="tableId"
+                :parent-record-id="recordId"
+                :child-table="childTables[0]"
+                :mode="mode"
+              />
+              <ChildTablePanel
+                v-else-if="mode !== 'create' && recordId"
+                :parent-table-id="tableId"
+                :parent-record-id="recordId"
+                :child-table="childTables[0]"
+                :mode="'view'"
+              />
+            </template>
+          </div>
+        </div>
       </template>
 
       <!-- 系统字段组 -->
@@ -109,8 +204,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { IconFolder, IconInfoCircle } from '@arco-design/web-vue/es/icon'
+import { IconFolder, IconInfoCircle, IconUnorderedList } from '@arco-design/web-vue/es/icon'
 import DynamicFormItem from './DynamicFormItem.vue'
+import ChildTablePanel from './ChildTablePanel.vue'
+import ChildTableInlinePanel from './ChildTableInlinePanel.vue'
 import { useDynamicForm } from '../../composables'
 import type { FormMode, SysColumn } from '../../types'
 
@@ -235,7 +332,65 @@ const defaultActiveGroups = computed(() => {
   return collapsibleGroups.value.map((_, index) => index)
 })
 
+/**
+ * 子表配置
+ */
+const childTables = computed(() => {
+  return tableConfig.value?.childTables || []
+})
+
+/**
+ * 子表引用（用于内嵌编辑组件）
+ */
+const childTableRefs = ref<Record<number, any>>({})
+
 // ==================== 方法 ====================
+
+/**
+ * 判断是否使用内嵌编辑
+ * EDIT_TYPE: Y=标准（内嵌），A=仅新增（内嵌）
+ */
+function shouldUseInlineEdit(childTable: any): boolean {
+  const editType = childTable.ref.editType || childTable.ref.EDIT_TYPE
+  return editType === 'Y' || editType === 'A'
+}
+
+/**
+ * 判断是否使用弹出框编辑
+ * EDIT_TYPE: NP=非内嵌允许弹出，NS=非内嵌禁止弹出
+ */
+function shouldUsePopupEdit(childTable: any): boolean {
+  const editType = childTable.ref.editType || childTable.ref.EDIT_TYPE
+  return editType === 'NP' || editType === 'NS'
+}
+
+/**
+ * 设置子表引用
+ */
+function setChildTableRef(index: number, el: any) {
+  if (el) {
+    childTableRefs.value[index] = el
+  }
+}
+
+/**
+ * 子表数据变化处理
+ */
+function handleChildTableChange(index: number, data: any[]) {
+  console.log(`[DynamicForm] 子表 ${index} 数据变化:`, data)
+  // 可以在这里触发表单的 change 事件
+}
+
+/**
+ * 子表请求刷新整个表单
+ */
+async function handleChildTableRefresh() {
+  console.log('[DynamicForm] 子表请求刷新整个表单')
+  if (props.recordId) {
+    await loadRecordData(props.recordId)
+    Message.success('刷新成功')
+  }
+}
 
 /**
  * 判断是否为折叠字段
@@ -343,7 +498,28 @@ async function validate(): Promise<boolean> {
  * 获取表单数据
  */
 function getFormData() {
-  return { ...formData.value }
+  const mainData = { ...formData.value }
+
+  // 如果有子表数据，也一并返回
+  const childTablesData: Record<string, any[]> = {}
+  Object.keys(childTableRefs.value).forEach(index => {
+    const childTableRef = childTableRefs.value[Number(index)]
+    if (childTableRef && typeof childTableRef.getData === 'function') {
+      const childTable = childTables.value[Number(index)]
+      const tableName = childTable.table.NAME || childTable.table.name
+      childTablesData[tableName] = childTableRef.getData()
+    }
+  })
+
+  // 如果有子表数据，添加到返回对象中
+  if (Object.keys(childTablesData).length > 0) {
+    return {
+      ...mainData,
+      __childTables: childTablesData
+    }
+  }
+
+  return mainData
 }
 
 /**
@@ -429,10 +605,63 @@ watch(
 
 // ==================== 暴露方法 ====================
 
+/**
+ * 获取子表数据
+ */
+function getChildTablesData(): Record<string, any[]> {
+  const childTablesData: Record<string, any[]> = {}
+
+  Object.keys(childTableRefs.value).forEach(index => {
+    const childTableRef = childTableRefs.value[Number(index)]
+    if (childTableRef && typeof childTableRef.getData === 'function') {
+      const childTable = childTables.value[Number(index)]
+      const tableName = childTable.table.NAME || childTable.table.name
+      const data = childTableRef.getData()
+
+      console.log(`[DynamicForm] 获取子表 ${tableName} 数据:`, data)
+
+      if (data && data.length > 0) {
+        childTablesData[tableName] = data
+      }
+    }
+  })
+
+  return childTablesData
+}
+
+/**
+ * 验证子表数据
+ */
+function validateChildTables(): { valid: boolean; errors: string[] } {
+  const allErrors: string[] = []
+
+  Object.keys(childTableRefs.value).forEach(index => {
+    const childTableRef = childTableRefs.value[Number(index)]
+    if (childTableRef && typeof childTableRef.validate === 'function') {
+      const childTable = childTables.value[Number(index)]
+      const tableName = childTable.table.DISPLAY_NAME || childTable.table.displayName
+      const result = childTableRef.validate()
+
+      if (!result.valid) {
+        result.errors.forEach(err => {
+          allErrors.push(`${tableName}: ${err}`)
+        })
+      }
+    }
+  })
+
+  return {
+    valid: allErrors.length === 0,
+    errors: allErrors
+  }
+}
+
 defineExpose({
   validate,
   getFormData,
   getChangedFields,  // 获取变更的字段
+  getChildTablesData,  // 获取子表数据
+  validateChildTables,  // 验证子表数据
   setFormData,
   reset,
   loadData: loadRecordData,  // 暴露加载数据方法
@@ -492,6 +721,19 @@ defineExpose({
 
 .dynamic-form__group-body :deep(.arco-col) {
   box-sizing: border-box;
+}
+
+.dynamic-form__group--child-tables {
+  border-color: #3370ff;
+}
+
+.dynamic-form__group--child-tables .dynamic-form__group-header {
+  background: #f2f5ff;
+  border-bottom-color: #3370ff;
+}
+
+.dynamic-form__group--child-tables .dynamic-form__group-body {
+  padding: 0;
 }
 
 .dynamic-form__group--system {

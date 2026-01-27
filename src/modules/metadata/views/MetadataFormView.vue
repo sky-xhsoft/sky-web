@@ -332,12 +332,12 @@ async function handleSave() {
       )
       Message.success('新增成功')
 
-      // 使用 navigationStore 跳转到查看页（如果是通过 props 传入的参数）
+      // 使用 navigationStore 跳转到编辑页（如果是通过 props 传入的参数）
       if (props.tableId) {
-        navigationStore.navigateTo('MetadataFormView', `查看${tableConfig.value!.table.DISPLAY_NAME}`, {
+        navigationStore.navigateTo('MetadataFormView', `编辑${tableConfig.value!.table.DISPLAY_NAME}`, {
           tableId: props.tableId,
           recordId: result.ID,
-          mode: 'view'
+          mode: 'edit'
         }, false) // 不推入历史栈，直接替换当前页面
       } else {
         // 兼容路由模式
@@ -478,10 +478,20 @@ async function handleBack() {
 /**
  * 加载记录列表（用于上一条/下一条导航）
  */
+let loadingRecordList = false  // 防止重复加载
 async function loadRecordList() {
+  // 如果正在加载，直接返回
+  if (loadingRecordList) {
+    console.log('[MetadataFormView] 记录列表正在加载中，跳过重复请求')
+    console.trace('[MetadataFormView] 调用栈:')
+    return
+  }
+
   try {
+    loadingRecordList = true
     const tableName = (tableConfig.value!.table as any).NAME || (tableConfig.value!.table as any).name
     console.log('[MetadataFormView] 加载记录列表, tableName:', tableName, 'recordId:', recordId.value)
+    console.trace('[MetadataFormView] 调用栈:')
 
     // 使用 tableStore 加载记录
     await tableStore.loadRecords(tableName)
@@ -499,6 +509,8 @@ async function loadRecordList() {
     console.log('[MetadataFormView] hasPrevious:', hasPrevious.value, 'hasNext:', hasNext.value)
   } catch (error) {
     console.error('加载记录列表失败', error)
+  } finally {
+    loadingRecordList = false
   }
 }
 

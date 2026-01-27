@@ -7,6 +7,12 @@ import { Message } from '@arco-design/web-vue'
 import * as api from '../api/metadata'
 import type { SysColumn, ForeignKeyOption } from '../types'
 
+// 全局显示值缓存 - 所有组件共享，避免重复请求
+const globalDisplayValueCache = new Map<string, string>()
+
+// 全局请求去重 - 防止并发请求相同的数据
+const pendingRequests = new Map<string, Promise<string>>()
+
 export function useForeignKey(column: SysColumn) {
   const options = ref<ForeignKeyOption[]>([])
   const loading = ref(false)
@@ -85,21 +91,45 @@ export function useForeignKey(column: SysColumn) {
     const option = options.value.find(opt => opt.value === value)
     if (option) return option.label
 
-    // 如果没找到,单独请求
-    try {
-      const refTableId = column.REF_TABLE_ID || (column as any).refTableId
-      const refColumnId = column.REF_COLUMN_ID || (column as any).refColumnId
+    // 检查全局缓存
+    const refTableId = column.REF_TABLE_ID || (column as any).refTableId
+    const refColumnId = column.REF_COLUMN_ID || (column as any).refColumnId
+    const cacheKey = `${refTableId}_${value}_${refColumnId || ''}`
 
-      const result = await api.getForeignKeyDisplayValue(
-        refTableId!,
-        value,
-        refColumnId
-      )
-      return result
-    } catch (error) {
-      console.error('[useForeignKey] 获取显示值失败:', error)
-      return String(value)
+    if (globalDisplayValueCache.has(cacheKey)) {
+      console.log('[useForeignKey] 使用缓存的显示值:', cacheKey)
+      return globalDisplayValueCache.get(cacheKey)!
     }
+
+    // 检查是否有正在进行的请求（请求去重）
+    if (pendingRequests.has(cacheKey)) {
+      console.log('[useForeignKey] 等待已有请求:', cacheKey)
+      return pendingRequests.get(cacheKey)!
+    }
+
+    // 如果没找到,单独请求
+    console.log('[useForeignKey] 发起新请求:', cacheKey)
+    const requestPromise = api.getForeignKeyDisplayValue(
+      refTableId!,
+      value,
+      refColumnId
+    ).then(result => {
+      // 缓存结果到全局缓存
+      globalDisplayValueCache.set(cacheKey, result)
+      // 请求完成，从 pending 中移除
+      pendingRequests.delete(cacheKey)
+      return result
+    }).catch(error => {
+      console.error('[useForeignKey] 获取显示值失败:', error)
+      // 请求失败，从 pending 中移除
+      pendingRequests.delete(cacheKey)
+      return String(value)
+    })
+
+    // 将请求 Promise 存入 pending
+    pendingRequests.set(cacheKey, requestPromise)
+
+    return requestPromise
   }
 
   return {

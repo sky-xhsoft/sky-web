@@ -1,8 +1,8 @@
 <!-- 动态表格组件 -->
 <template>
   <div class="dynamic-table">
-    <!-- 查询区域 -->
-    <div v-if="queryColumns.length > 0" class="dynamic-table__query">
+    <!-- 查询区域 - 始终显示 -->
+    <div class="dynamic-table__query">
       <div class="query-header">
         <icon-search class="query-icon" />
         <span class="query-title">查询条件</span>
@@ -13,7 +13,7 @@
         layout="inline"
         @submit="handleQuery"
       >
-        <a-row :gutter="[16, 16]" class="query-row">
+        <a-row v-if="queryColumns.length > 0" :gutter="[16, 16]" class="query-row">
           <a-col
             v-for="column in visibleQueryColumns"
             :key="column.DB_NAME || column.dbName"
@@ -93,6 +93,11 @@
             </a-form-item>
           </a-col>
         </a-row>
+
+        <!-- 无查询字段提示 -->
+        <div v-else class="query-empty">
+          <span class="query-empty-text">暂无查询字段</span>
+        </div>
 
         <!-- 查询按钮区域 - 固定在右下角 -->
         <div class="query-actions">
@@ -1699,7 +1704,7 @@ defineExpose({
 
 .dynamic-table__query :deep(.arco-form) {
   padding: 16px;
-  padding-bottom: 60px; /* 为按钮区域留出空间 */
+   /* 为按钮区域留出空间 */
   position: relative;
 }
 
@@ -1717,6 +1722,17 @@ defineExpose({
   right: 16px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* 查询区域空状态 */
+.query-empty {
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.query-empty-text {
+  color: #86909c;
+  font-size: 14px;
 }
 
 .dynamic-table__toolbar {
@@ -1864,7 +1880,7 @@ defineExpose({
 
 /* 空状态样式 */
 .dynamic-table :deep(.arco-empty) {
-  padding: 48px 0;
+
 }
 
 /* 加载状态样式 */

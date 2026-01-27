@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import * as api from '../../api/metadata'
+import { useForeignKey } from '../../composables/useForeignKey'
 import type { SysColumn } from '../../types'
 
 const props = defineProps<{
@@ -29,7 +29,6 @@ async function fetchDisplayValue() {
 
   const setValueType = column.SET_VALUE_TYPE || (column as any).setValueType
   const refTableId = column.REF_TABLE_ID || (column as any).refTableId
-  const refColumnId = column.REF_COLUMN_ID || (column as any).refColumnId
 
   if (setValueType !== 'fk' || !refTableId) {
     displayValue.value = String(props.value)
@@ -38,11 +37,9 @@ async function fetchDisplayValue() {
 
   loading.value = true
   try {
-    const result = await api.getForeignKeyDisplayValue(
-      refTableId,
-      props.value,
-      refColumnId
-    )
+    // 使用 useForeignKey 的 getDisplayValue，它有全局缓存
+    const { getDisplayValue } = useForeignKey(column)
+    const result = await getDisplayValue(props.value)
     displayValue.value = result
   } catch (error) {
     console.error('[ForeignKeyCell] 获取显示值失败:', error)

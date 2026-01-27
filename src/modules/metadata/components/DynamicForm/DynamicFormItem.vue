@@ -18,6 +18,7 @@
       :mode="mode"
       :disabled="isDisabled"
       :readonly="isReadonly"
+      :record="record"
       @update:model-value="handleChange"
       @blur="handleBlur"
     />
@@ -69,6 +70,7 @@ interface Props {
   modelValue?: FieldValue
   mode?: FormMode
   error?: string
+  record?: Record<string, any>  // 完整记录数据，用于FK字段显示
 }
 
 const props = withDefaults(defineProps<Props>(), {

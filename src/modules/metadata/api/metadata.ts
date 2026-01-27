@@ -278,6 +278,11 @@ export async function fetchRecord(tableName: string, id: number): Promise<FormDa
  * 创建记录
  */
 export async function createRecord(tableName: string, record: FormData): Promise<FormData> {
+  console.log('[metadata.createRecord] 调用参数:', {
+    tableName,
+    record: JSON.stringify(record),
+    recordKeys: Object.keys(record)
+  })
   const { data } = await api.post<ApiResponse<FormData>>(`/data/${tableName}`, record)
   return data.data
 }

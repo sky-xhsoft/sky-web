@@ -149,6 +149,17 @@ const displayValue = computed(() => {
 
 // 初始化
 onMounted(async () => {
+  // 查看模式下，如果后端已经返回了 _display 字段，不需要加载 options
+  const dbName = props.column.DB_NAME || (props.column as any).dbName
+  const displayFieldName = `${dbName}_display`
+  const hasBackendDisplayValue = props.record && props.record[displayFieldName]
+
+  if (isDisabled.value && hasBackendDisplayValue) {
+    console.log('[ForeignKeyField] 查看模式，使用后端返回的 _display 字段，跳过加载 options')
+    return
+  }
+
+  // 编辑模式或没有后端显示值时才加载 options
   await loadOptions()
 
   // 如果有值但 options 中没有对应项，主动获取显示值
