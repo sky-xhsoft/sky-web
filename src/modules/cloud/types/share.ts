@@ -21,9 +21,13 @@ export interface ShareInfo {
  * 分享创建参数
  */
 export interface ShareCreateParams {
-  fileId: number
+  resourceType?: string  // 资源类型: 'file' 或 'folder'
+  resourceId?: number    // 资源ID（文件ID或文件夹ID）
+  fileId?: number        // 文件ID（兼容旧版本）
+  shareType: string      // 分享类型: 'public', 'password', 'private'
+  password?: string      // 访问密码（当shareType='password'时需要）
   expireDays?: number    // 过期天数，0表示永久
-  password?: string      // 访问密码（可选）
+  maxDownloads?: number  // 最大下载次数，0表示无限制
 }
 
 /**

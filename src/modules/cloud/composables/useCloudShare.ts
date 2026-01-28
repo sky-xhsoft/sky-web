@@ -85,9 +85,10 @@ export function useCloudShare() {
         content: `分享「${'FileName' in item ? item.FileName : item.FolderName}」`,
         modalClass: 'create-share-modal',
         onOk: async () => {
-          // 默认参数：7天有效，需要密码
+          // 默认参数：密码分享，7天有效
           const params: Omit<ShareCreateParams, 'fileId' | 'resourceId'> = {
-            expirationDays: 7,
+            shareType: 'password',  // 必填：分享类型
+            expireDays: 7,
             password: Math.random().toString(36).substring(2, 8), // 生成随机6位密码
           }
 

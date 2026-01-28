@@ -115,7 +115,8 @@ function generatePassword() {
 
 function handleOk() {
   const params: Omit<ShareCreateParams, 'fileId' | 'resourceId'> = {
-    expirationDays: form.value.expirationDays,
+    shareType: form.value.password.trim() ? 'password' : 'public', // 根据是否有密码决定分享类型
+    expireDays: form.value.expirationDays,
   }
 
   // 只在有密码时添加

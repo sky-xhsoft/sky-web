@@ -343,9 +343,12 @@ export async function renameFile(id: number, params: FileRenameParams): Promise<
  */
 export async function createFileShare(params: ShareCreateParams): Promise<ShareInfo> {
   const { data } = await api.post<ApiResponse<ShareInfo>>('/cloud/shares', {
-    fileId: params.resourceId,
-    expireDays: params.expireDays || 0,
+    resourceType: 'file',
+    resourceId: params.resourceId || params.fileId,
+    shareType: params.shareType || 'password', // 默认密码分享
     password: params.password,
+    expireDays: params.expireDays || 0,
+    maxDownloads: params.maxDownloads || 0,
   })
 
   if (!data?.data) {
@@ -358,15 +361,16 @@ export async function createFileShare(params: ShareCreateParams): Promise<ShareI
 /**
  * 创建文件夹分享
  *
- * 注意：根据API文档，后端分享接口统一使用 fileId 参数
- * 如果需要区分文件和文件夹，可能需要后端添加 resourceType 支持
+ * 注意：根据API文档，后端分享接口统一使用 resourceType 和 resourceId 参数
  */
 export async function createFolderShare(params: ShareCreateParams): Promise<ShareInfo> {
   const { data } = await api.post<ApiResponse<ShareInfo>>('/cloud/shares', {
     resourceType: 'folder',
     resourceId: params.resourceId,
-    expireDays: params.expireDays || 0,
+    shareType: params.shareType || 'password', // 默认密码分享
     password: params.password,
+    expireDays: params.expireDays || 0,
+    maxDownloads: params.maxDownloads || 0,
   })
 
   if (!data?.data) {
