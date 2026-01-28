@@ -142,7 +142,7 @@ export function useCloudShare() {
           status: 'danger',
         },
         onOk: async () => {
-          const success = await removeShare(share.ID)
+          const success = await removeShare(share.id)
           resolve(success)
         },
         onCancel: () => {
