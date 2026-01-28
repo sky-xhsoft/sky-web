@@ -12,15 +12,15 @@
         <div class="share-item">
           <div class="item-icon">📄</div>
           <div class="item-info">
-            <div class="item-name">{{ share?.FileName || '未知文件' }}</div>
+            <div class="item-name">{{ share?.fileName || '未知文件' }}</div>
             <div class="item-meta">
               <span class="meta-item">
                 <icon-link />
-                {{ share?.ShareCode }}
+                {{ share?.shareCode }}
               </span>
-              <span v-if="share?.Password" class="meta-item">
+              <span v-if="share?.password" class="meta-item">
                 <icon-lock />
-                {{ share?.Password }}
+                {{ share?.password }}
               </span>
             </div>
           </div>
@@ -183,7 +183,7 @@ async function loadAccessRecords() {
   loading.value = true
   try {
     // 调用后端API获取访问记录
-    const records = await getShareAccessRecords(props.share.ID)
+    const records = await getShareAccessRecords(props.share.id)
 
     if (records && records.length > 0) {
       accessRecords.value = records
@@ -192,7 +192,7 @@ async function loadAccessRecords() {
       accessRecords.value = [
         {
           ID: 1,
-          ShareID: props.share.ID,
+          ShareID: props.share.id,
           AccessTime: new Date(Date.now() - 3600000).toISOString(),
           IPAddress: '192.168.1.100',
           Action: 'view',
@@ -201,7 +201,7 @@ async function loadAccessRecords() {
         },
         {
           ID: 2,
-          ShareID: props.share.ID,
+          ShareID: props.share.id,
           AccessTime: new Date(Date.now() - 7200000).toISOString(),
           IPAddress: '192.168.1.101',
           Action: 'download',
@@ -210,7 +210,7 @@ async function loadAccessRecords() {
         },
         {
           ID: 3,
-          ShareID: props.share.ID,
+          ShareID: props.share.id,
           AccessTime: new Date(Date.now() - 10800000).toISOString(),
           IPAddress: '192.168.1.100',
           Action: 'download',

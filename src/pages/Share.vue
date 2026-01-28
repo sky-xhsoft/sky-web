@@ -159,7 +159,7 @@ import {
   IconEye,
   IconExclamationCircle,
 } from '@arco-design/web-vue/es/icon'
-import { getShareInfo, accessShare, downloadShareFile } from '@/modules/cloud/api/share'
+import { getShareInfo, accessShare, downloadShareFile, getShareFolderContent } from '@/modules/cloud/api/share'
 import type { ShareInfo } from '@/modules/cloud/types'
 
 const route = useRoute()
@@ -299,10 +299,53 @@ async function handleDownload() {
 }
 
 // 查看文件夹
-function handleViewFolder() {
+async function handleViewFolder() {
   showFolderContent.value = true
-  // TODO: 加载文件夹内容
-  Message.info('文件夹内容展示功能开发中')
+  await loadFolderContent()
+}
+
+// 加载文件夹内容
+async function loadFolderContent(parentId?: number) {
+  loadingFiles.value = true
+  try {
+    const content = await getShareFolderContent(shareCode.value, parentId)
+
+    // 转换为表格数据格式
+    const items: any[] = []
+
+    // 添加文件夹
+    if (content.folders && content.folders.length > 0) {
+      content.folders.forEach((folder: any) => {
+        items.push({
+          id: folder.ID || folder.id,
+          name: folder.NAME || folder.name,
+          type: 'folder',
+          size: 0,
+          updateTime: folder.UPDATE_TIME || folder.updateTime || '',
+        })
+      })
+    }
+
+    // 添加文件
+    if (content.files && content.files.length > 0) {
+      content.files.forEach((file: any) => {
+        items.push({
+          id: file.ID || file.id,
+          name: file.NAME || file.name || file.FileName || file.fileName,
+          type: 'file',
+          size: file.FILE_SIZE || file.fileSize || file.FileSize || 0,
+          updateTime: file.UPDATE_TIME || file.updateTime || file.UpdateTime || '',
+        })
+      })
+    }
+
+    folderFiles.value = items
+  } catch (e: any) {
+    console.error('加载文件夹内容失败:', e)
+    Message.error(e?.message || '加载文件夹内容失败')
+  } finally {
+    loadingFiles.value = false
+  }
 }
 
 // 下载文件夹中的文件

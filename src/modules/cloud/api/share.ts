@@ -80,8 +80,31 @@ export async function downloadShareFile(code: string, filename: string): Promise
   }
 }
 
+/**
+ * 获取分享文件夹的内容
+ * @param code 分享码
+ * @param parentId 父文件夹ID（可选）
+ */
+export async function getShareFolderContent(
+  code: string,
+  parentId?: number
+): Promise<{ folders: any[]; files: any[] }> {
+  const params = parentId ? { parentId } : {}
+  const { data } = await api.get<ApiResponse<{ folders: any[]; files: any[] }>>(
+    `/cloud/shares/${code}/content`,
+    { params }
+  )
+
+  if (!data?.data) {
+    throw new Error('获取文件夹内容失败')
+  }
+
+  return data.data
+}
+
 export default {
   getShareInfo,
   accessShare,
   downloadShareFile,
+  getShareFolderContent,
 }

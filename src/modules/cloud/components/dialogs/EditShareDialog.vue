@@ -194,6 +194,8 @@ function handleCancel() {
   font-weight: 500;
   color: #1f2937;
   font-family: monospace;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 .hint {

@@ -250,7 +250,8 @@ function handleDelete(share: ShareListItem) {
 }
 
 .share-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   align-items: center;
   gap: 16px;
   padding: 16px;
@@ -322,8 +323,8 @@ function handleDelete(share: ShareListItem) {
 /* 响应式调整 */
 @media (max-width: 768px) {
   .share-item {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .share-item__actions {
