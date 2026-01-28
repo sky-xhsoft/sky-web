@@ -80,6 +80,7 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
         file: 'FileField',
         image: 'ImageField',
         json: 'JsonField',
+        richtext: 'RichTextField',
         clob: 'TextareaField',  // clob 映射到 textarea
         xml: 'TextareaField'     // xml 映射到 textarea
       }

@@ -8,6 +8,7 @@
 
     <!-- 编辑模式 -->
     <div v-else class="richtext-field__edit">
+      <div ref="toolbarRef" class="richtext-field__toolbar"></div>
       <div ref="editorRef" class="richtext-field__editor"></div>
       <div v-if="config.maxLength" class="richtext-field__counter">
         {{ textLength }} / {{ config.maxLength }}
@@ -36,12 +37,15 @@ const emit = defineEmits<{
 
 // 编辑器引用
 const editorRef = ref<HTMLElement>()
+const toolbarRef = ref<HTMLElement>()
 let editor: any = null
+let toolbar: any = null
 
 // 解析控件配置
 const config = computed(() => {
   try {
-    return JSON.parse(props.column.CONTROL_CONFIG || '{}')
+    const configStr = props.column.CONTROL_CONFIG || (props.column as any).controlConfig || '{}'
+    return JSON.parse(configStr)
   } catch {
     return {}
   }
@@ -54,8 +58,9 @@ const editorHeight = computed(() => {
     return config.value.height
   }
   // 其次使用 DISPLAY_ROWS 计算高度（每行约 32px）
-  if (props.column.DISPLAY_ROWS && props.column.DISPLAY_ROWS > 1) {
-    return props.column.DISPLAY_ROWS * 32 + (props.column.DISPLAY_ROWS - 1) * 8
+  const displayRows = props.column.DISPLAY_ROWS || (props.column as any).displayRows
+  if (displayRows && displayRows > 1) {
+    return displayRows * 32 + (displayRows - 1) * 8
   }
   // 默认 300px
   return 300
@@ -64,7 +69,7 @@ const editorHeight = computed(() => {
 // 文本长度（不包含 HTML 标签）
 const textLength = computed(() => {
   if (!props.modelValue) return 0
-  const text = props.modelValue.replace(/<[^>]*>/g, '')
+  const text = String(props.modelValue).replace(/<[^>]*>/g, '')
   return text.length
 })
 
@@ -85,7 +90,7 @@ onMounted(async () => {
     // 动态导入 WangEditor（按需加载）
     const { createEditor, createToolbar } = await import('@wangeditor/editor')
 
-    if (!editorRef.value) return
+    if (!editorRef.value || !toolbarRef.value) return
 
     // 创建编辑器
     editor = createEditor({
@@ -94,52 +99,55 @@ onMounted(async () => {
       config: {
         placeholder: config.value.placeholder || '请输入内容...',
         readOnly: props.disabled || props.readonly,
-        maxLength: config.value.maxLength,
-        MENU_CONF: {
-          // 配置上传图片
-          uploadImage: {
-            server: '/api/upload/image',
-            fieldName: 'file',
-            maxFileSize: 5 * 1024 * 1024, // 5MB
-            allowedFileTypes: ['image/*']
-          }
+        onChange(editor: any) {
+          const html = editor.getHtml()
+          emit('update:modelValue', html)
+        },
+        onBlur() {
+          emit('blur')
         }
       },
-      onChange(editor: any) {
-        const html = editor.getHtml()
-        emit('update:modelValue', html)
-      },
-      onBlur() {
-        emit('blur')
-      }
+      mode: 'default'
     })
 
     // 创建工具栏
-    const toolbar = config.value.toolbar || [
-      'bold', 'italic', 'underline', 'strikeThrough',
-      '|',
-      'fontSize', 'fontFamily', 'foreColor', 'backColor',
-      '|',
-      'link', 'image',
-      '|',
-      'bulletedList', 'numberedList',
-      '|',
-      'alignLeft', 'alignCenter', 'alignRight',
-      '|',
-      'blockquote', 'codeBlock'
-    ]
-
-    createToolbar({
+    toolbar = createToolbar({
       editor,
-      selector: editorRef.value.parentElement,
+      selector: toolbarRef.value,
       config: {
-        toolbarKeys: toolbar
+        toolbarKeys: [
+          'headerSelect',
+          'bold',
+          'italic',
+          'underline',
+          '|',
+          'color',
+          'bgColor',
+          '|',
+          'fontSize',
+          'fontFamily',
+          '|',
+          'bulletedList',
+          'numberedList',
+          '|',
+          'justifyLeft',
+          'justifyCenter',
+          'justifyRight',
+          '|',
+          'insertLink',
+          'insertImage',
+          '|',
+          'blockquote',
+          'codeBlock',
+          '|',
+          'undo',
+          'redo'
+        ]
       },
       mode: 'default'
     })
   } catch (error) {
     console.error('[RichTextField] 初始化编辑器失败:', error)
-    console.warn('[RichTextField] 请安装 @wangeditor/editor: npm install @wangeditor/editor')
   }
 })
 
@@ -162,7 +170,11 @@ watch(
   () => props.disabled || props.readonly,
   (isReadonly) => {
     if (editor) {
-      editor.enable(!isReadonly)
+      if (isReadonly) {
+        editor.disable()
+      } else {
+        editor.enable()
+      }
     }
   }
 )
@@ -174,6 +186,10 @@ onBeforeUnmount(() => {
   if (editor) {
     editor.destroy()
     editor = null
+  }
+  if (toolbar) {
+    toolbar.destroy()
+    toolbar = null
   }
 })
 </script>
@@ -228,10 +244,17 @@ onBeforeUnmount(() => {
 .richtext-field__edit {
   border: 1px solid #e5e6eb;
   border-radius: 4px;
+  overflow: hidden;
+}
+
+.richtext-field__toolbar {
+  border-bottom: 1px solid #e5e6eb;
+  background: #fff;
 }
 
 .richtext-field__editor {
   min-height: v-bind('editorHeight + "px"');
+  background: #fff;
 }
 
 .richtext-field__counter {
@@ -241,15 +264,5 @@ onBeforeUnmount(() => {
   color: #86909c;
   border-top: 1px solid #e5e6eb;
   background: #f7f8fa;
-}
-
-/* WangEditor 样式覆盖 */
-.richtext-field__edit :deep(.w-e-toolbar) {
-  border-bottom: 1px solid #e5e6eb;
-  background: #fff;
-}
-
-.richtext-field__edit :deep(.w-e-text-container) {
-  background: #fff;
 }
 </style>
