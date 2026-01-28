@@ -209,8 +209,8 @@ export function useCloudShare() {
    * @param share 分享对象
    */
   function isShareExpired(share: ShareListItem): boolean {
-    if (!share.ExpirationTime) return false
-    return new Date(share.ExpirationTime) < new Date()
+    if (!share.ExpireTime) return false
+    return new Date(share.ExpireTime) < new Date()
   }
 
   /**
@@ -218,8 +218,8 @@ export function useCloudShare() {
    * @param share 分享对象
    */
   function getShareRemainingDays(share: ShareListItem): number | null {
-    if (!share.ExpirationTime) return null
-    const expTime = new Date(share.ExpirationTime).getTime()
+    if (!share.ExpireTime) return null
+    const expTime = new Date(share.ExpireTime).getTime()
     const now = Date.now()
     const diff = expTime - now
     if (diff <= 0) return 0

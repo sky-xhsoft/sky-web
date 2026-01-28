@@ -69,13 +69,29 @@ export interface ShareCreateResponse {
 }
 
 /**
- * 分享列表项（扩展了资源名称和链接）
+ * 分享列表项（后端返回的扩展分享信息）
  */
-export interface ShareListItem extends ShareInfo {
-  FileName: string       // 文件名
-  ShareLink: string      // 完整分享链接
-  AccessCount?: number   // 访问次数（后端可能扩展）
-  IsActive?: boolean     // 是否激活
+export interface ShareListItem {
+  // CloudShare 字段（嵌入）
+  ID: number
+  ShareCode: string       // 分享码
+  ResourceType: string    // 资源类型: 'file' 或 'folder'
+  ResourceID: number      // 资源ID
+  SharerID: number        // 分享者ID
+  ShareType: string       // 分享类型: 'public', 'password', 'private'
+  Password?: string       // 访问密码
+  ExpireTime?: string     // 过期时间（后端字段名）
+  MaxDownloads: number    // 最大下载次数
+  DownloadCount: number   // 已下载次数
+  ViewCount: number       // 查看次数
+  Status: string          // 状态: 'active', 'expired', 'cancelled'
+  CreateTime: string      // 创建时间
+  UpdateTime?: string     // 更新时间
+  IsActive?: string       // 是否激活 (Y/N)
+
+  // 扩展字段
+  FileName: string        // 文件/文件夹名称
+  ShareLink: string       // 完整分享链接
 }
 
 /**

@@ -151,13 +151,13 @@ const emit = defineEmits<Emits>()
 const filterStatus = ref<'all' | 'active' | 'expired'>('all')
 
 function isExpired(share: ShareListItem): boolean {
-  if (!share.ExpirationTime) return false
-  return new Date(share.ExpirationTime) < new Date()
+  if (!share.ExpireTime) return false
+  return new Date(share.ExpireTime) < new Date()
 }
 
 function getRemainingDays(share: ShareListItem): number {
-  if (!share.ExpirationTime) return 999
-  const expTime = new Date(share.ExpirationTime).getTime()
+  if (!share.ExpireTime) return 999
+  const expTime = new Date(share.ExpireTime).getTime()
   const now = Date.now()
   const diff = expTime - now
   if (diff <= 0) return 0
