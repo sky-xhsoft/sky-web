@@ -100,8 +100,8 @@ watch(
     if (newValue && props.share) {
       // 根据当前分享信息初始化表单
       form.value = {
-        expirationDays: calculateRemainingDays(props.share.ExpireTime),
-        password: props.share.Password || '',
+        expirationDays: calculateRemainingDays(props.share.expireTime),
+        password: props.share.password || '',
       }
     }
   }
@@ -113,19 +113,19 @@ watch(dialogVisible, (newValue) => {
 
 const shareLink = computed(() => {
   if (!props.share) return ''
-  return `${window.location.origin}/share/${props.share.ShareCode}`
+  return `${window.location.origin}/share/${props.share.shareCode}`
 })
 
 const shareCode = computed(() => {
-  return props.share?.ShareCode || ''
+  return props.share?.shareCode || ''
 })
 
 const createTime = computed(() => {
-  return props.share?.CreateTime || ''
+  return props.share?.createTime || ''
 })
 
 const expirationTime = computed(() => {
-  return props.share?.ExpireTime || ''
+  return props.share?.expireTime || ''
 })
 
 function calculateRemainingDays(expirationTime?: string): number {

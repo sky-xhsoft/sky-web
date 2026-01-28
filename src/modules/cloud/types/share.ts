@@ -70,28 +70,32 @@ export interface ShareCreateResponse {
 
 /**
  * 分享列表项（后端返回的扩展分享信息）
+ * 注意：后端使用小驼峰命名
  */
 export interface ShareListItem {
-  // CloudShare 字段（嵌入）
-  ID: number
-  ShareCode: string       // 分享码
-  ResourceType: string    // 资源类型: 'file' 或 'folder'
-  ResourceID: number      // 资源ID
-  SharerID: number        // 分享者ID
-  ShareType: string       // 分享类型: 'public', 'password', 'private'
-  Password?: string       // 访问密码
-  ExpireTime?: string     // 过期时间（后端字段名）
-  MaxDownloads: number    // 最大下载次数
-  DownloadCount: number   // 已下载次数
-  ViewCount: number       // 查看次数
-  Status: string          // 状态: 'active', 'expired', 'cancelled'
-  CreateTime: string      // 创建时间
-  UpdateTime?: string     // 更新时间
-  IsActive?: string       // 是否激活 (Y/N)
+  // CloudShare 字段（嵌入）- 小驼峰命名
+  id: number
+  sysCompanyId?: number
+  createBy?: string
+  createTime: string
+  updateBy?: string
+  updateTime?: string
+  isActive?: string
+  shareCode: string       // 分享码
+  resourceType: string    // 资源类型: 'file' 或 'folder'
+  resourceId: number      // 资源ID
+  sharerId: number        // 分享者ID
+  shareType: string       // 分享类型: 'public', 'password', 'private'
+  password?: string       // 访问密码
+  expireTime?: string     // 过期时间
+  maxDownloads: number    // 最大下载次数
+  downloadCount: number   // 已下载次数
+  viewCount: number       // 查看次数
+  status: string          // 状态: 'active', 'expired', 'cancelled'
 
-  // 扩展字段
-  FileName: string        // 文件/文件夹名称
-  ShareLink: string       // 完整分享链接
+  // 扩展字段 - 小驼峰命名
+  fileName: string        // 文件/文件夹名称
+  shareLink: string       // 完整分享链接
 }
 
 /**

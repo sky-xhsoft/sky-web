@@ -180,9 +180,9 @@ export function useCloudShare() {
   async function copyShareLink(share: ShareListItem) {
     try {
       const baseUrl = window.location.origin
-      const shareUrl = `${baseUrl}/share/${share.ShareCode}`
-      const text = share.Password
-        ? `分享链接：${shareUrl}\n提取码：${share.Password}`
+      const shareUrl = `${baseUrl}/share/${share.shareCode}`
+      const text = share.password
+        ? `分享链接：${shareUrl}\n提取码：${share.password}`
         : `分享链接：${shareUrl}`
 
       await navigator.clipboard.writeText(text)
@@ -201,7 +201,7 @@ export function useCloudShare() {
    */
   function getShareLink(share: ShareListItem): string {
     const baseUrl = window.location.origin
-    return `${baseUrl}/share/${share.ShareCode}`
+    return `${baseUrl}/share/${share.shareCode}`
   }
 
   /**
@@ -209,8 +209,8 @@ export function useCloudShare() {
    * @param share 分享对象
    */
   function isShareExpired(share: ShareListItem): boolean {
-    if (!share.ExpireTime) return false
-    return new Date(share.ExpireTime) < new Date()
+    if (!share.expireTime) return false
+    return new Date(share.expireTime) < new Date()
   }
 
   /**
@@ -218,8 +218,8 @@ export function useCloudShare() {
    * @param share 分享对象
    */
   function getShareRemainingDays(share: ShareListItem): number | null {
-    if (!share.ExpireTime) return null
-    const expTime = new Date(share.ExpireTime).getTime()
+    if (!share.expireTime) return null
+    const expTime = new Date(share.expireTime).getTime()
     const now = Date.now()
     const diff = expTime - now
     if (diff <= 0) return 0

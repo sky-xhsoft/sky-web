@@ -39,26 +39,26 @@
     <div v-else-if="shares.length > 0" class="cloud-share-manager__list">
       <div
         v-for="share in filteredShares"
-        :key="share.ID"
+        :key="share.id"
         class="share-item"
         :class="{ 'is-expired': isExpired(share) }"
       >
         <div class="share-item__info">
           <div class="share-name">
-            {{ share.FileName || '未知文件' }}
+            {{ share.fileName || '未知文件' }}
           </div>
           <div class="share-meta">
             <span class="share-code">
               <icon-link />
-              {{ share.ShareCode }}
+              {{ share.shareCode }}
             </span>
-            <span v-if="share.Password" class="share-password">
+            <span v-if="share.password" class="share-password">
               <icon-lock />
-              {{ share.Password }}
+              {{ share.password }}
             </span>
             <span class="share-time">
               <icon-clock-circle />
-              {{ formatDate(share.CreateTime) }}
+              {{ formatDate(share.createTime) }}
             </span>
           </div>
         </div>
@@ -151,13 +151,13 @@ const emit = defineEmits<Emits>()
 const filterStatus = ref<'all' | 'active' | 'expired'>('all')
 
 function isExpired(share: ShareListItem): boolean {
-  if (!share.ExpireTime) return false
-  return new Date(share.ExpireTime) < new Date()
+  if (!share.expireTime) return false
+  return new Date(share.expireTime) < new Date()
 }
 
 function getRemainingDays(share: ShareListItem): number {
-  if (!share.ExpireTime) return 999
-  const expTime = new Date(share.ExpireTime).getTime()
+  if (!share.expireTime) return 999
+  const expTime = new Date(share.expireTime).getTime()
   const now = Date.now()
   const diff = expTime - now
   if (diff <= 0) return 0
