@@ -56,6 +56,7 @@ import { Message } from '@arco-design/web-vue'
 import { IconFile, IconUpload, IconEmpty } from '@arco-design/web-vue/es/icon'
 import type { SysColumn, FormMode } from '../../types'
 import type { FileItem } from '@arco-design/web-vue'
+import { getAccessToken } from '@/utils/token'
 
 interface Props {
   column: SysColumn
@@ -96,7 +97,7 @@ const uploadUrl = computed(() => {
 
 // 上传请求头
 const uploadHeaders = computed(() => {
-  const token = localStorage.getItem('token')
+  const token = getAccessToken()
   return {
     Authorization: token ? `Bearer ${token}` : '',
     ...config.value.headers
@@ -160,21 +161,31 @@ watch(
  */
 function handleChange(fileList: FileItem[]) {
   // 更新文件列表
-  const files = fileList.map(file => ({
-    uid: file.uid,
-    name: file.name,
-    url: file.url || file.response?.data?.url || '',
-    size: file.size,
-    status: file.status
-  }))
+  const files = fileList.map(file => {
+    // 优先使用后端返回的 accessUrl（仅在上传成功后才有）
+    // 如果还在上传中，使用临时的 blob URL 用于预览
+    const serverUrl = file.response?.data?.accessUrl || file.response?.data?.url
+    return {
+      uid: file.uid,
+      name: file.name,
+      url: serverUrl || file.url || '',
+      size: file.size,
+      status: file.status
+    }
+  })
 
-  // 发送更新事件
-  if (maxCount.value === 1) {
-    // 单文件模式：只保存 URL 字符串
-    emit('update:modelValue', files[0]?.url || null)
-  } else {
-    // 多文件模式：保存文件数组的 JSON 字符串
-    emit('update:modelValue', JSON.stringify(files))
+  // 只有当所有文件都上传成功后，才发送更新事件
+  const allSuccess = files.every(f => f.status === 'done' && f.url && !f.url.startsWith('blob:'))
+
+  if (allSuccess || files.length === 0) {
+    // 发送更新事件
+    if (maxCount.value === 1) {
+      // 单文件模式：只保存 URL 字符串
+      emit('update:modelValue', files[0]?.url || null)
+    } else {
+      // 多文件模式：保存文件数组的 JSON 字符串
+      emit('update:modelValue', JSON.stringify(files))
+    }
   }
 }
 
@@ -182,10 +193,11 @@ function handleChange(fileList: FileItem[]) {
  * 上传成功处理
  */
 function handleSuccess(response: any) {
-  if (response.code === 0 || response.success) {
+  console.log('[FileField] Upload success response:', response)
+  if (response && (response.code === 0 || response.success)) {
     Message.success('上传成功')
   } else {
-    Message.error(response.message || '上传失败')
+    Message.error(response?.message || '上传失败')
   }
 }
 
@@ -193,7 +205,8 @@ function handleSuccess(response: any) {
  * 上传失败处理
  */
 function handleError(error: any) {
-  Message.error(error.message || '上传失败')
+  console.error('[FileField] Upload error:', error)
+  Message.error(error?.message || '上传失败')
 }
 
 /**

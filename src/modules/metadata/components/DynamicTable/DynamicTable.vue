@@ -373,6 +373,23 @@
         </span>
       </template>
 
+      <!-- 图片列自定义渲染 -->
+      <template #image="{ record, column }">
+        <div class="image-cell">
+          <template v-if="record[column.dataIndex]">
+            <a-image
+              :src="record[column.dataIndex]"
+              :width="60"
+              :height="60"
+              fit="cover"
+              :preview="true"
+              style="border-radius: 4px;"
+            />
+          </template>
+          <span v-else class="image-empty">-</span>
+        </div>
+      </template>
+
       <!-- 操作列 -->
       <template #actions="{ record }">
         <a-space>
@@ -680,7 +697,13 @@ const columns = computed<TableColumnData[]>(() => {
 
     // 自定义渲染
     const setValueType = originalColumn?.SET_VALUE_TYPE || (originalColumn as any)?.setValueType
-    if (setValueType === 'fk') {
+    const displayType = originalColumn?.DISPLAY_TYPE || (originalColumn as any)?.displayType
+
+    if (displayType === 'image') {
+      // 图片列
+      col.slotName = 'image'
+      ;(col as any).originalColumn = originalColumn
+    } else if (setValueType === 'fk') {
       // 外键列
       col.slotName = 'foreignkey'
       // 保存原始列配置到 col，供 slot 使用
@@ -2258,5 +2281,23 @@ defineExpose({
 .legend-default {
   color: #1d2129;
   padding: 0 4px;
+}
+
+/* 图片单元格样式 */
+.image-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.image-cell .arco-image {
+  border: 1px solid #e5e6eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.image-empty {
+  color: #c9cdd4;
 }
 </style>

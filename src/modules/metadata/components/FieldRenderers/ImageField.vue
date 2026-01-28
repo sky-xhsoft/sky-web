@@ -34,7 +34,7 @@
       :multiple="multiple"
       :show-file-list="true"
       :list-type="listType"
-      :image-preview="true"
+      :image-preview="false"
       :auto-upload="true"
       @change="handleChange"
       @success="handleSuccess"
@@ -65,6 +65,7 @@ import { Message } from '@arco-design/web-vue'
 import { IconPlus, IconEye, IconImage } from '@arco-design/web-vue/es/icon'
 import type { SysColumn, FormMode } from '../../types'
 import type { FileItem } from '@arco-design/web-vue'
+import { getAccessToken } from '@/utils/token'
 
 interface Props {
   column: SysColumn
@@ -105,12 +106,12 @@ const config = computed(() => {
 
 // 上传地址
 const uploadUrl = computed(() => {
-  return config.value.uploadUrl || '/api/v1/file/upload/image'
+  return config.value.uploadUrl || '/api/v1/files/upload'
 })
 
 // 上传请求头
 const uploadHeaders = computed(() => {
-  const token = localStorage.getItem('token')
+  const token = getAccessToken()
   return {
     Authorization: token ? `Bearer ${token}` : '',
     ...config.value.headers
@@ -189,20 +190,31 @@ watch(
  */
 function handleChange(fileList: FileItem[]) {
   // 更新图片列表
-  const images = fileList.map(file => ({
-    uid: file.uid,
-    name: file.name,
-    url: file.url || file.response?.data?.url || '',
-    status: file.status
-  }))
+  const images = fileList.map(file => {
+    // 优先使用后端返回的 accessUrl（仅在上传成功后才有）
+    // 如果还在上传中，使用临时的 blob URL 用于预览
+    const serverUrl = file.response?.data?.accessUrl || file.response?.data?.url
+    return {
+      uid: file.uid,
+      name: file.name,
+      url: serverUrl || file.url || '',
+      size: file.size,
+      status: file.status
+    }
+  })
 
-  // 发送更新事件
-  if (maxCount.value === 1) {
-    // 单图模式：只保存 URL 字符串
-    emit('update:modelValue', images[0]?.url || null)
-  } else {
-    // 多图模式：保存图片数组的 JSON 字符串
-    emit('update:modelValue', JSON.stringify(images))
+  // 只有当所有文件都上传成功后，才发送更新事件
+  const allSuccess = images.every(img => img.status === 'done' && img.url && !img.url.startsWith('blob:'))
+
+  if (allSuccess || images.length === 0) {
+    // 发送更新事件
+    if (maxCount.value === 1) {
+      // 单图模式：只保存 URL 字符串
+      emit('update:modelValue', images[0]?.url || null)
+    } else {
+      // 多图模式：保存图片数组的 JSON 字符串
+      emit('update:modelValue', JSON.stringify(images))
+    }
   }
 }
 
@@ -210,10 +222,11 @@ function handleChange(fileList: FileItem[]) {
  * 上传成功处理
  */
 function handleSuccess(response: any) {
-  if (response.code === 0 || response.success) {
+  console.log('[ImageField] Upload success response:', response)
+  if (response && (response.code === 0 || response.success)) {
     Message.success('上传成功')
   } else {
-    Message.error(response.message || '上传失败')
+    Message.error(response?.message || '上传失败')
   }
 }
 
@@ -221,7 +234,8 @@ function handleSuccess(response: any) {
  * 上传失败处理
  */
 function handleError(error: any) {
-  Message.error(error.message || '上传失败')
+  console.error('[ImageField] Upload error:', error)
+  Message.error(error?.message || '上传失败')
 }
 
 /**
