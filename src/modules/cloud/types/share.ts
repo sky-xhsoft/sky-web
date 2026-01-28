@@ -5,16 +5,45 @@
  */
 
 /**
- * 分享信息
+ * 云盘分享实体（对应后端 CloudShare）
+ */
+export interface CloudShare {
+  ID: number
+  ResourceType: string    // 'file' 或 'folder'
+  ResourceID: number      // 资源ID
+  ShareCode: string       // 分享码
+  ShareType: string       // 分享类型: 'public', 'password', 'private'
+  Password?: string       // 访问密码
+  ExpireTime?: string     // 过期时间
+  MaxDownloads: number    // 最大下载次数
+  DownloadCount: number   // 已下载次数
+  Status: string          // 状态: 'active', 'expired', 'cancelled'
+  UserID: number          // 创建者ID
+  CreateTime: string      // 创建时间
+}
+
+/**
+ * 分享信息（完整信息，包含资源详情）
  */
 export interface ShareInfo {
-  ID: number
-  FileID: number
-  ShareCode: string
-  Password?: string
-  ExpireTime?: string
-  UserID: number
-  CreateTime: string
+  share: CloudShare                    // 分享记录
+  resourceType: string                 // 资源类型
+  file?: {                             // 文件信息（当resourceType='file'时）
+    id: number
+    name: string
+    fileSize: number
+    fileType: string
+    fileExt: string
+    createTime: string
+  }
+  folder?: {                           // 文件夹信息（当resourceType='folder'时）
+    id: number
+    name: string
+    fileCount: number
+    totalSize: number
+    createTime: string
+  }
+  sharer: string                       // 分享者名称
 }
 
 /**

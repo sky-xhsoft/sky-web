@@ -4,6 +4,7 @@ import BasicLayout from '../layouts/BasicLayout.vue'
 import Dashboard from '../pages/Dashboard.vue'
 import Login from '../pages/Login.vue'
 import Cloud from '../pages/Cloud.vue'
+import Share from '../pages/Share.vue'
 import { useAuthStore } from '../stores/auth'
 import { useMenuStore } from '../stores/menu'
 
@@ -13,6 +14,12 @@ const routes: RouteRecordRaw[] = [
     name: 'login',
     component: Login,
     meta: { title: '登录', requiresAuth: false },
+  },
+  {
+    path: '/share/:code',
+    name: 'share',
+    component: Share,
+    meta: { title: '文件分享', requiresAuth: false },
   },
   {
     path: '/',
