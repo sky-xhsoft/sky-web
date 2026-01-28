@@ -38,7 +38,12 @@ const FIELD_COMPONENT_MAP: Record<string, string> = {
   // 特殊输入类
   color: 'ColorField',
   file: 'FileField',
-  image: 'ImageField'
+  image: 'ImageField',
+
+  // 布局和交互类
+  blank: 'BlankField',
+  button: 'ButtonField',
+  hr: 'HrField'
 }
 
 export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
@@ -82,7 +87,10 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
         json: 'JsonField',
         richtext: 'RichTextField',
         clob: 'TextareaField',  // clob 映射到 textarea
-        xml: 'TextareaField'     // xml 映射到 textarea
+        xml: 'TextareaField',   // xml 映射到 textarea
+        blank: 'BlankField',
+        button: 'ButtonField',
+        hr: 'HrField'
       }
 
       const mappedComponent = displayTypeMap[displayType.toLowerCase()]

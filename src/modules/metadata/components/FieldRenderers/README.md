@@ -113,6 +113,11 @@ CONTROL_CONFIG = '{"height": 300, "theme": "dark", "placeholder": "请输入..."
 | `json` | JsonField | ✅ | ✅ | JSON 编辑器 |
 | `richtext` | RichTextField | ✅ | ✅ | 富文本编辑器 |
 | `color` | ColorField | ✅ | ❌ | 颜色选择器 |
+| `file` | FileField | ✅ | ❌ | 文件上传 |
+| `image` | ImageField | ✅ | ❌ | 图片上传 |
+| `blank` | BlankField | ✅ | ✅ | 空白区域 |
+| `button` | ButtonField | ✅ | ❌ | 按钮（关联 action） |
+| `hr` | HrField | ✅ | ❌ | 分隔线 |
 | `clob` | TextareaField | ✅ | ✅ | 大文本（映射到 textarea） |
 | `xml` | TextareaField | ✅ | ✅ | XML（映射到 textarea） |
 
@@ -541,6 +546,328 @@ UPDATE sys_column SET
   PLACEHOLDER = '请选择关联对象'
 WHERE DB_NAME = 'USER_ID';
 ```
+
+---
+
+### 12. FileField - 文件上传
+
+#### 功能特性
+- ✅ 文件上传
+- ✅ 文件列表显示
+- ✅ 文件大小显示
+- ✅ 支持单文件/多文件
+- ✅ 文件类型限制
+- ✅ 文件下载
+
+#### CONTROL_CONFIG 配置项
+
+```typescript
+interface FileFieldConfig {
+  uploadUrl?: string              // 上传接口地址，默认 '/api/v1/file/upload'
+  accept?: string                 // 接受的文件类型，默认 '*'
+  maxCount?: number               // 最大文件数量，默认 1
+  multiple?: boolean              // 是否支持多选，默认 true
+  placeholder?: string            // 占位符文本
+  headers?: Record<string, string> // 自定义请求头
+}
+```
+
+#### 配置示例
+
+```sql
+-- 单文件上传
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'file',
+  DATA_TYPE = 'varchar',
+  LENGTH = 500,
+  CONTROL_CONFIG = '{
+    "uploadUrl": "/api/v1/file/upload",
+    "accept": "*",
+    "maxCount": 1,
+    "placeholder": "点击上传文件"
+  }'
+WHERE DB_NAME = 'ATTACHMENT';
+
+-- 多文件上传
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'file',
+  DATA_TYPE = 'text',
+  CONTROL_CONFIG = '{
+    "uploadUrl": "/api/v1/file/upload",
+    "accept": ".pdf,.doc,.docx,.xls,.xlsx",
+    "maxCount": 5,
+    "multiple": true,
+    "placeholder": "上传文档"
+  }'
+WHERE DB_NAME = 'DOCUMENTS';
+```
+
+#### 数据存储格式
+
+```javascript
+// 单文件模式（maxCount = 1）
+"https://example.com/files/document.pdf"
+
+// 多文件模式（maxCount > 1）
+'[{"uid":"1","name":"file1.pdf","url":"https://...","size":1024},{"uid":"2","name":"file2.doc","url":"https://...","size":2048}]'
+```
+
+#### 使用场景
+- 附件上传
+- 文档管理
+- 合同文件
+- 证明材料
+
+---
+
+### 13. ImageField - 图片上传
+
+#### 功能特性
+- ✅ 图片上传
+- ✅ 图片预览
+- ✅ 图片列表显示
+- ✅ 支持单图/多图
+- ✅ 图片类型限制
+- ✅ 图片查看器
+
+#### CONTROL_CONFIG 配置项
+
+```typescript
+interface ImageFieldConfig {
+  uploadUrl?: string              // 上传接口地址，默认 '/api/v1/file/upload/image'
+  accept?: string                 // 接受的图片类型，默认 'image/*'
+  maxCount?: number               // 最大图片数量，默认 1
+  multiple?: boolean              // 是否支持多选，默认 true
+  listType?: string               // 列表类型，默认 'picture-card'
+  placeholder?: string            // 占位符文本
+  headers?: Record<string, string> // 自定义请求头
+}
+```
+
+#### 配置示例
+
+```sql
+-- 单图上传（头像）
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'image',
+  DATA_TYPE = 'varchar',
+  LENGTH = 500,
+  CONTROL_CONFIG = '{
+    "uploadUrl": "/api/v1/file/upload/image",
+    "accept": "image/*",
+    "maxCount": 1,
+    "placeholder": "上传头像"
+  }'
+WHERE DB_NAME = 'AVATAR';
+
+-- 多图上传（相册）
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'image',
+  DATA_TYPE = 'text',
+  CONTROL_CONFIG = '{
+    "uploadUrl": "/api/v1/file/upload/image",
+    "accept": "image/jpeg,image/png,image/gif",
+    "maxCount": 9,
+    "multiple": true,
+    "placeholder": "上传图片"
+  }'
+WHERE DB_NAME = 'GALLERY';
+```
+
+#### 数据存储格式
+
+```javascript
+// 单图模式（maxCount = 1）
+"https://example.com/images/avatar.jpg"
+
+// 多图模式（maxCount > 1）
+'[{"uid":"1","name":"img1.jpg","url":"https://..."},{"uid":"2","name":"img2.png","url":"https://..."}]'
+```
+
+#### 使用场景
+- 用户头像
+- 产品图片
+- 相册管理
+- 图片展示
+
+---
+
+### 14. BlankField - 空白区域
+
+#### 功能特性
+- ✅ 占位空白区域
+- ✅ 自定义高度
+- ✅ 自定义背景色
+- ✅ 用于布局调整
+
+#### CONTROL_CONFIG 配置项
+
+```typescript
+interface BlankFieldConfig {
+  height?: number                 // 高度（像素）
+  backgroundColor?: string        // 背景色
+}
+```
+
+#### 配置示例
+
+```sql
+-- 基础空白区域
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'blank',
+  DISPLAY_COLS = 1,
+  DISPLAY_ROWS = 2,
+  CONTROL_CONFIG = '{}'
+WHERE DB_NAME = 'BLANK_1';
+
+-- 带背景色的空白区域
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'blank',
+  DISPLAY_COLS = 2,
+  CONTROL_CONFIG = '{
+    "height": 100,
+    "backgroundColor": "#f7f8fa"
+  }'
+WHERE DB_NAME = 'BLANK_SECTION';
+```
+
+#### 使用场景
+- 表单布局调整
+- 视觉分隔
+- 占位符
+
+---
+
+### 15. ButtonField - 按钮
+
+#### 功能特性
+- ✅ 触发自定义操作
+- ✅ 关联 sys_action
+- ✅ 多种按钮样式
+- ✅ 图标支持
+- ✅ 加载状态
+
+#### CONTROL_CONFIG 配置项
+
+```typescript
+interface ButtonFieldConfig {
+  text?: string                   // 按钮文本
+  type?: 'primary' | 'secondary' | 'outline' | 'text' | 'dashed'  // 按钮类型
+  size?: 'mini' | 'small' | 'medium' | 'large'  // 按钮尺寸
+  status?: 'normal' | 'warning' | 'danger' | 'success'  // 按钮状态
+  icon?: string                   // 图标名称（Arco Design 图标）
+  actionId?: number               // 关联的 sys_action ID
+}
+```
+
+#### 配置示例
+
+```sql
+-- 基础按钮
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'button',
+  DISPLAY_NAME = '审批',
+  CONTROL_CONFIG = '{
+    "text": "提交审批",
+    "type": "primary",
+    "size": "medium",
+    "actionId": 100
+  }'
+WHERE DB_NAME = 'BTN_APPROVE';
+
+-- 危险操作按钮
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'button',
+  DISPLAY_NAME = '删除',
+  CONTROL_CONFIG = '{
+    "text": "删除记录",
+    "type": "primary",
+    "status": "danger",
+    "icon": "Delete",
+    "actionId": 101
+  }'
+WHERE DB_NAME = 'BTN_DELETE';
+
+-- 带图标的按钮
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'button',
+  CONTROL_CONFIG = '{
+    "text": "导出",
+    "type": "outline",
+    "icon": "Download",
+    "actionId": 102
+  }'
+WHERE DB_NAME = 'BTN_EXPORT';
+```
+
+#### 使用场景
+- 自定义操作触发
+- 工作流操作
+- 批量操作
+- 导出/导入
+
+**注意**：需要在 `sys_action` 表中配置对应的操作逻辑。
+
+---
+
+### 16. HrField - 分隔线
+
+#### 功能特性
+- ✅ 视觉分隔
+- ✅ 带文本的分隔线
+- ✅ 多种样式
+- ✅ 文本位置配置
+
+#### CONTROL_CONFIG 配置项
+
+```typescript
+interface HrFieldConfig {
+  text?: string                   // 分隔线文本
+  orientation?: 'left' | 'center' | 'right'  // 文本位置
+  type?: 'solid' | 'dashed' | 'dotted'  // 分隔线类型
+}
+```
+
+#### 配置示例
+
+```sql
+-- 基础分隔线
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'hr',
+  DISPLAY_COLS = 2,
+  DISPLAY_NAME = '基本信息',
+  CONTROL_CONFIG = '{
+    "text": "基本信息",
+    "orientation": "left",
+    "type": "solid"
+  }'
+WHERE DB_NAME = 'HR_BASIC';
+
+-- 居中文本分隔线
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'hr',
+  DISPLAY_COLS = 2,
+  CONTROL_CONFIG = '{
+    "text": "扩展配置",
+    "orientation": "center",
+    "type": "dashed"
+  }'
+WHERE DB_NAME = 'HR_EXTENDED';
+
+-- 无文本分隔线
+UPDATE sys_column SET
+  DISPLAY_TYPE = 'hr',
+  DISPLAY_COLS = 2,
+  CONTROL_CONFIG = '{
+    "type": "solid"
+  }'
+WHERE DB_NAME = 'HR_DIVIDER';
+```
+
+#### 使用场景
+- 表单区域分隔
+- 视觉层次划分
+- 内容分组
 
 ---
 

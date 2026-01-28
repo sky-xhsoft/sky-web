@@ -58,6 +58,11 @@ const JsonField = defineAsyncComponent(() => import('../FieldRenderers/JsonField
 const RichTextField = defineAsyncComponent(() => import('../FieldRenderers/RichTextField.vue'))
 const SwitchField = defineAsyncComponent(() => import('../FieldRenderers/SwitchField.vue'))
 const ColorField = defineAsyncComponent(() => import('../FieldRenderers/ColorField.vue'))
+const BlankField = defineAsyncComponent(() => import('../FieldRenderers/BlankField.vue'))
+const ButtonField = defineAsyncComponent(() => import('../FieldRenderers/ButtonField.vue'))
+const HrField = defineAsyncComponent(() => import('../FieldRenderers/HrField.vue'))
+const FileField = defineAsyncComponent(() => import('../FieldRenderers/FileField.vue'))
+const ImageField = defineAsyncComponent(() => import('../FieldRenderers/ImageField.vue'))
 
 // 组件映射
 const COMPONENT_MAP: Record<string, any> = {
@@ -74,7 +79,12 @@ const COMPONENT_MAP: Record<string, any> = {
   JsonField,
   RichTextField,
   SwitchField,
-  ColorField
+  ColorField,
+  BlankField,
+  ButtonField,
+  HrField,
+  FileField,
+  ImageField
 }
 
 // ==================== Props ====================
