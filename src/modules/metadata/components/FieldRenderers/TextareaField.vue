@@ -59,10 +59,14 @@ const allowClear = computed(() => {
 })
 
 // 自动调整高度
-const autoSize = computed(() => ({
-  minRows: props.rows,
-  maxRows: 10
-}))
+const autoSize = computed(() => {
+  // 优先使用 DISPLAY_ROWS，其次使用 props.rows
+  const minRows = props.column.DISPLAY_ROWS || props.rows
+  return {
+    minRows: minRows,
+    maxRows: Math.max(minRows, 10)
+  }
+})
 
 // 值变化处理
 function handleChange(value: string | undefined) {

@@ -9,20 +9,36 @@ import type { SysColumn, FormMode } from '../types'
 
 // 字段类型到组件的映射
 const FIELD_COMPONENT_MAP: Record<string, string> = {
+  // 基础输入类
   text: 'TextField',
   textarea: 'TextareaField',
   number: 'NumberField',
+  password: 'PasswordField',
+  email: 'EmailField',
+  url: 'UrlField',
+
+  // 选择类
   select: 'SelectField',
   radio: 'RadioField',
   checkbox: 'CheckboxField',
+  switch: 'SwitchField',
+
+  // 日期时间类
   date: 'DateField',
   datetime: 'DatetimeField',
-  file: 'FileField',
-  image: 'ImageField',
+  time: 'TimeField',
+
+  // 关联类
   foreign_key: 'ForeignKeyField',
-  password: 'PasswordField',
-  email: 'EmailField',
-  url: 'UrlField'
+
+  // 高级编辑器类
+  json: 'JsonField',
+  richtext: 'RichTextField',
+
+  // 特殊输入类
+  color: 'ColorField',
+  file: 'FileField',
+  image: 'ImageField'
 }
 
 export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
@@ -47,7 +63,41 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
       return 'DatetimeField'
     }
 
-    return FIELD_COMPONENT_MAP[column.CONTROL_TYPE] || 'TextField'
+    // 优先使用 DISPLAY_TYPE（兼容旧数据）
+    const displayType = column.DISPLAY_TYPE || (column as any).displayType
+    if (displayType) {
+      // DISPLAY_TYPE 映射到组件名称
+      const displayTypeMap: Record<string, string> = {
+        text: 'TextField',
+        textarea: 'TextareaField',
+        number: 'NumberField',
+        select: 'SelectField',
+        radio: 'RadioField',
+        checkbox: 'CheckboxField',
+        date: 'DateField',
+        datetime: 'DatetimeField',
+        time: 'TimeField',
+        file: 'FileField',
+        image: 'ImageField',
+        json: 'JsonField',
+        clob: 'TextareaField',  // clob 映射到 textarea
+        xml: 'TextareaField'     // xml 映射到 textarea
+      }
+
+      const mappedComponent = displayTypeMap[displayType.toLowerCase()]
+      if (mappedComponent) {
+        return mappedComponent
+      }
+    }
+
+    // 其次使用 CONTROL_TYPE
+    const controlType = column.CONTROL_TYPE || (column as any).controlType
+    if (controlType) {
+      const component = FIELD_COMPONENT_MAP[controlType] || 'TextField'
+      return component
+    }
+
+    return 'TextField'
   })
 
   /**
@@ -76,14 +126,12 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
       if (mode === 'create') {
         // 新增模式：检查第 2 位（索引 1）
         const canEdit = mask[1] === '1'
-        console.log(`[useFieldRenderer] ${column.DB_NAME} 新增模式: mask=${mask}, mask[1]=${mask[1]}, canEdit=${canEdit}`)
         if (!canEdit) {
           return true  // 不可编辑 = 只读
         }
       } else if (mode === 'edit') {
         // 修改模式：检查第 4 位（索引 3）
         const canEdit = mask[3] === '1'
-        console.log(`[useFieldRenderer] ${column.DB_NAME} 编辑模式: mask=${mask}, mask[3]=${mask[3]}, canEdit=${canEdit}`)
         if (!canEdit) {
           return true  // 不可编辑 = 只读
         }
@@ -110,15 +158,24 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
       return column.PLACEHOLDER
     }
 
+    // 获取控件类型（优先 DISPLAY_TYPE）
+    const displayType = column.DISPLAY_TYPE || (column as any).displayType
+    const controlType = displayType || column.CONTROL_TYPE || (column as any).controlType
+
     // 根据控件类型生成默认占位符
-    switch (column.CONTROL_TYPE) {
+    switch (controlType?.toLowerCase()) {
       case 'text':
       case 'textarea':
       case 'number':
       case 'password':
       case 'email':
       case 'url':
+      case 'json':
+      case 'clob':
+      case 'xml':
         return `请输入${column.DISPLAY_NAME}`
+      case 'richtext':
+        return '请输入内容...'
       case 'select':
       case 'radio':
         return `请选择${column.DISPLAY_NAME}`
@@ -126,6 +183,10 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
         return '请选择日期'
       case 'datetime':
         return '请选择日期时间'
+      case 'time':
+        return '请选择时间'
+      case 'color':
+        return '请选择颜色'
       case 'file':
       case 'image':
         return '点击上传'
@@ -161,8 +222,12 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
       disabled: isReadonly.value
     }
 
+    // 获取控件类型（优先 DISPLAY_TYPE）
+    const displayType = column.DISPLAY_TYPE || (column as any).displayType
+    const controlType = (displayType || column.CONTROL_TYPE || (column as any).controlType)?.toLowerCase()
+
     // 根据控件类型添加特定属性
-    switch (column.CONTROL_TYPE) {
+    switch (controlType) {
       case 'number':
         if (column.DECIMAL_PLACES !== undefined) {
           props.precision = column.DECIMAL_PLACES
@@ -170,7 +235,8 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
         break
 
       case 'textarea':
-        props.rows = 4
+      case 'clob':
+        props.rows = column.DISPLAY_ROWS || 4
         if (column.LENGTH) {
           props.maxLength = column.LENGTH
           props.showWordLimit = true
@@ -207,7 +273,7 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
 
       case 'file':
       case 'image':
-        props.accept = column.CONTROL_TYPE === 'image' ? 'image/*' : '*'
+        props.accept = controlType === 'image' ? 'image/*' : '*'
         props.maxSize = 10 * 1024 * 1024 // 10MB
         break
     }
@@ -227,7 +293,10 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
     const errorMsg = column.ERROR_MSG || (column as any).errorMsg
     const regExpression = column.REG_EXPRESSION || (column as any).regExpression
     const length = column.LENGTH || (column as any).length
-    const controlType = column.CONTROL_TYPE || (column as any).controlType
+
+    // 获取控件类型（优先 DISPLAY_TYPE）
+    const displayType = column.DISPLAY_TYPE || (column as any).displayType
+    const controlType = (displayType || column.CONTROL_TYPE || (column as any).controlType)?.toLowerCase()
 
     // 必填规则
     if (nullAble === 'N') {
@@ -251,7 +320,7 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
     }
 
     // 长度规则
-    if (length && ['text', 'textarea', 'password', 'email', 'url'].includes(controlType)) {
+    if (length && ['text', 'textarea', 'password', 'email', 'url', 'clob'].includes(controlType)) {
       rules.push({
         maxLength: length,
         message: `${displayName}长度不能超过${length}个字符`
@@ -285,12 +354,19 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
       return '-'
     }
 
-    switch (column.CONTROL_TYPE) {
+    // 获取控件类型（优先 DISPLAY_TYPE）
+    const displayType = column.DISPLAY_TYPE || (column as any).displayType
+    const controlType = (displayType || column.CONTROL_TYPE || (column as any).controlType)?.toLowerCase()
+
+    switch (controlType) {
       case 'date':
         return new Date(value).toLocaleDateString('zh-CN')
 
       case 'datetime':
         return new Date(value).toLocaleString('zh-CN')
+
+      case 'time':
+        return value
 
       case 'number':
         if (column.DECIMAL_PLACES !== undefined) {
@@ -299,7 +375,28 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
         return String(value)
 
       case 'checkbox':
+      case 'switch':
+      case 'check':
         return value ? '是' : '否'
+
+      case 'json':
+        try {
+          return JSON.stringify(JSON.parse(value), null, 2)
+        } catch {
+          return String(value)
+        }
+
+      case 'richtext':
+        // 移除 HTML 标签用于纯文本显示
+        return String(value).replace(/<[^>]*>/g, '')
+
+      case 'color':
+        return String(value)
+
+      case 'textarea':
+      case 'clob':
+      case 'xml':
+        return String(value)
 
       default:
         return String(value)

@@ -7,8 +7,11 @@
     :validate-trigger="['blur', 'change']"
     :feedback="!!error"
     :help="error || helpText"
+    :label-col-props="labelColProps"
+    :wrapper-col-props="wrapperColProps"
     class="dynamic-form-item"
     :class="formItemClass"
+    :style="formItemStyle"
   >
     <!-- 字段渲染器 -->
     <component
@@ -19,6 +22,7 @@
       :disabled="isDisabled"
       :readonly="isReadonly"
       :record="record"
+      :style="fieldStyle"
       @update:model-value="handleChange"
       @blur="handleBlur"
     />
@@ -48,7 +52,12 @@ const RadioField = defineAsyncComponent(() => import('../FieldRenderers/RadioFie
 const CheckboxField = defineAsyncComponent(() => import('../FieldRenderers/CheckboxField.vue'))
 const DateField = defineAsyncComponent(() => import('../FieldRenderers/DateField.vue'))
 const DatetimeField = defineAsyncComponent(() => import('../FieldRenderers/DatetimeField.vue'))
+const TimeField = defineAsyncComponent(() => import('../FieldRenderers/TimeField.vue'))
 const ForeignKeyField = defineAsyncComponent(() => import('../FieldRenderers/ForeignKeyField.vue'))
+const JsonField = defineAsyncComponent(() => import('../FieldRenderers/JsonField.vue'))
+const RichTextField = defineAsyncComponent(() => import('../FieldRenderers/RichTextField.vue'))
+const SwitchField = defineAsyncComponent(() => import('../FieldRenderers/SwitchField.vue'))
+const ColorField = defineAsyncComponent(() => import('../FieldRenderers/ColorField.vue'))
 
 // 组件映射
 const COMPONENT_MAP: Record<string, any> = {
@@ -60,7 +69,12 @@ const COMPONENT_MAP: Record<string, any> = {
   CheckboxField,
   DateField,
   DatetimeField,
-  ForeignKeyField
+  TimeField,
+  ForeignKeyField,
+  JsonField,
+  RichTextField,
+  SwitchField,
+  ColorField
 }
 
 // ==================== Props ====================
@@ -71,10 +85,12 @@ interface Props {
   mode?: FormMode
   error?: string
   record?: Record<string, any>  // 完整记录数据，用于FK字段显示
+  formColumns?: number  // 表单列数配置（1-4）
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  mode: 'view'
+  mode: 'view',
+  formColumns: 2  // 默认2列
 })
 
 // ==================== Emits ====================
@@ -105,24 +121,116 @@ const fieldComponent = computed(() => {
 })
 
 /**
+ * 标签列配置
+ * 当字段跨列时，需要调整标签宽度比例以保持对齐
+ */
+const labelColProps = computed(() => {
+  const displayColsValue = displayCols.value
+
+  if (displayColsValue > 1) {
+    // 跨列字段的标签 span = 6 / 跨列数
+    // 例如：跨2列的字段，标签占 6/2=3 span
+    // 这样标签宽度 = 3/24 * (2*colWidth)/24 = 6/24 * colWidth/24，与单列字段的标签宽度一致
+    const labelSpan = 6 / displayColsValue
+    const roundedSpan = Math.round(labelSpan)
+
+    return { span: roundedSpan }
+  }
+
+  // 单列字段：使用默认配置（继承父级，6 span）
+  return undefined
+})
+
+/**
+ * 输入框列配置
+ */
+const wrapperColProps = computed(() => {
+  const displayColsValue = displayCols.value
+
+  if (displayColsValue > 1) {
+    // 输入框占剩余空间
+    const labelSpan = labelColProps.value?.span || 6
+    return { span: 24 - labelSpan }
+  }
+
+  // 单列字段：使用默认配置（继承父级，18 span）
+  return undefined
+})
+
+/**
  * 是否禁用
  */
 const isDisabled = computed(() => {
-  const result = props.mode === 'view'
-  console.log(`[DynamicFormItem] ${props.column.DB_NAME} isDisabled=${result}, mode=${props.mode}`)
-  return result
+  return props.mode === 'view'
 })
 
 /**
  * 表单项样式类
  */
 const formItemClass = computed(() => {
+  // 获取控件类型（优先 DISPLAY_TYPE）
+  const displayType = props.column.DISPLAY_TYPE || (props.column as any).displayType
+  const controlType = displayType || props.column.CONTROL_TYPE || (props.column as any).controlType
+
   return {
     'dynamic-form-item--required': isRequired.value,
     'dynamic-form-item--readonly': isReadonly.value,
     'dynamic-form-item--error': !!props.error,
-    [`dynamic-form-item--${props.column.CONTROL_TYPE}`]: true
+    'dynamic-form-item--span-multiple': displayCols.value > 1,  // 跨列字段
+    [`dynamic-form-item--${controlType}`]: !!controlType
   }
+})
+
+/**
+ * 显示列数（控件宽度）
+ * 默认 1 列，可通过 DISPLAY_COLS 配置
+ */
+const displayCols = computed(() => {
+  return props.column.DISPLAY_COLS || (props.column as any).displayCols || 1
+})
+
+/**
+ * 显示行数（控件高度）
+ * 默认 1 行，可通过 DISPLAY_ROWS 配置
+ */
+const displayRows = computed(() => {
+  return props.column.DISPLAY_ROWS || (props.column as any).displayRows || 1
+})
+
+/**
+ * 表单项样式（控制 grid-column）
+ */
+const formItemStyle = computed(() => {
+  // 如果列数大于 1，使用 grid-column 跨列
+  if (displayCols.value > 1) {
+    return {
+      gridColumn: `span ${displayCols.value}`
+    }
+  }
+  return {}
+})
+
+
+/**
+ * 字段样式（控制高度）
+ */
+const fieldStyle = computed(() => {
+  const style: Record<string, string> = {}
+
+  // 获取控件类型（优先 DISPLAY_TYPE）
+  const displayType = props.column.DISPLAY_TYPE || (props.column as any).displayType
+  const controlType = (displayType || props.column.CONTROL_TYPE || (props.column as any).controlType)?.toLowerCase()
+
+  // 根据行数设置高度
+  // 对于支持多行的控件（textarea, json, richtext, code, clob），设置高度
+  const multiRowControls = ['textarea', 'json', 'richtext', 'code', 'clob', 'xml']
+  if (multiRowControls.includes(controlType) && displayRows.value > 1) {
+    // 每行约 32px（输入框标准高度），加上间距
+    const height = displayRows.value * 32 + (displayRows.value - 1) * 8
+    style.minHeight = `${height}px`
+  }
+
+  return style
 })
 
 // ==================== 方法 ====================
@@ -145,6 +253,16 @@ function handleBlur() {
 <style scoped>
 .dynamic-form-item {
   position: relative;
+  padding-top: 3px;
+}
+
+/* 跨列字段：标签和输入框布局 */
+.dynamic-form-item--span-multiple :deep(.arco-form-item-label-col) {
+  flex: none !important;
+}
+
+.dynamic-form-item--span-multiple :deep(.arco-form-item-wrapper-col) {
+  flex: 1 1 auto !important;
 }
 
 /* 只读字段样式 */

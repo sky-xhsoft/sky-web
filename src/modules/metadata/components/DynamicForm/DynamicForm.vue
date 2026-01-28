@@ -32,6 +32,7 @@
                   :model-value="formData[column.DB_NAME]"
                   :error="errors[column.DB_NAME]"
                   :record="formData"
+                  :form-columns="formColumnsCount"
                   @update:model-value="handleFieldChange(column.DB_NAME, $event)"
                   @blur="handleFieldBlur(column)"
                 />
@@ -65,6 +66,7 @@
                   :model-value="formData[column.DB_NAME]"
                   :error="errors[column.DB_NAME]"
                   :record="formData"
+                  :form-columns="formColumnsCount"
                   @update:model-value="handleFieldChange(column.DB_NAME, $event)"
                   @blur="handleFieldBlur(column)"
                 />
@@ -340,6 +342,19 @@ const childTables = computed(() => {
 })
 
 /**
+ * 表单列数配置
+ * 根据 SYS_OBJUICONF_ID 返回表单的列数（1-4）
+ */
+const formColumnsCount = computed(() => {
+  const objUiConfId = tableConfig.value?.table?.SYS_OBJUICONF_ID ||
+                      (tableConfig.value?.table as any)?.sysObjuiconfId ||
+                      2 // 默认2列
+
+  // 1: 1列, 2: 2列, 3: 3列, 4: 4列
+  return objUiConfId
+})
+
+/**
  * 子表引用（用于内嵌编辑组件）
  */
 const childTableRefs = ref<Record<number, any>>({})
@@ -377,7 +392,6 @@ function setChildTableRef(index: number, el: any) {
  * 子表数据变化处理
  */
 function handleChildTableChange(index: number, data: any[]) {
-  console.log(`[DynamicForm] 子表 ${index} 数据变化:`, data)
   // 可以在这里触发表单的 change 事件
 }
 
@@ -385,7 +399,6 @@ function handleChildTableChange(index: number, data: any[]) {
  * 子表请求刷新整个表单
  */
 async function handleChildTableRefresh() {
-  console.log('[DynamicForm] 子表请求刷新整个表单')
   if (props.recordId) {
     await loadRecordData(props.recordId)
     Message.success('刷新成功')
@@ -410,7 +423,35 @@ function isCollapsibleField(column: SysColumn): boolean {
  * 获取字段列跨度
  */
 function getFieldColSpan(column: SysColumn): number {
-  // 优先使用字段配置的跨度
+  // 优先使用字段配置的 DISPLAY_COLS
+  const displayCols = column.DISPLAY_COLS || (column as any).displayCols
+  if (displayCols && displayCols > 1) {
+    // DISPLAY_COLS 表示字段要占据的列数（基于表单的列数配置）
+    // 例如：如果表单是 2 列布局（每列 12），DISPLAY_COLS=2 表示占满整行（24）
+    const objUiConfId = tableConfig.value?.table?.SYS_OBJUICONF_ID ||
+                        (tableConfig.value?.table as any)?.sysObjuiconfId ||
+                        2 // 默认2列
+
+    let colWidth = 12 // 默认每列宽度
+    switch (objUiConfId) {
+      case 1:
+        colWidth = 24 // 1列布局
+        break
+      case 2:
+        colWidth = 12 // 2列布局
+        break
+      case 3:
+        colWidth = 8  // 3列布局
+        break
+      case 4:
+        colWidth = 6  // 4列布局
+        break
+    }
+
+    return Math.min(displayCols * colWidth, 24)
+  }
+
+  // 其次使用 FORM_COLSPAN
   if (column.FORM_COLSPAN) {
     return column.FORM_COLSPAN
   }
@@ -437,16 +478,21 @@ function getFieldColSpan(column: SysColumn): number {
       break
   }
 
+  // 获取控件类型（优先 DISPLAY_TYPE）
+  const displayType = column.DISPLAY_TYPE || (column as any).displayType
+  const controlType = (displayType || column.CONTROL_TYPE || (column as any).controlType)?.toLowerCase()
+
   // 根据控件类型调整（某些控件强制占满一行）
-  switch (column.CONTROL_TYPE) {
-    case 'textarea':
-      return 24  // 文本域占满一行
-    case 'checkbox':
-    case 'radio':
-      return Math.min(defaultSpan, 8) // 复选框/单选框最多占1/3行
-    default:
-      return defaultSpan
+  const fullWidthControls = ['textarea', 'json', 'richtext', 'clob', 'xml']
+  if (fullWidthControls.includes(controlType)) {
+    return 24  // 多行文本控件占满一行
   }
+
+  if (controlType === 'checkbox' || controlType === 'radio') {
+    return Math.min(defaultSpan, 8) // 复选框/单选框最多占1/3行
+  }
+
+  return defaultSpan
 }
 
 /**
@@ -483,7 +529,6 @@ async function handleSubmit(e: Event) {
     emit('submit', result)
   } catch (error: any) {
     // 错误已在 composable 中处理
-    console.error('Form submit error:', error)
   }
 }
 
@@ -579,7 +624,6 @@ watch(
   () => props.mode,
   async (newMode, oldMode) => {
     if (newMode && oldMode && newMode !== oldMode) {
-      console.log('[DynamicForm] mode 变化:', oldMode, '->', newMode)
       // 如果有 recordId，重新加载数据以确保字段正确填充
       if (props.recordId) {
         await loadRecordData(props.recordId)
@@ -617,8 +661,6 @@ function getChildTablesData(): Record<string, any[]> {
       const childTable = childTables.value[Number(index)]
       const tableName = childTable.table.NAME || childTable.table.name
       const data = childTableRef.getData()
-
-      console.log(`[DynamicForm] 获取子表 ${tableName} 数据:`, data)
 
       if (data && data.length > 0) {
         childTablesData[tableName] = data

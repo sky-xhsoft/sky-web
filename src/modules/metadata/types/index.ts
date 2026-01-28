@@ -124,6 +124,8 @@ export interface SysColumn {
   // 界面布局
   GRID_WIDTH?: number       // 表格列宽度
   FORM_COLSPAN?: number     // 表单列跨度
+  DISPLAY_COLS?: number     // 显示列数（控件宽度，默认 1）
+  DISPLAY_ROWS?: number     // 显示行数（控件高度，默认 1）
   PLACEHOLDER?: string      // 占位符
   HELP_TEXT?: string        // 帮助文本
 
