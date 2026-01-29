@@ -6,20 +6,21 @@
 
 /**
  * 云盘分享实体（对应后端 CloudShare）
+ * 注意：后端返回小驼峰命名
  */
 export interface CloudShare {
-  ID: number
-  ResourceType: string    // 'file' 或 'folder'
-  ResourceID: number      // 资源ID
-  ShareCode: string       // 分享码
-  ShareType: string       // 分享类型: 'public', 'password', 'private'
-  Password?: string       // 访问密码
-  ExpireTime?: string     // 过期时间
-  MaxDownloads: number    // 最大下载次数
-  DownloadCount: number   // 已下载次数
-  Status: string          // 状态: 'active', 'expired', 'cancelled'
-  UserID: number          // 创建者ID
-  CreateTime: string      // 创建时间
+  id: number
+  resourceType: string    // 'file' 或 'folder'
+  resourceId: number      // 资源ID
+  shareCode: string       // 分享码
+  shareType: string       // 分享类型: 'public', 'password', 'private'
+  password?: string       // 访问密码
+  expireTime?: string     // 过期时间
+  maxDownloads: number    // 最大下载次数
+  downloadCount: number   // 已下载次数
+  status: string          // 状态: 'active', 'expired', 'cancelled'
+  userId: number          // 创建者ID
+  createTime: string      // 创建时间
 }
 
 /**

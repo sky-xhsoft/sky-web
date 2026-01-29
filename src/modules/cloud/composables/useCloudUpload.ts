@@ -77,24 +77,33 @@ export function useCloudUpload() {
     store.uploadQueue.push(task)
 
     try {
-      await uploadFile(file, folderId, (progressEvent) => {
-        const { loaded, total } = progressEvent
-        const percent = total ? Math.round((loaded / total) * 100) : 0
-
+      await uploadFile(file, folderId, (percent, loaded, total) => {
         // 更新任务进度
         const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
         if (taskIndex !== -1) {
-          store.uploadQueue[taskIndex].progress = percent
-          store.uploadQueue[taskIndex].uploadedSize = loaded
-          store.uploadQueue[taskIndex].totalSize = total || 0
+          const updatedTask = {
+            ...store.uploadQueue[taskIndex],
+            progress: Math.min(percent, 100),
+            uploadedSize: Math.min(loaded, file.size),
+            totalSize: file.size,
+          }
+          // 直接替换整个任务对象，确保状态一致性
+          store.uploadQueue.splice(taskIndex, 1, updatedTask)
         }
       })
 
       // 更新任务状态为完成
       const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
       if (taskIndex !== -1) {
-        store.uploadQueue[taskIndex].status = 'completed'
-        store.uploadQueue[taskIndex].progress = 100
+        const updatedTask = {
+          ...store.uploadQueue[taskIndex],
+          status: 'completed',
+          progress: 100,
+          uploadedSize: file.size,
+          totalSize: file.size,
+        }
+        // 直接替换整个任务对象，确保状态一致性
+        store.uploadQueue.splice(taskIndex, 1, updatedTask)
       }
 
       Message.success(`上传成功：${file.name}`)
@@ -325,20 +334,23 @@ export function useCloudUpload() {
       const manager = new ResumableUploadManager(file, folderId)
 
       // 设置进度回调，传入初始任务
-      manager.setProgressCallback((progress) => {
-        const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
-        if (taskIndex !== -1) {
-          // 确保更新所有字段，避免 NaN
-          store.uploadQueue[taskIndex] = {
-            ...store.uploadQueue[taskIndex],
-            ...progress,
-            // 确保这些字段始终有值
-            uploadedSize: progress.uploadedSize ?? store.uploadQueue[taskIndex].uploadedSize ?? 0,
-            totalSize: progress.totalSize ?? store.uploadQueue[taskIndex].totalSize ?? file.size,
-            progress: progress.progress ?? store.uploadQueue[taskIndex].progress ?? 0,
-          }
+    manager.setProgressCallback((progress) => {
+      const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
+      if (taskIndex !== -1) {
+        // 确保更新所有字段，避免 NaN
+        const currentTask = store.uploadQueue[taskIndex]
+        const updatedTask = {
+          ...currentTask,
+          ...progress,
+          // 确保这些字段始终有值且单位一致
+          uploadedSize: Math.min(Number(progress.uploadedSize) || 0, file.size),
+          totalSize: file.size,
+          progress: Math.min(Number(progress.progress) || 0, 100),
         }
-      })
+        // 直接替换整个任务对象，确保状态一致性
+        store.uploadQueue.splice(taskIndex, 1, updatedTask)
+      }
+    })
 
       // 设置初始任务，让 manager 知道任务结构
       manager.setInitialTask(task)
@@ -349,8 +361,15 @@ export function useCloudUpload() {
       // 更新任务状态为完成
       const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
       if (taskIndex !== -1) {
-        store.uploadQueue[taskIndex].status = 'completed'
-        store.uploadQueue[taskIndex].progress = 100
+        const updatedTask = {
+          ...store.uploadQueue[taskIndex],
+          status: 'completed',
+          progress: 100,
+          uploadedSize: file.size,
+          totalSize: file.size,
+        }
+        // 直接替换整个任务对象，确保状态一致性
+        store.uploadQueue.splice(taskIndex, 1, updatedTask)
       }
 
       Message.success(`上传成功：${file.name}`)

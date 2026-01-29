@@ -210,13 +210,26 @@ export const useCloudStore = defineStore('cloud', () => {
       return { percent: 0, loaded: 0, total: 0 }
     }
 
-    const totalSize = uploadQueue.value.reduce((sum, task) => sum + task.totalSize, 0)
-    const uploadedSize = uploadQueue.value.reduce((sum, task) => sum + task.uploadedSize, 0)
+    // 计算总大小和已上传大小
+    const totalSize = uploadQueue.value.reduce((sum, task) => {
+      // 确保 totalSize 是数字且为正数
+      const taskTotalSize = Number(task.totalSize) || 0
+      return sum + taskTotalSize
+    }, 0)
+    
+    const uploadedSize = uploadQueue.value.reduce((sum, task) => {
+      // 确保 uploadedSize 是数字且不超过 totalSize
+      const taskTotalSize = Number(task.totalSize) || 0
+      const taskUploadedSize = Math.min(Number(task.uploadedSize) || 0, taskTotalSize)
+      return sum + taskUploadedSize
+    }, 0)
+    
+    // 计算百分比
     const percent = totalSize > 0 ? (uploadedSize / totalSize) * 100 : 0
 
     return {
       percent: Math.min(100, Math.max(0, percent)),
-      loaded: uploadedSize,
+      loaded: Math.min(uploadedSize, totalSize),
       total: totalSize,
     }
   })

@@ -20,12 +20,14 @@
 
     <div v-if="!collapsed" class="cloud-upload-progress__body">
       <a-progress
-        :percent="overallProgress.percent"
+        :percent="Math.min(1, Math.max(0, (props.overallProgress.percent || 0) / 100))"
         :status="hasFailedTasks ? 'danger' : undefined"
+        :show-text="false"
         class="cloud-upload-progress__bar"
       />
       <div class="cloud-upload-progress__stats">
-        <span>{{ formatSize(overallProgress.loaded) }} / {{ formatSize(overallProgress.total) }}</span>
+        <span>{{ formatSize(safeOverallProgress.loaded) }} / {{ formatSize(safeOverallProgress.total) }}</span>
+        <span>{{ Math.round(safeOverallProgress.percent) }}%</span>
         <span>剩余 {{ uploadQueue.length - completedCount }} 个</span>
       </div>
 
@@ -116,6 +118,19 @@ const hasFailedTasks = computed(() =>
 const visibleTasks = computed(() =>
   props.uploadQueue.slice(0, maxVisibleTasks.value)
 )
+
+// 确保百分比在 0-100% 之间
+const safeOverallProgress = computed(() => {
+  return {
+    ...props.overallProgress,
+    percent: Math.min(100, Math.max(0, props.overallProgress.percent))
+  }
+})
+
+// 确保传递给 a-progress 组件的百分比值在 0-100 之间
+const safeProgressPercent = computed(() => {
+  return Math.min(100, Math.max(0, Math.round(props.overallProgress.percent || 0)))
+})
 
 function getTaskStatus(task: UploadTask) {
   if (task.status === 'completed') return 'success'

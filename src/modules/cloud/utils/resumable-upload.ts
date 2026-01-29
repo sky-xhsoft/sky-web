@@ -124,7 +124,8 @@ export class ResumableUploadManager {
    * 设置初始任务
    */
   setInitialTask(task: UploadTask) {
-    this.currentTask = task
+    // 创建任务对象的副本，避免修改原始任务对象
+    this.currentTask = { ...task }
   }
 
   /**
@@ -132,8 +133,12 @@ export class ResumableUploadManager {
    */
   private updateProgress(updates: Partial<UploadTask>) {
     if (this.currentTask && this.onProgress) {
-      Object.assign(this.currentTask, updates)
-      this.onProgress(this.currentTask)
+      // 创建一个新的进度对象，避免直接修改原始任务对象
+      const progress = {
+        ...this.currentTask,
+        ...updates
+      }
+      this.onProgress(progress)
     }
   }
 
