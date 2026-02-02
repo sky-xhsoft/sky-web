@@ -445,7 +445,7 @@ export const useCloudStore = defineStore('cloud', () => {
         parentId: parentId ?? (currentFolderId.value === 0 ? null : currentFolderId.value),
       })
       Message.success('创建文件夹成功')
-      await Promise.all([currentFolderId.value === 0 ? loadFiles() : loadFolderContent(currentFolderId.value)])
+      await Promise.all([currentFolderId.value === 0 ? loadFiles() : loadFolderContent(currentFolderId.value), loadQuota()])
     } catch (e: any) {
       console.error('创建文件夹失败:', e)
       Message.error(e?.message || '创建文件夹失败')

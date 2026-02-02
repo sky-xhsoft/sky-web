@@ -16,7 +16,7 @@ const form = reactive({
 
 const submitting = ref(false)
 
-const handleSubmit = async () => {
+const handleSubmit = async (data: any) => {
   submitting.value = true
   try {
     await authStore.login({
@@ -41,14 +41,14 @@ const handleSubmit = async () => {
     <a-card class="login-card" :bordered="false">
       <div class="title">XH-TEC</div>
       <div class="subtitle">云数据平台</div>
-      <a-form :model="form" layout="vertical" @submit.prevent="handleSubmit">
+      <a-form :model="form" layout="vertical" @submit="handleSubmit">
         <a-form-item field="username" label="用户名">
           <a-input v-model="form.username" placeholder="请输入用户名" />
         </a-form-item>
         <a-form-item field="password" label="密码">
           <a-input-password v-model="form.password" placeholder="请输入密码" allow-clear />
         </a-form-item>
-        <a-button type="primary" long :loading="submitting" html-type="submit" @click="handleSubmit">
+        <a-button type="primary" long :loading="submitting" html-type="submit">
           登录
         </a-button>
       </a-form>

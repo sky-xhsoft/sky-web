@@ -16,6 +16,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      host: '0.0.0.0',
+      port: 3000,
+      allowedHosts: ['c.skyzhou.cn'],
       proxy: {
         // 通过本地 dev server 反向代理后端，避免浏览器 CORS
         '/api': {

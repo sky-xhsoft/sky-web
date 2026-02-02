@@ -92,6 +92,13 @@
         :file-name="fileName"
       />
 
+      <!-- Markdown预览 -->
+      <MarkdownPreview
+        v-else-if="category === 'text' && isMarkdown"
+        :content="textContent"
+        :file-name="fileName"
+      />
+
       <!-- 文本预览 -->
       <TextPreview
         v-else-if="category === 'text'"
@@ -160,6 +167,7 @@ import AudioPreview from './previews/AudioPreview.vue'
 import PDFPreview from './previews/PDFPreview.vue'
 import TextPreview from './previews/TextPreview.vue'
 import CodePreview from './previews/CodePreview.vue'
+import MarkdownPreview from './previews/MarkdownPreview.vue'
 
 interface Props {
   visible: boolean
@@ -199,6 +207,13 @@ const fileSize = computed(() => formatFileSize(props.file?.FileSize || 0))
 const fileType = computed(() => props.file?.FileType || '未知')
 const fileExt = computed(() => props.file?.FileExt?.toLowerCase() || '')
 const createTime = computed(() => formatDate(props.file?.CreateTime || '', 'full'))
+
+// 判断是否是 Markdown 文件
+const isMarkdown = computed(() => {
+  const result = fileExt.value === '.md'
+  console.log('[DEBUG] isMarkdown check:', { fileExt: fileExt.value, isMarkdown: result, category: props.category })
+  return result
+})
 
 const fileEmoji = computed(() => {
   const ext = fileExt.value

@@ -7,8 +7,11 @@
 // 基础展示组件
 export { default as CloudHeader } from './CloudHeader.vue'
 export { default as CloudBreadcrumb } from './CloudBreadcrumb.vue'
+export { default as CloudTopBar } from './CloudTopBar.vue'
 export { default as CloudQuotaBar } from './CloudQuotaBar.vue'
 export { default as CloudUploadProgress } from './CloudUploadProgress.vue'
+export { default as CloudFileDisplay } from './CloudFileDisplay.vue'
+export { default as CloudDialogManager } from './CloudDialogManager.vue'
 
 // 文件展示组件
 export { default as CloudFileCard } from './CloudFileCard.vue'

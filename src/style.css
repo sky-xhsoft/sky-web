@@ -69,3 +69,9 @@ div[style*="position"][style*="fixed"]:has(.arco-message) {
   margin-bottom: 10px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
+
+/* Dropdown 下拉菜单高度限制 */
+.arco-dropdown-list-wrapper {
+  max-height: 220px !important;
+  overflow-y: auto !important;
+}

@@ -15,20 +15,13 @@
         </div>
 
         <!-- 顶部栏：面包屑 + 我的分享 + 配额 -->
-        <div class="cloud-view__top-bar">
-          <CloudBreadcrumb
-            :items="store.breadcrumbs"
-            :current-id="store.currentFolderId"
-            @navigate="handleBreadcrumbNavigate"
-          />
+        <CloudTopBar
+          :items="store.breadcrumbs"
+          :current-id="store.currentFolderId"
+          @navigate="handleBreadcrumbNavigate"
+          @open-share-manager="handleOpenShareManager"
+        />
 
-          <div class="cloud-view__top-actions">
-            <a-button @click="handleOpenShareManager" size="small">
-              <icon-share-alt />
-              我的分享
-            </a-button>
-          </div>
-        </div>
 
         <!-- 工具栏 -->
         <CloudToolbar
@@ -59,33 +52,19 @@
         </CloudToolbar>
 
         <!-- 文件展示区 -->
-        <div class="cloud-view__files">
-          <!-- 网格视图 -->
-          <CloudFileGrid
-            v-if="store.viewMode === 'grid'"
-            :items="store.gridItems"
-            :loading="store.loading.files"
-            :selected-ids="allSelectedIds"
-            :selectable="selection.selectedCount.value > 0"
-            @click="handleItemClick"
-            @dblclick="handleItemDoubleClick"
-            @select="handleItemSelect"
-            @action="handleItemAction"
-          />
+        <CloudFileDisplay
+          :view-mode="store.viewMode"
+          :items="store.gridItems"
+          :loading="store.loading.files"
+          :selected-ids="allSelectedIds"
+          :selectable="true"
+          @item-click="handleItemClick"
+          @item-double-click="handleItemDoubleClick"
+          @item-select="handleItemSelect"
+          @list-select="handleListSelect"
+          @item-action="handleItemAction"
+        />
 
-          <!-- 列表视图 -->
-          <CloudFileList
-            v-else
-            :items="store.gridItems"
-            :loading="store.loading.files"
-            :selected-ids="allSelectedIds"
-            :selectable="selection.selectedCount.value > 0"
-            @click="handleItemClick"
-            @dblclick="handleItemDoubleClick"
-            @select="handleListSelect"
-            @action="handleItemAction"
-          />
-        </div>
       </main>
 
       <!-- 右侧栏：配额信息 + 批量操作 -->
@@ -137,7 +116,6 @@
     <MoveFileDialog
       v-model:visible="dialogs.move"
       :loading="file.movingFile.value"
-      :folder-tree="store.folderTree"
       :selected-count="selection.selectedCount.value"
       :current-folder-id="store.currentFolderId"
       @confirm="handleMove"
@@ -228,6 +206,8 @@ import type { TreeNodeData } from '@arco-design/web-vue'
 // 导入组件
 import {
   CloudBreadcrumb,
+  CloudTopBar,
+  CloudFileDisplay,
   CloudQuotaBar,
   CloudToolbar,
   CloudSearchBar,
@@ -237,6 +217,7 @@ import {
   CloudBatchActions,
   CloudUploadProgress,
   CloudShareManager,
+  CloudDialogManager,
   CreateFolderDialog,
   RenameDialog,
   MoveFileDialog,
@@ -455,18 +436,17 @@ function handleSortOrderToggle() {
 }
 
 // ==================== 文件/文件夹操作 ====================
-function handleItemClick(item: GridItem) {
-  // 单击选择/取消选择
-  if (item.type === 'file') {
-    selection.toggleFileSelection(item.id)
-  } else {
-    selection.toggleFolderSelection(item.id)
+async function handleItemClick(item: GridItem) {
+  // 单击文件夹：直接进入
+  if (item.type === 'folder') {
+    await navigation.navigateTo(item.id, item.name)
   }
+  // 单击文件：不做任何操作（只有点击复选框才会选中）
 }
 
 async function handleItemDoubleClick(item: GridItem) {
   if (item.type === 'folder') {
-    // 双击文件夹：进入文件夹
+    // 双击文件夹：进入文件夹（与单击行为一致）
     await navigation.navigateTo(item.id, item.name)
   } else if (item.type === 'file') {
     // 双击文件：预览
@@ -479,12 +459,18 @@ async function handleItemDoubleClick(item: GridItem) {
   }
 }
 
-function handleItemSelect(item: GridItem, selected: boolean) {
+function handleItemSelect(payload: { item: GridItem; selected: boolean }) {
+  console.log('[DEBUG] handleItemSelect called:', payload)
+  const { item, selected } = payload
   if (item.type === 'file') {
+    console.log('[DEBUG] Toggling file selection:', item.id)
     selection.toggleFileSelection(item.id)
   } else {
+    console.log('[DEBUG] Toggling folder selection:', item.id)
     selection.toggleFolderSelection(item.id)
   }
+  console.log('[DEBUG] After toggle - selectedFileIds:', Array.from(store.selectedFileIds))
+  console.log('[DEBUG] After toggle - selectedFolderIds:', Array.from(store.selectedFolderIds))
 }
 
 function handleListSelect(selectedKeys: (string | number)[]) {
@@ -505,12 +491,21 @@ function handleListSelect(selectedKeys: (string | number)[]) {
   })
 }
 
-async function handleItemAction(action: string, item: GridItem) {
+async function handleItemAction(payload: { action: string; item: GridItem }) {
+  const { action, item } = payload
+  console.log('[DEBUG] handleItemAction called:', { action, item })
   currentItem.value = item
 
   switch (action) {
     case 'preview':
+      console.log('[DEBUG] Preview action:', {
+        itemType: item.type,
+        hasFile: !!item.file,
+        canPreview: item.file ? preview.canPreview(item.file) : false,
+        fileExt: item.file?.FileExt
+      })
       if (item.type === 'file' && item.file && preview.canPreview(item.file)) {
+        console.log('[DEBUG] Opening preview dialog')
         dialogs.preview = true
       } else {
         Message.warning('暂不支持预览此类型文件')
@@ -534,6 +529,11 @@ async function handleItemAction(action: string, item: GridItem) {
         // 选中当前文件
         store.selectedFileIds.clear()
         store.selectedFileIds.add(item.id)
+        dialogs.move = true
+      } else if (item.type === 'folder') {
+        // 选中当前文件夹
+        store.selectedFolderIds.clear()
+        store.selectedFolderIds.add(item.id)
         dialogs.move = true
       }
       break

@@ -3,8 +3,8 @@ import { Message } from '@arco-design/web-vue'
 import BasicLayout from '../layouts/BasicLayout.vue'
 import Dashboard from '../pages/Dashboard.vue'
 import Login from '../pages/Login.vue'
-import Cloud from '../pages/Cloud.vue'
 import Share from '../pages/Share.vue'
+import LiveDomain from '../pages/LiveDomain.vue'
 import { useAuthStore } from '../stores/auth'
 import { useMenuStore } from '../stores/menu'
 
@@ -34,6 +34,13 @@ const routes: RouteRecordRaw[] = [
         name: 'app',
         component: Dashboard,  // 默认组件，实际不会用到
         meta: { title: '应用', requiresAuth: true },
+      },
+      // 直播域名管理页面
+      {
+        path: 'live/domains',
+        name: 'live-domains',
+        component: LiveDomain,
+        meta: { title: '直播域名管理', requiresAuth: true },
       },
     ],
   },

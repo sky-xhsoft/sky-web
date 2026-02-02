@@ -272,7 +272,13 @@ export function useCloudSelection() {
       // 显示结果消息
       if (result.failedCount === 0) {
         Message.success(`成功移动 ${result.successCount} 个文件`)
+      } else if (result.successCount === 0) {
+        // 全部失败
+        Message.error(
+          `移动失败：${result.failedCount} 个文件无法移动`
+        )
       } else {
+        // 部分成功
         Message.warning(
           `移动完成：成功 ${result.successCount} 个，失败 ${result.failedCount} 个`
         )

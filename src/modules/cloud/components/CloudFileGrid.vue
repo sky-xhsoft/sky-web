@@ -28,7 +28,7 @@
         :show-actions="showActions"
         @click="handleClick(item)"
         @dblclick="handleDoubleClick(item)"
-        @select="handleSelect(item, $event)"
+        @select="handleSelect"
         @action="handleAction($event, item)"
         @contextmenu="handleContextMenu($event, item)"
       />

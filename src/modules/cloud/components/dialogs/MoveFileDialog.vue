@@ -21,7 +21,7 @@
         <a-tree
           :data="folderTreeData"
           :selected-keys="selectedKeys"
-          :default-expand-all="true"
+          :load-more="loadMore"
           @select="handleSelect"
         >
           <template #icon>
@@ -30,7 +30,7 @@
         </a-tree>
       </div>
 
-      <div class="target-info" v-if="targetFolder">
+      <div class="target-info" v-if="targetFolder !== null">
         目标位置：<strong>{{ targetFolderPath }}</strong>
       </div>
     </div>
@@ -39,13 +39,13 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { fetchFolders } from '@/modules/cloud/api'
 import type { Folder } from '@/modules/cloud/types'
 import type { TreeNodeData } from '@arco-design/web-vue'
 
 interface Props {
   visible?: boolean
   loading?: boolean
-  folderTree?: Folder[]
   selectedCount?: number
   currentFolderId?: number
 }
@@ -58,7 +58,6 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
   loading: false,
-  folderTree: () => [],
   selectedCount: 0,
   currentFolderId: 0,
 })
@@ -68,15 +67,22 @@ const emit = defineEmits<Emits>()
 const dialogVisible = ref(props.visible)
 const selectedKeys = ref<number[]>([0])
 const targetFolder = ref<number | null>(null)
+const folderTreeData = ref<TreeNodeData[]>([])
+const folderPathMap = ref<Map<number, string>>(new Map())
 
 watch(
   () => props.visible,
-  (newValue) => {
+  async (newValue) => {
     dialogVisible.value = newValue
     if (newValue) {
       // 重置选择
       selectedKeys.value = [0]
       targetFolder.value = 0
+      folderPathMap.value.clear()
+      folderPathMap.value.set(0, '/根目录')
+
+      // 加载根目录的子文件夹
+      await loadRootFolders()
     }
   }
 )
@@ -89,45 +95,55 @@ const selectedItemsText = computed(() => {
   return `${props.selectedCount} 项`
 })
 
-const folderTreeData = computed<TreeNodeData[]>(() => {
-  const rootNode: TreeNodeData = {
-    key: 0,
-    title: '根目录',
-    children: convertToTreeData(props.folderTree),
-  }
-  return [rootNode]
-})
-
 const targetFolderPath = computed(() => {
   if (targetFolder.value === null) return ''
-  if (targetFolder.value === 0) return '/根目录'
-
-  const path = findFolderPath(props.folderTree, targetFolder.value)
-  return path ? `/根目录/${path.join('/')}` : '/根目录'
+  return folderPathMap.value.get(targetFolder.value) || '/根目录'
 })
 
-function convertToTreeData(folders: Folder[]): TreeNodeData[] {
-  return folders.map((folder) => ({
-    key: folder.ID || folder.id || 0,
-    title: folder.name,
-    children: folder.Children ? convertToTreeData(folder.Children) : [],
-    // 禁用当前文件夹（不能移动到自己）
-    disabled: (folder.ID || folder.id) === props.currentFolderId,
-  }))
+// 加载根目录的子文件夹
+async function loadRootFolders() {
+  try {
+    const folders = await fetchFolders(0)
+    folderTreeData.value = [{
+      key: 0,
+      title: '根目录',
+      isLeaf: false,
+      children: folders.map(folder => convertFolderToTreeNode(folder, '/根目录')),
+    }]
+  } catch (error) {
+    console.error('加载根目录失败:', error)
+  }
 }
 
-function findFolderPath(folders: Folder[], targetId: number, path: string[] = []): string[] | null {
-  for (const folder of folders) {
-    const currentPath = [...path, folder.name]
-    if ((folder.ID || folder.id) === targetId) {
-      return currentPath
-    }
-    if (folder.Children) {
-      const result = findFolderPath(folder.Children, targetId, currentPath)
-      if (result) return result
-    }
+// 懒加载子文件夹
+async function loadMore(node: TreeNodeData): Promise<void> {
+  const folderId = node.key as number
+
+  try {
+    const folders = await fetchFolders(folderId)
+    const parentPath = folderPathMap.value.get(folderId) || '/根目录'
+
+    node.children = folders.map(folder => convertFolderToTreeNode(folder, parentPath))
+  } catch (error) {
+    console.error('加载子文件夹失败:', error)
+    node.children = []
   }
-  return null
+}
+
+// 将 Folder 转换为 TreeNodeData
+function convertFolderToTreeNode(folder: Folder, parentPath: string): TreeNodeData {
+  const folderId = folder.ID || folder.id || 0
+  const folderPath = `${parentPath}/${folder.name}`
+
+  // 保存路径映射
+  folderPathMap.value.set(folderId, folderPath)
+
+  return {
+    key: folderId,
+    title: folder.name,
+    isLeaf: false, // 假设所有文件夹都可能有子文件夹
+    disabled: folderId === props.currentFolderId, // 禁用当前文件夹
+  }
 }
 
 function handleSelect(selectedKeysList: (string | number)[], data: { node?: TreeNodeData }) {

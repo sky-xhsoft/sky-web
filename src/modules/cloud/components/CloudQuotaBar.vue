@@ -45,7 +45,7 @@
           <icon-dashboard :size="16" />
         </div>
         <div class="stat-info">
-          <div class="stat-value" :class="percentClass">{{ usagePercent.toFixed(1) }}%</div>
+          <div class="stat-value" :class="percentClass">{{ displayPercent }}%</div>
           <div class="stat-label">使用率</div>
         </div>
       </div>
@@ -69,28 +69,35 @@ const usagePercent = computed(() => {
   if (!props.quota) return 0
   const total = Number(props.quota.totalQuota) || 0
   const used = Number(props.quota.usedSpace) || 0
-  if (total > 0) {
-    return Math.min(100, Math.max(0, (used / total) * 100))
-  }
-  return 0
+
+  if (total <= 0) return 0
+
+  // 计算比例（0-1），Arco Design 会自动乘以 100 来显示
+  const ratio = used / total
+  return Math.min(1, Math.max(0, ratio))
+})
+
+// 用于显示的百分比文本（需要手动乘以 100）
+const displayPercent = computed(() => {
+  return (usagePercent.value * 100).toFixed(1)
 })
 
 const progressColor = computed(() => {
-  const percent = usagePercent.value
+  const percent = usagePercent.value * 100 // 转换为百分比
   if (percent >= 90) return '#f53f3f'
   if (percent >= 70) return '#ff7d00'
   return '#00b42a'
 })
 
 const progressStatus = computed(() => {
-  const percent = usagePercent.value
+  const percent = usagePercent.value * 100 // 转换为百分比
   if (percent >= 90) return 'danger'
   if (percent >= 70) return 'warning'
   return 'success'
 })
 
 const percentClass = computed(() => {
-  const percent = usagePercent.value
+  const percent = usagePercent.value * 100 // 转换为百分比
   if (percent >= 90) return 'is-danger'
   if (percent >= 70) return 'is-warning'
   return 'is-safe'
