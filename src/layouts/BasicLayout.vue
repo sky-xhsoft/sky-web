@@ -10,6 +10,16 @@ import { useNavigationStore } from '../stores/navigation'
 // 导入常用组件
 import Dashboard from '../pages/Dashboard.vue'
 import Cloud from '../pages/Cloud.vue'
+import LiveDomain from '../pages/LiveDomain.vue'
+import LiveDomainDetail from '../pages/LiveDomainDetail.vue'
+import LiveStream from '../pages/LiveStream.vue'
+import LivePreview from '../pages/LivePreview.vue'
+import PullStreamTask from '../pages/PullStreamTask.vue'
+import PullStreamTaskForm from '../pages/PullStreamTaskForm.vue'
+import LiveHighlightClips from '../pages/LiveHighlightClips.vue'
+import LiveHighlightClipPreview from '../pages/LiveHighlightClipPreview.vue'
+import LiveRecordings from '../pages/LiveRecordings.vue'
+import LiveRecordingPreview from '../pages/LiveRecordingPreview.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -21,6 +31,16 @@ const navigationStore = useNavigationStore()
 const componentRegistry: Record<string, any> = {
   Dashboard,
   Cloud,
+  LiveDomain,
+  LiveDomainDetail,
+  LiveStream,
+  LivePreview,
+  PullStreamTask,
+  PullStreamTaskForm,
+  LiveHighlightClips,
+  LiveHighlightClipPreview,
+  LiveRecordings,
+  LiveRecordingPreview,
 }
 
 // 当前显示的组件（使用 shallowRef 提高性能）
@@ -53,16 +73,14 @@ const navItems = computed<NavItem[]>(() => {
 
   // 定义默认菜单项
   const dashboard = { key: 'dashboard', title: '首页', path: '/' }
-  const cloud = { key: 'cloud', title: '云盘', path: '/cloud' }
+  //const cloud = { key: 'cloud', title: '云盘', path: '/cloud' }
 
   // 过滤掉后端返回的首页和云盘（如果存在）
   const filtered = mapped.filter((m) => m.key !== 'dashboard' && m.key !== 'cloud')
 
   // 确保首页始终排第一，云盘排第二（如果后端没有返回）
   const result = [dashboard]
-  if (!mapped.some((m) => m.key === 'cloud')) {
-    result.push(cloud)
-  }
+
   result.push(...filtered)
 
   return result
@@ -135,6 +153,41 @@ async function loadComponent(path: string) {
       currentComponent.value = componentRegistry.Cloud
       navigationStore.navigateTo('Cloud', '云盘', {}, false)
       break
+    case '/live/domains':
+      currentComponent.value = componentRegistry.LiveDomain
+      navigationStore.navigateTo('LiveDomain', '直播域名管理', {}, false)
+      break
+    case '/live/domains/detail':
+      currentComponent.value = componentRegistry.LiveDomainDetail
+      // 从查询参数中获取域名
+      const domainName = new URLSearchParams(window.location.search).get('domain') || ''
+      navigationStore.navigateTo('LiveDomainDetail', `域名详情 - ${domainName}`, { domainName }, false)
+      break
+    case '/live/streams':
+      currentComponent.value = componentRegistry.LiveStream
+      navigationStore.navigateTo('LiveStream', '直播流管理', {}, false)
+      break
+    case '/live/pull-stream':
+      currentComponent.value = componentRegistry.PullStreamTask
+      navigationStore.navigateTo('PullStreamTask', '拉流转推', {}, false)
+      break
+    case '/live/pull-stream/create':
+      currentComponent.value = componentRegistry.PullStreamTaskForm
+      navigationStore.navigateTo('PullStreamTaskForm', '创建拉流任务', {}, false)
+      break
+    case '/live/pull-stream/edit':
+      currentComponent.value = componentRegistry.PullStreamTaskForm
+      const taskId = new URLSearchParams(window.location.search).get('id') || ''
+      navigationStore.navigateTo('PullStreamTaskForm', '编辑拉流任务', { taskId }, false)
+      break
+    case '/live/highlight-clips':
+      currentComponent.value = componentRegistry.LiveHighlightClips
+      navigationStore.navigateTo('LiveHighlightClips', '高光切片', {}, false)
+      break
+    case '/live/recordings':
+      currentComponent.value = componentRegistry.LiveRecordings
+      navigationStore.navigateTo('LiveRecordings', '录制列表', {}, false)
+      break
     default:
       // 动态表单路由 /tables/xxx
       if (path.startsWith('/tables/')) {
@@ -202,8 +255,10 @@ watch(
       // 动态加载列表视图组件
       const MetadataListView = (await import('../modules/metadata/views/MetadataListView.vue')).default
       currentComponent.value = MetadataListView
+    } else if (componentRegistry[componentName]) {
+      // 如果组件在 componentRegistry 中，直接使用
+      currentComponent.value = componentRegistry[componentName]
     }
-    // 其他组件已在 componentRegistry 中或通过 loadComponent 处理
   }
 )
 
