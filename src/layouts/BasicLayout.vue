@@ -207,8 +207,39 @@ const onMenuClick = async (key: string) => {
   }
 }
 
+const onOpenChange = (keys: string[]) => {
+  console.log('onOpenChange triggered:', keys)
+  openKeys.value = keys as string[]
+}
+
+const onSubMenuClick = (key: string | number) => {
+  console.log('SubMenu clicked:', key, 'type:', typeof key)
+  console.log('Current openKeys:', openKeys.value)
+
+  // 确保 key 和 openKeys 中的值类型一致
+  const keyStr = String(key)
+  const currentKeys = openKeys.value.map(k => String(k))
+  const index = currentKeys.indexOf(keyStr)
+
+  console.log('keyStr:', keyStr, 'currentKeys:', currentKeys, 'index:', index)
+
+  if (index > -1) {
+    // 折叠：移除这个 key
+    openKeys.value = openKeys.value.filter(k => String(k) !== keyStr)
+  } else {
+    // 展开：添加这个 key
+    openKeys.value = [...openKeys.value, key]
+  }
+  console.log('Updated openKeys:', openKeys.value)
+  console.log('Updated openKeys raw:', JSON.stringify(openKeys.value))
+}
+
 const onRootClick = async (key: string) => {
-  selectedRootKey.value = key
+  // 如果切换了根菜单，重置展开状态
+  if (selectedRootKey.value !== key) {
+    selectedRootKey.value = key
+    openKeys.value = defaultOpenKeys.value
+  }
   currentMenuKey.value = key
   const targetPath = keyPathMap.value.get(key)
   if (targetPath) {
@@ -272,14 +303,6 @@ watch(
   },
   { immediate: true }
 )
-
-watch(
-  () => sidebarItems.value,
-  () => {
-    openKeys.value = defaultOpenKeys.value
-  },
-  { immediate: true }
-)
 </script>
 
 <template>
@@ -295,17 +318,17 @@ watch(
             </div>
           </div>
           <div class="root-menu-bar">
-            <Menu
+            <a-menu
               mode="horizontal"
               :selected-keys="rootSelectedKeys"
-              @menu-item-click="onRootClick"
+              @menuItemClick="onRootClick"
               class="root-menu-flat"
               :ellipsis="false"
             >
-              <Menu.Item v-for="item in rootMenus" :key="item.key">
+              <a-menu-item v-for="item in rootMenus" :key="item.key">
                 {{ item.title }}
-              </Menu.Item>
-            </Menu>
+              </a-menu-item>
+            </a-menu>
           </div>
         </div>
         <div class="header-actions">
@@ -316,33 +339,30 @@ watch(
     </a-layout-header>
     <a-layout class="main-layout">
       <a-layout-sider class="side-nav" :width="230">
-        <Menu
-          :selected-keys="selectedKeys"
-          :default-open-keys="defaultOpenKeys"
-          :open-keys="openKeys"
-          @open-change="(keys) => (openKeys = keys as string[])"
-          @menu-item-click="onMenuClick"
-          auto-open-selected
-          theme="light"
+        <a-menu
+          v-model:openKeys="openKeys"
+          v-model:selectedKeys="selectedKeys"
+          @menuItemClick="onMenuClick"
+          :accordion="true"
         >
           <template v-for="item in sidebarItems" :key="item.key">
-            <Menu.SubMenu v-if="item.children?.length" :key="item.key">
+            <a-sub-menu v-if="item.children?.length" :key="item.key">
               <template #icon>
                 <IconApps />
               </template>
               <template #title>{{ item.title }}</template>
-              <Menu.Item v-for="child in item.children" :key="child.key">
+              <a-menu-item v-for="child in item.children" :key="child.key">
                 {{ child.title }}
-              </Menu.Item>
-            </Menu.SubMenu>
-            <Menu.Item v-else :key="item.key">
+              </a-menu-item>
+            </a-sub-menu>
+            <a-menu-item v-else :key="item.key">
               <template #icon>
                 <IconApps />
               </template>
               {{ item.title }}
-            </Menu.Item>
+            </a-menu-item>
           </template>
-        </Menu>
+        </a-menu>
       </a-layout-sider>
       <a-layout>
         <a-layout-content class="app-content">
