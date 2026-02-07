@@ -810,7 +810,6 @@ const defaultSorters = computed(() => {
       dataIndex: field,
       direction: sorter.direction
     }))
-  console.log('[DynamicTable] defaultSorters computed:', result)
   return result
 })
 
@@ -837,7 +836,6 @@ const legendItems = computed(() => {
     return setValueType === 'select'
   })
 
-  console.log('[legendItems] selectColumns:', selectColumns.map(c => c.DB_NAME || (c as any).dbName))
 
   // 为每个 select 列生成图例
   selectColumns.forEach(column => {
@@ -847,7 +845,6 @@ const legendItems = computed(() => {
     const dictID = typeof sysDictID === 'string' ? parseInt(sysDictID, 10) : sysDictID
     const dictItems = tableConfig.value!.dictData[dictID]
 
-    console.log(`[legendItems] column=${column.DB_NAME || (column as any).dbName}, dictID=${dictID}, dictItems:`, dictItems)
 
     if (!dictItems || dictItems.length === 0) return
 
@@ -869,7 +866,6 @@ const legendItems = computed(() => {
     })
   })
 
-  console.log('[legendItems] legends:', legends)
   return legends
 })
 
@@ -915,14 +911,12 @@ function isDateTimeColumn(dataIndex: string): boolean {
   if (commonDateTimeFields.includes(dataIndex) ||
       upperDataIndex === 'CREATE_TIME' ||
       upperDataIndex === 'UPDATE_TIME') {
-    console.log(`[DynamicTable] ${dataIndex} 识别为系统时间字段`)
     return true
   }
 
   const column = tableConfig.value?.columns.find(c => c.DB_NAME === dataIndex)
   const isDateTime = column?.CONTROL_TYPE === 'datetime'
   if (isDateTime) {
-    console.log(`[DynamicTable] ${dataIndex} 识别为datetime类型字段`)
   }
   return isDateTime
 }
@@ -1151,21 +1145,11 @@ function handleEdit(record: FormData) {
  * 外键跳转 - 跳转到关联记录的查看页面
  */
 function handleForeignKeyJump(refInfo: any) {
-  console.log('[FK Jump] refInfo:', refInfo)
 
   if (!refInfo || !refInfo.table_id || !refInfo.record_id) {
     Message.warning('无法跳转：缺少关联信息')
     return
   }
-
-  console.log('[FK Jump] Navigating to:', {
-    componentName: 'MetadataFormView',
-    params: {
-      tableId: refInfo.table_id,
-      recordId: refInfo.record_id,
-      mode: 'view'
-    }
-  })
 
   // 使用 navigationStore 跳转到关联记录的查看页面
   navigationStore.navigateTo('MetadataFormView', '查看关联记录', {
@@ -1309,7 +1293,6 @@ async function handleRefresh() {
  * 排序变化（支持多字段排序）
  */
 function handleSorterChange(dataIndex: string, direction: string, sorterResult: any) {
-  console.log('[DynamicTable] 排序事件触发:', { dataIndex, direction, sorterResult })
 
   const tableStore = useDynamicTableStore()
 
@@ -1354,8 +1337,6 @@ function handleSorterChange(dataIndex: string, direction: string, sorterResult: 
       direction: sorter.direction
     }))
 
-  console.log('[DynamicTable] 当前排序状态:', columnSorters.value)
-  console.log('[DynamicTable] 发送排序参数:', sorters)
 
   // 发送到后端
   tableStore.updateSorters(tableName.value, sorters)
@@ -1388,9 +1369,6 @@ function handleCancelSort(dataIndex: string) {
       direction: sorter.direction
     }))
 
-  console.log('[DynamicTable] 取消排序:', dataIndex)
-  console.log('[DynamicTable] 当前排序状态:', columnSorters.value)
-  console.log('[DynamicTable] 发送排序参数:', sorters)
 
   // 发送到后端
   const tableStore = useDynamicTableStore()
@@ -1401,7 +1379,6 @@ function handleCancelSort(dataIndex: string) {
  * 处理表头点击（切换排序）
  */
 function handleHeaderClick(dataIndex: string) {
-  console.log('[DynamicTable] 表头点击:', dataIndex)
 
   const tableStore = useDynamicTableStore()
   const current = columnSorters.value[dataIndex]
@@ -1444,8 +1421,6 @@ function handleHeaderClick(dataIndex: string) {
       direction: sorter.direction
     }))
 
-  console.log('[DynamicTable] 当前排序状态:', columnSorters.value)
-  console.log('[DynamicTable] 发送排序参数:', sorters)
 
   // 发送到后端
   tableStore.updateSorters(tableName.value, sorters)
@@ -1491,7 +1466,6 @@ function handleSelectAll(checked: boolean) {
  */
 function getRowClass(record: FormData, rowIndex: number): string | string[] {
   if (!tableConfig.value?.dictData) {
-    console.log('[getRowClass] No dictData')
     return ''
   }
 
@@ -1505,14 +1479,11 @@ function getRowClass(record: FormData, rowIndex: number): string | string[] {
     return setValueType === 'select'
   })
 
-  console.log('[getRowClass] rowIndex:', rowIndex, 'selectColumns:', selectColumns.map(c => c.dataIndex))
 
   // 遍历所有 select 列，找到第一个有 CSS_CLASS 的值
   for (const column of selectColumns) {
     const value = record[column.dataIndex]
-    console.log(`[getRowClass] column=${column.dataIndex}, value=${value}, type=${typeof value}, isEmpty=${!value}`)
     if (!value) {
-      console.log(`[getRowClass] Skipping column ${column.dataIndex} because value is empty`)
       continue
     }
 
@@ -1521,18 +1492,14 @@ function getRowClass(record: FormData, rowIndex: number): string | string[] {
       return dbName === column.dataIndex
     })
 
-    console.log(`[getRowClass] originalColumn:`, originalColumn)
 
     const sysDictID = originalColumn?.SYS_DICT_ID || (originalColumn as any)?.sysDictId
-    console.log(`[getRowClass] sysDictID=${sysDictID}`)
     if (!sysDictID) {
-      console.log(`[getRowClass] No sysDictID for column ${column.dataIndex}`)
       continue
     }
 
     const dictID = typeof sysDictID === 'string' ? parseInt(sysDictID, 10) : sysDictID
     const dictItems = tableConfig.value.dictData[dictID]
-    console.log(`[getRowClass] dictID=${dictID}, dictItems:`, dictItems)
     if (!dictItems) continue
 
     const item = dictItems.find(item => {
@@ -1540,19 +1507,15 @@ function getRowClass(record: FormData, rowIndex: number): string | string[] {
       return itemValue === String(value)
     })
 
-    console.log(`[getRowClass] Found item:`, item)
 
     if (item) {
       const cssClass = item.CSS_CLASS || (item as any).cssClass
-      console.log(`[getRowClass] cssClass=${cssClass}`)
       if (cssClass) {
         // 如果是 Arco tag 颜色，转换为行样式类
         if (['success', 'danger', 'warning', 'primary', 'info'].includes(cssClass)) {
-          console.log(`[getRowClass] Returning row-${cssClass}`)
           return `row-${cssClass}`
         }
         // 自定义样式类
-        console.log(`[getRowClass] Returning row-dict-label-${cssClass}`)
         return `row-dict-label-${cssClass}`
       }
     }
@@ -1639,18 +1602,14 @@ watch(
   () => props.tableId,
   (newTableId, oldTableId) => {
     if (newTableId !== oldTableId && oldTableId !== undefined) {
-      console.log('[DynamicTable] tableId 变化：', oldTableId, '->', newTableId)
-      console.log('[DynamicTable] 清空前 queryForm=', JSON.stringify(queryForm.value))
 
       // 清空查询表单，避免旧表的查询字段带入新表
       queryForm.value = {}
 
-      console.log('[DynamicTable] 清空后 queryForm=', JSON.stringify(queryForm.value))
 
       // 同时清空 store 的 filters（因为可能之前点过查询按钮）
       const tableStore = useDynamicTableStore()
       tableStore.filters = {}
-      console.log('[DynamicTable] 已清空 tableStore.filters')
     }
   }
 )

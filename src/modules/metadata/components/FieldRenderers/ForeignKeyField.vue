@@ -108,128 +108,122 @@ const {
 // 从列配置中直接读取 refTableIsDropdown
 const isDropdownMode = computed(() => {
   const refTableIsDropdown = (props.column as any).refTableIsDropdown ||
-                             (props.column as any).REF_TABLE_IS_DROPDOWN
+                             (props.column as any).REF_TABLE_IS_DROPDOWN;
   // 默认为下拉框模式，只有明确配置为 'N' 才使用仅查找模式
-  return refTableIsDropdown !== 'N'
-})
+  return refTableIsDropdown !== 'N';
+});
 
-const currentValue = ref(props.modelValue)
-const isDisabled = computed(() => props.disabled || props.mode === 'view')
-const placeholder = computed(() => props.column.PLACEHOLDER || '请选择')
-const showLookupDialog = ref(false)
+const currentValue = ref(props.modelValue);
+const isDisabled = computed(() => props.disabled || props.mode === 'view');
+const placeholder = computed(() => props.column.PLACEHOLDER || '请选择');
+const showLookupDialog = ref(false);
 
 // 获取 FK 配置
 const refTableId = computed(() => {
-  return props.column.REF_TABLE_ID || (props.column as any).refTableId
-})
+  return props.column.REF_TABLE_ID || (props.column as any).refTableId;
+});
 
 const refColumnId = computed(() => {
-  return props.column.REF_COLUMN_ID || (props.column as any).refColumnId
-})
+  return props.column.REF_COLUMN_ID || (props.column as any).refColumnId;
+});
 
 const displayName = computed(() => {
-  return props.column.DISPLAY_NAME || (props.column as any).displayName || '数据'
-})
+  return props.column.DISPLAY_NAME || (props.column as any).displayName || '数据';
+});
 
 // 显示值（查看模式使用）
 const displayValue = computed(() => {
-  if (!currentValue.value) return ''
+  if (!currentValue.value) return '';
 
   // 优先使用后端返回的 _display 字段
-  const dbName = props.column.DB_NAME || (props.column as any).dbName
-  const displayFieldName = `${dbName}_display`
+  const dbName = props.column.DB_NAME || (props.column as any).dbName;
+  const displayFieldName = `${dbName}_display`;
   if (props.record && props.record[displayFieldName]) {
-    return props.record[displayFieldName]
+    return props.record[displayFieldName];
   }
 
   // 其次从 options 中查找
-  const option = options.value.find(opt => opt.value === currentValue.value)
-  return option ? option.label : String(currentValue.value)
-})
+  const option = options.value.find(opt => opt.value === currentValue.value);
+  return option ? option.label : String(currentValue.value);
+});
 
 // 初始化
 onMounted(async () => {
   // 查看模式下，如果后端已经返回了 _display 字段，不需要加载 options
-  const dbName = props.column.DB_NAME || (props.column as any).dbName
-  const displayFieldName = `${dbName}_display`
-  const hasBackendDisplayValue = props.record && props.record[displayFieldName]
+  const dbName = props.column.DB_NAME || (props.column as any).dbName;
+  const displayFieldName = `${dbName}_display`;
+  const hasBackendDisplayValue = props.record && props.record[displayFieldName];
 
   if (isDisabled.value && hasBackendDisplayValue) {
-    console.log('[ForeignKeyField] 查看模式，使用后端返回的 _display 字段，跳过加载 options')
-    return
+    return;
   }
 
   // 编辑模式或没有后端显示值时才加载 options
-  await loadOptions()
+  await loadOptions();
 
   // 如果有值但 options 中没有对应项，主动获取显示值
   if (currentValue.value && !options.value.find(opt => opt.value === currentValue.value)) {
     try {
-      const { getDisplayValue } = useForeignKey(props.column)
-      const label = await getDisplayValue(currentValue.value)
+      const { getDisplayValue } = useForeignKey(props.column);
+      const label = await getDisplayValue(currentValue.value);
       if (label) {
         options.value.push({
           value: currentValue.value,
           label: label
-        })
+        });
       }
     } catch (error) {
-      console.error('[ForeignKeyField] 获取显示值失败:', error)
+      console.error('[ForeignKeyField] 获取显示值失败:', error);
     }
   }
-})
+});
 
 // 监听外部值变化
 watch(() => props.modelValue, (newVal) => {
-  currentValue.value = newVal
-})
+  currentValue.value = newVal;
+});
 
 // 搜索处理
 async function handleSearch(keyword: string) {
-  await searchOptions(keyword)
+  await searchOptions(keyword);
 }
 
 // 值变化处理
 function handleChange(value: number | string | null) {
-  const option = options.value.find(opt => opt.value === value)
-  emit('update:modelValue', value)
-  emit('change', value, option || null)
+  const option = options.value.find(opt => opt.value === value);
+  emit('update:modelValue', value);
+  emit('change', value, option || null);
 }
 
 // 清除
 function handleClear() {
-  currentValue.value = null
-  handleChange(null)
+  currentValue.value = null;
+  handleChange(null);
 }
 
 // 从对话框选择
 function handleSelectFromDialog(row: { value: any; label: string }) {
-  currentValue.value = row.value
+  currentValue.value = row.value;
   // 将选中的数据添加到 options 中（如果不存在）
   if (!options.value.find(opt => opt.value === row.value)) {
-    options.value.push(row)
+    options.value.push(row);
   }
-  handleChange(row.value)
+  handleChange(row.value);
 }
 
 // 跳转到关联记录
 function handleJumpToRecord() {
   if (!currentValue.value || !refTableId.value) {
-    Message.warning('无法跳转：缺少关联信息')
-    return
+    Message.warning('无法跳转：缺少关联信息');
+    return;
   }
-
-  console.log('[ForeignKeyField] 跳转到关联记录:', {
-    tableId: refTableId.value,
-    recordId: currentValue.value
-  })
 
   // 使用 navigationStore 跳转到关联记录的查看页面
   navigationStore.navigateTo('MetadataFormView', '查看关联记录', {
     tableId: refTableId.value,
     recordId: currentValue.value,
     mode: 'view'
-  })
+  });
 }
 </script>
 

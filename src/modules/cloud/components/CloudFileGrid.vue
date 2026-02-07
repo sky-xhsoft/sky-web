@@ -71,7 +71,6 @@ const emit = defineEmits<Emits>()
 function isSelected(item: GridItem): boolean {
   const compositeKey = `${item.type}-${item.id}`
   const result = props.selectedIds ? props.selectedIds.has(compositeKey) : false
-  console.log("[DEBUG] isSelected check:", { itemType: item.type, itemId: item.id, itemName: item.name, compositeKey, result, allSelectedIds: props.selectedIds ? Array.from(props.selectedIds) : [] })
   return result
 }
 

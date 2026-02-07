@@ -326,17 +326,14 @@ async function loadShareInfo() {
   error.value = ''
   try {
     const info = await getShareInfo(shareCode.value)
-    console.log('初始加载分享信息:', info)
     shareInfo.value = info
 
     // 如果是公开分享，直接验证通过
     if (info.share.shareType === 'public') {
-      console.log('公开分享，直接验证通过')
       verified.value = true
 
       // 如果是文件夹分享，自动加载文件夹内容
       if (info.resourceType === 'folder') {
-        console.log('公开文件夹分享，开始加载内容')
         showFolderContent.value = true
 
         // 初始化面包屑路径
@@ -346,7 +343,6 @@ async function loadShareInfo() {
         await loadFolderContent()
       }
     } else {
-      console.log('密码分享，需要验证密码')
     }
   } catch (e: any) {
     console.error('获取分享信息失败:', e)
@@ -371,14 +367,12 @@ async function handleVerify() {
   error.value = ''
   try {
     const info = await accessShare(shareCode.value, form.value.password)
-    console.log('验证成功，获取到的分享信息:', info)
     shareInfo.value = info
     verified.value = true
     Message.success('验证成功')
 
     // 如果是文件夹分享，自动加载文件夹内容
     if (info.resourceType === 'folder') {
-      console.log('检测到文件夹分享，开始加载内容')
       showFolderContent.value = true
 
       // 初始化面包屑路径
@@ -426,7 +420,6 @@ async function loadFolderContent(parentId?: number) {
   try {
     // 如果 parentId 为 undefined，不传递参数（后端会使用分享的根文件夹ID）
     const content = await getShareFolderContent(shareCode.value, parentId)
-    console.log('获取到的文件夹内容:', content)
 
     // 转换为表格数据格式
     const items: any[] = []
@@ -457,9 +450,6 @@ async function loadFolderContent(parentId?: number) {
       })
     }
 
-    console.log('转换后的表格数据:', items)
-    console.log('当前文件夹ID:', currentFolderId.value)
-    console.log('面包屑路径:', folderPath.value)
     folderFiles.value = items
   } catch (e: any) {
     console.error('加载文件夹内容失败:', e)
@@ -471,7 +461,6 @@ async function loadFolderContent(parentId?: number) {
 
 // 导航到指定文件夹
 async function navigateToFolder(folderId?: number, folderName?: string) {
-  console.log('导航到文件夹:', folderId, folderName)
 
   // 如果点击的是面包屑，需要更新路径
   if (folderName === undefined) {
@@ -488,8 +477,6 @@ async function navigateToFolder(folderId?: number, folderName?: string) {
     currentFolderId.value = folderId
   }
 
-  console.log('更新后的路径:', folderPath.value)
-  console.log('当前文件夹ID:', currentFolderId.value)
 
   // 加载文件夹内容
   await loadFolderContent(currentFolderId.value)

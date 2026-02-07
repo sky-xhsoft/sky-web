@@ -435,7 +435,6 @@ const loadDomains = async () => {
   loading.value = true
   try {
     const response = await listDomains(undefined)
-    console.log('API Response:', response)
 
     // 后端返回格式: { code: 200, data: { domains: [...], total: 3 } }
     const result = response.data
@@ -496,26 +495,19 @@ const handleCancelAdd = () => {
 
 // 添加域名（步骤1）
 const handleAddDomain = async () => {
-  console.log('handleAddDomain called')
-  console.log('addFormRef.value:', addFormRef.value)
-  console.log('addForm:', addForm)
 
   if (!addFormRef.value) {
-    console.log('addFormRef is null')
     return
   }
 
   try {
-    console.log('Starting validation...')
     await addFormRef.value.validate()
-    console.log('Validation passed')
   } catch (error) {
     // 验证失败
     console.error('Validation error:', error)
     return
   }
 
-  console.log('Submitting...')
   submitting.value = true
   try {
     await addDomain({

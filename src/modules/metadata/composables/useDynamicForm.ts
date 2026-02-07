@@ -157,7 +157,6 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
             if (defaultItem) {
               const value = defaultItem.VALUE || (defaultItem as any).value
               data[dbName] = value
-              console.log(`[useDynamicForm] ${dbName} 使用字典默认值: ${value}`)
             } else {
               data[dbName] = null
             }
@@ -510,7 +509,6 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
       }
     }
 
-    console.log('[useDynamicForm] 检测到变更的字段：', Object.keys(changedFields))
     return changedFields
   }
 

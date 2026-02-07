@@ -40,6 +40,9 @@ const FIELD_COMPONENT_MAP: Record<string, string> = {
   file: 'FileField',
   image: 'ImageField',
 
+  // 权限管理类
+  permission_bits: 'PermissionBitField',
+
   // 布局和交互类
   blank: 'BlankField',
   button: 'ButtonField',
@@ -88,6 +91,7 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
         richtext: 'RichTextField',
         clob: 'TextareaField',  // clob 映射到 textarea
         xml: 'TextareaField',   // xml 映射到 textarea
+        permission_bits: 'PermissionBitField',  // 权限位字段
         blank: 'BlankField',
         button: 'ButtonField',
         hr: 'HrField'

@@ -61,18 +61,12 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     // 如果正在加载同一个表，返回已有的 Promise
     const requestKey = `${tableName}_${JSON.stringify(params || {})}`
     if (loadingRequest) {
-      console.log('[useDynamicTableStore] 已有正在进行的请求，等待完成')
       return loadingRequest
     }
 
     loading.value = true
     error.value = null
     try {
-      console.log('[useDynamicTableStore] loadRecords 被调用')
-      console.log('  tableName=', tableName)
-      console.log('  filters.value=', JSON.stringify(filters.value))
-      console.log('  sorters.value=', JSON.stringify(sorters.value))
-      console.log('  params=', JSON.stringify(params))
 
       // 构建排序参数（多字段用逗号分隔）
       const sortParams: Record<string, any> = {}
@@ -88,7 +82,6 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         ...sortParams,
         ...params
       }
-      console.log('  最终请求参数=', JSON.stringify(requestParams))
 
       loadingRequest = api.fetchRecords(tableName, requestParams)
       const result = await loadingRequest

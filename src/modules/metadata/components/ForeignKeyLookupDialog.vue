@@ -216,10 +216,7 @@ async function loadData() {
       filters
     })
 
-    console.log('[ForeignKeyLookupDialog] API response:', response)
     const rawList = response.list || []
-    console.log('[ForeignKeyLookupDialog] raw first row:', rawList[0])
-    console.log('[ForeignKeyLookupDialog] raw first row keys:', rawList[0] ? Object.keys(rawList[0]) : [])
 
     // 转换数据：确保有 id 字段
     tableData.value = rawList.map(row => {
@@ -231,7 +228,6 @@ async function loadData() {
       return newRow
     })
 
-    console.log('[ForeignKeyLookupDialog] tableData:', tableData.value)
     pagination.total = response.total || 0
   } catch (error: any) {
     console.error('[ForeignKeyLookupDialog] loadData error:', error)
@@ -249,9 +245,7 @@ function handleSearch() {
 
 // 行选择
 function handleRowSelect(rowKeys: (string | number)[]) {
-  console.log('[ForeignKeyLookupDialog] handleRowSelect:', rowKeys)
   const selected = tableData.value.find(row => row.id === rowKeys[0])
-  console.log('[ForeignKeyLookupDialog] selected row:', selected)
   selectedRow.value = selected || null
 }
 
@@ -286,8 +280,6 @@ function handleConfirm() {
     return
   }
 
-  console.log('[ForeignKeyLookupDialog] handleConfirm selectedRow:', selectedRow.value)
-  console.log('[ForeignKeyLookupDialog] refTableColumns length:', refTableColumns.value.length)
 
   // 如果还没有加载列配置，直接使用 NAME 字段
   if (refTableColumns.value.length === 0) {
@@ -307,13 +299,11 @@ function handleConfirm() {
     col.IS_DK === 'Y' || (col as any).isDk === 'Y'
   )
 
-  console.log('[ForeignKeyLookupDialog] dkCol:', dkCol)
 
   const dkDbName = dkCol ? (dkCol.DB_NAME || (dkCol as any).dbName) : 'NAME'
   const recordId = selectedRow.value.ID || selectedRow.value.id
   const label = selectedRow.value[dkDbName] || selectedRow.value.NAME || String(recordId)
 
-  console.log('[ForeignKeyLookupDialog] dkDbName:', dkDbName, 'label:', label)
 
   emit('select', {
     value: recordId,

@@ -196,21 +196,11 @@ const loadData = async () => {
     }
 
     const res = await queryCallbackEvents(params)
-    console.log('API Response:', res)
-    console.log('Response code:', res.data?.code)
-    console.log('Response data:', res.data?.data)
 
     if (res.data?.code === 200 || res.data?.code === 0) {
-      console.log('Data list:', res.data.data.list)
       // 解析事件数据
       tableData.value = res.data.data.list.map((item: any) => {
-        console.log('Processing item:', item)
         const eventData = JSON.parse(item.eventData)
-        console.log('Parsed eventData:', eventData)
-        console.log('Available eventData keys:', Object.keys(eventData))
-        console.log('video_store_url:', eventData.video_store_url)
-        console.log('clip_url:', eventData.clip_url)
-        console.log('video_url:', eventData.video_url)
 
         return {
           id: item.id,

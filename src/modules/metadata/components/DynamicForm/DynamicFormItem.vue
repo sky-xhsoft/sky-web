@@ -63,6 +63,7 @@ const ButtonField = defineAsyncComponent(() => import('../FieldRenderers/ButtonF
 const HrField = defineAsyncComponent(() => import('../FieldRenderers/HrField.vue'))
 const FileField = defineAsyncComponent(() => import('../FieldRenderers/FileField.vue'))
 const ImageField = defineAsyncComponent(() => import('../FieldRenderers/ImageField.vue'))
+const PermissionBitField = defineAsyncComponent(() => import('../FieldRenderers/PermissionBitField.vue'))
 
 // 组件映射
 const COMPONENT_MAP: Record<string, any> = {
@@ -84,7 +85,8 @@ const COMPONENT_MAP: Record<string, any> = {
   ButtonField,
   HrField,
   FileField,
-  ImageField
+  ImageField,
+  PermissionBitField
 }
 
 // ==================== Props ====================

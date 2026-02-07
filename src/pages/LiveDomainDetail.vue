@@ -12,48 +12,49 @@
 
     <!-- 标签页 -->
     <a-tabs v-model:active-key="activeTab" type="card-gutter">
-      <a-tab-pane key="basic" title="基本信息">
+      <!-- 推流域名：合并基本信息和推流配置 -->
+      <a-tab-pane v-if="domainInfo.type === 0" key="push" title="基本信息和推流配置">
         <div class="tab-content">
-          <a-descriptions :column="2" bordered :label-style="{ width: '120px' }" :value-style="{ width: '200px' }">
-            <a-descriptions-item label="域名">
-              {{ domainInfo.name }}
-            </a-descriptions-item>
-            <a-descriptions-item label="域名类型">
-              <a-tag :color="domainInfo.type === 0 ? 'blue' : 'green'">
-                {{ domainInfo.type === 0 ? '推流域名' : '播放域名' }}
-              </a-tag>
-            </a-descriptions-item>
-            <a-descriptions-item label="CNAME">
-              <div class="cname-cell">
-                <span>{{ domainInfo.cname }}</span>
-                <icon-copy class="copy-icon" @click="copyToClipboard(domainInfo.cname)" />
-              </div>
-            </a-descriptions-item>
-            <a-descriptions-item label="CNAME 状态">
-              <a-tag :color="domainInfo.cnameConfigured === 1 ? 'green' : 'gray'">
-                {{ domainInfo.cnameConfigured === 1 ? '已配置' : '未配置' }}
-              </a-tag>
-            </a-descriptions-item>
-            <a-descriptions-item label="状态">
-              <a-tag :color="domainInfo.status === 1 ? 'green' : 'red'">
-                {{ domainInfo.status === 1 ? '已启用' : '已禁用' }}
-              </a-tag>
-            </a-descriptions-item>
-            <a-descriptions-item label="区域">
-              {{ domainInfo.region || '全球加速' }}
-            </a-descriptions-item>
-            <a-descriptions-item label="创建时间">
-              {{ formatDateTime(domainInfo.createTime) }}
-            </a-descriptions-item>
-            <a-descriptions-item label="更新时间">
-              {{ formatDateTime(domainInfo.updateTime) }}
-            </a-descriptions-item>
-          </a-descriptions>
+          <!-- 基本信息 -->
+          <div class="section">
+            <h3 class="section-title">基本信息</h3>
+            <a-descriptions :column="2" bordered :label-style="{ width: '120px' }" :value-style="{ width: '200px' }">
+              <a-descriptions-item label="域名">
+                {{ domainInfo.name }}
+              </a-descriptions-item>
+              <a-descriptions-item label="域名类型">
+                <a-tag color="blue">推流域名</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="CNAME">
+                <div class="cname-cell">
+                  <span>{{ domainInfo.cname }}</span>
+                  <icon-copy class="copy-icon" @click="copyToClipboard(domainInfo.cname)" />
+                </div>
+              </a-descriptions-item>
+              <a-descriptions-item label="CNAME 状态">
+                <a-tag :color="domainInfo.cnameConfigured === 1 ? 'green' : 'gray'">
+                  {{ domainInfo.cnameConfigured === 1 ? '已配置' : '未配置' }}
+                </a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="状态">
+                <a-tag :color="domainInfo.status === 1 ? 'green' : 'red'">
+                  {{ domainInfo.status === 1 ? '已启用' : '已禁用' }}
+                </a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="区域">
+                {{ domainInfo.region || '全球加速' }}
+              </a-descriptions-item>
+              <a-descriptions-item label="创建时间">
+                {{ formatDateTime(domainInfo.createTime) }}
+              </a-descriptions-item>
+              <a-descriptions-item label="更新时间">
+                {{ formatDateTime(domainInfo.updateTime) }}
+              </a-descriptions-item>
+            </a-descriptions>
+          </div>
         </div>
-      </a-tab-pane>
 
-      <!-- 推流域名显示推流配置 -->
-      <a-tab-pane v-if="domainInfo.type === 0" key="push" title="推流配置">
+        <!-- 推流配置 -->
         <div class="tab-content compact">
           <!-- 鉴权配置 - 放在最上面，更紧凑 -->
           <div class="section compact-section">
@@ -75,6 +76,13 @@
           <div class="section compact-section">
             <h3 class="section-title">推流地址生成器</h3>
             <a-form :model="pushForm" layout="inline" class="compact-form">
+              <a-form-item label="AppName" style="width: 200px">
+                <a-input
+                  v-model="pushForm.appName"
+                  placeholder="应用名称"
+                  size="small"
+                />
+              </a-form-item>
               <a-form-item label="StreamName" style="width: 280px">
                 <a-input
                   v-model="pushForm.streamName"
@@ -108,7 +116,7 @@
           <!-- 生成结果 - 紧凑显示 -->
           <div v-if="generatedPushUrl" class="section compact-section">
             <div class="section-header">
-              <h3 class="section-title">生成结果</h3>
+              <h3 class="section-title">生成结果（根据上面设置项生成以下地址）</h3>
               <a-button type="outline" size="mini" @click="copyAllResults">
                 <template #icon><icon-copy /></template>
                 一键复制全部
@@ -116,16 +124,23 @@
             </div>
             <a-space direction="vertical" :size="8" fill>
               <div class="result-item">
-                <span class="result-label">推流地址：</span>
-                <div class="result-value">
-                  <span class="url-text">{{ generatedPushUrl.pushUrl }}</span>
-                  <icon-copy class="copy-icon" @click="copyToClipboard(generatedPushUrl.pushUrl)" />
-                </div>
+                <span class="result-label">地址类型：</span>
+                <span class="result-value">推流地址</span>
               </div>
               <div class="result-item">
                 <span class="result-label">有效时间：</span>
-                <span class="result-value">{{ generatedPushUrl.expireTime }}</span>
+                <span class="result-value">{{ generatedPushUrl.expireTime }}(UTC+8)</span>
               </div>
+
+              <!-- 各种推流地址 -->
+              <div v-for="item in generatedPushUrlList" :key="item.type" class="result-item">
+                <span class="result-label">{{ item.type }}：</span>
+                <div class="result-value">
+                  <span class="url-text">{{ item.url }}</span>
+                  <icon-copy class="copy-icon" @click="copyToClipboard(item.url)" />
+                </div>
+              </div>
+
               <div class="result-item">
                 <span class="result-label">OBS服务器：</span>
                 <div class="result-value">
@@ -134,7 +149,7 @@
                 </div>
               </div>
               <div class="result-item">
-                <span class="result-label">OBS串流密钥：</span>
+                <span class="result-label">OBS推流码：</span>
                 <div class="result-value">
                   <span class="url-text">{{ generatedPushUrl.obsStreamKey }}</span>
                   <icon-copy class="copy-icon" @click="copyToClipboard(generatedPushUrl.obsStreamKey)" />
@@ -171,8 +186,49 @@
         </div>
       </a-tab-pane>
 
-      <!-- 播放域名显示播放配置 -->
-      <a-tab-pane v-if="domainInfo.type === 1" key="play" title="播放配置">
+      <!-- 播放域名：合并基本信息和播放配置 -->
+      <a-tab-pane v-if="domainInfo.type === 1" key="play" title="基本信息和播放配置">
+        <div class="tab-content">
+          <!-- 基本信息 -->
+          <div class="section">
+            <h3 class="section-title">基本信息</h3>
+            <a-descriptions :column="2" bordered :label-style="{ width: '120px' }" :value-style="{ width: '200px' }">
+              <a-descriptions-item label="域名">
+                {{ domainInfo.name }}
+              </a-descriptions-item>
+              <a-descriptions-item label="域名类型">
+                <a-tag color="green">播放域名</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="CNAME">
+                <div class="cname-cell">
+                  <span>{{ domainInfo.cname }}</span>
+                  <icon-copy class="copy-icon" @click="copyToClipboard(domainInfo.cname)" />
+                </div>
+              </a-descriptions-item>
+              <a-descriptions-item label="CNAME 状态">
+                <a-tag :color="domainInfo.cnameConfigured === 1 ? 'green' : 'gray'">
+                  {{ domainInfo.cnameConfigured === 1 ? '已配置' : '未配置' }}
+                </a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="状态">
+                <a-tag :color="domainInfo.status === 1 ? 'green' : 'red'">
+                  {{ domainInfo.status === 1 ? '已启用' : '已禁用' }}
+                </a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="区域">
+                {{ domainInfo.region || '全球加速' }}
+              </a-descriptions-item>
+              <a-descriptions-item label="创建时间">
+                {{ formatDateTime(domainInfo.createTime) }}
+              </a-descriptions-item>
+              <a-descriptions-item label="更新时间">
+                {{ formatDateTime(domainInfo.updateTime) }}
+              </a-descriptions-item>
+            </a-descriptions>
+          </div>
+        </div>
+
+        <!-- 播放配置 -->
         <div class="tab-content compact">
           <!-- 播放地址解析 -->
           <div class="section compact-section">
@@ -318,7 +374,7 @@ import {
   IconQuestionCircle,
   IconPlus
 } from '@arco-design/web-vue/es/icon'
-import { getDomain } from '@/api/live'
+import { getDomain, generatePushURL } from '@/api/live'
 import { useNavigationStore } from '@/stores/navigation'
 import { formatDateTime } from '@/utils/date'
 
@@ -342,10 +398,10 @@ const domainInfo = ref({
 })
 
 // 当前标签页
-const activeTab = ref('basic')
+const activeTab = ref('push')
 
 // 推流鉴权密钥
-const pushAuthKey = ref('d0d87c303d4df45fd648aff7ea4a9516')
+const pushAuthKey = ref('d0d87c303d4df45fd648af77ea4a9516')
 
 // 推流地址列表
 const pushUrlList = ref([
@@ -372,8 +428,8 @@ const pushUrlList = ref([
 ])
 
 // 推流表单
-// 推流表单
 const pushForm = reactive({
+  appName: 'live', // 应用名称，默认为 live
   encryptType: 'MD5',
   streamName: '',
   expireTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 默认7天后
@@ -381,6 +437,9 @@ const pushForm = reactive({
 
 // 生成的推流地址
 const generatedPushUrl = ref<any>(null)
+
+// 生成的推流地址列表
+const generatedPushUrlList = ref<any[]>([])
 
 // 播放鉴权密钥
 const playAuthKey = ref('d0d87c303d4df45fd648aff7ea4a9516')
@@ -493,23 +552,81 @@ const loadDomainInfo = async () => {
 }
 
 // 生成推流地址
-const generatePushUrl = () => {
+const generatePushUrl = async () => {
+  if (!pushForm.appName) {
+    Message.warning('请输入 AppName')
+    return
+  }
   if (!pushForm.streamName) {
     Message.warning('请输入 StreamName')
     return
   }
 
-  // 这里应该调用后端接口生成真实的推流地址
-  // 目前使用模拟数据
-  generatedPushUrl.value = {
-    pushUrl: `rtmp://e.skyzhou.cn/live/${pushForm.streamName}?bSecret=011f54d09433353052c90516c127a933&bTime=697E41FE`,
-    expireTime: pushForm.expireTime || '2026-02-01 01:55:10 (UTC+8)',
-    rtmpUrl: `rtmp://e.skyzhou.cn/live/${pushForm.streamName}?bSecret=011f54d09433353052c90516c127a933&bTime=697E41FE`,
-    obsServer: 'rtmp://e.skyzhou.cn/live/',
-    obsStreamKey: `${pushForm.streamName}?bSecret=011f54d09433353052c90516c127a933&bTime=697E41FE`
-  }
+  try {
+    // 计算过期时间（秒）
+    const expireTimestamp = Math.floor(new Date(pushForm.expireTime).getTime() / 1000)
+    const nowTimestamp = Math.floor(Date.now() / 1000)
+    const expireTime = expireTimestamp - nowTimestamp
 
-  Message.success('推流地址生成成功')
+    // 调用后端 API 生成推流地址
+    const response = await generatePushURL({
+      domainName: domainInfo.value.name,
+      appName: pushForm.appName,
+      streamName: pushForm.streamName,
+      streamKey: pushAuthKey.value,
+      expireTime: expireTimestamp
+    })
+
+    const data = response.data.data
+    const pushURL = data.pushURL
+
+    // 解析 RTMP 推流地址
+    // pushURL 格式: rtmp://domain/app/streamName?txSecret=xxx&txTime=xxx
+    const urlParts = pushURL.split('?')
+    const authParams = urlParts[1] || ''
+    const pathParts = urlParts[0].split('/')
+    const domain = pathParts[2] // upload.skyzhou.cn
+    const appName = pathParts[3] // live
+    const streamName = pathParts[4] // A
+
+    const obsServer = urlParts[0].substring(0, urlParts[0].lastIndexOf('/') + 1)
+    const obsStreamKey = streamName + (authParams ? '?' + authParams : '')
+
+    // 生成各种格式的推流地址
+    generatedPushUrlList.value = [
+      {
+        type: 'RTMP 地址',
+        url: pushURL
+      },
+      {
+        type: 'WebRTC 地址',
+        url: `webrtc://${domain}/${appName}/${streamName}${authParams ? '?' + authParams : ''}`
+      },
+      {
+        type: 'SRT 地址',
+        url: `srt://${domain}:9000?streamid=#!::h=${domain},r=${appName}/${streamName}${authParams ? ',' + authParams.replace(/&/g, ',') : ''}`
+      },
+      {
+        type: 'RTMP over SRT 地址',
+        url: `rtmp://${domain}:3570/${appName}/${streamName}${authParams ? '?' + authParams : ''}`
+      },
+      {
+        type: 'RTMP over QUIC 地址',
+        url: `rtmp://${domain}:443/${appName}/${streamName}${authParams ? '?' + authParams : ''}`
+      }
+    ]
+
+    generatedPushUrl.value = {
+      pushUrl: pushURL,
+      expireTime: pushForm.expireTime,
+      obsServer: obsServer,
+      obsStreamKey: obsStreamKey
+    }
+
+    Message.success('推流地址生成成功')
+  } catch (error: any) {
+    Message.error(error.response?.data?.message || '生成推流地址失败')
+  }
 }
 
 // 复制到剪贴板
@@ -548,10 +665,17 @@ const copyToClipboard = (text: string) => {
 const copyAllResults = () => {
   if (!generatedPushUrl.value) return
 
-  const allText = `推流地址：${generatedPushUrl.value.pushUrl}
-有效时间：${generatedPushUrl.value.expireTime}
-OBS服务器：${generatedPushUrl.value.obsServer}
-OBS串流密钥：${generatedPushUrl.value.obsStreamKey}`
+  let allText = `地址类型：推流地址
+有效时间：${generatedPushUrl.value.expireTime}(UTC+8)
+`
+
+  // 添加所有推流地址
+  generatedPushUrlList.value.forEach(item => {
+    allText += `${item.type}：${item.url}\n`
+  })
+
+  allText += `OBS服务器：${generatedPushUrl.value.obsServer}
+OBS推流码：${generatedPushUrl.value.obsStreamKey}`
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(allText).then(() => {
@@ -658,6 +782,8 @@ onMounted(() => {
   padding: 20px;
   background: #fff;
   min-height: 100%;
+  max-height: 100vh;
+  overflow-y: auto;
 }
 
 .page-header {

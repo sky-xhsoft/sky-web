@@ -103,7 +103,6 @@ export const useCloudStore = defineStore('cloud', () => {
    */
   const currentFolderChildren = computed<Folder[]>(() => {
     // 统一使用 currentSubFolders，不再依赖废弃的 folderTree
-    console.log("[DEBUG] currentFolderChildren - currentFolderId:", currentFolderId.value, "currentSubFolders:", currentSubFolders.value.length)
     return currentSubFolders.value
   })
 
@@ -118,7 +117,6 @@ export const useCloudStore = defineStore('cloud', () => {
   const gridItems = computed<GridItem[]>(() => {
     const items: GridItem[] = []
 
-    console.log("[DEBUG] gridItems computed - currentFolderChildren:", currentFolderChildren.value.length, "filteredAndSortedFiles:", filteredAndSortedFiles.value.length)
 
     // 添加文件夹
     currentFolderChildren.value.forEach((folder) => {
@@ -255,16 +253,13 @@ export const useCloudStore = defineStore('cloud', () => {
    * 加载文件列表
    */
   async function loadFiles(folderId = currentFolderId.value) {
-    console.log("[DEBUG] cloudStore.loadFiles called with folderId:", folderId)
     loading.value.files = true
     loading.value.tree = true  // 同时加载文件夹
     try {
       // 使用新的统一接口 fetchItems，一次性获取文件和文件夹
       const result = await fetchItems(folderId === 0 ? undefined : folderId)
-      console.log("[DEBUG] cloudStore.loadFiles result:", result)
       files.value = result.files
       currentSubFolders.value = result.folders  // 同时更新子文件夹
-      console.log("[DEBUG] cloudStore.loadFiles - files.value:", files.value.length, "currentSubFolders.value:", currentSubFolders.value.length)
     } catch (e: any) {
       console.error("加载文件列表失败:", e)
       Message.error(e?.message || "加载文件列表失败")
@@ -279,12 +274,10 @@ export const useCloudStore = defineStore('cloud', () => {
    * 加载子文件夹列表
    */
   async function loadSubFolders(parentId: number) {
-    console.log("[DEBUG] cloudStore.loadSubFolders called with parentId:", parentId)
     loading.value.tree = true
     try {
       const data = await fetchFolders(parentId)
       currentSubFolders.value = data
-      console.log("[DEBUG] loadSubFolders result:", data)
     } catch (e: any) {
       console.error("加载子文件夹失败:", e)
       Message.error(e?.message || "加载子文件夹失败")
@@ -299,7 +292,6 @@ export const useCloudStore = defineStore('cloud', () => {
    * 一次性获取子文件夹和文件，性能更优
    */
   async function loadFolderContent(folderId: number) {
-    console.log("[DEBUG] cloudStore.loadFolderContent called with folderId:", folderId)
     loading.value.files = true
     loading.value.tree = true
     try {
@@ -307,7 +299,6 @@ export const useCloudStore = defineStore('cloud', () => {
       const result = await fetchItems(folderId === 0 ? undefined : folderId)
       currentSubFolders.value = result.folders
       files.value = result.files
-      console.log("[DEBUG] loadFolderContent result:", result)
     } catch (e: any) {
       console.error("加载文件夹内容失败:", e)
       Message.error(e?.message || "加载文件夹内容失败")
@@ -323,7 +314,6 @@ export const useCloudStore = defineStore('cloud', () => {
    * 根据当前所在目录选择合适的刷新方法
    */
   async function refreshCurrentFolder() {
-    console.log("[DEBUG] cloudStore.refreshCurrentFolder called, currentFolderId:", currentFolderId.value)
     if (currentFolderId.value === 0) {
       // 根目录只需要刷新文件列表
       await loadFiles(0)
@@ -377,7 +367,6 @@ export const useCloudStore = defineStore('cloud', () => {
    * 切换文件夹
    */
   async function switchFolder(folderId: number, folderName?: string) {
-    console.log("[DEBUG] cloudStore.switchFolder called with folderId:", folderId, "folderName:", folderName)
     
     // 如果要回到根目录
     if (folderId === 0) {
@@ -457,9 +446,7 @@ export const useCloudStore = defineStore('cloud', () => {
    * 删除文件夹
    */
   async function deleteFolder(folderId: number) {
-    console.log('[DEBUG] cloudStore.deleteFolder called', { folderId })
     try {
-      console.log('[DEBUG] cloudStore - calling deleteItemApi', { folderId })
       // 使用新的统一接口
       await deleteItemApi(folderId)
       Message.success('删除文件夹成功')
@@ -550,7 +537,6 @@ export const useCloudStore = defineStore('cloud', () => {
    * 选择文件夹
    */
   function selectFolder(folderId: number) {
-    console.log("[DEBUG] selectFolder called with folderId:", folderId, "current selectedFolderIds:", Array.from(selectedFolderIds.value))
     if (selectedFolderIds.value.has(folderId)) {
       selectedFolderIds.value.delete(folderId)
     } else {

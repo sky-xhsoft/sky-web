@@ -97,18 +97,15 @@ export function useForeignKey(column: SysColumn) {
     const cacheKey = `${refTableId}_${value}_${refColumnId || ''}`
 
     if (globalDisplayValueCache.has(cacheKey)) {
-      console.log('[useForeignKey] 使用缓存的显示值:', cacheKey)
       return globalDisplayValueCache.get(cacheKey)!
     }
 
     // 检查是否有正在进行的请求（请求去重）
     if (pendingRequests.has(cacheKey)) {
-      console.log('[useForeignKey] 等待已有请求:', cacheKey)
       return pendingRequests.get(cacheKey)!
     }
 
     // 如果没找到,单独请求
-    console.log('[useForeignKey] 发起新请求:', cacheKey)
     const requestPromise = api.getForeignKeyDisplayValue(
       refTableId!,
       value,

@@ -360,7 +360,6 @@ async function handleSave() {
         return
       }
 
-      console.log('[MetadataFormView] 提交变更的字段：', changedFields)
 
       await formStore.updateRecord(
         (tableConfig.value!.table as any).NAME || (tableConfig.value!.table as any).name,
@@ -482,7 +481,6 @@ let loadingRecordList = false  // 防止重复加载
 async function loadRecordList() {
   // 如果正在加载，直接返回
   if (loadingRecordList) {
-    console.log('[MetadataFormView] 记录列表正在加载中，跳过重复请求')
     console.trace('[MetadataFormView] 调用栈:')
     return
   }
@@ -490,23 +488,19 @@ async function loadRecordList() {
   try {
     loadingRecordList = true
     const tableName = (tableConfig.value!.table as any).NAME || (tableConfig.value!.table as any).name
-    console.log('[MetadataFormView] 加载记录列表, tableName:', tableName, 'recordId:', recordId.value)
     console.trace('[MetadataFormView] 调用栈:')
 
     // 使用 tableStore 加载记录
     await tableStore.loadRecords(tableName)
 
     recordList.value = tableStore.records
-    console.log('[MetadataFormView] 记录列表数量:', recordList.value.length)
 
     currentIndex.value = recordList.value.findIndex(
       r => r.ID === Number(recordId.value)
     )
-    console.log('[MetadataFormView] 当前记录索引:', currentIndex.value)
 
     hasPrevious.value = currentIndex.value > 0
     hasNext.value = currentIndex.value < recordList.value.length - 1
-    console.log('[MetadataFormView] hasPrevious:', hasPrevious.value, 'hasNext:', hasNext.value)
   } catch (error) {
     console.error('加载记录列表失败', error)
   } finally {
@@ -601,7 +595,6 @@ watch(
   () => props.mode,
   (newMode, oldMode) => {
     if (newMode && oldMode && newMode !== oldMode) {
-      console.log('[MetadataFormView] mode 变化:', oldMode, '->', newMode)
       // 模式切换时重置 hasChanges
       hasChanges.value = false
       // DynamicForm 组件会自己处理数据加载

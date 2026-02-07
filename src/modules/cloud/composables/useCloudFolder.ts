@@ -65,10 +65,8 @@ export function useCloudFolder() {
    * @param folderId 文件夹ID
    */
   async function deleteFolder(folderId: number) {
-    console.log('[DEBUG] useCloudFolder.deleteFolder called', { folderId })
     deletingFolder.value = true
     try {
-      console.log('[DEBUG] useCloudFolder - calling store.deleteFolder', { folderId })
       await store.deleteFolder(folderId)
       return true
     } catch (e) {

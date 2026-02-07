@@ -509,7 +509,6 @@ function isRowEditable(record: any): boolean {
     }
     const recordId = record.ID || record.id
     const editable = recordId && editingRecordIds.value.has(recordId)
-    console.log('[ChildTableInlinePanel] isRowEditable - recordId:', recordId, 'editable:', editable, 'editingRecordIds:', Array.from(editingRecordIds.value))
     return editable
   }
 
@@ -692,12 +691,9 @@ function handleAddDialog() {
  * 表单加载完成回调
  */
 function handleFormLoaded(config: any) {
-  console.log('[ChildTableInlinePanel] 表单加载完成:', config)
-  console.log('[ChildTableInlinePanel] dialogFormRef.value:', dialogFormRef.value)
 
   // 等待下一个 tick 确保 ref 已经绑定
   nextTick(() => {
-    console.log('[ChildTableInlinePanel] nextTick 后 dialogFormRef.value:', dialogFormRef.value)
     formLoaded.value = true
   })
 }
@@ -706,7 +702,6 @@ function handleFormLoaded(config: any) {
  * 对话框打开前回调
  */
 function handleBeforeOpen() {
-  console.log('[ChildTableInlinePanel] 对话框即将打开')
   formLoaded.value = false
 }
 
@@ -717,7 +712,6 @@ function handleBeforeOpen() {
  */
 function handleEdit(record: any) {
   const recordId = record.ID || record.id
-  console.log('[ChildTableInlinePanel] handleEdit - recordId:', recordId, 'record:', record)
 
   if (!recordId) {
     Message.warning('该记录没有ID，无法编辑')
@@ -725,22 +719,18 @@ function handleEdit(record: any) {
   }
 
   const type = editType.value
-  console.log('[ChildTableInlinePanel] handleEdit - editType:', type)
 
   if (type === 'Y' || type === 'A') {
     // Y 和 A 类型：切换编辑状态
     if (editingRecordIds.value.has(recordId)) {
-      console.log('[ChildTableInlinePanel] 保存记录:', recordId)
       // 如果已经在编辑，则保存并退出编辑状态
       editingRecordIds.value.delete(recordId)
       saveRecord(record)
     } else {
-      console.log('[ChildTableInlinePanel] 进入编辑状态:', recordId)
       // 进入编辑状态，保存原始数据
       originalData.value.set(recordId, JSON.parse(JSON.stringify(record)))
       modifiedFields.value.set(recordId, new Set())
       editingRecordIds.value.add(recordId)
-      console.log('[ChildTableInlinePanel] editingRecordIds:', Array.from(editingRecordIds.value))
     }
   }
 }
@@ -766,7 +756,6 @@ async function saveNewRecord(record: any, rowIndex: number) {
     const table = props.childTable.table
     const childTableName = table.NAME || table.name
 
-    console.log('[ChildTableInlinePanel] 保存前的 record:', JSON.stringify(record))
 
     // 验证必填字段
     const validationResult = validateNewRecord(record)
@@ -778,7 +767,6 @@ async function saveNewRecord(record: any, rowIndex: number) {
     // 准备保存的数据（移除临时标记）
     const { __temp_id, __is_new, ...saveData } = record
 
-    console.log('[ChildTableInlinePanel] 移除临时标记后:', JSON.stringify(saveData))
 
     // 根据字段类型处理空值
     Object.keys(saveData).forEach(field => {
@@ -819,11 +807,9 @@ async function saveNewRecord(record: any, rowIndex: number) {
       if (refColumn) {
         const refColumnDbName = refColumn.DB_NAME || refColumn.dbName
         saveData[refColumnDbName] = props.parentRecordId
-        console.log('[ChildTableInlinePanel] 设置父记录关联:', refColumnDbName, '=', props.parentRecordId)
       }
     }
 
-    console.log('[ChildTableInlinePanel] 最终保存的数据:', JSON.stringify(saveData))
 
     // 调用 API 创建记录
     const result = await metadataApi.createRecord(childTableName, saveData)
@@ -919,7 +905,6 @@ async function saveRecord(record: any) {
       updateData[field] = value
     })
 
-    console.log('[ChildTableInlinePanel] 只保存修改的字段:', updateData)
 
     await metadataApi.updateRecord(childTableName, recordId, updateData)
     Message.success('保存成功')
@@ -944,7 +929,6 @@ async function saveRecord(record: any) {
  */
 async function handleDialogOk(done: (closed: boolean) => void) {
   try {
-    console.log('[ChildTableInlinePanel] handleDialogOk 开始')
 
     // 等待 DOM 更新
     await nextTick()
@@ -961,12 +945,10 @@ async function handleDialogOk(done: (closed: boolean) => void) {
     let retryCount = 0
     const maxRetries = 30  // 30 * 100ms = 3 秒
     while (!dialogFormRef.value && retryCount < maxRetries) {
-      console.log('[ChildTableInlinePanel] 等待 dialogFormRef 可用，重试次数:', retryCount)
       await new Promise(resolve => setTimeout(resolve, 100))
       retryCount++
     }
 
-    console.log('[ChildTableInlinePanel] dialogFormRef.value:', dialogFormRef.value)
 
     if (!dialogFormRef.value) {
       Message.error('表单未加载完成，请稍后再试')
@@ -977,7 +959,6 @@ async function handleDialogOk(done: (closed: boolean) => void) {
 
     // 验证表单
     const valid = await dialogFormRef.value.validate()
-    console.log('[ChildTableInlinePanel] 表单验证结果:', valid)
 
     if (!valid) {
       Message.warning('请检查表单填写')
@@ -987,7 +968,6 @@ async function handleDialogOk(done: (closed: boolean) => void) {
 
     // 获取表单数据
     const formData = dialogFormRef.value.getFormData()
-    console.log('[ChildTableInlinePanel] 获取到的表单数据:', formData)
 
     if (!formData) {
       Message.error('获取表单数据失败')
@@ -1005,7 +985,6 @@ async function handleDialogOk(done: (closed: boolean) => void) {
       if (refColumn) {
         const refColumnDbName = refColumn.DB_NAME || refColumn.dbName
         formData[refColumnDbName] = props.parentRecordId
-        console.log('[ChildTableInlinePanel] 设置外键字段:', refColumnDbName, '=', props.parentRecordId)
       }
     }
 
@@ -1014,12 +993,10 @@ async function handleDialogOk(done: (closed: boolean) => void) {
 
     if (dialogMode.value === 'create') {
       // 新增模式
-      console.log('[ChildTableInlinePanel] 执行新增:', childTableName, formData)
       await metadataApi.createRecord(childTableName, formData)
       Message.success('新增成功')
     } else {
       // 编辑模式
-      console.log('[ChildTableInlinePanel] 执行更新:', childTableName, currentRecordId.value, formData)
       await metadataApi.updateRecord(childTableName, currentRecordId.value!, formData)
       Message.success('更新成功')
     }
@@ -1054,7 +1031,6 @@ function handleCellChange(rowIndex: number, field: string, value: any) {
     const record = tableData.value[rowIndex]
     const recordId = record.ID || record.id
 
-    console.log('[ChildTableInlinePanel] handleCellChange - rowIndex:', rowIndex, 'field:', field, 'value:', value, 'recordId:', recordId)
 
     // 更新值
     record[field] = value
@@ -1065,9 +1041,7 @@ function handleCellChange(rowIndex: number, field: string, value: any) {
         modifiedFields.value.set(recordId, new Set())
       }
       modifiedFields.value.get(recordId)!.add(field)
-      console.log('[ChildTableInlinePanel] 记录修改字段:', field, '当前修改字段:', Array.from(modifiedFields.value.get(recordId)!))
     } else {
-      console.log('[ChildTableInlinePanel] 记录不在编辑状态，editingRecordIds:', Array.from(editingRecordIds.value))
     }
 
     emitChange()
@@ -1117,11 +1091,6 @@ async function loadChildData() {
     const table = props.childTable.table
     const childTableName = table.NAME || table.name
 
-    console.log('[ChildTableInlinePanel] 加载子表数据:', {
-      tableName: childTableName,
-      filters
-    })
-
     // 调用 API 加载数据
     const response = await metadataApi.fetchRecords(childTableName, {
       filters,
@@ -1132,10 +1101,6 @@ async function loadChildData() {
     tableData.value = response.list || []
     pagination.value.total = response.total || 0
 
-    console.log('[ChildTableInlinePanel] 加载到的数据:', tableData.value)
-    console.log('[ChildTableInlinePanel] editType:', editType.value)
-    console.log('[ChildTableInlinePanel] editableColumns:', editableColumns.value)
-    console.log('[ChildTableInlinePanel] tableColumns:', tableColumns.value)
   } catch (error: any) {
     console.error('加载子表数据失败:', error)
     Message.error('加载子表数据失败: ' + (error.message || '未知错误'))
@@ -1244,12 +1209,6 @@ function handleSelectAll(checked: boolean) {
 // ==================== 生命周期 ====================
 
 onMounted(() => {
-  console.log('[ChildTableInlinePanel] onMounted:', {
-    mode: props.mode,
-    parentRecordId: props.parentRecordId,
-    childTableName: props.childTable.table.NAME || props.childTable.table.name
-  })
-
   if (props.mode !== 'create' && props.parentRecordId) {
     loadChildData()
   }
@@ -1257,7 +1216,6 @@ onMounted(() => {
 
 // 监听 parentRecordId 变化，重新加载数据
 watch(() => props.parentRecordId, (newVal, oldVal) => {
-  console.log('[ChildTableInlinePanel] parentRecordId 变化:', oldVal, '->', newVal)
   if (newVal && props.mode !== 'create') {
     loadChildData()
   }

@@ -103,7 +103,6 @@ const initPlayer = () => {
       }
     })
 
-    console.log('播放器初始化成功，播放地址:', playUrl.value)
   } catch (error) {
     console.error('播放器初始化失败:', error)
     Message.error('播放器初始化失败')

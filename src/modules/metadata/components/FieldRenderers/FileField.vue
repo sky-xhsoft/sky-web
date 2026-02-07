@@ -193,7 +193,6 @@ function handleChange(fileList: FileItem[]) {
  * 上传成功处理
  */
 function handleSuccess(response: any) {
-  console.log('[FileField] Upload success response:', response)
   if (response && (response.code === 0 || response.success)) {
     Message.success('上传成功')
   } else {

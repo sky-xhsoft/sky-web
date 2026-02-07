@@ -316,7 +316,6 @@ const folderTreeData = computed<TreeNodeData[]>(() => {
     return folders.map((f) => {
       // 后端返回 json:"id"（小写），需要兼容 ID 和 id
       const folderId = f.ID || f.id || 0
-      console.log("[DEBUG] Converting folder to tree node:", { name: f.name, ID: f.ID, id: f.id, folderId })
       return {
         key: folderId,
         title: f.name,
@@ -352,13 +351,11 @@ function handleBreadcrumbNavigate(item: { id: number; name: string }) {
 }
 
 function handleTreeSelect(selectedKeys: (string | number)[]) {
-  console.log("[DEBUG] handleTreeSelect called with:", selectedKeys)
   if (selectedKeys.length > 0) {
     // Parse the selected key to a number
     // Arco tree may return string keys, so we need to properly convert
     const selectedKey = selectedKeys[0]
     const folderId = typeof selectedKey === 'number' ? selectedKey : parseInt(String(selectedKey), 10)
-    console.log("[DEBUG] Parsed folderId:", folderId, "from:", selectedKey)
 
     // Validate that we got a valid number
     if (isNaN(folderId)) {
@@ -366,7 +363,6 @@ function handleTreeSelect(selectedKeys: (string | number)[]) {
       return
     }
 
-    console.log("[DEBUG] Calling navigation.navigateTo(", folderId, ")")
     navigation.navigateTo(folderId)
   }
 }
@@ -460,17 +456,12 @@ async function handleItemDoubleClick(item: GridItem) {
 }
 
 function handleItemSelect(payload: { item: GridItem; selected: boolean }) {
-  console.log('[DEBUG] handleItemSelect called:', payload)
   const { item, selected } = payload
   if (item.type === 'file') {
-    console.log('[DEBUG] Toggling file selection:', item.id)
     selection.toggleFileSelection(item.id)
   } else {
-    console.log('[DEBUG] Toggling folder selection:', item.id)
     selection.toggleFolderSelection(item.id)
   }
-  console.log('[DEBUG] After toggle - selectedFileIds:', Array.from(store.selectedFileIds))
-  console.log('[DEBUG] After toggle - selectedFolderIds:', Array.from(store.selectedFolderIds))
 }
 
 function handleListSelect(selectedKeys: (string | number)[]) {
@@ -493,19 +484,11 @@ function handleListSelect(selectedKeys: (string | number)[]) {
 
 async function handleItemAction(payload: { action: string; item: GridItem }) {
   const { action, item } = payload
-  console.log('[DEBUG] handleItemAction called:', { action, item })
   currentItem.value = item
 
   switch (action) {
     case 'preview':
-      console.log('[DEBUG] Preview action:', {
-        itemType: item.type,
-        hasFile: !!item.file,
-        canPreview: item.file ? preview.canPreview(item.file) : false,
-        fileExt: item.file?.FileExt
-      })
       if (item.type === 'file' && item.file && preview.canPreview(item.file)) {
-        console.log('[DEBUG] Opening preview dialog')
         dialogs.preview = true
       } else {
         Message.warning('暂不支持预览此类型文件')
@@ -545,7 +528,6 @@ async function handleItemAction(payload: { action: string; item: GridItem }) {
       break
 
     case 'delete':
-      console.log('[DEBUG] handleItemAction - delete action', { item, type: item.type, id: item.id })
       currentDeleteType.value = item.type as 'file' | 'folder'
       currentDeleteName.value = item.name
       currentDeleteCount.value = 1
@@ -605,7 +587,6 @@ async function handleCreateShare(params: Omit<ShareCreateParams, 'fileId' | 'res
 }
 
 async function handleDelete() {
-  console.log('[DEBUG] handleDelete called', { currentItem: currentItem.value, currentDeleteType: currentDeleteType.value, currentDeleteCount: currentDeleteCount.value })
 
   let success = false
 
@@ -614,7 +595,6 @@ async function handleDelete() {
     if (currentDeleteType.value === 'file' && currentItem.value?.file) {
       success = await file.deleteFile(currentItem.value.id)
     } else if (currentDeleteType.value === 'folder') {
-      console.log('[DEBUG] handleDelete - calling folder.deleteFolder', { id: currentItem.value?.id })
       success = await folder.deleteFolder(currentItem.value!.id)
     }
   } else {

@@ -208,20 +208,14 @@ const onMenuClick = async (key: string) => {
 }
 
 const onOpenChange = (keys: string[]) => {
-  console.log('onOpenChange triggered:', keys)
   openKeys.value = keys as string[]
 }
 
 const onSubMenuClick = (key: string | number) => {
-  console.log('SubMenu clicked:', key, 'type:', typeof key)
-  console.log('Current openKeys:', openKeys.value)
-
   // 确保 key 和 openKeys 中的值类型一致
   const keyStr = String(key)
   const currentKeys = openKeys.value.map(k => String(k))
   const index = currentKeys.indexOf(keyStr)
-
-  console.log('keyStr:', keyStr, 'currentKeys:', currentKeys, 'index:', index)
 
   if (index > -1) {
     // 折叠：移除这个 key
@@ -230,8 +224,6 @@ const onSubMenuClick = (key: string | number) => {
     // 展开：添加这个 key
     openKeys.value = [...openKeys.value, key]
   }
-  console.log('Updated openKeys:', openKeys.value)
-  console.log('Updated openKeys raw:', JSON.stringify(openKeys.value))
 }
 
 const onRootClick = async (key: string) => {

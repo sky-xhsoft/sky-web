@@ -209,6 +209,33 @@ export const restartPullStreamTask = (taskId: string, operator: string) => {
   }).then(res => res.data.data)
 }
 
+// ==================== 推流地址生成 ====================
+
+// 生成推流地址请求
+export interface GeneratePushURLRequest {
+  streamName: string
+  expireTime?: number // 过期时间（秒），可选
+  includePlayUrls?: boolean // 是否包含播放地址
+}
+
+// 生成推流地址响应
+export interface GeneratePushURLResponse {
+  pushUrl: string
+  pushUrlObs: string
+  streamKey: string
+  expireTime: string
+  playUrls?: {
+    rtmpUrl: string
+    flvUrl: string
+    hlsUrl: string
+  }
+}
+
+// 生成推流地址
+export const generatePushURL = (data: GeneratePushURLRequest) => {
+  return api.post('/live/push-url/generate', data)
+}
+
 // ==================== 直播回调事件管理 ====================
 
 // 查询回调事件列表

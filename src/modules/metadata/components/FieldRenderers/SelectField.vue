@@ -59,7 +59,6 @@ const loading = ref(false)
 // 是否为查看模式（disabled 或 readonly）
 const isViewMode = computed(() => {
   const result = props.disabled || props.readonly
-  console.log(`[SelectField] ${props.column.DB_NAME} isViewMode=${result}, disabled=${props.disabled}, readonly=${props.readonly}`)
   return result
 })
 
@@ -81,55 +80,45 @@ const options = computed(() => {
   // 优先从 tableConfig.dictData 中获取（新方式）
   const sysDictID = props.column.SYS_DICT_ID || (props.column as any).sysDictId
   const tableId = props.column.TABLE_ID || (props.column as any).tableId || (props.column as any).sysTableId
-  console.log(`[SelectField] ${props.column.DB_NAME} sysDictID=${sysDictID}, tableId=${tableId}`)
 
   if (sysDictID) {
     // 从 metadataStore 获取 tableConfig
     if (tableId) {
       const tableConfig = metadataStore.getTableConfig(tableId)
-      console.log(`[SelectField] ${props.column.DB_NAME} tableConfig=`, tableConfig)
 
       if (tableConfig?.dictData) {
         const dictID = typeof sysDictID === 'string' ? parseInt(sysDictID, 10) : sysDictID
         const dictItems = tableConfig.dictData[dictID]
-        console.log(`[SelectField] ${props.column.DB_NAME} dictID=${dictID}, dictItems=`, dictItems)
 
         if (dictItems && dictItems.length > 0) {
           const opts = dictItems.map(item => ({
             value: item.VALUE || (item as any).value,
             label: item.DISPLAY_NAME || (item as any).displayName
           }))
-          console.log(`[SelectField] ${props.column.DB_NAME} options from dictData=`, opts)
           return opts
         }
       } else {
-        console.log(`[SelectField] ${props.column.DB_NAME} tableConfig.dictData 不存在`)
       }
     } else {
-      console.log(`[SelectField] ${props.column.DB_NAME} tableId 不存在`)
     }
   }
 
   // 降级：从 dictStore 获取（旧方式）
   if (props.column.DICT_TABLE_ID) {
     const opts = dictStore.toSelectOptions(props.column.DICT_TABLE_ID)
-    console.log(`[SelectField] ${props.column.DB_NAME} options from dictStore=`, opts)
     return opts
   }
 
-  console.log(`[SelectField] ${props.column.DB_NAME} no options found`)
   return []
 })
 
 // 显示文本（用于查看模式）
 const displayText = computed(() => {
-  console.log(`[SelectField] ${props.column.DB_NAME} displayText: modelValue=${props.modelValue}, options=`, options.value)
 
   if (!props.modelValue) return '-'
 
   const option = options.value.find(opt => opt.value === props.modelValue)
   const result = option ? option.label : String(props.modelValue)
-  console.log(`[SelectField] ${props.column.DB_NAME} displayText result=${result}`)
   return result
 })
 

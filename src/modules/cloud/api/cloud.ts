@@ -122,7 +122,6 @@ export async function createFolder(params: FolderCreateParams): Promise<Folder> 
  * 删除文件夹
  */
 export async function deleteFolder(id: number): Promise<void> {
-  console.log('[DEBUG] cloud.api.deleteFolder called', { id, url: `/cloud/folders/${id}` })
   await api.delete(`/cloud/folders/${id}`)
 }
 
@@ -891,9 +890,7 @@ export async function fetchItems(parentId?: number): Promise<{ folders: Folder[]
   const params = parentId !== undefined && parentId !== 0 ? { parentId } : {}
   const { data } = await api.get<ApiResponse<any>>('/cloud/items', { params })
 
-  console.log('[DEBUG] fetchItems response:', { data, params })
   const result = data?.data || { folders: [], files: [] }
-  console.log('[DEBUG] fetchItems result:', result)
 
   // 转换文件夹字段（CloudItem -> Folder）
   const convertFolder = (item: any): Folder => ({
@@ -936,7 +933,6 @@ export async function fetchItems(parentId?: number): Promise<{ folders: Folder[]
     files: Array.isArray(result.files) ? result.files.map(convertFile) : []
   }
 
-  console.log('[DEBUG] fetchItems converted:', converted)
   return converted
 }
 

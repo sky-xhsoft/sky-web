@@ -229,7 +229,6 @@ const loadTaskList = async () => {
   loading.value = true
   try {
     const result = await getPullStreamTasks()
-    console.log('拉流任务列表数据:', result)
 
     // 转换字段名：大写转小驼峰
     const convertedList = (result || []).map((task: any) => ({
@@ -265,7 +264,6 @@ const loadTaskList = async () => {
     }
 
     pagination.total = taskList.value.length
-    console.log('转换后的任务列表:', taskList.value)
   } catch (error) {
     console.error('加载任务列表失败:', error)
     Message.error('加载任务列表失败')

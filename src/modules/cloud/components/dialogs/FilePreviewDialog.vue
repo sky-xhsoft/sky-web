@@ -211,7 +211,6 @@ const createTime = computed(() => formatDate(props.file?.CreateTime || '', 'full
 // 判断是否是 Markdown 文件
 const isMarkdown = computed(() => {
   const result = fileExt.value === '.md'
-  console.log('[DEBUG] isMarkdown check:', { fileExt: fileExt.value, isMarkdown: result, category: props.category })
   return result
 })
 

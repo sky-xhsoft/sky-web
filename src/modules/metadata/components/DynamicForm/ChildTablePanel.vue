@@ -499,7 +499,6 @@ async function loadChildData() {
     }
 
     const refColumnDbName = refColumn.DB_NAME || refColumn.dbName
-    console.log('找到外键字段:', refColumnDbName, '字段ID:', refColumn.ID || refColumn.id)
 
     // 构建过滤条件：使用 filters 对象而不是 where 字符串
     const filters: Record<string, any> = {
@@ -606,12 +605,10 @@ async function handleEdit(record: any) {
 }
 
 function handleBeforeOpen() {
-  console.log('[ChildTablePanel] 对话框即将打开')
   formLoaded.value = false
 }
 
 function handleFormLoaded(config: any) {
-  console.log('[ChildTablePanel] 表单加载完成:', config)
   formLoaded.value = true
 }
 
@@ -653,7 +650,6 @@ async function handleDialogOk() {
       return
     }
 
-    console.log('[ChildTablePanel] 开始验证表单...')
 
     // 验证表单
     const valid = await childFormRef.value.validate()
@@ -662,7 +658,6 @@ async function handleDialogOk() {
       return
     }
 
-    console.log('[ChildTablePanel] 表单验证通过，获取表单数据...')
 
     // 获取表单数据
     const formData = childFormRef.value.getFormData()
@@ -674,7 +669,6 @@ async function handleDialogOk() {
       return
     }
 
-    console.log('[ChildTablePanel] 获取到的表单数据:', formData)
 
     // 设置父记录关联
     // 找到子表中引用父表的外键字段（通过 REF_TABLE_ID 匹配父表 ID）
@@ -685,11 +679,7 @@ async function handleDialogOk() {
 
     if (refColumn) {
       const refColumnDbName = refColumn.DB_NAME || refColumn.dbName
-      console.log('[ChildTablePanel] 找到外键字段:', refColumnDbName)
-      console.log('[ChildTablePanel] 设置前 formData:', JSON.stringify(formData))
       formData[refColumnDbName] = props.parentRecordId
-      console.log('[ChildTablePanel] 设置后 formData:', JSON.stringify(formData))
-      console.log('[ChildTablePanel] 验证字段值:', refColumnDbName, '=', formData[refColumnDbName])
     } else {
       console.error('[ChildTablePanel] ❌ 未找到外键字段！')
       console.error('[ChildTablePanel] parentTableId=', props.parentTableId)
@@ -704,28 +694,13 @@ async function handleDialogOk() {
     const table = props.childTable.table
     const childTableName = table.NAME || table.name
 
-    console.log('[ChildTablePanel] 准备提交数据:', {
-      mode: dialogMode.value,
-      tableName: childTableName,
-      formData: JSON.stringify(formData)
-    })
-
     // 确保 formData 包含所有必需字段
-    console.log('[ChildTablePanel] 最终提交的 formData 对象:', formData)
-    console.log('[ChildTablePanel] formData 的所有键:', Object.keys(formData))
-    console.log('[ChildTablePanel] formData 的 SYS_DICT_ID 值:', formData.SYS_DICT_ID)
 
     if (dialogMode.value === 'create') {
-      console.log('[ChildTablePanel] 调用 createRecord，参数:', {
-        tableName: childTableName,
-        record: formData
-      })
       const result = await metadataApi.createRecord(childTableName, formData)
-      console.log('[ChildTablePanel] 创建成功，返回结果:', result)
       Message.success('新增成功')
     } else if (dialogMode.value === 'edit') {
       const result = await metadataApi.updateRecord(childTableName, currentRecordId.value!, formData)
-      console.log('[ChildTablePanel] 更新成功，返回结果:', result)
       Message.success('更新成功')
     }
 

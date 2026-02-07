@@ -267,19 +267,12 @@ const loadData = async () => {
     }
 
     const res = await queryCallbackEvents(params)
-    console.log('录制列表 API Response:', res)
-    console.log('录制列表 Response data:', res.data?.data)
 
     if (res.data?.code === 200 || res.data?.code === 0) {
-      console.log('录制列表 Data list:', res.data.data.list)
       // 解析事件数据
       tableData.value = res.data.data.list
         .map((item: any) => {
-          console.log('Processing recording item:', item)
-          console.log('item.eventTime:', item.eventTime, 'type:', typeof item.eventTime)
           const eventData = JSON.parse(item.eventData)
-          console.log('Parsed recording eventData:', eventData)
-          console.log('Available eventData keys:', Object.keys(eventData))
 
           // 从 eventData 中提取字段，支持多种可能的字段名
           const videoUrl = eventData.video_url || eventData.videoUrl || ''
@@ -291,8 +284,6 @@ const loadData = async () => {
           const recordFileId = eventData.record_file_id || eventData.recordFileId || ''
           const videoId = eventData.video_id || eventData.videoId || ''
 
-          console.log('Extracted fileSize:', fileSize, 'from eventData.file_size:', eventData.file_size)
-          console.log('Extracted duration:', duration, 'from eventData.duration:', eventData.duration)
 
           // 如果 eventData 中没有这些字段，尝试从 item 的其他字段获取
           const streamName = item.streamName || eventData.stream_name || eventData.streamName || ''
@@ -300,7 +291,6 @@ const loadData = async () => {
           const appName = item.appName || eventData.app_name || eventData.appName || ''
 
           const processedEventTime = item.eventTime != null ? item.eventTime * 1000 : null
-          console.log('Processed eventTime:', processedEventTime, 'from:', item.eventTime)
 
           return {
             id: item.id,

@@ -19,7 +19,6 @@ export function useCloudNavigation() {
    * @param folderName 文件夹名称（用于面包屑）
    */
   async function navigateTo(folderId: number, folderName?: string) {
-    console.log("[DEBUG] useCloudNavigation.navigateTo called with folderId:", folderId, "folderName:", folderName)
     await store.switchFolder(folderId, folderName)
   }
 

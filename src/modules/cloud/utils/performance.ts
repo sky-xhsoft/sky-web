@@ -12,7 +12,6 @@
  *
  * @example
  * const debouncedSearch = debounce((query: string) => {
- *   console.log('搜索:', query)
  * }, 300)
  *
  * debouncedSearch('hello')  // 只有在300ms内没有新调用时才会执行
@@ -43,7 +42,6 @@ export function debounce<T extends (...args: any[]) => any>(
  *
  * @example
  * const throttledScroll = throttle(() => {
- *   console.log('滚动事件')
  * }, 200)
  *
  * window.addEventListener('scroll', throttledScroll)
@@ -164,7 +162,6 @@ export function lazyLoadImages(
  *
  * @example
  * const batchedUpdate = batch((items: string[]) => {
- *   console.log('批量更新:', items)
  * }, 100)
  *
  * batchedUpdate('a')
@@ -208,7 +205,6 @@ export function batch<T>(
  *   largeArray,
  *   100,
  *   (chunk) => chunk.forEach(processItem),
- *   (progress) => console.log(`处理进度: ${progress}%`)
  * )
  */
 export async function processInChunks<T>(
