@@ -48,9 +48,21 @@ const allowClear = computed(() => {
   return !props.disabled && !props.readonly
 })
 
+// 是否自动转大写
+const isUppercase = computed(() => {
+  return props.column.IS_UPPERCASE === 'Y' || (props.column as any).isUppercase === 'Y'
+})
+
 // 值变化处理
 function handleChange(value: string | undefined) {
-  emit('update:modelValue', value || null)
+  let processedValue = value || null
+
+  // 如果配置了自动转大写，则转换为大写
+  if (processedValue && isUppercase.value) {
+    processedValue = processedValue.toUpperCase()
+  }
+
+  emit('update:modelValue', processedValue)
 }
 
 // 失焦处理

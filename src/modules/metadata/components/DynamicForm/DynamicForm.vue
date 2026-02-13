@@ -174,7 +174,7 @@
         <div class="dynamic-form__group dynamic-form__group--system">
           <div class="dynamic-form__group-header">
             <icon-info-circle />
-            <span>系统信息</span>
+            <span>日志信息</span>
           </div>
           <div class="dynamic-form__group-body">
             <a-row :gutter="rowGutter">
