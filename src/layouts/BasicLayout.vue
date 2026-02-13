@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch, shallowRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Menu, Message } from '@arco-design/web-vue'
-import { IconApps } from '@arco-design/web-vue/es/icon'
+import { IconApps, IconMenuFold, IconMenuUnfold } from '@arco-design/web-vue/es/icon'
 import { useMenuStore } from '../stores/menu'
 import { useAuthStore } from '../stores/auth'
 import { useNavigationStore } from '../stores/navigation'
@@ -10,6 +10,7 @@ import { useNavigationStore } from '../stores/navigation'
 // 导入常用组件
 import Dashboard from '../pages/Dashboard.vue'
 import Cloud from '../pages/Cloud.vue'
+import SystemManagement from '../pages/SystemManagement.vue'
 import LiveDomain from '../pages/LiveDomain.vue'
 import LiveDomainDetail from '../pages/LiveDomainDetail.vue'
 import LiveStream from '../pages/LiveStream.vue'
@@ -31,6 +32,7 @@ const navigationStore = useNavigationStore()
 const componentRegistry: Record<string, any> = {
   Dashboard,
   Cloud,
+  SystemManagement,
   LiveDomain,
   LiveDomainDetail,
   LiveStream,
@@ -57,9 +59,9 @@ const mapMenu = (items: any[]): NavItem[] => {
   if (!Array.isArray(items)) return []
   return items
     .map((item) => ({
-      key: item.path || item.id || item.name,
+      key: item.path || item.url || item.id || item.name,
       title: item.title || item.displayName || item.menuName || item.name || '未命名',
-      path: item.path,
+      path: item.path || item.url,
       order: item.orderno ?? item.sortOrder ?? 0,
       children: item.children ? mapMenu(item.children) : undefined,
     }))
@@ -152,6 +154,10 @@ async function loadComponent(path: string) {
     case '/cloud':
       currentComponent.value = componentRegistry.Cloud
       navigationStore.navigateTo('Cloud', '云盘', {}, false)
+      break
+    case '/system-management':
+      currentComponent.value = componentRegistry.SystemManagement
+      navigationStore.navigateTo('SystemManagement', '系统管理', {}, false)
       break
     case '/live/domains':
       currentComponent.value = componentRegistry.LiveDomain
@@ -250,6 +256,10 @@ const goHome = async () => {
   await loadComponent('/')
 }
 
+const toggleSidebar = () => {
+  menuStore.toggleSidebar()
+}
+
 onMounted(async () => {
   if (!menuStore.menus.length && authStore.isAuthenticated) {
     try {
@@ -330,12 +340,18 @@ watch(
       </div>
     </a-layout-header>
     <a-layout class="main-layout">
-      <a-layout-sider class="side-nav" :width="230">
+      <a-layout-sider
+        class="side-nav"
+        :width="230"
+        :collapsed="menuStore.sidebarCollapsed"
+        :collapsed-width="48"
+      >
         <a-menu
           v-model:openKeys="openKeys"
           v-model:selectedKeys="selectedKeys"
           @menuItemClick="onMenuClick"
           :accordion="true"
+          :collapsed="menuStore.sidebarCollapsed"
         >
           <template v-for="item in sidebarItems" :key="item.key">
             <a-sub-menu v-if="item.children?.length" :key="item.key">
@@ -358,6 +374,10 @@ watch(
       </a-layout-sider>
       <a-layout>
         <a-layout-content class="app-content">
+          <div class="sidebar-toggle" @click="toggleSidebar">
+            <IconMenuFold v-if="!menuStore.sidebarCollapsed" />
+            <IconMenuUnfold v-else />
+          </div>
           <!-- 使用动态组件，传递 navigationStore 中的参数 -->
           <!-- key 确保每次切换都创建新实例 -->
           <component
@@ -462,14 +482,50 @@ watch(
   justify-content: flex-end;
 }
 .main-layout {
+  position: relative;
+}
+.app-content {
+  padding: 20px;
+  background: #ffffff;
+  min-height: calc(100vh - 120px);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+  position: relative;
+}
+.app-content :deep(.arco-breadcrumb) {
+  margin-left: 40px;
+}
+.sidebar-toggle {
+  position: absolute;
+  top: 3px;
+  left: 0px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  z-index: 100;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.sidebar-toggle:hover {
+  background: #f2f3f5;
+  border-color: #165dff;
+  color: #165dff;
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.15);
 }
 .side-nav {
   background: #f8f9fb;
   border-right: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
 }
 .side-nav :deep(.arco-menu) {
   background: transparent;
-  padding-left: 20px;
+  transition: all 0.2s ease;
 }
 .side-nav :deep(.arco-menu-item) {
   border-radius: 6px;
@@ -479,16 +535,26 @@ watch(
   background: rgba(22, 93, 255, 0.12);
   color: #165dff;
 }
+.side-nav :deep(.arco-layout-sider-collapsed .arco-menu) {
+  padding-left: 0;
+}
+.side-nav :deep(.arco-layout-sider-collapsed .arco-menu-item) {
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  margin: 8px 4px;
+}
+.side-nav :deep(.arco-layout-sider-collapsed .arco-menu-icon) {
+  margin-right: 0;
+  font-size: 18px;
+}
+.side-nav :deep(.arco-layout-sider-collapsed .arco-menu-item-inner) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
 .arco-menu-inner{
   padding: 14px 0px;
-}
-
-.app-content {
-  padding: 20px;
-  background: #ffffff;
-  min-height: calc(100vh - 120px);
-  border-radius: 10px;
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
-  position: relative;
 }
 </style>

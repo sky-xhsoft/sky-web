@@ -9,6 +9,7 @@ type MenuState = {
   menus: MenuTreeNode[]
   loading: boolean
   routesAdded: boolean
+  sidebarCollapsed: boolean
 }
 
 const buildRoutesFromMenus = (menus: MenuTreeNode[]): RouteRecordRaw[] => {
@@ -64,6 +65,7 @@ export const useMenuStore = defineStore('menu', {
     menus: [],
     loading: false,
     routesAdded: false,
+    sidebarCollapsed: false,
   }),
   getters: {
     navMenus: (state) => mapMenusToNav(state.menus),
@@ -92,6 +94,9 @@ export const useMenuStore = defineStore('menu', {
     reset() {
       this.menus = []
       this.routesAdded = false
+    },
+    toggleSidebar() {
+      this.sidebarCollapsed = !this.sidebarCollapsed
     },
   },
 })
