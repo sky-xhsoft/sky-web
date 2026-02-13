@@ -213,22 +213,18 @@ export const restartPullStreamTask = (taskId: string, operator: string) => {
 
 // 生成推流地址请求
 export interface GeneratePushURLRequest {
+  domainName: string
+  appName: string
   streamName: string
-  expireTime?: number // 过期时间（秒），可选
-  includePlayUrls?: boolean // 是否包含播放地址
+  streamKey: string
+  expireTime: number // 过期时间戳（秒）
 }
 
 // 生成推流地址响应
 export interface GeneratePushURLResponse {
   pushUrl: string
-  pushUrlObs: string
-  streamKey: string
-  expireTime: string
-  playUrls?: {
-    rtmpUrl: string
-    flvUrl: string
-    hlsUrl: string
-  }
+  pushUrlSrt: string
+  pushUrlWebRtc: string
 }
 
 // 生成推流地址

@@ -160,7 +160,7 @@
 
           <!-- 推流地址解析 - 折叠显示 -->
           <div class="section compact-section">
-            <a-collapse :default-active-key="['1']" :bordered="false">
+            <a-collapse v-model:active-key="collapseActiveKeys" :bordered="false">
               <a-collapse-item header="推流地址格式说明" key="1">
                 <a-table
                   :data="pushUrlList"
@@ -441,6 +441,9 @@ const generatedPushUrl = ref<any>(null)
 // 生成的推流地址列表
 const generatedPushUrlList = ref<any[]>([])
 
+// 折叠面板激活的 key
+const collapseActiveKeys = ref<string[]>(['1'])
+
 // 播放鉴权密钥
 const playAuthKey = ref('d0d87c303d4df45fd648aff7ea4a9516')
 
@@ -578,7 +581,7 @@ const generatePushUrl = async () => {
     })
 
     const data = response.data.data
-    const pushURL = data.pushURL
+    const pushURL = data.pushUrl
 
     // 解析 RTMP 推流地址
     // pushURL 格式: rtmp://domain/app/streamName?txSecret=xxx&txTime=xxx
@@ -592,27 +595,19 @@ const generatePushUrl = async () => {
     const obsServer = urlParts[0].substring(0, urlParts[0].lastIndexOf('/') + 1)
     const obsStreamKey = streamName + (authParams ? '?' + authParams : '')
 
-    // 生成各种格式的推流地址
+    // 使用后端返回的推流地址
     generatedPushUrlList.value = [
       {
         type: 'RTMP 地址',
-        url: pushURL
+        url: data.pushUrl
       },
       {
         type: 'WebRTC 地址',
-        url: `webrtc://${domain}/${appName}/${streamName}${authParams ? '?' + authParams : ''}`
+        url: data.pushUrlWebRtc
       },
       {
         type: 'SRT 地址',
-        url: `srt://${domain}:9000?streamid=#!::h=${domain},r=${appName}/${streamName}${authParams ? ',' + authParams.replace(/&/g, ',') : ''}`
-      },
-      {
-        type: 'RTMP over SRT 地址',
-        url: `rtmp://${domain}:3570/${appName}/${streamName}${authParams ? '?' + authParams : ''}`
-      },
-      {
-        type: 'RTMP over QUIC 地址',
-        url: `rtmp://${domain}:443/${appName}/${streamName}${authParams ? '?' + authParams : ''}`
+        url: data.pushUrlSrt
       }
     ]
 
@@ -622,6 +617,9 @@ const generatePushUrl = async () => {
       obsServer: obsServer,
       obsStreamKey: obsStreamKey
     }
+
+    // 生成地址后折叠格式说明
+    collapseActiveKeys.value = []
 
     Message.success('推流地址生成成功')
   } catch (error: any) {
@@ -822,7 +820,6 @@ onMounted(() => {
 
 .url-text {
   word-break: break-all;
-  flex: 1;
 }
 
 .copy-icon {
