@@ -11,6 +11,7 @@ import { useNavigationStore } from '../stores/navigation'
 import Dashboard from '../pages/Dashboard.vue'
 import Cloud from '../pages/Cloud.vue'
 import SystemManagement from '../pages/SystemManagement.vue'
+import LiveGuide from '../pages/LiveGuide.vue'
 import LiveDomain from '../pages/LiveDomain.vue'
 import LiveDomainDetail from '../pages/LiveDomainDetail.vue'
 import LiveStream from '../pages/LiveStream.vue'
@@ -33,6 +34,7 @@ const componentRegistry: Record<string, any> = {
   Dashboard,
   Cloud,
   SystemManagement,
+  LiveGuide,
   LiveDomain,
   LiveDomainDetail,
   LiveStream,
@@ -158,6 +160,10 @@ async function loadComponent(path: string) {
     case '/system-management':
       currentComponent.value = componentRegistry.SystemManagement
       navigationStore.navigateTo('SystemManagement', '系统管理', {}, false)
+      break
+    case '/LiveGuide':
+      currentComponent.value = componentRegistry.LiveGuide
+      navigationStore.navigateTo('LiveGuide', '视频直播功能说明', {}, false)
       break
     case '/live/domains':
       currentComponent.value = componentRegistry.LiveDomain
