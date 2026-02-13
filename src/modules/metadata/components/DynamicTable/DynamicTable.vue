@@ -38,6 +38,7 @@
                 v-model="queryForm[column.DB_NAME || column.dbName]"
                 :placeholder="`请输入${column.DISPLAY_NAME || column.displayName}`"
                 allow-clear
+                @input="(value) => handleQueryInputChange(column, value)"
               />
 
               <!-- 数字输入 -->
@@ -89,6 +90,7 @@
                 v-model="queryForm[column.DB_NAME || column.dbName]"
                 :placeholder="`请输入${column.DISPLAY_NAME || column.displayName}`"
                 allow-clear
+                @input="(value) => handleQueryInputChange(column, value)"
               />
             </a-form-item>
           </a-col>
@@ -1071,6 +1073,20 @@ function getDictOptions(column: SysColumn): Array<{ value: string; label: string
     value: item.VALUE || (item as any).value,
     label: item.DISPLAY_NAME || (item as any).displayName
   }))
+}
+
+/**
+ * 处理查询输入框变化（支持自动转大写）
+ */
+function handleQueryInputChange(column: any, value: string) {
+  const fieldName = column.DB_NAME || column.dbName
+
+  // 如果配置了自动转大写，则转换为大写
+  if (value && (column.IS_UPPERCASE === 'Y' || column.isUppercase === 'Y')) {
+    queryForm.value[fieldName] = value.toUpperCase()
+  } else {
+    queryForm.value[fieldName] = value
+  }
 }
 
 /**

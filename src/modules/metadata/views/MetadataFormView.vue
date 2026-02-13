@@ -214,7 +214,6 @@ const mode = computed<FormMode>(() => {
 })
 
 const tableConfig = ref<TableConfig | null>(null)
-const showSystemFields = ref(true)  // 在表单内显示系统字段，保持样式统一
 const activeDetailTab = ref<string>()
 const hasChanges = ref(false)
 
@@ -255,6 +254,17 @@ const canUnsubmit = computed(() => mask.value.includes('U'))   // Unsubmit - 反
 const canPrint = computed(() => mask.value.includes('P'))      // Print - 打印
 const canImport = computed(() => mask.value.includes('I'))     // Import - 导入
 const canExport = computed(() => mask.value.includes('E'))     // Export - 导出
+
+/**
+ * 是否显示系统字段
+ * 根据表配置的 props.hideSystemFields 来决定
+ * 默认显示系统字段（true）
+ */
+const showSystemFields = computed(() => {
+  if (!tableConfig.value?.props) return true
+  // 如果配置了 hideSystemFields 为 true，则不显示系统字段
+  return !(tableConfig.value.props as any).hideSystemFields
+})
 
 /**
  * 子表配置
