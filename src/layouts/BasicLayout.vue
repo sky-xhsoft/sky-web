@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { computed, onMounted, ref, watch, shallowRef } from 'vue'
+import { computed, onMounted, ref, watch, shallowRef, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Menu, Message } from '@arco-design/web-vue'
 import { IconApps, IconMenuFold, IconMenuUnfold } from '@arco-design/web-vue/es/icon'
@@ -13,6 +13,8 @@ import Cloud from '../pages/Cloud.vue'
 import SystemManagement from '../pages/SystemManagement.vue'
 import LiveGuide from '../pages/LiveGuide.vue'
 import LiveDomain from '../pages/LiveDomain.vue'
+import PushDomain from '../pages/PushDomain.vue'
+import PlayDomain from '../pages/PlayDomain.vue'
 import LiveDomainDetail from '../pages/LiveDomainDetail.vue'
 import LiveStream from '../pages/LiveStream.vue'
 import LivePreview from '../pages/LivePreview.vue'
@@ -22,6 +24,8 @@ import LiveHighlightClips from '../pages/LiveHighlightClips.vue'
 import LiveHighlightClipPreview from '../pages/LiveHighlightClipPreview.vue'
 import LiveRecordings from '../pages/LiveRecordings.vue'
 import LiveRecordingPreview from '../pages/LiveRecordingPreview.vue'
+import LiveRoomList from '../pages/LiveRoomList.vue'
+import LiveRoomForm from '../pages/LiveRoomForm.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -36,6 +40,8 @@ const componentRegistry: Record<string, any> = {
   SystemManagement,
   LiveGuide,
   LiveDomain,
+  PushDomain,
+  PlayDomain,
   LiveDomainDetail,
   LiveStream,
   LivePreview,
@@ -45,6 +51,8 @@ const componentRegistry: Record<string, any> = {
   LiveHighlightClipPreview,
   LiveRecordings,
   LiveRecordingPreview,
+  LiveRoomList,
+  LiveRoomForm,
 }
 
 // 当前显示的组件（使用 shallowRef 提高性能）
@@ -127,6 +135,16 @@ const defaultOpenKeys = computed(() => {
 })
 const openKeys = ref<string[]>([])
 
+// 监听折叠状态变化
+watch(() => menuStore.sidebarCollapsed, (collapsed) => {
+  if (!collapsed && openKeys.value.length === 0) {
+    // 仅在展开且 openKeys 为空时，设置默认值
+    nextTick(() => {
+      openKeys.value = [...defaultOpenKeys.value]
+    })
+  }
+})
+
 /**
  * 动态加载组件
  */
@@ -169,6 +187,14 @@ async function loadComponent(path: string) {
       currentComponent.value = componentRegistry.LiveDomain
       navigationStore.navigateTo('LiveDomain', '直播域名管理', {}, false)
       break
+    case '/live/push-domains':
+      currentComponent.value = componentRegistry.PushDomain
+      navigationStore.navigateTo('PushDomain', '推流域名管理', {}, false)
+      break
+    case '/live/play-domains':
+      currentComponent.value = componentRegistry.PlayDomain
+      navigationStore.navigateTo('PlayDomain', '播放域名管理', {}, false)
+      break
     case '/live/domains/detail':
       currentComponent.value = componentRegistry.LiveDomainDetail
       // 从查询参数中获取域名
@@ -181,16 +207,16 @@ async function loadComponent(path: string) {
       break
     case '/live/pull-stream':
       currentComponent.value = componentRegistry.PullStreamTask
-      navigationStore.navigateTo('PullStreamTask', '拉流转推', {}, false)
+      navigationStore.navigateTo('PullStreamTask', '社媒分发', {}, false)
       break
     case '/live/pull-stream/create':
       currentComponent.value = componentRegistry.PullStreamTaskForm
-      navigationStore.navigateTo('PullStreamTaskForm', '创建拉流任务', {}, false)
+      navigationStore.navigateTo('PullStreamTaskForm', '创建分发任务', {}, false)
       break
     case '/live/pull-stream/edit':
       currentComponent.value = componentRegistry.PullStreamTaskForm
       const taskId = new URLSearchParams(window.location.search).get('id') || ''
-      navigationStore.navigateTo('PullStreamTaskForm', '编辑拉流任务', { taskId }, false)
+      navigationStore.navigateTo('PullStreamTaskForm', '编辑分发任务', { taskId }, false)
       break
     case '/live/highlight-clips':
       currentComponent.value = componentRegistry.LiveHighlightClips
@@ -199,6 +225,19 @@ async function loadComponent(path: string) {
     case '/live/recordings':
       currentComponent.value = componentRegistry.LiveRecordings
       navigationStore.navigateTo('LiveRecordings', '录制列表', {}, false)
+      break
+    case '/live/rooms':
+      currentComponent.value = componentRegistry.LiveRoomList
+      navigationStore.navigateTo('LiveRoomList', '直播间管理', {}, false)
+      break
+    case '/live/rooms/create':
+      currentComponent.value = componentRegistry.LiveRoomForm
+      navigationStore.navigateTo('LiveRoomForm', '创建直播间', {}, false)
+      break
+    case '/live/rooms/edit':
+      currentComponent.value = componentRegistry.LiveRoomForm
+      const roomId = new URLSearchParams(window.location.search).get('id') || ''
+      navigationStore.navigateTo('LiveRoomForm', '编辑直播间', { roomId }, false)
       break
     default:
       // 动态表单路由 /tables/xxx
@@ -211,31 +250,30 @@ async function loadComponent(path: string) {
 }
 
 const onMenuClick = async (key: string) => {
+  // 找到被点击项的父菜单
+  let parentKey: string | null = null
+  for (const item of sidebarItems.value) {
+    if (item.children?.some(child => child.key === key)) {
+      parentKey = item.key
+      break
+    }
+  }
+
   currentMenuKey.value = key
   const targetPath = keyPathMap.value.get(key)
   if (targetPath) {
     // 不使用路由跳转，而是动态加载组件
     await loadComponent(targetPath)
   }
+
+  // 确保父菜单保持展开状态
+  if (parentKey && !openKeys.value.includes(parentKey)) {
+    openKeys.value = [...openKeys.value, parentKey]
+  }
 }
 
 const onOpenChange = (keys: string[]) => {
   openKeys.value = keys as string[]
-}
-
-const onSubMenuClick = (key: string | number) => {
-  // 确保 key 和 openKeys 中的值类型一致
-  const keyStr = String(key)
-  const currentKeys = openKeys.value.map(k => String(k))
-  const index = currentKeys.indexOf(keyStr)
-
-  if (index > -1) {
-    // 折叠：移除这个 key
-    openKeys.value = openKeys.value.filter(k => String(k) !== keyStr)
-  } else {
-    // 展开：添加这个 key
-    openKeys.value = [...openKeys.value, key]
-  }
 }
 
 const onRootClick = async (key: string) => {
@@ -358,6 +396,7 @@ watch(
           @menuItemClick="onMenuClick"
           :accordion="true"
           :collapsed="menuStore.sidebarCollapsed"
+          :popup-max-height="400"
         >
           <template v-for="item in sidebarItems" :key="item.key">
             <a-sub-menu v-if="item.children?.length" :key="item.key">
