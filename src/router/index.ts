@@ -5,6 +5,10 @@ import Dashboard from '../pages/Dashboard.vue'
 import Login from '../pages/Login.vue'
 import Share from '../pages/Share.vue'
 import LiveDomain from '../pages/LiveDomain.vue'
+import PushDomain from '../pages/PushDomain.vue'
+import PlayDomain from '../pages/PlayDomain.vue'
+import LiveRoomList from '../pages/LiveRoomList.vue'
+import LiveRoomForm from '../pages/LiveRoomForm.vue'
 import { useAuthStore } from '../stores/auth'
 import { useMenuStore } from '../stores/menu'
 
@@ -41,6 +45,41 @@ const routes: RouteRecordRaw[] = [
         name: 'live-domains',
         component: LiveDomain,
         meta: { title: '直播域名管理', requiresAuth: true },
+      },
+      // 推流域名管理页面
+      {
+        path: 'live/push-domains',
+        name: 'push-domains',
+        component: PushDomain,
+        meta: { title: '推流域名管理', requiresAuth: true },
+      },
+      // 播放域名管理页面
+      {
+        path: 'live/play-domains',
+        name: 'play-domains',
+        component: PlayDomain,
+        meta: { title: '播放域名管理', requiresAuth: true },
+      },
+      // 直播间列表页面
+      {
+        path: 'live/rooms',
+        name: 'live-rooms',
+        component: LiveRoomList,
+        meta: { title: '直播间管理', requiresAuth: true },
+      },
+      // 创建直播间页面
+      {
+        path: 'live/rooms/create',
+        name: 'live-room-create',
+        component: LiveRoomForm,
+        meta: { title: '创建直播间', requiresAuth: true },
+      },
+      // 编辑直播间页面
+      {
+        path: 'live/rooms/edit/:id',
+        name: 'live-room-edit',
+        component: LiveRoomForm,
+        meta: { title: '编辑直播间', requiresAuth: true },
       },
     ],
   },

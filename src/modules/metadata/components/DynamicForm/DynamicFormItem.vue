@@ -22,6 +22,7 @@
       :disabled="isDisabled"
       :readonly="isReadonly"
       :record="record"
+      :rows="displayRows"
       :style="fieldStyle"
       @update:model-value="handleChange"
       @blur="handleBlur"

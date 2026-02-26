@@ -87,6 +87,13 @@
 
       <!-- PDF预览 -->
       <PDFPreview
+        v-else-if="category === 'document' && isPDF"
+        :url="previewUrl"
+        :file-name="fileName"
+      />
+
+      <!-- Office文档预览 -->
+      <OfficePreview
         v-else-if="category === 'document'"
         :url="previewUrl"
         :file-name="fileName"
@@ -168,6 +175,7 @@ import PDFPreview from './previews/PDFPreview.vue'
 import TextPreview from './previews/TextPreview.vue'
 import CodePreview from './previews/CodePreview.vue'
 import MarkdownPreview from './previews/MarkdownPreview.vue'
+import OfficePreview from './previews/OfficePreview.vue'
 
 interface Props {
   visible: boolean
@@ -214,6 +222,12 @@ const isMarkdown = computed(() => {
   return result
 })
 
+// 判断是否是 PDF 文件
+const isPDF = computed(() => {
+  const result = fileExt.value === '.pdf'
+  return result
+})
+
 const fileEmoji = computed(() => {
   const ext = fileExt.value
   const emojiMap: Record<string, string> = {
@@ -240,6 +254,12 @@ const fileEmoji = computed(() => {
 
     // 文档
     '.pdf': '📕',
+    '.doc': '📘',
+    '.docx': '📘',
+    '.xls': '📗',
+    '.xlsx': '📗',
+    '.ppt': '📙',
+    '.pptx': '📙',
 
     // 文本
     '.txt': '📄',

@@ -160,7 +160,7 @@
 
           <!-- 推流地址解析 - 折叠显示 -->
           <div class="section compact-section">
-            <a-collapse v-model:active-key="collapseActiveKeys" :bordered="false">
+            <a-collapse v-model:active-key="pushCollapseActiveKeys" :bordered="false">
               <a-collapse-item header="推流地址格式说明" key="1">
                 <a-table
                   :data="pushUrlList"
@@ -230,40 +230,6 @@
 
         <!-- 播放配置 -->
         <div class="tab-content compact">
-          <!-- 播放地址解析 -->
-          <div class="section compact-section">
-            <h3 class="section-title">播放地址解析</h3>
-            <div class="address-formula">
-              <span class="formula-label">地址组成：</span>
-              <span class="formula-part domain">播放域名</span>
-              <span class="formula-plus">+</span>
-              <span class="formula-part">AppName</span>
-              <span class="formula-plus">+</span>
-              <span class="formula-part">StreamName</span>
-              <span class="formula-plus">+</span>
-              <span class="formula-part auth">鉴权信息</span>
-            </div>
-            <a-table
-              :data="playUrlList"
-              :pagination="false"
-              :bordered="{ wrapper: true, cell: true }"
-              size="small"
-              style="margin-top: 16px"
-            >
-              <template #columns>
-                <a-table-column title="地址类型" data-index="type" :width="150" />
-                <a-table-column title="播放地址格式" data-index="url">
-                  <template #cell="{ record }">
-                    <div class="url-cell">
-                      <span class="url-text">{{ record.url }}</span>
-                      <icon-copy class="copy-icon" @click="copyToClipboard(record.url)" />
-                    </div>
-                  </template>
-                </a-table-column>
-              </template>
-            </a-table>
-          </div>
-
           <!-- 播放地址生成器 -->
           <div class="section compact-section">
             <h3 class="section-title">播放地址生成器</h3>
@@ -360,6 +326,43 @@
               </div>
             </a-space>
           </div>
+
+          <!-- 播放地址格式说明 - 放在最下面 -->
+          <div class="section compact-section">
+            <a-collapse v-model:active-key="playCollapseActiveKeys" :bordered="false">
+              <a-collapse-item header="播放地址格式说明" key="1">
+                <div class="address-formula">
+                  <span class="formula-label">地址组成：</span>
+                  <span class="formula-part domain">播放域名</span>
+                  <span class="formula-plus">+</span>
+                  <span class="formula-part">AppName</span>
+                  <span class="formula-plus">+</span>
+                  <span class="formula-part">StreamName</span>
+                  <span class="formula-plus">+</span>
+                  <span class="formula-part auth">鉴权信息</span>
+                </div>
+                <a-table
+                  :data="playUrlList"
+                  :pagination="false"
+                  :bordered="{ wrapper: true, cell: true }"
+                  size="small"
+                  style="margin-top: 16px"
+                >
+                  <template #columns>
+                    <a-table-column title="地址类型" data-index="type" :width="150" />
+                    <a-table-column title="播放地址格式" data-index="url">
+                      <template #cell="{ record }">
+                        <div class="url-cell">
+                          <span class="url-text">{{ record.url }}</span>
+                          <icon-copy class="copy-icon" @click="copyToClipboard(record.url)" />
+                        </div>
+                      </template>
+                    </a-table-column>
+                  </template>
+                </a-table>
+              </a-collapse-item>
+            </a-collapse>
+          </div>
         </div>
       </a-tab-pane>
     </a-tabs>
@@ -407,23 +410,23 @@ const pushAuthKey = ref('d0d87c303d4df45fd648af77ea4a9516')
 const pushUrlList = ref([
   {
     type: 'RTMP 地址',
-    url: 'rtmp://e.skyzhou.cn/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
+    url: 'rtmp://upload.skyzhou.cn/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
   },
   {
     type: 'WebRTC 地址',
-    url: 'webrtc://e.skyzhou.cn/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
+    url: 'webrtc://upload.skyzhou.cn/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
   },
   {
     type: 'SRT 地址',
-    url: 'srt://e.skyzhou.cn:9000?streamid=#!::h=e.skyzhou.cn,r=AppName/StreamName,bSecret=md5(key+StreamName+hex(time)),bTime=hex(time)'
+    url: 'srt://upload.skyzhou.cn:9000?streamid=#!::h=upload.skyzhou.cn,r=AppName/StreamName,bSecret=md5(key+StreamName+hex(time)),bTime=hex(time)'
   },
   {
     type: 'RTMP over SRT 地址',
-    url: 'rtmp://e.skyzhou.cn:3570/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
+    url: 'rtmp://upload.skyzhou.cn:3570/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
   },
   {
     type: 'RTMP over QUIC 地址',
-    url: 'rtmp://e.skyzhou.cn:443/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
+    url: 'rtmp://upload.skyzhou.cn:443/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
   }
 ])
 
@@ -441,8 +444,11 @@ const generatedPushUrl = ref<any>(null)
 // 生成的推流地址列表
 const generatedPushUrlList = ref<any[]>([])
 
-// 折叠面板激活的 key
-const collapseActiveKeys = ref<string[]>(['1'])
+// 推流配置折叠面板激活的 key
+const pushCollapseActiveKeys = ref<string[]>(['1'])
+
+// 播放配置折叠面板激活的 key
+const playCollapseActiveKeys = ref<string[]>(['1'])
 
 // 播放鉴权密钥
 const playAuthKey = ref('d0d87c303d4df45fd648aff7ea4a9516')
@@ -549,6 +555,9 @@ const loadDomainInfo = async () => {
       createTime: data.CreateTime,
       updateTime: data.UpdateTime
     }
+
+    // 根据域名类型自动切换标签页
+    activeTab.value = data.Type === 0 ? 'push' : 'play'
   } catch (error: any) {
     Message.error(error.response?.data?.message || '加载域名信息失败')
   }
@@ -719,6 +728,9 @@ const generatePlayUrl = () => {
     hlsUrl: `http://${domainInfo.value.name}/${appName}/${playForm.streamName}.m3u8`,
     webrtcUrl: `webrtc://${domainInfo.value.name}/${appName}/${playForm.streamName}`
   }
+
+  // 自动折叠"播放地址格式说明"模块
+  playCollapseActiveKeys.value = []
 
   Message.success('播放地址生成成功')
 }

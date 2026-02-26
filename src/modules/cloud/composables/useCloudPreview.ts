@@ -67,7 +67,14 @@ export function useCloudPreview() {
     }
 
     // 文档
-    if (['.pdf'].includes(ext) || mimeType === 'application/pdf') {
+    if (['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'].includes(ext) ||
+        mimeType === 'application/pdf' ||
+        mimeType.includes('application/msword') ||
+        mimeType.includes('application/vnd.openxmlformats-officedocument') ||
+        mimeType.includes('application/vnd.ms-excel') ||
+        mimeType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml') ||
+        mimeType.includes('application/vnd.ms-powerpoint') ||
+        mimeType.includes('application/vnd.openxmlformats-officedocument.presentationml')) {
       return 'document'
     }
 

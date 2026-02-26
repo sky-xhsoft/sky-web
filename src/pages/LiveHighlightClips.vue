@@ -4,6 +4,12 @@
     <div class="page-header">
       <h2>直播高光切片</h2>
       <div class="header-actions">
+        <a-button v-if="selectedRows.length > 0" status="danger" size="small" @click="handleBatchDelete">
+          <template #icon>
+            <icon-delete />
+          </template>
+          批量删除 ({{ selectedRows.length }})
+        </a-button>
         <a-button type="primary" size="small" @click="handleRefresh">
           <template #icon>
             <icon-refresh />
@@ -78,55 +84,43 @@
       :scroll="{ x: 1520 }"
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
+      :row-selection="rowSelection"
+      :columns="columns"
+      @selectAll="handleSelectAll"
+      @selectionChange="handleSelectionChange"
     >
-      <template #columns>
-        <a-table-column title="ID" data-index="id" :width="60" />
-        <a-table-column title="标题" :width="280">
-          <template #cell="{ record }">
-            <a-tooltip :content="record.title" v-if="record.title">
-              <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                {{ record.title }}
-              </div>
-            </a-tooltip>
-            <span v-else style="color: #999;">-</span>
-          </template>
-        </a-table-column>
-        <a-table-column title="关键词" :width="280">
-          <template #cell="{ record }">
-            <a-space wrap size="mini" v-if="record.keyWords && record.keyWords.length > 0">
-              <a-tag v-for="(keyword, index) in record.keyWords.slice(0, 4)" :key="index" size="small">
-                {{ keyword }}
-              </a-tag>
-              <a-tag v-if="record.keyWords.length > 4" size="small" color="gray">+{{ record.keyWords.length - 4 }}</a-tag>
-            </a-space>
-            <span v-else style="color: #999;">-</span>
-          </template>
-        </a-table-column>
-        <a-table-column title="域名" data-index="domainName" :width="160" />
-        <a-table-column title="应用" data-index="appName" :width="80" />
-        <a-table-column title="开始时间" :width="160">
-          <template #cell="{ record }">
-            {{ formatDateTime(record.startTime) }}
-          </template>
-        </a-table-column>
-        <a-table-column title="结束时间" :width="160">
-          <template #cell="{ record }">
-            {{ formatDateTime(record.endTime) }}
-          </template>
-        </a-table-column>
-        <a-table-column title="时长" :width="90">
-          <template #cell="{ record }">
-            {{ formatDuration(record.startTime, record.endTime) }}
-          </template>
-        </a-table-column>
-        <a-table-column title="操作" :width="120" fixed="right">
-          <template #cell="{ record }">
-            <a-space size="mini">
-              <a-link @click="handlePreview(record)">预览</a-link>
-              <a-link @click="handleDownload(record)">下载</a-link>
-            </a-space>
-          </template>
-        </a-table-column>
+      <template #title="{ record }">
+        <a-tooltip :content="record.title" v-if="record.title">
+          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            {{ record.title }}
+          </div>
+        </a-tooltip>
+        <span v-else style="color: #999;">-</span>
+      </template>
+      <template #keywords="{ record }">
+        <a-space wrap size="mini" v-if="record.keyWords && record.keyWords.length > 0">
+          <a-tag v-for="(keyword, index) in record.keyWords.slice(0, 4)" :key="index" size="small">
+            {{ keyword }}
+          </a-tag>
+          <a-tag v-if="record.keyWords.length > 4" size="small" color="gray">+{{ record.keyWords.length - 4 }}</a-tag>
+        </a-space>
+        <span v-else style="color: #999;">-</span>
+      </template>
+      <template #startTime="{ record }">
+        {{ formatDateTime(record.startTime) }}
+      </template>
+      <template #endTime="{ record }">
+        {{ formatDateTime(record.endTime) }}
+      </template>
+      <template #duration="{ record }">
+        {{ formatDuration(record.startTime, record.endTime) }}
+      </template>
+      <template #actions="{ record }">
+        <a-space size="mini">
+          <a-link @click="handlePreview(record)">预览</a-link>
+          <a-link @click="handleDownload(record)">下载</a-link>
+          <a-link status="danger" @click="handleDelete(record)">删除</a-link>
+        </a-space>
       </template>
       <template #empty>
         <a-empty description="暂无高光切片数据" />
@@ -138,13 +132,13 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useNavigationStore } from '@/stores/navigation'
-import { Message } from '@arco-design/web-vue'
+import { Message, Modal } from '@arco-design/web-vue'
 import {
   IconRefresh,
   IconSearch,
-  IconDownload
+  IconDelete
 } from '@arco-design/web-vue/es/icon'
-import { queryCallbackEvents } from '@/api/live'
+import { queryCallbackEvents, deleteCallbackEvent, batchDeleteCallbackEvents } from '@/api/live'
 import dayjs from 'dayjs'
 
 const navigationStore = useNavigationStore()
@@ -160,16 +154,111 @@ const searchForm = reactive({
   ]
 })
 
+// 表格数据类型定义
+interface TableDataItem {
+  id: number
+  title: string
+  keyWords: string[]
+  domainName: string
+  appName: string
+  startTime: number
+  endTime: number
+  clipUrl: string
+  streamId: string
+  streamName: string
+  summary: string
+  coverUrl: string
+  score: number
+  eventTime: number
+  createTime: string
+}
+
 // 表格数据
 const loading = ref(false)
-const tableData = ref([])
+const tableData = ref<TableDataItem[]>([])
 const pagination = reactive({
   current: 1,
-  pageSize: 20,
+  pageSize: 10,
   total: 0,
   showTotal: true,
   showPageSize: true
 })
+
+// 选中的项
+const selectedRows = ref<TableDataItem[]>([])
+
+// 行选择配置
+const rowSelection = reactive({
+  type: 'checkbox',
+  showCheckedAll: true
+})
+
+// 处理选择变化
+const handleSelectionChange = (rowKeys: any[]) => {
+  // 根据选中的行 keys 找到对应的记录
+  selectedRows.value = tableData.value.filter(record => rowKeys.includes(record.id))
+}
+
+// 处理全选
+const handleSelectAll = (checked: boolean) => {
+  if (checked) {
+    // 全选时，选中所有数据
+    selectedRows.value = [...tableData.value]
+  } else {
+    // 取消全选时，清空选中数据
+    selectedRows.value = []
+  }
+}
+
+// 列配置
+const columns = [
+  {
+    title: 'ID',
+    dataIndex: 'id',
+    width: 100
+  },
+  {
+    title: '标题',
+    slotName: 'title',
+    width: 280
+  },
+  {
+    title: '关键词',
+    slotName: 'keywords',
+    width: 280
+  },
+  {
+    title: '域名',
+    dataIndex: 'domainName',
+    width: 160
+  },
+  {
+    title: '应用',
+    dataIndex: 'appName',
+    width: 80
+  },
+  {
+    title: '开始时间',
+    slotName: 'startTime',
+    width: 160
+  },
+  {
+    title: '结束时间',
+    slotName: 'endTime',
+    width: 160
+  },
+  {
+    title: '时长',
+    slotName: 'duration',
+    width: 90
+  },
+  {
+    title: '操作',
+    slotName: 'actions',
+    width: 150,
+    fixed: 'right'
+  }
+]
 
 // 加载数据
 const loadData = async () => {
@@ -272,6 +361,49 @@ const handlePreview = (record: any) => {
   navigationStore.navigateTo('LiveHighlightClipPreview', '高光切片预览', { clipId: record.id, clipData: record })
 }
 
+// 单个删除
+const handleDelete = (record: TableDataItem) => {
+  Modal.confirm({
+    title: '确认删除',
+    content: '确定要删除这条高光切片记录吗？此操作不可恢复。',
+    onOk: async () => {
+      try {
+        await deleteCallbackEvent(record.id)
+        Message.success('删除成功')
+        loadData()
+      } catch (error) {
+        console.error('删除高光切片失败:', error)
+        Message.error('删除失败')
+      }
+    }
+  })
+}
+
+// 批量删除
+const handleBatchDelete = () => {
+  if (selectedRows.value.length === 0) {
+    Message.warning('请选择要删除的记录')
+    return
+  }
+
+  Modal.confirm({
+    title: '确认批量删除',
+    content: `确定要删除选中的 ${selectedRows.value.length} 条高光切片记录吗？此操作不可恢复。`,
+    onOk: async () => {
+      try {
+        const ids = selectedRows.value.map(item => item.id)
+        await batchDeleteCallbackEvents(ids)
+        Message.success('批量删除成功')
+        loadData()
+        selectedRows.value = []
+      } catch (error) {
+        console.error('批量删除高光切片失败:', error)
+        Message.error('批量删除失败')
+      }
+    }
+  })
+}
+
 // 下载
 const handleDownload = (record: any) => {
   window.open(record.clipUrl, '_blank')
@@ -294,15 +426,6 @@ const formatDuration = (startTime: number, endTime: number) => {
   return `${minutes}分${seconds}秒`
 }
 
-// 获取评分颜色
-const getScoreColor = (score: number) => {
-  if (score >= 9) return 'red'
-  if (score >= 8) return 'orangered'
-  if (score >= 7) return 'orange'
-  if (score >= 6) return 'gold'
-  return 'blue'
-}
-
 onMounted(() => {
   loadData()
 })
@@ -311,6 +434,8 @@ onMounted(() => {
 <style scoped lang="less">
 .highlight-clips-page {
   padding: 12px;
+  overflow-y: auto;
+  height: calc(100vh - 80px);
 
   .page-header {
     display: flex;

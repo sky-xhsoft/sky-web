@@ -417,6 +417,7 @@ onMounted(() => {
   padding: 20px;
   background: #fff;
   min-height: 100%;
+  overflow-y: auto;
 }
 
 .page-toolbar {

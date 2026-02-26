@@ -136,26 +136,29 @@ export interface PullStreamTaskInfo {
   updateTime?: string
   operator?: string
   comment?: string
+  pushArgs?: string
 }
 
 // 创建拉流任务请求
 export interface CreatePullStreamTaskRequest {
   sourceType: string
   sourceUrls: string[]
-  domainName: string
-  appName: string
-  streamName: string
+  domainName?: string
+  appName?: string
+  streamName?: string
+  toUrl?: string // 完整目标 URL 地址
   startTime: string
   endTime: string
   operator: string
   comment?: string
   region?: string
+  pushArgs?: string
 }
 
 // 更新拉流任务请求
 export interface UpdatePullStreamTaskRequest {
-  sourceType?: string
   sourceUrls?: string[]
+  toUrl?: string // 完整目标 URL 地址
   startTime?: string
   endTime?: string
   operator: string
@@ -173,6 +176,29 @@ export interface PullStreamTaskStatus {
   reportTime?: string // 最新心跳上报时间
 }
 
+// 拉流转推任务流信息
+export interface TurnPushInfo {
+  videoFps: number
+  audioFps: number
+  videoRate: number
+  audioRate: number
+  streamFlag: string
+  time: string
+}
+
+// 查询拉流转推任务流数据请求
+export interface DescribePullTransformPushInfoListRequest {
+  startTime: string // UTC开始时间，格式：yyyy-mm-ddTHH:MM:SSZ
+  endTime: string // UTC结束时间，格式：yyyy-mm-ddTHH:MM:SSZ
+  taskId: string // 拉流转推任务ID
+}
+
+// 查询拉流转推任务流数据响应
+export interface DescribePullTransformPushInfoListResponse {
+  dataInfoList: TurnPushInfo[]
+  requestId?: string
+}
+
 // 创建拉流任务
 export const createPullStreamTask = (data: CreatePullStreamTaskRequest) => {
   return api.post('/live/pull-stream/tasks', data).then(res => res.data.data)
@@ -182,7 +208,7 @@ export const createPullStreamTask = (data: CreatePullStreamTaskRequest) => {
 export const getPullStreamTasks = (taskId?: string) => {
   return api.get('/live/pull-stream/tasks', {
     params: taskId ? { taskId } : {}
-  }).then(res => res.data.data)
+  }).then(res => res.data.data.TaskInfos || [])
 }
 
 // 更新拉流任务
@@ -207,6 +233,11 @@ export const restartPullStreamTask = (taskId: string, operator: string) => {
   return api.post(`/live/pull-stream/tasks/${taskId}/restart`, null, {
     params: { operator }
   }).then(res => res.data.data)
+}
+
+// 查询拉流转推任务流数据
+export const describePullTransformPushInfoList = (data: DescribePullTransformPushInfoListRequest) => {
+  return api.post('/live/pull-stream/tasks/transform-push-info', data).then(res => res.data.data)
 }
 
 // ==================== 推流地址生成 ====================
@@ -247,4 +278,14 @@ export const queryCallbackEvents = (params: {
   pageSize?: number
 }) => {
   return api.get('/live/callback/events', { params })
+}
+
+// 删除回调事件
+export const deleteCallbackEvent = (id: number) => {
+  return api.delete(`/live/callback/events/${id}`)
+}
+
+// 批量删除回调事件
+export const batchDeleteCallbackEvents = (ids: number[]) => {
+  return api.delete(`/live/callback/events/batch`, { data: ids })
 }

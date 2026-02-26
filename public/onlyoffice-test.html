@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OnlyOffice 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .document-container {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ccc;
+            margin: 10px 0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>OnlyOffice 集成测试</h1>
+    
+    <div class="test-section">
+        <h2>1. 脚本加载测试</h2>
+        <div id="script-test-result" class="test-result loading">加载中...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 文档预览测试</h2>
+        <div id="document-test-result" class="test-result loading">加载中...</div>
+        
+        <div class="document-container">
+            <div id="document-editor"></div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button id="load-docx">加载 DOCX 文档</button>
+            <button id="load-xlsx">加载 XLSX 文档</button>
+            <button id="load-pptx">加载 PPTX 文档</button>
+            <button id="clear">清除</button>
+        </div>
+    </div>
+
+    <script src="https://documentserver.onlyoffice.com/web-apps/apps/api/documents/api.js"></script>
+    <script>
+        // 测试 1: 脚本加载
+        const scriptTestResult = document.getElementById("script-test-result");
+        
+        if (window.DocsAPI) {
+            scriptTestResult.textContent = "✅ OnlyOffice 脚本加载成功";
+            scriptTestResult.className = "test-result success";
+        } else {
+            scriptTestResult.textContent = "❌ OnlyOffice 脚本加载失败";
+            scriptTestResult.className = "test-result error";
+        }
+        
+        // 测试 2: 文档加载
+        const documentTestResult = document.getElementById("document-test-result");
+        const documentEditorDiv = document.getElementById("document-editor");
+        let currentEditor = null;
+        
+        // 测试文档 URL
+        const testDocuments = {
+            docx: "https://example.com/test.docx",
+            xlsx: "https://example.com/test.xlsx", 
+            pptx: "https://example.com/test.pptx"
+        };
+        
+        function loadDocument(fileType, url) {
+            // 清除现有编辑器
+            if (currentEditor) {
+                documentEditorDiv.innerHTML = "";
+            }
+            
+            documentTestResult.textContent = "加载文档中...";
+            documentTestResult.className = "test-result loading";
+            
+            const config = {
+                document: {
+                    fileType: fileType,
+                    key: btoa(url),
+                    title: `test.${fileType}`,
+                    url: url
+                },
+                documentType: fileType === "docx" ? "word" : 
+                            fileType === "xlsx" ? "cell" : 
+                            "slide",
+                editorConfig: {
+                    mode: "view",
+                    lang: "zh-CN"
+                },
+                width: "100%",
+                height: "100%"
+            };
+            
+            try {
+                currentEditor = new DocsAPI.DocEditor("document-editor", config);
+                documentTestResult.textContent = `✅ 成功加载 ${fileType.toUpperCase()} 文档`;
+                documentTestResult.className = "test-result success";
+            } catch (error) {
+                documentTestResult.textContent = `❌ 加载 ${fileType.toUpperCase()} 文档失败: ${error.message}`;
+                documentTestResult.className = "test-result error";
+            }
+        }
+        
+        // 事件监听
+        document.getElementById("load-docx").addEventListener("click", () => {
+            loadDocument("docx", testDocuments.docx);
+        });
+        
+        document.getElementById("load-xlsx").addEventListener("click", () => {
+            loadDocument("xlsx", testDocuments.xlsx);
+        });
+        
+        document.getElementById("load-pptx").addEventListener("click", () => {
+            loadDocument("pptx", testDocuments.pptx);
+        });
+        
+        document.getElementById("clear").addEventListener("click", () => {
+            if (currentEditor) {
+                documentEditorDiv.innerHTML = "";
+                currentEditor = null;
+                documentTestResult.textContent = "文档已清除";
+                documentTestResult.className = "test-result loading";
+            }
+        });
+        
+        console.log("OnlyOffice 测试页面已加载");
+    </script>
+</body>
+</html>

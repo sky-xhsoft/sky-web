@@ -186,10 +186,8 @@ import {
   IconDownload,
   IconFile,
   IconCalendar,
-  IconStorage,
-  IconClockCircle
 } from '@arco-design/web-vue/es/icon'
-import { queryCallbackEvents } from '@/api/live'
+import { queryCallbackEvents, deleteCallbackEvent } from '@/api/live'
 import dayjs from 'dayjs'
 
 const navigationStore = useNavigationStore()
@@ -386,10 +384,11 @@ const handleDelete = (record: any) => {
     content: '确定要删除这条录制记录吗？此操作不可恢复。',
     onOk: async () => {
       try {
-        // TODO: 调用删除接口
+        await deleteCallbackEvent(record.id)
         Message.success('删除成功')
         loadData()
       } catch (error) {
+        console.error('删除录制记录失败:', error)
         Message.error('删除失败')
       }
     }
@@ -466,6 +465,7 @@ onMounted(() => {
 <style scoped lang="less">
 .live-recordings-page {
   padding: 20px;
+  overflow-y: auto;
 
   .page-header {
     display: flex;

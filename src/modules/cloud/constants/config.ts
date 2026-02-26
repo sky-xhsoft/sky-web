@@ -6,8 +6,8 @@
  * 断点续传配置
  */
 export const RESUMABLE_UPLOAD_CONFIG = {
-  /** 分片大小（字节），默认 5MB */
-  CHUNK_SIZE: 5 * 1024 * 1024,
+  /** 分片大小（字节），默认 50MB */
+  CHUNK_SIZE: 50 * 1024 * 1024,
 
   /** 最大重试次数 */
   MAX_RETRIES: 3,

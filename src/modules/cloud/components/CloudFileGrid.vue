@@ -13,7 +13,7 @@
 
     <!-- 加载状态 -->
     <div v-if="loading" class="cloud-file-grid__loading">
-      <a-spin size="large" />
+      <a-spin :size="24" />
       <div class="loading-text">加载中...</div>
     </div>
 

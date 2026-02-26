@@ -171,6 +171,7 @@ onBeforeUnmount(() => {
   padding: 20px;
   background: #fff;
   min-height: 100vh;
+  overflow-y: auto;
 }
 
 .preview-header {

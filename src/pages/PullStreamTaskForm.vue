@@ -4,7 +4,7 @@
     <div class="page-header">
       <a-breadcrumb>
         <a-breadcrumb-item>
-          <a-link @click="goBack">拉流转推</a-link>
+          <a-link @click="goBack">社媒分发</a-link>
         </a-breadcrumb-item>
         <a-breadcrumb-item>{{ isEdit ? '编辑任务' : '创建任务' }}</a-breadcrumb-item>
       </a-breadcrumb>
@@ -28,7 +28,7 @@
             />
           </a-form-item>
           <a-form-item label="事件回调通知">
-            <a-input v-model="taskForm.callbackUrl" placeholder="请输入用于接收拉流转推任务事件的回调地址" />
+            <a-input v-model="taskForm.callbackUrl" placeholder="请输入用于接收社媒分发任务事件的回调地址" />
           </a-form-item>
         </div>
 
@@ -162,9 +162,15 @@ const loadTaskDetail = async (id: string) => {
       const domainName = task.domainName || task.DomainName
       const appName = task.appName || task.AppName
       const streamName = task.streamName || task.StreamName
-      if (domainName && appName && streamName) {
-        taskForm.targetUrl = `rtmp://${domainName}/${appName}/${streamName}`
+      let targetUrl = `rtmp://${domainName}/${appName}/${streamName}`
+
+      // 如果任务有推流参数，添加到 URL 中
+      const pushArgs = task.pushArgs || task.PushArgs || ''
+      if (pushArgs) {
+        targetUrl += `?${pushArgs}`
       }
+
+      taskForm.targetUrl = targetUrl
     }
   } catch (error) {
     console.error('加载任务详情失败:', error)
@@ -177,16 +183,37 @@ const parseTargetUrl = (url: string) => {
   const parts = {
     domainName: '',
     appName: 'live',
-    streamName: ''
+    streamName: '',
+    pushArgs: ''
   }
 
   if (url) {
     try {
-      const urlObj = new URL(url)
-      parts.domainName = urlObj.hostname
-      const pathParts = urlObj.pathname.split('/').filter(p => p)
-      if (pathParts.length >= 1) parts.appName = pathParts[0]
-      if (pathParts.length >= 2) parts.streamName = pathParts[1]
+      // 处理 RTMP URL，RTMP URL 可能不遵循标准 URL 格式，需要特殊处理
+      if (url.startsWith('rtmp://')) {
+        // RTMP URL 格式: rtmp://domain/app/stream?arg1=value1&arg2=value2
+        let urlWithoutProtocol = url.slice(7) // 移除 rtmp://
+        let queryIndex = urlWithoutProtocol.indexOf('?')
+        if (queryIndex !== -1) {
+          parts.pushArgs = urlWithoutProtocol.slice(queryIndex + 1)
+          urlWithoutProtocol = urlWithoutProtocol.slice(0, queryIndex)
+        }
+
+        const pathParts = urlWithoutProtocol.split('/').filter(p => p)
+        if (pathParts.length >= 1) parts.domainName = pathParts[0]
+        if (pathParts.length >= 2) parts.appName = pathParts[1]
+        if (pathParts.length >= 3) parts.streamName = pathParts[2]
+      } else {
+        // 其他协议的 URL 按照标准 URL 解析
+        const urlObj = new URL(url)
+        parts.domainName = urlObj.hostname
+        const pathParts = urlObj.pathname.split('/').filter(p => p)
+        if (pathParts.length >= 1) parts.appName = pathParts[0]
+        if (pathParts.length >= 2) parts.streamName = pathParts[1]
+        if (urlObj.search) {
+          parts.pushArgs = urlObj.search.slice(1) // 移除开头的 ?
+        }
+      }
     } catch (e) {
       console.error('解析URL失败:', e)
     }
@@ -211,32 +238,73 @@ const submitTask = async () => {
 
     if (isEdit.value) {
       // 更新任务
-      const updateData: UpdatePullStreamTaskRequest = {
+      // 决定使用 ToUrl 还是分解后的字段
+      const isCompleteUrl = taskForm.targetUrl.startsWith('rtmp://') ||
+                           taskForm.targetUrl.startsWith('rtmps://') ||
+                           taskForm.targetUrl.startsWith('rtsp://') ||
+                           taskForm.targetUrl.startsWith('rtp://') ||
+                           taskForm.targetUrl.startsWith('srt://')
+
+      let updateData: UpdatePullStreamTaskRequest = {
         operator: authStore.user?.username || 'admin',
-        sourceType: taskForm.sourceType,
         sourceUrls: [taskForm.sourceUrl],
         startTime: startTime,
         endTime: endTime,
         comment: taskForm.comment
       }
+
+      if (isCompleteUrl) {
+        updateData.toUrl = taskForm.targetUrl
+      }
+
       await updatePullStreamTask(taskId.value, updateData)
       Message.success('更新任务成功')
     } else {
       // 创建任务
-      const urlParts = parseTargetUrl(taskForm.targetUrl)
 
-      const createData: CreatePullStreamTaskRequest = {
-        sourceType: taskForm.sourceType,
-        sourceUrls: [taskForm.sourceUrl],
-        domainName: urlParts.domainName || taskForm.domainName,
-        appName: urlParts.appName || taskForm.appName,
-        streamName: urlParts.streamName || taskForm.streamName || 'stream_' + Date.now(),
-        startTime: startTime,
-        endTime: endTime,
-        operator: authStore.user?.username || 'admin',
-        comment: taskForm.comment,
-        region: taskForm.region
+      // 决定使用 ToUrl 还是分解后的字段
+      // 如果目标地址包含完整的协议和路径，使用 ToUrl
+      const isCompleteUrl = taskForm.targetUrl.startsWith('rtmp://') ||
+                           taskForm.targetUrl.startsWith('rtmps://') ||
+                           taskForm.targetUrl.startsWith('rtsp://') ||
+                           taskForm.targetUrl.startsWith('rtp://') ||
+                           taskForm.targetUrl.startsWith('srt://')
+
+      let createData: CreatePullStreamTaskRequest
+
+      if (isCompleteUrl) {
+        // 使用 ToUrl 字段
+        createData = {
+          sourceType: taskForm.sourceType,
+          sourceUrls: [taskForm.sourceUrl],
+          toUrl: taskForm.targetUrl,
+          domainName: '',
+          appName: '',
+          streamName: '',
+          startTime: startTime,
+          endTime: endTime,
+          operator: authStore.user?.username || 'admin',
+          comment: taskForm.comment,
+          region: taskForm.region
+        }
+      } else {
+        // 解析 URL 并使用分解后的字段
+        const urlParts = parseTargetUrl(taskForm.targetUrl)
+        createData = {
+          sourceType: taskForm.sourceType,
+          sourceUrls: [taskForm.sourceUrl],
+          domainName: urlParts.domainName || taskForm.domainName,
+          appName: urlParts.appName || taskForm.appName,
+          streamName: urlParts.streamName || taskForm.streamName || 'stream_' + Date.now(),
+          startTime: startTime,
+          endTime: endTime,
+          operator: authStore.user?.username || 'admin',
+          comment: taskForm.comment,
+          region: taskForm.region,
+          pushArgs: urlParts.pushArgs // 从目标地址中解析出推流参数
+        }
       }
+
       await createPullStreamTask(createData)
       Message.success('创建任务成功')
     }
@@ -262,6 +330,7 @@ onMounted(() => {
   padding: 16px;
   background: var(--color-bg-1);
   min-height: calc(100vh - 60px);
+  overflow-y: auto;
 }
 
 .page-header {
