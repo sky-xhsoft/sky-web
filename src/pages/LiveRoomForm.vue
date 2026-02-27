@@ -15,22 +15,6 @@
                 <icon-video-camera />
                 视频直播
               </a-radio>
-              <a-radio value="image">
-                <icon-image />
-                图片直播
-              </a-radio>
-              <a-radio value="vr">
-                <icon-eye />
-                VR直播
-              </a-radio>
-              <a-radio value="audio">
-                <icon-sound />
-                语音直播
-              </a-radio>
-              <a-radio value="graphic">
-                <icon-file />
-                图文直播
-              </a-radio>
             </a-radio-group>
           </a-form-item>
 

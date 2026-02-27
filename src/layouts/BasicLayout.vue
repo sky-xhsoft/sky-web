@@ -83,19 +83,10 @@ const navItems = computed<NavItem[]>(() => {
   const mapped =
     menuStore.navMenus.length ? mapMenu(menuStore.navMenus) : menuStore.menus.length ? mapMenu(menuStore.menus) : []
 
-  // 定义默认菜单项
-  const dashboard = { key: 'dashboard', title: '首页', path: '/' }
-  //const cloud = { key: 'cloud', title: '云盘', path: '/cloud' }
-
   // 过滤掉后端返回的首页和云盘（如果存在）
   const filtered = mapped.filter((m) => m.key !== 'dashboard' && m.key !== 'cloud')
 
-  // 确保首页始终排第一，云盘排第二（如果后端没有返回）
-  const result = [dashboard]
-
-  result.push(...filtered)
-
-  return result
+  return filtered
 })
 
 const keyPathMap = computed(() => {
@@ -168,8 +159,8 @@ async function loadComponent(path: string) {
   // 其他路由
   switch (path) {
     case '/':
-      currentComponent.value = componentRegistry.Dashboard
-      navigationStore.navigateTo('Dashboard', '首页', {}, false)
+      currentComponent.value = componentRegistry.LiveRoomList
+      navigationStore.navigateTo('LiveRoomList', '直播间管理', {}, false)
       break
     case '/cloud':
       currentComponent.value = componentRegistry.Cloud
@@ -296,8 +287,9 @@ const handleLogout = async () => {
 }
 
 const goHome = async () => {
-  currentMenuKey.value = 'dashboard'
-  await loadComponent('/')
+  // 首页功能已取消，直接跳转到直播间管理页面
+  currentMenuKey.value = 'live-rooms'
+  await loadComponent('/live/rooms')
 }
 
 const toggleSidebar = () => {

@@ -15,8 +15,8 @@ export interface NavigationState {
 export const useNavigationStore = defineStore('navigation', () => {
   // 当前导航状态
   const current = ref<NavigationState>({
-    componentName: 'Dashboard',
-    title: '首页',
+    componentName: 'LiveRoomList',
+    title: '直播间管理',
     params: {}
   })
 
@@ -29,7 +29,7 @@ export const useNavigationStore = defineStore('navigation', () => {
    */
   function navigateTo(componentName: string, title: string, params?: Record<string, any>, pushToHistory: boolean = true) {
     // 将当前页面推入历史栈
-    if (pushToHistory && current.value.componentName !== 'Dashboard') {
+    if (pushToHistory) {
       history.value.push({ ...current.value })
     }
 

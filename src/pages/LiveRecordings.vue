@@ -40,10 +40,10 @@
     <!-- 搜索筛选 -->
     <div class="search-bar">
       <a-form :model="searchForm" layout="inline">
-        <a-form-item label="流名称">
+        <a-form-item label="直播间">
           <a-input
-            v-model="searchForm.streamName"
-            placeholder="请输入流名称"
+            v-model="searchForm.roomName"
+            placeholder="请输入直播间名称"
             style="width: 200px"
             allow-clear
           />
@@ -116,9 +116,9 @@
     >
       <template #columns>
         <a-table-column title="ID" data-index="id" :width="80" />
-        <a-table-column title="流名称" :width="150">
+        <a-table-column title="直播间" :width="150">
           <template #cell="{ record }">
-            {{ record.streamName || '-' }}
+            {{ record.roomName || record.streamName || '-' }}
           </template>
         </a-table-column>
         <a-table-column title="域名" :width="180">
@@ -194,7 +194,7 @@ const navigationStore = useNavigationStore()
 
 // 搜索表单 - 默认查询最近7天数据
 const searchForm = reactive({
-  streamName: '',
+  roomName: '',
   domainName: '',
   appName: '',
   fileFormat: '',
@@ -250,8 +250,8 @@ const loadData = async () => {
       pageSize: pagination.pageSize
     }
 
-    if (searchForm.streamName) {
-      params.streamName = searchForm.streamName
+    if (searchForm.roomName) {
+      params.roomName = searchForm.roomName
     }
     if (searchForm.domainName) {
       params.domainName = searchForm.domainName
@@ -294,6 +294,7 @@ const loadData = async () => {
             id: item.id,
             streamId: item.streamId || eventData.stream_id || '',
             streamName,
+            roomName: item.roomName || '',
             domainName,
             appName,
             videoUrl,
@@ -336,7 +337,7 @@ const handleSearch = () => {
 
 // 重置
 const handleReset = () => {
-  searchForm.streamName = ''
+  searchForm.roomName = ''
   searchForm.domainName = ''
   searchForm.appName = ''
   searchForm.fileFormat = ''

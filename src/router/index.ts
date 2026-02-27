@@ -36,7 +36,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'app',
-        component: Dashboard,  // 默认组件，实际不会用到
+        component: LiveRoomList,  // 默认显示直播间管理页面
         meta: { title: '应用', requiresAuth: true },
       },
       // 直播域名管理页面

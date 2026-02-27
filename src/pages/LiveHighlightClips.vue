@@ -30,22 +30,6 @@
             allow-clear
           />
         </a-form-item>
-        <a-form-item label="域名">
-          <a-input
-            v-model="searchForm.domainName"
-            placeholder="请输入域名"
-            style="width: 160px"
-            allow-clear
-          />
-        </a-form-item>
-        <a-form-item label="应用名称">
-          <a-input
-            v-model="searchForm.appName"
-            placeholder="请输入应用名称"
-            style="width: 120px"
-            allow-clear
-          />
-        </a-form-item>
         <a-form-item label="时间范围">
           <a-range-picker
             v-model="searchForm.timeRange"
@@ -106,6 +90,16 @@
         </a-space>
         <span v-else style="color: #999;">-</span>
       </template>
+      <template #video="{ record }">
+        <video
+            v-if="record.clipUrl"
+            :src="record.clipUrl"
+            style="width: 100px; height: 60px; object-fit: cover; cursor: pointer;"
+            :controls="false"
+            @click="handlePreview(record)"
+        />
+        <span v-else style="color: #999;">-</span>
+      </template>
       <template #startTime="{ record }">
         {{ formatDateTime(record.startTime) }}
       </template>
@@ -122,6 +116,7 @@
           <a-link status="danger" @click="handleDelete(record)">删除</a-link>
         </a-space>
       </template>
+
       <template #empty>
         <a-empty description="暂无高光切片数据" />
       </template>
@@ -146,8 +141,6 @@ const navigationStore = useNavigationStore()
 // 搜索表单 - 默认查询最近7天数据
 const searchForm = reactive({
   streamName: '',
-  domainName: '',
-  appName: '',
   timeRange: [
     dayjs().subtract(7, 'day').startOf('day').toDate(),
     dayjs().endOf('day').toDate()
@@ -171,6 +164,7 @@ interface TableDataItem {
   score: number
   eventTime: number
   createTime: string
+  roomName: string
 }
 
 // 表格数据
@@ -228,14 +222,14 @@ const columns = [
     width: 280
   },
   {
-    title: '域名',
-    dataIndex: 'domainName',
+    title: '直播间',
+    dataIndex: 'roomName',
     width: 160
   },
   {
-    title: '应用',
-    dataIndex: 'appName',
-    width: 80
+    title: '视频',
+    slotName: 'video',
+    width: 120
   },
   {
     title: '开始时间',
@@ -273,12 +267,6 @@ const loadData = async () => {
     if (searchForm.streamName) {
       params.streamName = searchForm.streamName
     }
-    if (searchForm.domainName) {
-      params.domainName = searchForm.domainName
-    }
-    if (searchForm.appName) {
-      params.appName = searchForm.appName
-    }
     if (searchForm.timeRange && searchForm.timeRange.length === 2) {
       params.startTime = dayjs(searchForm.timeRange[0]).format('YYYY-MM-DD HH:mm:ss')
       params.endTime = dayjs(searchForm.timeRange[1]).format('YYYY-MM-DD HH:mm:ss')
@@ -290,6 +278,7 @@ const loadData = async () => {
       // 解析事件数据
       tableData.value = res.data.data.list.map((item: any) => {
         const eventData = JSON.parse(item.eventData)
+        console.log('eventData:', eventData) // 调试信息
 
         return {
           id: item.id,
@@ -308,7 +297,8 @@ const loadData = async () => {
           coverUrl: eventData.cov_img_store_url || '',
           score: eventData.score, // 保留旧字段以兼容
           eventTime: item.eventTime != null ? item.eventTime * 1000 : null,
-          createTime: item.createTime
+          createTime: item.createTime,
+          roomName: item.roomName || ''
         }
       })
       pagination.total = res.data.data.total
@@ -332,9 +322,10 @@ const handleSearch = () => {
 // 重置
 const handleReset = () => {
   searchForm.streamName = ''
-  searchForm.domainName = ''
-  searchForm.appName = ''
-  searchForm.timeRange = []
+  searchForm.timeRange = [
+    dayjs().subtract(7, 'day').startOf('day').toDate(),
+    dayjs().endOf('day').toDate()
+  ]
   pagination.current = 1
   loadData()
 }

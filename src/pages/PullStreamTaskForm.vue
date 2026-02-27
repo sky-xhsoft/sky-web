@@ -27,9 +27,6 @@
               style="width: 100%"
             />
           </a-form-item>
-          <a-form-item label="事件回调通知">
-            <a-input v-model="taskForm.callbackUrl" placeholder="请输入用于接收社媒分发任务事件的回调地址" />
-          </a-form-item>
         </div>
 
         <!-- 2. 填写内容来源信息 -->
@@ -62,12 +59,6 @@
               :rows="2"
               placeholder="请输入直播源地址"
             />
-          </a-form-item>
-          <a-form-item label="备用输入源">
-            <a-checkbox v-model="taskForm.enableBackupSource">开启备用输入源</a-checkbox>
-          </a-form-item>
-          <a-form-item v-if="taskForm.enableBackupSource" label="备用源地址">
-            <a-input v-model="taskForm.backupSourceUrl" placeholder="请输入备用源地址" />
           </a-form-item>
         </div>
 
