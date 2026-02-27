@@ -26,6 +26,7 @@ import LiveRecordings from '../pages/LiveRecordings.vue'
 import LiveRecordingPreview from '../pages/LiveRecordingPreview.vue'
 import LiveRoomList from '../pages/LiveRoomList.vue'
 import LiveRoomForm from '../pages/LiveRoomForm.vue'
+import LiveRoomDetail from '../pages/LiveRoomDetail.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -53,6 +54,7 @@ const componentRegistry: Record<string, any> = {
   LiveRecordingPreview,
   LiveRoomList,
   LiveRoomForm,
+  LiveRoomDetail,
 }
 
 // 当前显示的组件（使用 shallowRef 提高性能）
@@ -229,6 +231,11 @@ async function loadComponent(path: string) {
       currentComponent.value = componentRegistry.LiveRoomForm
       const roomId = new URLSearchParams(window.location.search).get('id') || ''
       navigationStore.navigateTo('LiveRoomForm', '编辑直播间', { roomId }, false)
+      break
+    case '/live/rooms/detail':
+      currentComponent.value = componentRegistry.LiveRoomDetail
+      const detailRoomId = new URLSearchParams(window.location.search).get('id') || ''
+      navigationStore.navigateTo('LiveRoomDetail', '直播间详情', { id: detailRoomId }, false)
       break
     default:
       // 动态表单路由 /tables/xxx

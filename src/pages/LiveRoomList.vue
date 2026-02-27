@@ -117,7 +117,6 @@
             <div class="room-name">{{ record.roomName }}</div>
             <div class="room-meta">
               <a-tag>{{ record.viewingMethodText }}</a-tag>
-              <span>{{ record.statusText }}</span>
             </div>
           </div>
         </div>
@@ -144,62 +143,22 @@
       <template #actions="{ record }">
         <a-space>
           <a-link @click="handleManage(record)">管理</a-link>
+          <a-link v-if="record.status === 'live'" @click="handlePreview(record)">预览</a-link>
+          <a-link @click="handlePullStreamTask(record)">社媒分发</a-link>
+          <a-link @click="handleHighlightClips(record)">直播切片</a-link>
+          <a-link @click="handleRecordings(record)">直播录制</a-link>
           <a-dropdown trigger="click">
             <a-link>
               <icon-more />
             </a-link>
             <template #content>
-              <a-doption @click="handleShare(record)">
-                <icon-share-alt />
-                分享
-              </a-doption>
-              <a-doption @click="handleRecommend(record)">
-                <icon-thumb-up />
-                推荐
-              </a-doption>
-              <a-doption @click="handleTag(record)">
-                <icon-tags />
-                打标签
-              </a-doption>
-              <a-doption @click="handleDataAnalysis(record)">
-                <icon-bar-chart />
-                数据分析
-              </a-doption>
-              <a-doption @click="handleOperationRecommend(record)">
-                <icon-fire />
-                推荐运营
-              </a-doption>
-              <a-doption @click="handleScreenInteraction(record)">
-                <icon-desktop />
-                大屏互动
-              </a-doption>
-              <a-doption @click="handleDownloadPlayback(record)">
-                <icon-download />
-                下载回放视频
-              </a-doption>
-              <a-doption @click="handleRefreshPassword(record)">
-                <icon-refresh />
-                刷新密码
-              </a-doption>
               <a-doption @click="handleEdit(record)">
                 <icon-edit />
                 编辑
               </a-doption>
-              <a-doption @click="handleCopy(record)">
-                <icon-copy />
-                复制
-              </a-doption>
-              <a-doption @click="handleRecycle(record)">
+              <a-doption v-if="record.status === 'draft' || record.status === 'scheduled'" @click="handleRecycle(record)">
                 <icon-delete />
-                回收
-              </a-doption>
-              <a-doption @click="handleSetChannel(record)">
-                <icon-settings />
-                设置直播频道
-              </a-doption>
-              <a-doption @click="handleAdminMonitor(record)">
-                <icon-eye />
-                管理员监听
+                删除
               </a-doption>
             </template>
           </a-dropdown>
@@ -211,17 +170,33 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useNavigationStore } from '../stores/navigation'
 import api from '../api/http'
+import { listDomains } from '../api/live'
 import dayjs from 'dayjs'
-
-const router = useRouter()
 
 const navigationStore = useNavigationStore()
 const loading = ref(false)
 const tableData = ref([])
+const domains = ref<{ name: string; type: number }[]>([])
+
+// 加载域名列表
+const loadDomains = async () => {
+  try {
+    const response = await listDomains(undefined)
+    const result = response.data
+    if (result && result.data) {
+      const rawDomains = result.data.domains || []
+      domains.value = rawDomains.map((d: any) => ({
+        name: d.Name,
+        type: d.Type
+      }))
+    }
+  } catch (error: any) {
+    console.error('加载域名列表失败:', error)
+  }
+}
 
 const searchForm = reactive({
   filterType: 'roomName',
@@ -373,7 +348,9 @@ const fetchData = async () => {
       page: pagination.current,
       pageSize: pagination.pageSize,
       keyword: searchForm.keyword,
-      filters: {}
+      filters: {
+        IS_ACTIVE: 'Y'
+      }
     })
 
     if (response.data) {
@@ -428,7 +405,7 @@ const handleEdit = (record: any) => {
 }
 
 const handleManage = (record: any) => {
-  router.push(`/live/rooms/detail/${record.id}`)
+  navigationStore.navigateTo('LiveRoomDetail', '直播间详情', { id: record.id }, false)
 }
 
 const handleShare = (record: any) => {
@@ -517,6 +494,43 @@ const handleAdminMonitor = (record: any) => {
   Message.info('管理员监听功能开发中')
 }
 
+const handlePullStreamTask = (record: any) => {
+  navigationStore.navigateTo('PullStreamTask', '社媒分发', { roomId: record.id }, false)
+}
+
+const handleHighlightClips = (record: any) => {
+  navigationStore.navigateTo('LiveHighlightClips', '高光切片', { roomId: record.id }, false)
+}
+
+const handleRecordings = (record: any) => {
+  navigationStore.navigateTo('LiveRecordings', '录制列表', { roomId: record.id }, false)
+}
+
+const handlePreview = async (record: any) => {
+  try {
+    // 获取播放域名（类型为1的域名）
+    const playDomain = domains.value.find(d => d.type === 1)
+
+    if (!playDomain) {
+      Message.warning('未找到播放域名，请先添加播放域名')
+      return
+    }
+
+    // 使用默认值
+    const streamName = record.streamName || String(record.id)
+    const appName = 'live'
+
+    navigationStore.navigateTo('LivePreview', '直播预览', {
+      streamName,
+      appName,
+      playDomain: playDomain.name
+    })
+  } catch (error: any) {
+    console.error('预览失败:', error)
+    Message.error('预览失败')
+  }
+}
+
 const handleCopy = async (record: any) => {
   try {
     // 先获取原记录数据
@@ -577,6 +591,7 @@ const handleBackToSite = () => {
 }
 
 onMounted(() => {
+  loadDomains()
   fetchData()
 })
 </script>

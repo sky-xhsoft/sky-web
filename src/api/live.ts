@@ -263,6 +263,29 @@ export const generatePushURL = (data: GeneratePushURLRequest) => {
   return api.post('/live/push-url/generate', data)
 }
 
+// ==================== 拉流地址生成 ====================
+
+// 生成拉流地址请求
+export interface GeneratePlayURLRequest {
+  playDomain: string
+  appName: string
+  streamName: string
+  playKey: string
+  expireTime: number // 过期时间戳（秒）
+}
+
+// 生成拉流地址响应
+export interface GeneratePlayURLResponse {
+  rtmp: string
+  flv: string
+  hls: string
+}
+
+// 生成拉流地址
+export const generatePlayURL = (data: GeneratePlayURLRequest) => {
+  return api.post('/live/play-url/generate', data)
+}
+
 // ==================== 直播间管理 ====================
 
 // 直播间详情

@@ -1,5 +1,15 @@
 <template>
   <div class="live-room-form">
+    <!-- 左上角按钮 -->
+    <div class="form-header">
+      <a-space>
+        <a-button @click="handleCancel">返回</a-button>
+        <a-button type="primary" @click="handleSubmit" :loading="submitting">
+          {{ isEditMode ? '修改' : '立即创建' }}
+        </a-button>
+      </a-space>
+    </div>
+
     <a-alert type="info" show-icon style="margin-bottom: 16px">
       请您遵守国家相关规定，禁止发布含有违法、违规、低俗、暴力、色情、虚假宣传等内容的直播。微赞将会对直播内容进行监管，如发现违规行为将会对直播内容进行下架、封禁等操作
     </a-alert>
@@ -238,16 +248,6 @@
         </a-col>
       </a-row>
     </a-form>
-
-    <!-- 底部按钮 -->
-    <div class="form-footer">
-      <a-space>
-        <a-button @click="handleCancel">返回</a-button>
-        <a-button type="primary" @click="handleSubmit" :loading="submitting">
-          立即创建
-        </a-button>
-      </a-space>
-    </div>
   </div>
 </template>
 
@@ -524,11 +524,9 @@ onMounted(() => {
     }
   }
 
-  .form-footer {
-    margin-top: 24px;
-    padding-top: 16px;
-    border-top: 1px solid #e5e6eb;
-    text-align: right;
+  .form-header {
+    margin-bottom: 16px;
+    text-align: left;
   }
 }
 </style>

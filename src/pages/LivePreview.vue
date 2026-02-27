@@ -50,6 +50,8 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { IconLeft, IconCopy } from '@arco-design/web-vue/es/icon'
 import { useNavigationStore } from '@/stores/navigation'
+import { generatePlayURL } from '@/api/live'
+import dayjs from 'dayjs'
 
 const navigationStore = useNavigationStore()
 
@@ -71,9 +73,35 @@ const streamInfo = ref({
 })
 
 // 播放地址
-const playUrl = computed(() => {
-  return `http://${streamInfo.value.playDomain}/${streamInfo.value.appName}/${streamInfo.value.streamName}.flv`
-})
+const playUrl = ref('')
+
+// 生成播放地址
+const generatePlayUrl = async () => {
+  try {
+    const expireTime = dayjs().add(7, 'day').unix()
+    const response = await generatePlayURL({
+      playDomain: streamInfo.value.playDomain || 'play.skyzhou.cn',
+      appName: streamInfo.value.appName,
+      streamName: streamInfo.value.streamName,
+      playKey: '',
+      expireTime: expireTime
+    })
+
+    if (response.data?.data) {
+      // 使用 flv 地址
+      playUrl.value = response.data.data.flv || ''
+    } else {
+      Message.error('获取播放地址失败')
+      // 使用默认地址
+      playUrl.value = `http://${streamInfo.value.playDomain || 'play.skyzhou.cn'}/${streamInfo.value.appName}/${streamInfo.value.streamName}.flv`
+    }
+  } catch (error: any) {
+    console.error('生成播放地址失败:', error)
+    Message.error(error.message || '生成播放地址失败')
+    // 使用默认地址
+    playUrl.value = `http://${streamInfo.value.playDomain || 'play.skyzhou.cn'}/${streamInfo.value.appName}/${streamInfo.value.streamName}.flv`
+  }
+}
 
 // 初始化播放器
 const initPlayer = () => {
@@ -81,6 +109,12 @@ const initPlayer = () => {
     // 检查 TCPlayer 是否已加载
     if (typeof (window as any).TCPlayer === 'undefined') {
       Message.error('播放器加载失败，请刷新页面重试')
+      return
+    }
+
+    // 检查播放地址是否为空
+    if (!playUrl.value) {
+      Message.error('播放地址为空')
       return
     }
 
@@ -149,7 +183,8 @@ const copyToClipboard = (text: string) => {
 // 组件挂载
 onMounted(() => {
   // 延迟初始化，确保 DOM 已渲染
-  setTimeout(() => {
+  setTimeout(async () => {
+    await generatePlayUrl()
     initPlayer()
   }, 100)
 })

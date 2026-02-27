@@ -190,6 +190,11 @@ import {
 import { queryCallbackEvents, deleteCallbackEvent } from '@/api/live'
 import dayjs from 'dayjs'
 
+// 接收传递的参数
+const props = defineProps<{
+  roomId?: string
+}>()
+
 const navigationStore = useNavigationStore()
 
 // 搜索表单 - 默认查询最近7天数据
@@ -250,7 +255,10 @@ const loadData = async () => {
       pageSize: pagination.pageSize
     }
 
-    if (searchForm.roomName) {
+    // 根据房间 ID 过滤数据
+    if (props.roomId) {
+      params.streamId = props.roomId
+    } else if (searchForm.roomName) {
       params.roomName = searchForm.roomName
     }
     if (searchForm.domainName) {

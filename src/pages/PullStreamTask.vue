@@ -211,6 +211,11 @@ import * as echarts from 'echarts'
 const authStore = useAuthStore()
 const navigationStore = useNavigationStore()
 
+// 接收传递的参数
+const props = defineProps<{
+  roomId?: string
+}>()
+
 // 列表数据
 const loading = ref(false)
 const taskList = ref<PullStreamTaskInfo[]>([])
@@ -580,18 +585,28 @@ const loadTaskList = async () => {
     // 保存所有任务（用于统计）
     allTaskList.value = convertedList
 
+    // 根据房间 ID 过滤数据
+    let filteredByRoomId = convertedList
+    if (props.roomId) {
+      filteredByRoomId = convertedList.filter((task: any) => {
+        // 假设拉流任务的 streamId 字段包含房间 ID
+        return task.streamId === props.roomId || task.streamId?.includes(props.roomId) ||
+               task.streamName === props.roomId || task.streamName?.includes(props.roomId)
+      })
+    }
+
     // 根据时间范围过滤数据（基于任务开始时间）
     if (dateRange.value && dateRange.value.length === 2) {
       const [startTime, endTime] = dateRange.value
       const startTimestamp = new Date(startTime).getTime()
       const endTimestamp = new Date(endTime).getTime()
 
-      taskList.value = convertedList.filter((task: any) => {
+      taskList.value = filteredByRoomId.filter((task: any) => {
         const taskStartTime = new Date(task.startTime).getTime()
         return taskStartTime >= startTimestamp && taskStartTime <= endTimestamp
       })
     } else {
-      taskList.value = convertedList
+      taskList.value = filteredByRoomId
     }
 
     pagination.total = taskList.value.length

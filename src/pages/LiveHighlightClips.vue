@@ -136,6 +136,11 @@ import {
 import { queryCallbackEvents, deleteCallbackEvent, batchDeleteCallbackEvents } from '@/api/live'
 import dayjs from 'dayjs'
 
+// 接收传递的参数
+const props = defineProps<{
+  roomId?: string
+}>()
+
 const navigationStore = useNavigationStore()
 
 // 搜索表单 - 默认查询最近7天数据
@@ -264,7 +269,11 @@ const loadData = async () => {
       pageSize: pagination.pageSize
     }
 
-    if (searchForm.streamName) {
+    // 根据房间 ID 过滤数据
+    if (props.roomId) {
+      // 假设高光切片的 streamId 字段包含房间 ID
+      params.streamId = props.roomId
+    } else if (searchForm.streamName) {
       params.streamName = searchForm.streamName
     }
     if (searchForm.timeRange && searchForm.timeRange.length === 2) {
