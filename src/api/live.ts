@@ -263,6 +263,45 @@ export const generatePushURL = (data: GeneratePushURLRequest) => {
   return api.post('/live/push-url/generate', data)
 }
 
+// ==================== 直播间管理 ====================
+
+// 直播间详情
+export interface LiveRoomDetail {
+  id: number
+  roomName: string
+  roomType: string
+  broadcastFormat: string
+  roomStage: string
+  displayMode: string
+  startTime: string
+  endTime: string
+  coverImage: string
+  viewingMethod: string
+  viewingPassword: string
+  viewingPrice: number
+  playbackMethod: string
+  playbackValidity: string
+  streamName: string
+  pushUrl: string
+  playUrl: string
+  status: string
+  viewerCount: number
+  peakViewerCount: number
+  duration: number
+  description: string
+  props: string
+}
+
+// 获取直播间详情
+export const getLiveRoomDetail = (id: number) => {
+  return api.get(`/live/rooms/${id}`)
+}
+
+// 删除直播间
+export const deleteLiveRoom = (id: number) => {
+  return api.delete(`/live/rooms/${id}`)
+}
+
 // ==================== 直播回调事件管理 ====================
 
 // 查询回调事件列表

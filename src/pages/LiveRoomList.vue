@@ -211,10 +211,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useNavigationStore } from '../stores/navigation'
 import api from '../api/http'
 import dayjs from 'dayjs'
+
+const router = useRouter()
 
 const navigationStore = useNavigationStore()
 const loading = ref(false)
@@ -425,8 +428,7 @@ const handleEdit = (record: any) => {
 }
 
 const handleManage = (record: any) => {
-  // TODO: 跳转到直播间管理页面
-  Message.info('管理功能开发中')
+  router.push(`/live/rooms/detail/${record.id}`)
 }
 
 const handleShare = (record: any) => {

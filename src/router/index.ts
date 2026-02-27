@@ -81,6 +81,13 @@ const routes: RouteRecordRaw[] = [
         component: LiveRoomForm,
         meta: { title: '编辑直播间', requiresAuth: true },
       },
+      // 直播管理详情页面
+      {
+        path: 'live/rooms/detail/:id',
+        name: 'live-room-detail',
+        component: () => import('../pages/LiveRoomDetail.vue'),
+        meta: { title: '直播间详情', requiresAuth: true },
+      },
     ],
   },
 ]
