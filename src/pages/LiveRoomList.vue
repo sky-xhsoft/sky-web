@@ -143,12 +143,6 @@
 
       <template #actions="{ record }">
         <a-space>
-          <a-link
-            v-if="record.status === 'draft' || record.status === 'scheduled'"
-            @click="handleStartLive(record)"
-          >
-            恢复未开始
-          </a-link>
           <a-link @click="handleManage(record)">管理</a-link>
           <a-dropdown trigger="click">
             <a-link>
@@ -310,7 +304,7 @@ const getBroadcastFormatText = (format: string) => {
 
 const getStatusText = (status: string) => {
   const map: Record<string, string> = {
-    draft: '草稿',
+    draft: '未开始',
     scheduled: '已排期',
     live: '直播中',
     ended: '已结束',
