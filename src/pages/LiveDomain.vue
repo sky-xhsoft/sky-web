@@ -56,7 +56,7 @@
           </template>
         </a-table-column>
 
-        <a-table-column title="CNAME" :width="250">
+        <a-table-column title="CNAME" :width="300">
           <template #cell="{ record }">
             <div class="cname-cell">
               <a-tooltip :content="getCnameStatusTooltip(record.cnameConfigured)">
@@ -75,7 +75,7 @@
           </template>
         </a-table-column>
 
-        <a-table-column title="类型" :width="120">
+        <a-table-column title="类型" :width="80">
           <template #cell="{ record }">
             <a-tag :color="record.type === 0 ? 'blue' : 'green'">
               {{ record.type === 0 ? '推流域名' : '播放域名' }}
@@ -83,7 +83,7 @@
           </template>
         </a-table-column>
 
-        <a-table-column title="区域" data-index="region" :width="120">
+        <a-table-column title="区域" data-index="region" :width="80">
           <template #cell="{ record }">
             {{ record.region || '全球加速' }}
           </template>

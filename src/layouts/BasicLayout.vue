@@ -535,6 +535,7 @@ watch(
   border-radius: 10px;
   box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
   position: relative;
+  overflow-y: auto;
 }
 .app-content :deep(.arco-breadcrumb) {
   margin-left: 40px;

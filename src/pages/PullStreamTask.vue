@@ -857,6 +857,7 @@ onMounted(() => {
 .pull-stream-task-page {
   padding: 16px;
   overflow-y: auto;
+  height: 850px;
 }
 
 .page-header {

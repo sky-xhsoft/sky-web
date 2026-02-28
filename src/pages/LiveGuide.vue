@@ -253,6 +253,7 @@ const navigateTo = (path: string) => {
   max-width: 1600px;
   margin: 0 auto;
   overflow-y: auto;
+  height: 850px;
 }
 
 /* 通用区块样式 */

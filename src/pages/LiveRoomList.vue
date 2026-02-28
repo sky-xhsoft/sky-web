@@ -109,8 +109,8 @@
         <div class="room-info">
           <a-image
             :src="record.coverImage || '/default-cover.png'"
-            width="120"
-            height="68"
+            width="80"
+            height="45"
             fit="cover"
           />
           <div class="room-details">
@@ -218,33 +218,23 @@ const rowSelection = reactive({
 
 const columns = [
   {
-    title: '直播ID',
+    title: 'id',
     dataIndex: 'id',
-    width: 100
+    width: 50
   },
   {
-    title: '直播',
+    title: '直播间',
     slotName: 'roomInfo',
-    width: 300
-  },
-  {
-    title: '直播类型',
-    slotName: 'roomType',
-    width: 100
+    width: 180
   },
   {
     title: '直播形式',
     slotName: 'broadcastFormat',
-    width: 100
+    width: 80
   },
   {
     title: '直播状态',
     slotName: 'status',
-    width: 100
-  },
-  {
-    title: '频道',
-    dataIndex: 'channel',
     width: 80
   },
   {
@@ -255,7 +245,7 @@ const columns = [
   {
     title: '操作',
     slotName: 'actions',
-    width: 200,
+    width: 280,
     fixed: 'right'
   }
 ]
@@ -598,7 +588,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .live-room-list {
-  padding: 20px;
+  padding: 12px;
   background: #fff;
   height: 100%;
   overflow-y: auto;
@@ -607,18 +597,18 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 20px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
     border-bottom: 1px solid #e5e6eb;
   }
 
   .search-bar {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
   }
 
   .room-info {
     display: flex;
-    gap: 12px;
+    gap: 8px;
 
     .room-details {
       flex: 1;
@@ -627,10 +617,10 @@ onMounted(() => {
       justify-content: center;
 
       .room-name {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 500;
-        margin-bottom: 8px;
-        overflow: hidden;
+        margin-bottom: 4px;
+
         text-overflow: ellipsis;
         white-space: nowrap;
       }
@@ -638,8 +628,8 @@ onMounted(() => {
       .room-meta {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 12px;
+        gap: 6px;
+        font-size: 11px;
         color: #86909c;
       }
     }

@@ -219,12 +219,12 @@ const columns = [
   {
     title: '标题',
     slotName: 'title',
-    width: 280
+    width: 150
   },
   {
     title: '关键词',
     slotName: 'keywords',
-    width: 280
+    width: 150
   },
   {
     title: '直播间',
@@ -239,11 +239,6 @@ const columns = [
   {
     title: '开始时间',
     slotName: 'startTime',
-    width: 160
-  },
-  {
-    title: '结束时间',
-    slotName: 'endTime',
     width: 160
   },
   {

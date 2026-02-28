@@ -533,7 +533,8 @@ onBeforeMount(() => {
 .live-room-detail {
   padding: 20px;
   background: #fff;
-  min-height: 100vh;
+  height: 850px;
+  overflow-y: auto;
 
   .header {
     display: flex;
