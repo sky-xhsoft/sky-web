@@ -9,47 +9,6 @@
           </template>
           创建直播
         </a-button>
-        <a-button>
-          <template #icon>
-            <icon-import />
-          </template>
-          批量创建直播
-        </a-button>
-        <a-button>
-          <template #icon>
-            <icon-settings />
-          </template>
-          直播全局设置
-        </a-button>
-        <a-button>
-          <template #icon>
-            <icon-calendar />
-          </template>
-          直播教程
-        </a-button>
-      </a-space>
-
-      <a-space size="medium">
-        <a-badge :count="0" :dot-style="{ width: '8px', height: '8px' }">
-          <a-button>
-            <template #icon>
-              <icon-clock-circle />
-            </template>
-            待整改直播内容 (0)
-          </a-button>
-        </a-badge>
-        <a-button>
-          <template #icon>
-            <icon-share-alt />
-          </template>
-          分类管理
-        </a-button>
-        <a-button @click="handleBackToSite">
-          <template #icon>
-            <icon-export />
-          </template>
-          回收站
-        </a-button>
       </a-space>
     </div>
 
