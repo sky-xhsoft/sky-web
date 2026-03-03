@@ -23,29 +23,12 @@
             {{ domain.name }}
           </a-option>
         </a-select>
-        <a-button @click="handleRefresh">
-          <template #icon>
-            <icon-refresh />
-          </template>
-          刷新数据
-        </a-button>
-        <a-button @click="handleRefresh">
-          <template #icon>
-            <icon-refresh />
-          </template>
-          刷新数据
-        </a-button>
         <a-input-search
           v-model="searchKeyword"
           placeholder="输入 StreamName（流ID）搜索"
           style="width: 260px"
           @search="handleSearch"
         />
-        <a-button type="text" @click="handleRefresh">
-          <template #icon>
-            <icon-refresh />
-          </template>
-        </a-button>
       </div>
     </div>
 
@@ -131,7 +114,6 @@
 import { ref, onMounted, reactive, computed } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import {
-  IconRefresh
 } from '@arco-design/web-vue/es/icon'
 import {
   getOnlineStreams,
@@ -329,11 +311,6 @@ const handleTabChange = () => {
 // 搜索
 const handleSearch = () => {
   pagination.current = 1
-  loadData()
-}
-
-// 刷新
-const handleRefresh = () => {
   loadData()
 }
 
