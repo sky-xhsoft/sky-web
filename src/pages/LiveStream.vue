@@ -29,11 +29,11 @@
           </template>
           刷新数据
         </a-button>
-        <a-button @click="handleExport">
+        <a-button @click="handleRefresh">
           <template #icon>
-            <icon-download />
+            <icon-refresh />
           </template>
-          导出数据
+          刷新数据
         </a-button>
         <a-input-search
           v-model="searchKeyword"
@@ -131,8 +131,7 @@
 import { ref, onMounted, reactive, computed } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import {
-  IconRefresh,
-  IconDownload
+  IconRefresh
 } from '@arco-design/web-vue/es/icon'
 import {
   getOnlineStreams,
@@ -336,11 +335,6 @@ const handleSearch = () => {
 // 刷新
 const handleRefresh = () => {
   loadData()
-}
-
-// 导出数据
-const handleExport = () => {
-  Message.info('导出功能开发中')
 }
 
 // 预览直播流
