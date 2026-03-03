@@ -798,7 +798,7 @@ const scrollConfig = computed(() => {
 
   return {
     x: totalWidth,  // 水平滚动：设置为所有列宽度之和
-    y: 'calc(100vh - 380px)'  // 竖向滚动：根据视口高度自动计算
+    y: 'calc(100vh - 420px)'  // 竖向滚动：根据视口高度自动计算，调整高度避免不必要的滚动条
   }
 })
 
