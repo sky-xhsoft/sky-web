@@ -15,13 +15,8 @@
       </div>
     </div>
 
-    <!-- 标签页和搜索 -->
+    <!-- 搜索和添加按钮 -->
     <div class="page-toolbar">
-      <a-radio-group v-model="activeTab" type="button" @change="handleTabChange">
-        <a-radio value="push">直播域名</a-radio>
-        <a-radio value="play">播放域名</a-radio>
-      </a-radio-group>
-
       <div class="toolbar-right">
         <a-input-search
           v-model="searchKeyword"
@@ -363,13 +358,6 @@ const addFormRules: Record<string, FieldRule | FieldRule[]> = {
 const filteredDomains = computed(() => {
   let result = domains.value
 
-  // 根据标签页过滤
-  if (activeTab.value === 'push') {
-    result = result.filter(d => d.type === 0)
-  } else if (activeTab.value === 'play') {
-    result = result.filter(d => d.type === 1)
-  }
-
   // 根据搜索关键词过滤
   if (searchKeyword.value) {
     const keyword = searchKeyword.value.toLowerCase()
@@ -463,11 +451,6 @@ const loadDomains = async () => {
   }
 }
 
-// 标签页切换
-const handleTabChange = () => {
-  pagination.current = 1
-}
-
 // 搜索
 const handleSearch = () => {
   pagination.current = 1
@@ -476,7 +459,7 @@ const handleSearch = () => {
 // 显示添加对话框
 const showAddDialog = () => {
   addForm.domainName = ''
-  addForm.domainType = activeTab.value === 'push' ? 0 : 1
+  addForm.domainType = 0 // 默认推流域名
   addForm.region = 'global'
   addForm.tags = ''
   currentStep.value = 1
