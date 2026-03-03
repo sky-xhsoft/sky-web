@@ -572,7 +572,7 @@ async function loadTableById(tableId: number) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: auto;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -601,7 +601,6 @@ async function loadTableById(tableId: number) {
 
 .main-table {
   flex: 1;
-  overflow-y: auto;
   min-height: 0;
 }
 

@@ -542,11 +542,10 @@ watch(
 .app-content {
   padding: 20px;
   background: #ffffff;
-  height: 100%;
+  min-height: 100%;
   border-radius: 10px;
   box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
   position: relative;
-  overflow-y: auto;
   margin-left: 230px;
   transition: margin-left 0.2s ease;
   width: calc(100% - 230px);

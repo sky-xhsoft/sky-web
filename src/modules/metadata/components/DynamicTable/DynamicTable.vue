@@ -1750,7 +1750,6 @@ defineExpose({
 
 /* 表格容器 - 支持固定列和滚动 */
 .dynamic-table :deep(.arco-table-container) {
-  flex: 1;
   overflow: auto;
 }
 
