@@ -107,6 +107,16 @@ api.interceptors.response.use(
     ;(enhancedError as any).code = code
     ;(enhancedError as any).data = payload
 
+    // 记录错误日志，特别是腾讯云接口调用错误
+    console.error('API请求失败:', {
+      url: config?.url,
+      method: config?.method,
+      code: code,
+      message: errorMessage,
+      data: payload,
+      timestamp: new Date().toISOString()
+    })
+
     return Promise.reject(enhancedError)
   }
 )

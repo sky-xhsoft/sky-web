@@ -608,7 +608,6 @@ onMounted(() => {
 
 .share-container {
   width: 100%;
-  max-width: 1200px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);

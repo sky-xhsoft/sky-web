@@ -250,10 +250,8 @@ const navigateTo = (path: string) => {
   flex-direction: column;
   gap: 24px;
   padding: 8px;
-  max-width: 1600px;
-  margin: 0 auto;
   overflow-y: auto;
-  height: 850px;
+  height: 100%;
 }
 
 /* 通用区块样式 */

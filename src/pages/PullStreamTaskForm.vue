@@ -320,7 +320,7 @@ onMounted(() => {
 .pull-stream-task-form-page {
   padding: 16px;
   background: var(--color-bg-1);
-  min-height: calc(100vh - 60px);
+  height: 100%;
   overflow-y: auto;
 }
 
@@ -332,7 +332,6 @@ onMounted(() => {
   background: var(--color-bg-2);
   padding: 20px;
   border-radius: 4px;
-  max-width: 1000px;
 }
 
 /* 表单分节样式 */

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { IconApps, IconRight, IconSettings, IconUser, IconDatabase, IconSafe, IconDesktop } from '@arco-design/web-vue/es/icon'
+import { IconApps, IconRight, IconSettings, IconUser, IconSafe, IconDesktop } from '@arco-design/web-vue/es/icon'
 import { useMenuStore } from '../stores/menu'
 import { useNavigationStore } from '../stores/navigation'
 
@@ -209,8 +209,8 @@ const usageFlow = ref([
   flex-direction: column;
   gap: 24px;
   padding: 8px;
-  max-width: 1600px;
-  margin: 0 auto;
+  height: 100%;
+  overflow-y: auto;
 }
 
 /* 页面头部 */

@@ -351,8 +351,8 @@ watch(
 </script>
 
 <template>
-  <a-layout class="app-shell">
-    <a-layout-header class="app-header">
+  <div class="app-shell">
+    <header class="app-header">
       <div class="header-inner">
         <div class="header-left-wrap">
           <div class="brand-area" role="button" tabindex="0" @click="goHome">
@@ -381,14 +381,9 @@ watch(
           <a-button type="text" size="small" @click="handleLogout">退出</a-button>
         </div>
       </div>
-    </a-layout-header>
-    <a-layout class="main-layout">
-      <a-layout-sider
-        class="side-nav"
-        :width="230"
-        :collapsed="menuStore.sidebarCollapsed"
-        :collapsed-width="48"
-      >
+    </header>
+    <div class="main-layout">
+      <aside class="side-nav" :class="{ collapsed: menuStore.sidebarCollapsed }">
         <a-menu
           v-model:openKeys="openKeys"
           v-model:selectedKeys="selectedKeys"
@@ -415,24 +410,22 @@ watch(
             </a-menu-item>
           </template>
         </a-menu>
-      </a-layout-sider>
-      <a-layout>
-        <a-layout-content class="app-content">
-          <div class="sidebar-toggle" @click="toggleSidebar">
-            <IconMenuFold v-if="!menuStore.sidebarCollapsed" />
-            <IconMenuUnfold v-else />
-          </div>
-          <!-- 使用动态组件，传递 navigationStore 中的参数 -->
-          <!-- key 确保每次切换都创建新实例 -->
-          <component
-            :is="currentComponent"
-            v-bind="navigationStore.current.params"
-            :key="navigationStore.current.componentName + '-' + JSON.stringify(navigationStore.current.params)"
-          />
-        </a-layout-content>
-      </a-layout>
-    </a-layout>
-  </a-layout>
+      </aside>
+      <main class="app-content" :class="{ collapsed: menuStore.sidebarCollapsed }">
+        <div class="sidebar-toggle" @click="toggleSidebar">
+          <IconMenuFold v-if="!menuStore.sidebarCollapsed" />
+          <IconMenuUnfold v-else />
+        </div>
+        <!-- 使用动态组件，传递 navigationStore 中的参数 -->
+        <!-- key 确保每次切换都创建新实例 -->
+        <component
+          :is="currentComponent"
+          v-bind="navigationStore.current.params"
+          :key="navigationStore.current.componentName + '-' + JSON.stringify(navigationStore.current.params)"
+        />
+      </main>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -527,15 +520,40 @@ watch(
 }
 .main-layout {
   position: relative;
+  height: calc(100vh - 64px);
+  display: flex;
+  overflow: hidden;
+}
+.side-nav {
+  position: fixed;
+  left: 0;
+  top: 64px;
+  height: calc(100vh - 64px);
+  width: 230px;
+  background: #f8f9fb;
+  border-right: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+  overflow-y: auto;
+  z-index: 10;
+}
+.side-nav.collapsed {
+  width: 48px;
 }
 .app-content {
   padding: 20px;
   background: #ffffff;
-  min-height: calc(100vh - 120px);
+  height: 100%;
   border-radius: 10px;
   box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
   position: relative;
   overflow-y: auto;
+  margin-left: 230px;
+  transition: margin-left 0.2s ease;
+  width: calc(100% - 230px);
+}
+.app-content.collapsed {
+  margin-left: 48px;
+  width: calc(100% - 48px);
 }
 .app-content :deep(.arco-breadcrumb) {
   margin-left: 40px;

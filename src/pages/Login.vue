@@ -11,7 +11,7 @@ const authStore = useAuthStore()
 const form = reactive({
   username: '',
   password: '',
-  companyId: 0,
+  companyId: 1,
 })
 
 const submitting = ref(false)

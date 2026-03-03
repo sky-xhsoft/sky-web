@@ -207,6 +207,7 @@ onBeforeUnmount(() => {
   background: #fff;
   min-height: 100vh;
   overflow-y: auto;
+  height: 850px;
 }
 
 .preview-header {
@@ -230,7 +231,6 @@ onBeforeUnmount(() => {
 
 .player-wrapper {
   width: 100%;
-  max-width: 1200px;
   aspect-ratio: 16 / 9;
   background: #000;
   border-radius: 4px;
@@ -238,7 +238,6 @@ onBeforeUnmount(() => {
 }
 
 .stream-info {
-  max-width: 1200px;
 }
 
 .play-url {

@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="live-guide-page">
+  <div class="dashboard-page">
     <!-- 快速开始流程 -->
     <div class="flow-section">
       <div class="section-header">
@@ -245,15 +245,12 @@ const navigateTo = (path: string) => {
 </script>
 
 <style scoped>
-.live-guide-page {
+.dashboard-page {
   display: flex;
   flex-direction: column;
   gap: 24px;
   padding: 8px;
-  max-width: 1600px;
-  margin: 0 auto;
-  overflow-y: auto;
-  height: 850px;
+  height: 100%;
 }
 
 /* 通用区块样式 */

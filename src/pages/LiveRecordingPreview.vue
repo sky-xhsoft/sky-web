@@ -217,8 +217,6 @@ onMounted(() => {
 <style scoped lang="less">
 .live-recording-preview-page {
   padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
   height: 850px;
   overflow-y: auto;
 

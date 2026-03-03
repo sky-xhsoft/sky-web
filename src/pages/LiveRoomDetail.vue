@@ -533,7 +533,7 @@ onBeforeMount(() => {
 .live-room-detail {
   padding: 20px;
   background: #fff;
-  height: 850px;
+  height: 100%;
   overflow-y: auto;
 
   .header {
