@@ -10,12 +10,6 @@
           </template>
           刷新
         </a-button>
-        <a-button @click="handleExport">
-          <template #icon>
-            <icon-download />
-          </template>
-          导出
-        </a-button>
       </div>
     </div>
 
@@ -183,7 +177,6 @@ import { Message, Modal } from '@arco-design/web-vue'
 import {
   IconRefresh,
   IconSearch,
-  IconDownload,
   IconFile,
   IconCalendar,
 } from '@arco-design/web-vue/es/icon'
@@ -357,11 +350,6 @@ const handleReset = () => {
 // 刷新
 const handleRefresh = () => {
   loadData()
-}
-
-// 导出
-const handleExport = () => {
-  Message.info('导出功能开发中...')
 }
 
 // 分页
