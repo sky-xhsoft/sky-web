@@ -251,6 +251,7 @@ const navigateTo = (path: string) => {
   gap: 24px;
   padding: 8px;
   height: 100%;
+  overflow-y: auto;
 }
 
 /* 通用区块样式 */
