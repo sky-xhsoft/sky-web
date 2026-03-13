@@ -1,6 +1,12 @@
 <!-- 文本输入框字段渲染器 -->
 <template>
+  <!-- 查看模式下直接显示文本 -->
+  <span v-if="disabled || readonly" class="text-field-view">
+    {{ modelValue || '-' }}
+  </span>
+  <!-- 编辑模式下显示输入框 -->
   <a-input
+    v-else
     :model-value="modelValue"
     :placeholder="placeholder"
     :disabled="disabled"
@@ -11,6 +17,18 @@
     @blur="handleBlur"
   />
 </template>
+
+<style scoped>
+.text-field-view {
+  display: inline-block;
+  padding: 4px 0;
+  color: #333;
+  line-height: 24px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+</style>
 
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -35,7 +53,8 @@ const emit = defineEmits<{
 
 // 占位符
 const placeholder = computed(() => {
-  return props.column.PLACEHOLDER || `请输入${props.column.DISPLAY_NAME}`
+  const displayName = props.column.DISPLAY_NAME || props.column.displayName || ''
+  return props.column.PLACEHOLDER || props.column.placeholder || (displayName ? `请输入${displayName}` : '')
 })
 
 // 最大长度

@@ -1,6 +1,12 @@
 <!-- 数字输入框字段渲染器 -->
 <template>
+  <!-- 查看模式下直接显示文本 -->
+  <span v-if="disabled || readonly" class="number-field-view">
+    {{ modelValue ?? '-' }}
+  </span>
+  <!-- 编辑模式下显示输入框 -->
   <a-input-number
+    v-else
     :model-value="numberValue"
     :placeholder="placeholder"
     :disabled="disabled"
@@ -14,6 +20,18 @@
     @blur="handleBlur"
   />
 </template>
+
+<style scoped>
+.number-field-view {
+  display: inline-block;
+  padding: 4px 0;
+  color: #333;
+  line-height: 24px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+</style>
 
 <script setup lang="ts">
 import { computed } from 'vue'

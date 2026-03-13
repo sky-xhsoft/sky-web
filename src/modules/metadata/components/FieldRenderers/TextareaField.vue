@@ -21,7 +21,7 @@ import type { SysColumn, FieldValue } from '../../types'
 
 interface Props {
   column: SysColumn
-  modelValue?: FieldValue
+  modelValue?: string
   disabled?: boolean
   readonly?: boolean
   rows?: number
@@ -40,7 +40,8 @@ const emit = defineEmits<{
 
 // 占位符
 const placeholder = computed(() => {
-  return props.column.PLACEHOLDER || `请输入${props.column.DISPLAY_NAME}`
+  const displayName = props.column.DISPLAY_NAME || props.column.displayName || ''
+  return props.column.PLACEHOLDER || props.column.placeholder || (displayName ? `请输入${displayName}` : '')
 })
 
 // 最大长度

@@ -1,6 +1,12 @@
 <!-- 日期选择器字段渲染器 -->
 <template>
+  <!-- 查看模式下直接显示格式化日期 -->
+  <span v-if="disabled || readonly" class="date-field-view">
+    {{ displayDate || '-' }}
+  </span>
+  <!-- 编辑模式下显示日期选择器 -->
   <a-date-picker
+    v-else
     :model-value="dateValue"
     :placeholder="placeholder"
     :disabled="disabled"
@@ -12,6 +18,18 @@
     @blur="handleBlur"
   />
 </template>
+
+<style scoped>
+.date-field-view {
+  display: inline-block;
+  padding: 4px 0;
+  color: #333;
+  line-height: 24px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+</style>
 
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -66,6 +84,13 @@ function handleChange(value: Date | string | number | undefined) {
   const dateStr = date.toISOString().split('T')[0]
   emit('update:modelValue', dateStr)
 }
+
+// 查看模式下显示的日期文本
+const displayDate = computed(() => {
+  if (!props.modelValue) return ''
+  const date = new Date(props.modelValue as string)
+  return date.toLocaleDateString('zh-CN')
+})
 
 // 失焦处理
 function handleBlur() {

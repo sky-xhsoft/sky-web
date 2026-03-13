@@ -16,44 +16,44 @@
         <a-row v-if="queryColumns.length > 0" :gutter="[16, 16]" class="query-row">
           <a-col
             v-for="column in visibleQueryColumns"
-            :key="column.DB_NAME || column.dbName"
+            :key="column.DB_NAME || column.DB_NAME"
             :span="6"
           >
             <a-form-item
-              :label="column.DISPLAY_NAME || column.displayName"
-              :field="column.DB_NAME || column.dbName"
+              :label="column.DISPLAY_NAME || column.DISPLAY_NAME"
+              :field="column.DB_NAME || column.DB_NAME"
             >
               <!-- 外键下拉选择 -->
               <ForeignKeyField
                 v-if="isForeignKeyColumn(column)"
                 :column="column"
-                :model-value="queryForm[column.DB_NAME || column.dbName]"
+                :model-value="queryForm[column.DB_NAME || column.DB_NAME]"
                 mode="edit"
-                @update:model-value="val => queryForm[column.DB_NAME || column.dbName] = val"
+                @update:model-value="val => queryForm[column.DB_NAME || column.DB_NAME] = val"
               />
 
               <!-- 文本输入 -->
               <a-input
                 v-else-if="column.CONTROL_TYPE === 'text' || column.CONTROL_TYPE === 'email' || column.CONTROL_TYPE === 'url'"
-                v-model="queryForm[column.DB_NAME || column.dbName]"
-                :placeholder="`请输入${column.DISPLAY_NAME || column.displayName}`"
+                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
+                :placeholder="`请输入${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
                 allow-clear
-                @input="(value) => handleQueryInputChange(column, value)"
+                @input="(value: string) => handleQueryInputChange(column, value)"
               />
 
               <!-- 数字输入 -->
               <a-input-number
                 v-else-if="column.CONTROL_TYPE === 'number'"
-                v-model="queryForm[column.DB_NAME || column.dbName]"
-                :placeholder="`请输入${column.DISPLAY_NAME || column.displayName}`"
+                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
+                :placeholder="`请输入${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
                 style="width: 100%"
               />
 
               <!-- 下拉选择 -->
               <a-select
                 v-else-if="column.CONTROL_TYPE === 'select'"
-                v-model="queryForm[column.DB_NAME || column.dbName]"
-                :placeholder="`请选择${column.DISPLAY_NAME || column.displayName}`"
+                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
+                :placeholder="`请选择${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
                 allow-clear
               >
                 <a-option
@@ -68,8 +68,8 @@
               <!-- 日期选择 -->
               <a-date-picker
                 v-else-if="column.CONTROL_TYPE === 'date'"
-                v-model="queryForm[column.DB_NAME || column.dbName]"
-                :placeholder="`请选择${column.DISPLAY_NAME || column.displayName}`"
+                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
+                :placeholder="`请选择${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
                 allow-clear
                 style="width: 100%"
               />
@@ -77,8 +77,8 @@
               <!-- 日期时间选择 -->
               <a-date-picker
                 v-else-if="column.CONTROL_TYPE === 'datetime'"
-                v-model="queryForm[column.DB_NAME || column.dbName]"
-                :placeholder="`请选择${column.DISPLAY_NAME || column.displayName}`"
+                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
+                :placeholder="`请选择${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
                 show-time
                 allow-clear
                 style="width: 100%"
@@ -87,10 +87,10 @@
               <!-- 默认文本输入 -->
               <a-input
                 v-else
-                v-model="queryForm[column.DB_NAME || column.dbName]"
-                :placeholder="`请输入${column.DISPLAY_NAME || column.displayName}`"
+                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
+                :placeholder="`请输入${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
                 allow-clear
-                @input="(value) => handleQueryInputChange(column, value)"
+                @input="(value: string) => handleQueryInputChange(column, value)"
               />
             </a-form-item>
           </a-col>
@@ -239,7 +239,7 @@
                     <icon-drag-dot-vertical class="drag-handle" />
                     <a-checkbox
                       :model-value="selectedColumnKeys.includes(column.dataIndex as string)"
-                      @change="(checked) => handleColumnToggle(column.dataIndex as string, checked)"
+                      @change="(checked: boolean) => handleColumnToggle(column.dataIndex as string, checked)"
                     >
                       {{ column.title }}
                     </a-checkbox>
@@ -304,7 +304,7 @@
         <div class="selection-index-cell">
           <a-checkbox
             :model-value="selectedRowKeys.includes(record[pkField])"
-            @change="(checked) => handleSingleSelect(record[pkField], checked)"
+            @change="(checked: boolean) => handleSingleSelect(record[pkField], checked)"
           />
           <span class="row-number">
             {{ (pagination.page - 1) * pagination.pageSize + rowIndex + 1 }}
@@ -437,13 +437,13 @@
       <!-- 自定义单元格插槽 -->
       <template
         v-for="column in customColumns"
-        :key="column.dataIndex"
-        #[column.dataIndex]="{ record }"
+        :key="column"
+        #[column]="{ record }"
       >
         <slot
-          :name="column.dataIndex"
+          :name="column"
           :record="record"
-          :column="column"
+          :column="{ dataIndex: column }"
         />
       </template>
 
@@ -516,7 +516,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useNavigationStore } from '@/stores/navigation'
 import {
@@ -530,15 +530,12 @@ import {
   IconSearch,
   IconDown,
   IconUp,
-  IconInfoCircle,
   IconPrinter,
   IconCopy,
   IconEdit,
   IconDragDotVertical,
-  IconClose,
   IconArrowUp,
-  IconArrowDown,
-  IconExport
+  IconArrowDown
 } from '@arco-design/web-vue/es/icon'
 import { useDynamicList } from '../../composables'
 import { useDynamicTableStore } from '../../stores'
@@ -602,7 +599,6 @@ const {
   queryColumns,
   pkField,
   tableName,
-  displayName,
   canCreate,
   canEdit,
   canDelete,
@@ -615,7 +611,6 @@ const {
   refresh,
   handlePageChange,
   handlePageSizeChange,
-  handleSortChange,
   handleSelectionChange: onSelectionChange,
   handleDelete: onDelete,
   handleBatchDelete: onBatchDelete
@@ -637,13 +632,6 @@ const queryForm = ref<Record<string, any>>({})
 const showAdvancedQuery = ref(false)
 
 // ==================== 计算属性 ====================
-
-/**
- * 已排序的列（用于显示表头插槽）
- */
-const sortedColumns = computed(() => {
-  return tableColumns.value.filter(col => columnSorters.value[col.dataIndex])
-})
 
 /**
  * 可见的查询字段（支持展开/收起）
@@ -675,8 +663,6 @@ const columns = computed<TableColumnData[]>(() => {
 
   // 业务列
   tableColumns.value.forEach(column => {
-    const sorterInfo = columnSorters.value[column.dataIndex]
-
     const col: TableColumnData = {
       title: column.title,
       dataIndex: column.dataIndex,
@@ -755,8 +741,8 @@ const visibleColumns = computed(() => {
 
   // 业务列按 allColumns 顺序排列，但使用 columns.value 中的最新配置（包含排序序号）
   const businessCols = allColumns.value
-    .filter(col => selectedColumnKeys.value.includes(col.dataIndex as string))
-    .map(col => {
+    .filter((col: TableColumnData) => selectedColumnKeys.value.includes(col.dataIndex as string))
+    .map((col: TableColumnData) => {
       // 从 columns.value 中找到对应的列配置（包含排序序号）
       return columns.value.find(c => c.dataIndex === col.dataIndex) || col
     })
@@ -803,19 +789,6 @@ const scrollConfig = computed(() => {
 })
 
 /**
- * 默认排序配置（用于显示多排序序号）
- */
-const defaultSorters = computed(() => {
-  const result = Object.entries(columnSorters.value)
-    .sort(([, a], [, b]) => a.priority - b.priority)
-    .map(([field, sorter]) => ({
-      dataIndex: field,
-      direction: sorter.direction
-    }))
-  return result
-})
-
-/**
  * 图例项（按字段分组显示所有字典值）
  */
 const legendItems = computed(() => {
@@ -841,11 +814,11 @@ const legendItems = computed(() => {
 
   // 为每个 select 列生成图例
   selectColumns.forEach(column => {
-    const sysDictID = column.SYS_DICT_ID || (column as any).sysDictId
+    const sysDictID = column.SYS_DICT_ID || (column as any).sysDictId || column.DICT_TABLE_ID || (column as any).dictTableId
     if (!sysDictID) return
 
     const dictID = typeof sysDictID === 'string' ? parseInt(sysDictID, 10) : sysDictID
-    const dictItems = tableConfig.value!.dictData[dictID]
+    const dictItems = tableConfig.value!.dictData && tableConfig.value!.dictData[dictID]
 
 
     if (!dictItems || dictItems.length === 0) return
@@ -988,7 +961,7 @@ function formatDateTime(value: any): string {
  */
 function getDictLabelWithStyle(dataIndex: string, value: any): { label: string; cssClass?: string } {
   if (!value) return { label: '-' }
-
+console.log(dataIndex,value)
   // 获取列配置
   const column = tableConfig.value?.columns.find(c => {
     const dbName = c.DB_NAME || (c as any).dbName
@@ -997,17 +970,17 @@ function getDictLabelWithStyle(dataIndex: string, value: any): { label: string; 
 
   if (!column) return { label: String(value) }
 
-  // 特殊处理 check 类型（只有 Y/N）
-  const displayType = column.DISPLAY_TYPE || (column as any).displayType
-  if (displayType === 'check') {
+  // 特殊处理 check 类型（只有 Y/N），兼容大小写和不同字段名
+  const displayType = (column.DISPLAY_TYPE || (column as any).displayType || column.CONTROL_TYPE || (column as any).controlType || '').toLowerCase()
+  if (displayType === 'check' || displayType === 'checkbox' || displayType === 'bool' || displayType === 'boolean') {
     return {
-      label: value === 'Y' ? '是' : value === 'N' ? '否' : String(value),
-      cssClass: value === 'Y' ? 'success' : 'danger'
+      label: String(value) === 'Y' || String(value) === '1' || value === true ? '是' : String(value) === 'N' || String(value) === '0' || value === false ? '否' : String(value),
+      cssClass: String(value) === 'Y' || String(value) === '1' || value === true ? 'success' : 'danger'
     }
   }
 
-  // 获取字典ID
-  const sysDictID = column.SYS_DICT_ID || (column as any).sysDictId
+  // 获取字典ID（同时支持SYS_DICT_ID和DICT_TABLE_ID）
+  const sysDictID = column.SYS_DICT_ID || (column as any).sysDictId || column.DICT_TABLE_ID || (column as any).dictTableId
   if (!sysDictID || !tableConfig.value?.dictData) {
     return { label: String(value) }
   }
@@ -1037,27 +1010,13 @@ function getDictLabelWithStyle(dataIndex: string, value: any): { label: string; 
 }
 
 /**
- * 获取字典标签（仅文本，向后兼容）
- */
-function getDictLabel(dataIndex: string, value: any): string {
-  return getDictLabelWithStyle(dataIndex, value).label
-}
-
-/**
  * 获取字段的字典选项
  */
 function getDictOptions(column: SysColumn): Array<{ value: string; label: string }> {
   // 特殊处理 check 类型（只有 Y/N）
   const displayType = column.DISPLAY_TYPE || (column as any).displayType
-  if (displayType === 'check') {
-    return [
-      { value: 'Y', label: '是' },
-      { value: 'N', label: '否' }
-    ]
-  }
-
-  // 获取字典ID
-  const sysDictID = column.SYS_DICT_ID || (column as any).sysDictId
+  // 获取字典ID（同时支持SYS_DICT_ID和DICT_TABLE_ID）
+  const sysDictID = column.SYS_DICT_ID || (column as any).sysDictId || column.DICT_TABLE_ID || (column as any).dictTableId
   if (!sysDictID || !tableConfig.value?.dictData) {
     return []
   }
@@ -1079,7 +1038,7 @@ function getDictOptions(column: SysColumn): Array<{ value: string; label: string
  * 处理查询输入框变化（支持自动转大写）
  */
 function handleQueryInputChange(column: any, value: string) {
-  const fieldName = column.DB_NAME || column.dbName
+  const fieldName = column.DB_NAME || column.DB_NAME
 
   // 如果配置了自动转大写，则转换为大写
   if (value && (column.IS_UPPERCASE === 'Y' || column.isUppercase === 'Y')) {
@@ -1308,7 +1267,7 @@ async function handleRefresh() {
 /**
  * 排序变化（支持多字段排序）
  */
-function handleSorterChange(dataIndex: string, direction: string, sorterResult: any) {
+function handleSorterChange(dataIndex: string, direction: string) {
 
   const tableStore = useDynamicTableStore()
 
@@ -1359,39 +1318,6 @@ function handleSorterChange(dataIndex: string, direction: string, sorterResult: 
 }
 
 /**
- * 取消单个字段的排序
- */
-function handleCancelSort(dataIndex: string) {
-  // 删除该字段的排序
-  delete columnSorters.value[dataIndex]
-
-  // 重新调整优先级，保持连续性
-  const sortedEntries = Object.entries(columnSorters.value)
-    .sort(([, a], [, b]) => a.priority - b.priority)
-
-  columnSorters.value = {}
-  sortedEntries.forEach(([field, sorter], index) => {
-    columnSorters.value[field] = {
-      direction: sorter.direction,
-      priority: index + 1
-    }
-  })
-
-  // 按优先级排序，收集所有有排序的字段
-  const sorters = Object.entries(columnSorters.value)
-    .sort(([, a], [, b]) => a.priority - b.priority)
-    .map(([field, sorter]) => ({
-      field,
-      direction: sorter.direction
-    }))
-
-
-  // 发送到后端
-  const tableStore = useDynamicTableStore()
-  tableStore.updateSorters(tableName.value, sorters)
-}
-
-/**
  * 处理表头点击（切换排序）
  */
 function handleHeaderClick(dataIndex: string) {
@@ -1411,7 +1337,9 @@ function handleHeaderClick(dataIndex: string) {
     }
   } else if (current.direction === 'ascend') {
     // 升序 -> 降序
-    columnSorters.value[dataIndex].direction = 'descend'
+    if (columnSorters.value[dataIndex]) {
+      columnSorters.value[dataIndex].direction = 'descend'
+    }
   } else {
     // 降序 -> 取消排序
     delete columnSorters.value[dataIndex]
@@ -1472,7 +1400,7 @@ function handleSingleSelect(key: string | number, checked: boolean) {
  * 处理全选
  */
 function handleSelectAll(checked: boolean) {
-  const keys = checked ? records.value.map(r => r[pkField.value]) : []
+  const keys = checked ? records.value.map(r => r[pkField.value] as string | number) : []
   onSelectionChange(keys)
   emit('selection-change', keys)
 }
@@ -1480,7 +1408,7 @@ function handleSelectAll(checked: boolean) {
 /**
  * 获取行样式类（根据字典项的 CSS_CLASS 给整行添加样式）
  */
-function getRowClass(record: FormData, rowIndex: number): string | string[] {
+function getRowClass(record: FormData, _rowIndex: number): string | string[] {
   if (!tableConfig.value?.dictData) {
     return ''
   }
@@ -1509,7 +1437,7 @@ function getRowClass(record: FormData, rowIndex: number): string | string[] {
     })
 
 
-    const sysDictID = originalColumn?.SYS_DICT_ID || (originalColumn as any)?.sysDictId
+    const sysDictID = originalColumn?.SYS_DICT_ID || (originalColumn as any)?.sysDictId || originalColumn?.DICT_TABLE_ID || (originalColumn as any)?.dictTableId
     if (!sysDictID) {
       continue
     }
@@ -1590,10 +1518,10 @@ function handleResetColumns() {
  * 初始化列设置
  */
 function initColumnSettings() {
-  allColumns.value = columns.value.filter(col =>
+  allColumns.value = columns.value.filter((col: TableColumnData) =>
     col.dataIndex !== '__selection_index__' && col.dataIndex !== 'actions'
   )
-  selectedColumnKeys.value = allColumns.value.map(col => col.dataIndex as string)
+  selectedColumnKeys.value = allColumns.value.map((col: TableColumnData) => col.dataIndex as string)
 }
 
 // ==================== 生命周期 ====================

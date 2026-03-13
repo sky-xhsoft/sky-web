@@ -7,8 +7,7 @@ import { ref, computed } from 'vue'
 import * as api from '../api/metadata'
 import type {
   FormData,
-  PageRequest,
-  PageResponse
+  PageRequest
 } from '../types'
 
 export const useDynamicTableStore = defineStore('dynamicTable', () => {
@@ -58,8 +57,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
    */
   let loadingRequest: Promise<any> | null = null  // 防止重复请求
   async function loadRecords(tableName: string, params?: Partial<PageRequest>) {
-    // 如果正在加载同一个表，返回已有的 Promise
-    const requestKey = `${tableName}_${JSON.stringify(params || {})}`
+    // 如果正在加载，返回已有的 Promise
     if (loadingRequest) {
       return loadingRequest
     }

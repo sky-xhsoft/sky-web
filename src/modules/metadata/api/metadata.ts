@@ -363,3 +363,36 @@ export async function getForeignKeyDisplayValue(
   )
   return data.data
 }
+
+// ==================== 主表明细同时保存 ====================
+
+/**
+ * 同时保存主表和明细数据
+ */
+export async function saveRecordWithDetails(params: {
+  tableName: string
+  mainRecord: Record<string, any>
+  details: Array<{
+    tableName: string
+    records: Array<Record<string, any>>
+    assoType: '1' | 'n'
+    refField: string
+  }>
+  mode?: 'create' | 'update'
+  mainRecordId?: number
+}): Promise<{
+  mainRecord: Record<string, any>
+  details: Array<{
+    tableName: string
+    records: Array<Record<string, any>>
+  }>
+}> {
+  const { data } = await api.post<ApiResponse<{
+    mainRecord: Record<string, any>
+    details: Array<{
+      tableName: string
+      records: Array<Record<string, any>>
+    }>
+  }>>('/data/save-with-details', params)
+  return data.data
+}

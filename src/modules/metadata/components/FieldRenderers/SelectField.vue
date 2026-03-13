@@ -1,12 +1,9 @@
 <!-- 下拉选择框字段渲染器 -->
 <template>
   <!-- 查看模式或只读模式：显示文本 -->
-  <a-input
-    v-if="isViewMode"
-    :model-value="displayText"
-    disabled
-    readonly
-  />
+  <span v-if="isViewMode" class="select-field-view">
+    {{ displayText }}
+  </span>
 
   <!-- 编辑模式：显示下拉框 -->
   <a-select
@@ -28,6 +25,18 @@
     </a-option>
   </a-select>
 </template>
+
+<style scoped>
+.select-field-view {
+  display: inline-block;
+  padding: 4px 0;
+  color: #333;
+  line-height: 24px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+</style>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'

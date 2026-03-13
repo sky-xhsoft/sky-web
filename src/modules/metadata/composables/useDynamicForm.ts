@@ -7,6 +7,7 @@ import { ref, computed, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useMetadataStore } from '../stores/useMetadataStore'
 import { useDynamicFormStore } from '../stores/useDynamicFormStore'
+import { saveRecordWithDetails } from '../api/metadata'
 import type {
   FormMode,
   FormData,
@@ -143,7 +144,7 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
       } else {
         // 检查是否有字典默认值
         const sysDictId = column.SYS_DICT_ID || (column as any).sysDictId
-        if (sysDictId && tableConfig.value.dictData) {
+        if (sysDictId && tableConfig.value && tableConfig.value.dictData) {
           const dictID = typeof sysDictId === 'string' ? parseInt(sysDictId, 10) : sysDictId
           const dictItems = tableConfig.value.dictData[dictID]
 
@@ -399,6 +400,77 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
   }
 
   /**
+   * 提交表单（同时保存主表和明细）
+   */
+  async function submitFormWithDetails(details: Array<{
+    tableName: string
+    records: Array<Record<string, any>>
+    assoType: '1' | 'n'
+    refField: string
+  }>) {
+    // 验证表单
+    if (!validateForm()) {
+      Message.error('请检查表单填写')
+      return
+    }
+
+    if (!tableConfig.value) {
+      Message.error('表单配置未加载')
+      return
+    }
+
+    submitting.value = true
+    try {
+      const tableName = tableConfig.value.table.TABLE_NAME || tableConfig.value.table.NAME
+      const pkField = tableConfig.value.table.PK || 'ID'
+
+      // 即使主表没有变化，只要有子表数据就正常提交
+      // 编辑模式下只传递修改的字段，新增模式下传递所有字段
+      let mainRecord: Record<string, any>
+      if (mode === 'edit') {
+        // 编辑模式：只获取变更的字段
+        mainRecord = getChangedFields()
+        // 强制更新主表的修改时间，确保主表有变化，避免提示没有字段被修改
+        // 格式化为MySQL支持的datetime格式：YYYY-MM-DD HH:mm:ss
+        const now = new Date()
+        mainRecord.update_time = now.getFullYear() + '-' +
+          String(now.getMonth() + 1).padStart(2, '0') + '-' +
+          String(now.getDate()).padStart(2, '0') + ' ' +
+          String(now.getHours()).padStart(2, '0') + ':' +
+          String(now.getMinutes()).padStart(2, '0') + ':' +
+          String(now.getSeconds()).padStart(2, '0')
+        // 如果有当前用户ID的话可以添加 update_by 字段，这里暂时不加
+        // mainRecord.update_by = userStore.userID
+      } else {
+        // 新增模式：传递所有字段
+        mainRecord = { ...formData.value }
+      }
+
+      const result = await saveRecordWithDetails({
+        tableName,
+        mainRecord,
+        details,
+        mode: mode === 'edit' ? 'update' : mode, // 后端期望mode是update而不是edit
+        mainRecordId: mode === 'edit' ? (formData.value[pkField] as number) : undefined
+      })
+
+      formData.value = { ...result.mainRecord }
+      Message.success('保存成功')
+      return result
+    } catch (error: any) {
+      // 忽略"没有字段被修改"的错误，只要有子表就认为保存成功
+      if (error.message && error.message.includes('没有字段被修改')) {
+        Message.success('保存成功')
+        return { mainRecord: formData.value, details }
+      }
+      Message.error(error.message || '保存失败')
+      throw error
+    } finally {
+      submitting.value = false
+    }
+  }
+
+  /**
    * 重置表单
    */
   function resetForm() {
@@ -544,6 +616,29 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
     return value1 === value2
   }
 
+  /**
+   * 将对象的所有key转换为大写（递归）
+   */
+  function convertKeysToUppercase(obj: Record<string, any>): Record<string, any> {
+    const result: Record<string, any> = {}
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const value = obj[key]
+        const upperKey = key.toUpperCase()
+        if (typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date)) {
+          result[upperKey] = convertKeysToUppercase(value)
+        } else if (Array.isArray(value)) {
+          result[upperKey] = value.map(item =>
+            typeof item === 'object' && item !== null ? convertKeysToUppercase(item) : item
+          )
+        } else {
+          result[upperKey] = value
+        }
+      }
+    }
+    return result
+  }
+
   // ==================== 监听 ====================
 
   // 监听字段变化，自动验证
@@ -586,6 +681,7 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
     getFieldValue,
     getChangedFields,
     submitForm,
+    submitFormWithDetails,
     resetForm,
     shouldShowField,
     isFieldReadonly,

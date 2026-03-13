@@ -4,7 +4,6 @@
  */
 
 import { computed } from 'vue'
-import type { Component } from 'vue'
 import type { SysColumn, FormMode } from '../types'
 
 // 字段类型到组件的映射
@@ -129,8 +128,8 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
       return true
     }
 
-    // 根据 MASK 检查是否可编辑
-    const mask = column.MASK || (column as any).mask
+    // 根据 MASK 检查是否可编辑（兼容大小写）
+    const mask = column.MASK || column.mask || ''
     if (mask && mask.length >= 4) {
       // MASK 位说明：
       // 位 2 (索引 1): 新增可编辑
@@ -176,6 +175,7 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
     const controlType = displayType || column.CONTROL_TYPE || (column as any).controlType
 
     // 根据控件类型生成默认占位符
+    const displayName = column.DISPLAY_NAME || column.displayName || ''
     switch (controlType?.toLowerCase()) {
       case 'text':
       case 'textarea':
@@ -186,12 +186,12 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
       case 'json':
       case 'clob':
       case 'xml':
-        return `请输入${column.DISPLAY_NAME}`
+        return displayName ? `请输入${displayName}` : ''
       case 'richtext':
         return '请输入内容...'
       case 'select':
       case 'radio':
-        return `请选择${column.DISPLAY_NAME}`
+        return displayName ? `请选择${displayName}` : ''
       case 'date':
         return '请选择日期'
       case 'datetime':
@@ -204,7 +204,7 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
       case 'image':
         return '点击上传'
       default:
-        return `请输入${column.DISPLAY_NAME}`
+        return displayName ? `请输入${displayName}` : ''
     }
   })
 

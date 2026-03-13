@@ -60,6 +60,7 @@ export interface SysTable {
 
   // 扩展属性
   FILTER_CONDITION?: string  // 过滤条件 SQL
+  SYS_OBJUICONF_ID?: number  // 界面配置 ID
   PROPS?: string            // 扩展属性 JSON
 
   ORDERNO?: number
@@ -115,6 +116,14 @@ export interface SysColumn {
 
   // 显示控制
   IS_VISIBLE?: 'Y' | 'N'    // 是否可见
+  CONTROL_CONFIG?: string   // 控件配置（JSON）
+  ACTION_ID?: number        // 操作ID
+  IS_UPPERCASE?: 'Y' | 'N'  // 是否自动转大写
+  MASK?: string             // 字段掩码
+  IS_DK?: 'Y' | 'N'         // 是否为显示主键
+  COL_TYPE?: string         // 字段类型
+  COL_LENGTH?: number       // 字段长度
+  MODIFI_ABLE?: 'Y' | 'N'   // 是否可修改
   IS_READONLY?: 'Y' | 'N'   // 是否只读
   IS_EDITABLE_IN_GRID?: 'Y' | 'N' // 表格中可编辑
   IS_QUERY?: 'Y' | 'N'      // 是否作为查询条件
@@ -183,6 +192,7 @@ export interface TableConfig {
   columns: SysColumn[]
   dictData?: Record<number, SysDictItem[]>  // 字典数据，key为字典ID
   props?: Record<string, any>  // 解析后的扩展属性
+  childTables?: any[]  // 子表配置
 }
 
 /**
@@ -253,6 +263,17 @@ export interface TreeNode {
 /**
  * 外键选项
  */
+export interface SelectOption {
+  value: string | number
+  label: string
+}
+
+export interface TreeSelectOption {
+  value: string | number
+  label: string
+  children?: TreeSelectOption[]
+}
+
 export interface ForeignKeyOption {
   value: number | string
   label: string

@@ -46,8 +46,6 @@ export type {
   SysTable,
   SysColumn,
   SysDict,
-  CloudFile,
-  CloudFolder,
 
   // 辅助类型
   FormMode,
@@ -55,21 +53,16 @@ export type {
   FormData,
   ValidationRule,
   TableConfig,
-  TableColumnData,
-  PaginationConfig,
-  SortConfig,
-  FilterConfig,
 
   // 树形结构类型
   TreeNode,
-  FolderNode,
 
   // 选项类型
   SelectOption,
   TreeSelectOption,
 
   // 请求响应类型
-  PaginatedResponse,
+  PageResponse,
   ApiResponse
 } from './types'
 

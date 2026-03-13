@@ -7,9 +7,7 @@ import { ref } from 'vue'
 import * as api from '../api/metadata'
 import type {
   FormData,
-  FormMode,
-  PageRequest,
-  PageResponse
+  FormMode
 } from '../types'
 
 export const useDynamicFormStore = defineStore('dynamicForm', () => {

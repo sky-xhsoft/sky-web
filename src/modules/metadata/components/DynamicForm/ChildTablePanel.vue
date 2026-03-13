@@ -82,7 +82,7 @@
       :loading="loading"
       :pagination="false"
       :bordered="{ wrapper: true, cell: true }"
-      :row-key="record => record.ID || record.id"
+      :row-key="(record: any) => record.ID || record.id"
       size="small"
       class="child-table-panel__table"
     >
@@ -91,7 +91,7 @@
         <div class="checkbox-with-index">
           <a-checkbox
             :model-value="selectedRowKeys.includes(record.ID || record.id)"
-            @change="(checked) => handleRowSelect(rowIndex, checked)"
+            @change="(checked: boolean) => handleRowSelect(rowIndex, checked)"
           />
           <span class="row-index">{{ (pagination.current - 1) * pagination.pageSize + rowIndex + 1 }}</span>
         </div>
@@ -201,7 +201,7 @@ import type { FormMode, SysColumn } from '../../types'
 
 interface Props {
   parentTableId: number
-  parentRecordId: number
+  parentRecordId?: number
   childTable: any
   mode: FormMode
 }
@@ -514,8 +514,12 @@ async function loadChildData() {
       filterParts.forEach((part: string) => {
         const match = part.match(/(\w+)\s*=\s*'?([^']+)'?/)
         if (match) {
-          const [, fieldName, fieldValue] = match
-          filters[fieldName.trim()] = fieldValue.trim().replace(/'/g, '')
+          const [, fieldName, fieldValue] = match as [string, string, string]
+          if (fieldName && fieldValue) {
+            const trimmedFieldName = fieldName.trim()
+            const trimmedFieldValue = fieldValue.trim().replace(/'/g, '')
+            filters[trimmedFieldName] = trimmedFieldValue
+          }
         }
       })
     }
@@ -608,7 +612,7 @@ function handleBeforeOpen() {
   formLoaded.value = false
 }
 
-function handleFormLoaded(config: any) {
+function handleFormLoaded(_config: any) {
   formLoaded.value = true
 }
 
@@ -697,10 +701,10 @@ async function handleDialogOk() {
     // 确保 formData 包含所有必需字段
 
     if (dialogMode.value === 'create') {
-      const result = await metadataApi.createRecord(childTableName, formData)
+      await metadataApi.createRecord(childTableName, formData)
       Message.success('新增成功')
     } else if (dialogMode.value === 'edit') {
-      const result = await metadataApi.updateRecord(childTableName, currentRecordId.value!, formData)
+      await metadataApi.updateRecord(childTableName, currentRecordId.value!, formData)
       Message.success('更新成功')
     }
 

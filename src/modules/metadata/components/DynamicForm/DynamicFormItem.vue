@@ -1,8 +1,8 @@
 <!-- 动态表单项组件 -->
 <template>
   <a-form-item
-    :field="column.DB_NAME"
-    :label="column.DISPLAY_NAME"
+    :field="column.DB_NAME || column.dbName"
+    :label="column.DISPLAY_NAME || column.displayName"
     :rules="validationRules"
     :validate-trigger="['blur', 'change']"
     :feedback="!!error"
@@ -119,7 +119,6 @@ const {
   componentName,
   isReadonly,
   isRequired,
-  placeholder,
   helpText,
   validationRules
 } = useFieldRenderer(props.column, props.mode)
@@ -174,7 +173,18 @@ const wrapperColProps = computed(() => {
  * 是否禁用
  */
 const isDisabled = computed(() => {
-  return props.mode === 'view'
+  // 查看模式下禁用
+  if (props.mode === 'view') {
+    return true
+  }
+
+  // 编辑模式下，判断字段是否可修改
+  const modifiAble = props.column.MODIFI_ABLE || props.column.modifiAble || props.column.isReadonly
+  if (modifiAble === 'N' || modifiAble === true) {
+    return true
+  }
+
+  return false
 })
 
 /**
@@ -375,14 +385,34 @@ function handleBlur() {
 /* 禁用状态统一样式 */
 .dynamic-form-item :deep([disabled]) {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 1 !important;
+}
+
+/* 禁用状态下输入框文字颜色优化 - 强制使用深黑色 */
+.dynamic-form-item :deep(.arco-input[disabled] .arco-input-inner),
+.dynamic-form-item :deep(.arco-textarea[disabled] .arco-textarea-inner),
+.dynamic-form-item :deep(.arco-select-view[disabled] .arco-select-view-input),
+.dynamic-form-item :deep(.arco-picker-input[disabled] input),
+.dynamic-form-item :deep(.arco-input.is-disabled .arco-input-inner),
+.dynamic-form-item :deep(.arco-textarea.is-disabled .arco-textarea-inner),
+.dynamic-form-item :deep(.arco-select-view.is-disabled .arco-select-view-input) {
+  color: #333 !important;
+  -webkit-text-fill-color: #333 !important;
+  background-color: #f7f8fa !important;
 }
 
 /* 只读状态统一样式 */
 .dynamic-form-item :deep([readonly]) {
-  background: #f5f5f5;
-  border-color: #e8e8e8;
+  background: #f7f8fa !important;
+  border-color: #e5e6eb !important;
   cursor: default;
+}
+
+/* 只读状态下输入框文字颜色优化 */
+.dynamic-form-item :deep(.arco-input[readonly] .arco-input-inner),
+.dynamic-form-item :deep(.arco-textarea[readonly] .arco-textarea-inner) {
+  color: #333 !important;
+  -webkit-text-fill-color: #333 !important;
 }
 
 /* 清除按钮样式 */

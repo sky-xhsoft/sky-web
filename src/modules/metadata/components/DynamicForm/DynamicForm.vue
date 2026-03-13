@@ -84,87 +84,25 @@
             <span>明细信息</span>
           </div>
           <div class="dynamic-form__group-body">
-            <a-tabs v-if="childTables.length > 1" default-active-key="0">
-              <a-tab-pane
-                v-for="(childTable, index) in childTables"
-                :key="String(index)"
-                :title="childTable.ref.displayName || childTable.ref.DISPLAY_NAME || childTable.table.DISPLAY_NAME || childTable.table.displayName"
-              >
-                <!-- 新增模式提示：需要先保存主表 -->
-                <a-alert
-                  v-if="mode === 'create'"
-                  type="info"
-                  style="margin-bottom: 16px;"
-                >
-                  请先保存主表信息后，再添加明细数据
-                </a-alert>
-
-                <!-- 根据 EDIT_TYPE 决定使用哪种组件 -->
-                <!-- Y: 标准（内嵌编辑）, A: 仅显示新增字段（内嵌编辑） -->
-                <ChildTableInlinePanel
-                  v-if="shouldUseInlineEdit(childTable) && mode !== 'create'"
-                  :ref="el => setChildTableRef(index, el)"
-                  :parent-table-id="tableId"
-                  :parent-record-id="recordId"
-                  :child-table="childTable"
-                  :mode="mode"
-                  @change="handleChildTableChange(index, $event)"
-                  @refresh="handleChildTableRefresh"
-                />
-                <!-- NP: 非内嵌，允许弹出, NS: 非内嵌，禁止弹出（仅编辑/查看模式显示） -->
-                <ChildTablePanel
-                  v-else-if="shouldUsePopupEdit(childTable) && mode !== 'create'"
-                  :parent-table-id="tableId"
-                  :parent-record-id="recordId"
-                  :child-table="childTable"
-                  :mode="mode"
-                />
-                <!-- N: 无（只读显示，仅编辑/查看模式） -->
-                <ChildTablePanel
-                  v-else-if="mode !== 'create' && recordId"
-                  :parent-table-id="tableId"
-                  :parent-record-id="recordId"
-                  :child-table="childTable"
-                  :mode="'view'"
-                />
-              </a-tab-pane>
-            </a-tabs>
-            <template v-else-if="childTables.length === 1">
-              <!-- 新增模式提示：需要先保存主表 -->
-              <a-alert
-                v-if="mode === 'create'"
-                type="info"
-                style="margin-bottom: 16px;"
-              >
-                请先保存主表信息后，再添加明细数据
-              </a-alert>
-
-              <!-- 根据 EDIT_TYPE 决定使用哪种组件 -->
-              <ChildTableInlinePanel
-                v-if="shouldUseInlineEdit(childTables[0]) && mode !== 'create'"
-                :ref="el => setChildTableRef(0, el)"
-                :parent-table-id="tableId"
-                :parent-record-id="recordId"
-                :child-table="childTables[0]"
+            <!-- 1:1 子表 -->
+            <template v-for="(childTable, index) in oneToOneChildTables" :key="`one-to-one-${index}`">
+              <OneToOneChildTable
+                :child-table="oneToOneChildTableConfigs[childTable.table.ID] || childTable"
+                :record="oneToOneChildTableRecords[childTable.table.ID]"
                 :mode="mode"
-                @change="handleChildTableChange(0, $event)"
-                @refresh="handleChildTableRefresh"
-              />
-              <ChildTablePanel
-                v-else-if="shouldUsePopupEdit(childTables[0]) && mode !== 'create'"
-                :parent-table-id="tableId"
-                :parent-record-id="recordId"
-                :child-table="childTables[0]"
-                :mode="mode"
-              />
-              <ChildTablePanel
-                v-else-if="mode !== 'create' && recordId"
-                :parent-table-id="tableId"
-                :parent-record-id="recordId"
-                :child-table="childTables[0]"
-                :mode="'view'"
+                :row-gutter="rowGutter"
+                @update:record="(record) => oneToOneChildTableRecords[childTable.table.ID] = record"
               />
             </template>
+
+            <!-- 1:N 子表 -->
+            <OneToManyChildTable
+              v-if="oneToManyChildTables.length > 0"
+              :child-tables="oneToManyChildTables"
+              :mode="mode"
+              :parent-table-id="tableId"
+              :parent-record-id="recordId"
+            />
           </div>
         </div>
       </template>
@@ -210,7 +148,10 @@ import { IconFolder, IconInfoCircle, IconUnorderedList } from '@arco-design/web-
 import DynamicFormItem from './DynamicFormItem.vue'
 import ChildTablePanel from './ChildTablePanel.vue'
 import ChildTableInlinePanel from './ChildTableInlinePanel.vue'
+import OneToOneChildTable from './OneToOneChildTable.vue'
+import OneToManyChildTable from './OneToManyChildTable.vue'
 import { useDynamicForm } from '../../composables'
+import * as metadataApi from '../../api/metadata'
 import type { FormMode, SysColumn } from '../../types'
 
 // ==================== Props ====================
@@ -252,7 +193,6 @@ const emit = defineEmits<{
 
 const {
   loading,
-  submitting,
   tableConfig,
   formData,
   errors,
@@ -264,8 +204,8 @@ const {
   setFieldValue,
   getChangedFields,
   submitForm,
+  submitFormWithDetails,
   shouldShowField,
-  isFieldReadonly,
   clearFieldError
 } = useDynamicForm(props.tableId, props.mode)
 
@@ -331,7 +271,7 @@ const collapsibleGroups = computed(() => {
  * 默认展开的折叠组
  */
 const defaultActiveGroups = computed(() => {
-  return collapsibleGroups.value.map((_, index) => index)
+  return collapsibleGroups.value.map((_group: any, index: number) => index)
 })
 
 /**
@@ -339,6 +279,20 @@ const defaultActiveGroups = computed(() => {
  */
 const childTables = computed(() => {
   return tableConfig.value?.childTables || []
+})
+
+/**
+ * 1:1 子表列表
+ */
+const oneToOneChildTables = computed(() => {
+  return childTables.value.filter(childTable => isOneToOneChildTable(childTable))
+})
+
+/**
+ * 1:N 子表列表
+ */
+const oneToManyChildTables = computed(() => {
+  return childTables.value.filter(childTable => !isOneToOneChildTable(childTable))
 })
 
 /**
@@ -359,40 +313,134 @@ const formColumnsCount = computed(() => {
  */
 const childTableRefs = ref<Record<number, any>>({})
 
+/**
+ * 1:1 子表记录 ID 映射（key: 子表 ID, value: 子表记录 ID）
+ */
+const oneToOneChildTableRecordIds = ref<Record<number, number | undefined>>({})
+
+/**
+ * 1:1 子表记录数据映射（key: 子表 ID, value: 子表记录数据）
+ */
+const oneToOneChildTableRecords = ref<Record<number, any>>({})
+// 存储1:1子表原始数据，用于对比变更
+const oneToOneChildTableOriginalRecords = ref<Record<number, any>>({})
+
+/**
+ * 1:1 子表原始记录数据映射（用于比较变化）
+ */
+const originalOneToOneChildTableRecords = ref<Record<number, any>>({})
+
+/**
+ * 1:1 子表字段配置映射（key: 子表 ID, value: 子表字段配置）
+ */
+const oneToOneChildTableConfigs = ref<Record<number, any>>({})
+
 // ==================== 方法 ====================
 
 /**
- * 判断是否使用内嵌编辑
- * EDIT_TYPE: Y=标准（内嵌），A=仅新增（内嵌）
+ * 判断是否为 1:1 子表
+ * 通过表关系类型 ASSOCTYPE 字段判断
+ * ASSOCTYPE 值为 '1' 表示 1:1 关联，'n' 表示 1:n 关联
  */
-function shouldUseInlineEdit(childTable: any): boolean {
-  const editType = childTable.ref.editType || childTable.ref.EDIT_TYPE
-  return editType === 'Y' || editType === 'A'
+function isOneToOneChildTable(childTable: any): boolean {
+  const assoType = childTable.ref.assoType || childTable.ref.ASSOCTYPE
+  return assoType === '1' || assoType === '1:1'
 }
 
 /**
- * 判断是否使用弹出框编辑
- * EDIT_TYPE: NP=非内嵌允许弹出，NS=非内嵌禁止弹出
+ * 获取 1:1 子表的字段配置
  */
-function shouldUsePopupEdit(childTable: any): boolean {
-  const editType = childTable.ref.editType || childTable.ref.EDIT_TYPE
-  return editType === 'NP' || editType === 'NS'
-}
-
-/**
- * 设置子表引用
- */
-function setChildTableRef(index: number, el: any) {
-  if (el) {
-    childTableRefs.value[index] = el
+async function getOneToOneChildTableConfig(childTableId: number): Promise<any> {
+  try {
+    const config = await metadataApi.fetchTableConfig(childTableId)
+    return config
+  } catch (error) {
+    console.error('获取子表配置失败:', error)
+    return undefined
   }
 }
 
 /**
- * 子表数据变化处理
+ * 获取 1:1 子表的记录
  */
-function handleChildTableChange(index: number, data: any[]) {
-  // 可以在这里触发表单的 change 事件
+async function getOneToOneChildTableRecord(childTable: any): Promise<any | undefined> {
+  // 如果是新增模式，还没有主表记录，返回 undefined
+  if (props.mode === 'create') {
+    return undefined
+  }
+
+  // 如果没有主表记录 ID，返回 undefined
+  if (!props.recordId) {
+    return undefined
+  }
+
+  try {
+    // 找到子表中引用父表的外键字段
+    // 方法1: 查找 REF_TABLE_ID 等于父表 ID 的字段
+    let refColumn = childTable.columns.find((col: any) => {
+      const refTableId = col.REF_TABLE_ID || col.refTableId
+      return refTableId === props.tableId
+    })
+
+    // 方法2: 如果方法1没找到，使用 refColumnId
+    if (!refColumn) {
+      const refColumnId = childTable.ref.refColumnId || childTable.ref.REF_COLUMN_ID
+      refColumn = childTable.columns.find((col: any) => {
+        const colId = col.ID || col.id
+        return colId === refColumnId
+      })
+    }
+
+    if (!refColumn) {
+      console.error('未找到外键字段')
+      console.error('父表ID:', props.tableId)
+      console.error('ref.refColumnId:', childTable.ref.refColumnId || childTable.ref.REF_COLUMN_ID)
+      console.error('可用的列:', childTable.columns)
+      return undefined
+    }
+
+    const refColumnDbName = refColumn.DB_NAME || refColumn.dbName
+
+    // 构建过滤条件
+    const filters: Record<string, any> = {
+      [refColumnDbName]: props.recordId
+    }
+
+    // 如果有额外的过滤条件，解析并添加
+    const filter = childTable.ref.filter || childTable.ref.FILTER || ''
+    if (filter) {
+      const filterParts = filter.split('AND').map((part: string) => part.trim())
+      filterParts.forEach((part: string) => {
+        const match = part.match(/(\w+)\s*=\s*'?([^']+)'?/)
+        if (match) {
+          const [, fieldName, fieldValue] = match as [string, string, string]
+          const key = fieldName.trim()
+          const value = fieldValue.trim().replace(/'/g, '')
+          ;(filters as Record<string, any>)[key] = value
+        }
+      })
+    }
+
+    const table = childTable.table
+    const childTableName = table.NAME || table.name
+
+    // 调用 API 查找子表记录
+    const response = await metadataApi.fetchRecords(childTableName, {
+      filters,
+      page: 1,
+      pageSize: 1
+    })
+
+    // 返回第一条记录
+    if (response.list && response.list.length > 0) {
+      return response.list[0]
+    }
+
+    return undefined
+  } catch (error: any) {
+    console.error('获取 1:1 子表记录失败:', error)
+    return undefined
+  }
 }
 
 /**
@@ -522,12 +570,117 @@ function handleFieldBlur(column: SysColumn) {
  * 表单提交处理
  */
 async function handleSubmit(e: Event) {
+  console.log('DynamicForm handleSubmit called', e)
   e.preventDefault()
 
   try {
-    const result = await submitForm()
-    emit('submit', result)
+    console.log('handleSubmit try block start')
+    // 只要有子表配置，就使用同时保存接口，确保子表变更能被保存
+    const hasChildTables = childTables.value.length > 0
+    console.log('hasChildTables in DynamicForm:', hasChildTables)
+
+    if (hasChildTables) {
+      // 收集所有子表数据
+      const details = []
+      console.log('开始收集子表数据，oneToOneChildTables:', oneToOneChildTables.value, 'oneToManyChildTables:', oneToManyChildTables.value)
+
+      // 收集1:1子表数据
+      for (const childTable of oneToOneChildTables.value) {
+        console.log('处理1:1子表:', childTable.table.NAME)
+        let record = oneToOneChildTableRecords.value[childTable.table.ID]
+        const originalRecord = originalOneToOneChildTableRecords.value[childTable.table.ID]
+
+        console.log('子表原始记录:', originalRecord, '当前记录:', record)
+
+        // 对比原始数据，只保留变更的字段
+        let changedRecord: Record<string, any> = {}
+        if (props.mode === 'edit' && originalRecord && record) {
+          // 编辑模式：只收集变更的字段
+          for (const key in record) {
+            if (record[key] !== originalRecord[key]) {
+              changedRecord[key] = record[key]
+            }
+          }
+          // 保留ID字段，用于更新
+          if (record.ID || record.id) {
+            changedRecord.ID = record.ID || record.id
+          }
+        } else {
+          // 新增模式：传递所有字段，如果没有记录则创建空记录
+          changedRecord = record || {}
+        }
+
+        // 找到子表的关联字段
+        let refField = ''
+        const refColumn = childTable.columns.find((col: any) => {
+          const refTableId = col.REF_TABLE_ID || col.refTableId
+          return refTableId === props.tableId
+        })
+        if (refColumn) {
+          refField = refColumn.DB_NAME || refColumn.dbName
+        } else {
+          // 如果没找到，使用ref中的配置
+          refField = childTable.ref.refColumn || childTable.ref.REF_COLUMN || 'SYS_COMPANY_ID'
+        }
+
+        // 新增模式下即使子表没有数据也新增一条关联记录，编辑模式下只有变更才提交
+        if (Object.keys(changedRecord).length > 0 || props.mode === 'create') {
+          details.push({
+            tableName: childTable.table.NAME || childTable.table.name,
+            records: [changedRecord],
+            assoType: '1',
+            refField
+          })
+        }
+      }
+
+      // 收集1:n子表数据
+      for (const childTable of oneToManyChildTables.value) {
+        const index = childTables.value.indexOf(childTable)
+        const childTableRef = childTableRefs.value[index]
+        if (childTableRef && typeof childTableRef.getData === 'function') {
+          const records = childTableRef.getData()
+          if (records.length > 0) {
+            // 找到子表的关联字段
+            let refField = ''
+            const refColumn = childTable.columns.find((col: any) => {
+              const refTableId = col.REF_TABLE_ID || col.refTableId
+              return refTableId === props.tableId
+            })
+            if (refColumn) {
+              refField = refColumn.DB_NAME || refColumn.dbName
+            } else {
+              // 如果没找到，使用ref中的配置
+              refField = childTable.ref.refColumn || childTable.ref.REF_COLUMN || 'parent_id'
+            }
+
+            details.push({
+              tableName: childTable.table.NAME || childTable.table.name,
+              records,
+              assoType: 'n',
+              refField
+            })
+          }
+        }
+      }
+
+      console.log('收集到的details:', details)
+      // 调用同时保存接口
+      console.log('准备调用submitFormWithDetails')
+      const result = await submitFormWithDetails(details)
+      console.log('submitFormWithDetails返回结果:', result)
+      if (result) {
+        emit('submit', result.mainRecord)
+      }
+    } else {
+      // 没有子表，使用原来的保存逻辑
+      const result = await submitForm()
+      if (result) {
+        emit('submit', result)
+      }
+    }
   } catch (error: any) {
+    console.error('handleSubmit error:', error)
     // 错误已在 composable 中处理
   }
 }
@@ -601,6 +754,31 @@ onMounted(async () => {
     systemFieldsToClear.forEach(field => {
       delete formData.value[field]
     })
+  }
+
+  // 加载 1:1 子表的配置和记录数据
+  if (tableConfig.value?.childTables) {
+    for (const childTable of tableConfig.value.childTables) {
+      if (isOneToOneChildTable(childTable)) {
+        // 获取子表的完整配置
+        const childTableConfig = await getOneToOneChildTableConfig(childTable.table.ID)
+        if (childTableConfig) {
+          oneToOneChildTableConfigs.value[childTable.table.ID] = childTableConfig
+        }
+
+        // 获取子表记录数据
+        const record = await getOneToOneChildTableRecord(childTable)
+        if (record) {
+          oneToOneChildTableRecords.value[childTable.table.ID] = record
+          // 保存原始数据用于比较变化
+          originalOneToOneChildTableRecords.value[childTable.table.ID] = JSON.parse(JSON.stringify(record))
+          const recordId = record.ID || record.id
+          if (recordId) {
+            oneToOneChildTableRecordIds.value[childTable.table.ID] = recordId
+          }
+        }
+      }
+    }
   }
 
   // 触发 loaded 事件
@@ -685,7 +863,7 @@ function validateChildTables(): { valid: boolean; errors: string[] } {
       const result = childTableRef.validate()
 
       if (!result.valid) {
-        result.errors.forEach(err => {
+        result.errors.forEach((err: string) => {
           allErrors.push(`${tableName}: ${err}`)
         })
       }
@@ -707,6 +885,7 @@ defineExpose({
   setFormData,
   reset,
   loadData: loadRecordData,  // 暴露加载数据方法
+  submit: handleSubmit, // 暴露提交方法
   formRef
 })
 </script>
@@ -776,6 +955,88 @@ defineExpose({
 
 .dynamic-form__group--child-tables .dynamic-form__group-body {
   padding: 0;
+}
+
+/* 1:1 子表样式 */
+.dynamic-form__one-to-one-child-table {
+  margin-bottom: 24px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  overflow: hidden;
+
+  &__header {
+    padding: 12px 16px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e8e8e8;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  &__body {
+    padding: 16px;
+  }
+
+  &__fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  &__field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 200px;
+    flex: 1;
+  }
+
+  &__field-label {
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  &__field-value {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  :deep(.dynamic-form) {
+    padding: 0;
+  }
+
+  :deep(.dynamic-form__form) {
+    padding: 0;
+  }
+
+  :deep(.dynamic-form__group) {
+    margin-bottom: 0;
+  }
+
+  :deep(.dynamic-form__group-header) {
+    background: #f5f5f5;
+    border-bottom: 1px solid #e8e8e8;
+  }
+
+  :deep(.dynamic-form__group-body) {
+    padding: 16px;
+  }
+
+  :deep(.dynamic-form-item) {
+    margin-bottom: 0;
+  }
+
+  :deep(.arco-form-item-label) {
+    font-weight: 600;
+    color: #333;
+  }
+
+  :deep(.arco-form-item-content) {
+    min-height: 32px;
+  }
 }
 
 .dynamic-form__group--system {

@@ -86,8 +86,8 @@ export const useDictStore = defineStore('dict', () => {
       .filter(d => d.IS_ACTIVE === 'Y')
       .sort((a, b) => (a.ORDERNO || 0) - (b.ORDERNO || 0))
       .map(d => ({
-        label: d.DICT_NAME,
-        value: d.DICT_VALUE
+        label: String(d.DICT_NAME || d.dictName || ''),
+        value: String(d.DICT_VALUE || d.dictValue || '')
       }))
   }
 

@@ -145,7 +145,7 @@ const placeholder = computed(() => {
 
 // 预览图片列表
 const previewList = computed(() => {
-  return imageList.value.map(img => img.url || '').filter(Boolean)
+  return imageList.value.map((img: FileItem) => img.url || '').filter(Boolean)
 })
 
 // 初始化图片列表
@@ -245,7 +245,7 @@ function handlePreview(index: number | FileItem) {
     previewIndex.value = index
     previewUrl.value = imageList.value[index]?.url || ''
   } else {
-    const idx = imageList.value.findIndex(img => img.uid === index.uid)
+    const idx = imageList.value.findIndex((img: FileItem) => img.uid === index.uid)
     previewIndex.value = idx >= 0 ? idx : 0
     previewUrl.value = index.url || ''
   }

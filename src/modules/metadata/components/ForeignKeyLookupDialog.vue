@@ -12,12 +12,12 @@
       <a-form :model="queryForm" layout="inline" class="query-form">
         <a-form-item
           v-for="field in queryFields"
-          :key="field.DB_NAME || field.dbName"
-          :label="field.DISPLAY_NAME || field.displayName"
+          :key="field.DB_NAME || (field as any).dbName"
+          :label="field.DISPLAY_NAME"
         >
           <a-input
-            v-model="queryForm[field.DB_NAME || field.dbName]"
-            :placeholder="`请输入${field.DISPLAY_NAME || field.displayName}`"
+            v-model="queryForm[field.DB_NAME || (field as any).dbName]"
+            :placeholder="`请输入${field.DISPLAY_NAME}`"
             allow-clear
             @press-enter="handleSearch"
           />
@@ -220,10 +220,10 @@ async function loadData() {
 
     // 转换数据：确保有 id 字段
     tableData.value = rawList.map(row => {
-      const newRow: any = { id: row.ID }
+      const newRow: any = { id: (row as any).ID }
       // 复制所有字段
-      Object.keys(row).forEach(key => {
-        newRow[key] = row[key]
+      Object.keys(row as any).forEach(key => {
+        newRow[key] = (row as any)[key]
       })
       return newRow
     })

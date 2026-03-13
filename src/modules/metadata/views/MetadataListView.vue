@@ -124,17 +124,13 @@ import {
   IconFolder,
   IconFile,
   IconApps,
-  IconSearch,
-  IconRefresh,
-  IconDown,
-  IconUp,
   IconMenuFold,
   IconMenuUnfold
 } from '@arco-design/web-vue/es/icon'
 import { DynamicTable } from '@/modules/metadata'
 import { useMetadataStore } from '@/modules/metadata'
 import { useNavigationStore } from '@/stores/navigation'
-import type { TreeNode, SysTable, Subsystem, TableCategory, SysColumn } from '@/modules/metadata'
+import type { TreeNode, SysTable, Subsystem, TableCategory } from '@/modules/metadata'
 
 // ==================== Props ====================
 
@@ -164,13 +160,10 @@ const treeLoading = ref(false)
 
 const filterForm = ref<Record<string, any>>({})
 const currentFilters = ref<Record<string, any>>({})
-const showAdvancedFilter = ref(false)
 
 const currentSubsystem = ref<Subsystem | null>(null)
 const currentCategory = ref<TableCategory | null>(null)
 const currentTable = ref<SysTable | null>(null)
-
-const tableRef = ref()
 
 // ==================== 计算属性 ====================
 
@@ -214,33 +207,7 @@ const filteredTree = computed(() => {
 /**
  * 筛选字段列表（前3个可见字段）
  */
-const filterColumns = computed(() => {
-  if (!currentTable.value) return []
-
-  const columns = metadataStore.getVisibleColumns(currentTable.value.ID)
-  return showAdvancedFilter.value ? columns.slice(0, 9) : columns.slice(0, 3)
-})
-
 // ==================== 方法 ====================
-
-/**
- * 加载树数据
- */
-async function loadTreeData() {
-  treeLoading.value = true
-  try {
-    await metadataStore.reloadTree()
-
-    // 默认展开第一层
-    if (treeData.value.length > 0) {
-      expandedKeys.value = [treeData.value[0].key as string]
-    }
-  } catch (error: any) {
-    Message.error(error.message || '加载树数据失败')
-  } finally {
-    treeLoading.value = false
-  }
-}
 
 /**
  * 树搜索
@@ -261,7 +228,7 @@ function handleTreeSearch(value: string) {
     expandedKeys.value = allKeys
   } else {
     // 恢复默认展开
-    if (treeData.value.length > 0) {
+    if (treeData.value.length > 0 && treeData.value[0]?.key) {
       expandedKeys.value = [treeData.value[0].key as string]
     }
   }
@@ -318,7 +285,7 @@ function handleNodeExpand(keys: string[]) {
 function findCategoryByTableId(tableId: number): TableCategory | null {
   for (const [categoryId, tables] of metadataStore.tables.entries()) {
     if (tables.some(t => t.ID === tableId)) {
-      for (const [subsystemId, categories] of metadataStore.tableCategories.entries()) {
+      for (const [, categories] of metadataStore.tableCategories.entries()) {
         const category = categories.find(c => c.ID === categoryId)
         if (category) return category
       }
@@ -351,19 +318,6 @@ function toggleSidebar() {
 /**
  * 查询
  */
-function handleSearch() {
-  currentFilters.value = { ...filterForm.value }
-}
-
-/**
- * 重置
- */
-function handleReset() {
-  filterForm.value = {}
-  currentFilters.value = {}
-  tableRef.value?.refresh()
-}
-
 /**
  * 新增
  */
@@ -405,7 +359,7 @@ function handleEdit(record: any) {
 /**
  * 删除
  */
-function handleDelete(record: any) {
+function handleDelete(_record: any) {
   // 删除成功提示已在 DynamicTable 的 composable 中处理
   // 这里可以做一些额外的处理，比如记录日志
 }

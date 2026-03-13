@@ -219,6 +219,98 @@ export const useMetadataStore = defineStore('metadata', () => {
         return mapped
       })
 
+      // 处理子表配置的字段名映射
+      if (config.childTables) {
+        config.childTables = config.childTables.map((childTable: any) => {
+          // 处理子表的 ref 属性（关联关系配置）
+          const mappedRef: any = { ...childTable.ref }
+          if (!mappedRef.EDIT_TYPE && (childTable.ref as any).editType) {
+            mappedRef.EDIT_TYPE = (childTable.ref as any).editType
+          }
+          if (!mappedRef.FILTER && (childTable.ref as any).filter) {
+            mappedRef.FILTER = (childTable.ref as any).filter
+          }
+          if (!mappedRef.ASSOCTYPE && (childTable.ref as any).assocType) {
+            mappedRef.ASSOCTYPE = (childTable.ref as any).assocType
+          }
+
+          // 处理子表的 table 属性（表配置）
+          const mappedTable: any = { ...childTable.table }
+          if (!mappedTable.ID && (childTable.table as any).id) {
+            mappedTable.ID = (childTable.table as any).id
+          }
+          if (!mappedTable.NAME && (childTable.table as any).name) {
+            mappedTable.NAME = (childTable.table as any).name
+          }
+          if (!mappedTable.DISPLAY_NAME && (childTable.table as any).displayName) {
+            mappedTable.DISPLAY_NAME = (childTable.table as any).displayName
+          }
+          if (!mappedTable.IS_ACTIVE && (childTable.table as any).isActive) {
+            mappedTable.IS_ACTIVE = (childTable.table as any).isActive
+          }
+
+          // 处理子表的 columns 属性（字段配置）
+          const mappedColumns = childTable.columns.map((col: any) => {
+            const mappedCol: any = { ...col }
+            if (!mappedCol.DB_NAME && (col as any).dbName) {
+              mappedCol.DB_NAME = (col as any).dbName
+            }
+            if (!mappedCol.DISPLAY_NAME && (col as any).displayName) {
+              mappedCol.DISPLAY_NAME = (col as any).displayName
+            }
+            if (!mappedCol.IS_VISIBLE && (col as any).isVisible) {
+              mappedCol.IS_VISIBLE = (col as any).isVisible
+            }
+            if (!mappedCol.IS_ACTIVE && (col as any).isActive) {
+              mappedCol.IS_ACTIVE = (col as any).isActive
+            }
+            if (!mappedCol.ORDERNO && (col as any).orderno !== undefined) {
+              mappedCol.ORDERNO = (col as any).orderno
+            }
+            if (!mappedCol.GRID_WIDTH && (col as any).displayCols) {
+              mappedCol.GRID_WIDTH = (col as any).displayCols
+            }
+            if (!mappedCol.MASK && (col as any).mask) {
+              mappedCol.MASK = (col as any).mask
+            }
+            if (!mappedCol.NULL_ABLE && (col as any).nullAble) {
+              mappedCol.NULL_ABLE = (col as any).nullAble
+            }
+            if (!mappedCol.CONTROL_TYPE && (col as any).controlType) {
+              mappedCol.CONTROL_TYPE = (col as any).controlType
+            }
+            return mappedCol
+          })
+
+          // 处理子表的 dictData 属性（字典数据）
+          const mappedDictData: any = {}
+          for (const key in childTable.dictData) {
+            const mappedKey = Number(key)
+            const items = childTable.dictData[key]
+            mappedDictData[mappedKey] = items.map((item: any) => {
+              const mappedItem: any = { ...item }
+              if (!mappedItem.VALUE && (item as any).value) {
+                mappedItem.VALUE = (item as any).value
+              }
+              if (!mappedItem.DISPLAY_NAME && (item as any).displayName) {
+                mappedItem.DISPLAY_NAME = (item as any).displayName
+              }
+              return mappedItem
+            })
+          }
+
+          return {
+            ref: mappedRef,
+            table: mappedTable,
+            columns: mappedColumns,
+            dictData: mappedDictData
+          }
+        })
+      }
+
+      // 处理子表配置
+      config.childTables = config.childTables || []
+
       // 缓存配置
       tableConfigs.value.set(tableId, config)
       columns.value.set(tableId, config.columns)

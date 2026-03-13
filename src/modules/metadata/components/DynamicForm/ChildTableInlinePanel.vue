@@ -133,7 +133,7 @@
               :placeholder="`请选择${column.title}`"
               size="small"
               allow-clear
-              @change="val => handleCellChange(rowIndex, column.dataIndex, val)"
+              @change="(val: any) => handleCellChange(rowIndex, column.dataIndex, val)"
             >
               <a-option
                 v-for="option in getDictOptions(column.columnConfig)"
@@ -151,7 +151,7 @@
               :placeholder="`请输入${column.title}`"
               size="small"
               style="width: 100%"
-              @change="val => handleCellChange(rowIndex, column.dataIndex, val)"
+              @change="(val: any) => handleCellChange(rowIndex, column.dataIndex, val)"
             />
 
             <!-- 日期选择 -->
@@ -162,7 +162,7 @@
               size="small"
               allow-clear
               style="width: 100%"
-              @change="val => handleCellChange(rowIndex, column.dataIndex, val)"
+              @change="(val: any) => handleCellChange(rowIndex, column.dataIndex, val)"
             />
 
             <!-- 日期时间选择 -->
@@ -174,7 +174,7 @@
               show-time
               allow-clear
               style="width: 100%"
-              @change="val => handleCellChange(rowIndex, column.dataIndex, val)"
+              @change="(val: any) => handleCellChange(rowIndex, column.dataIndex, val)"
             />
 
             <!-- 文本域 -->
@@ -367,12 +367,6 @@ const editType = computed(() => {
   return ref.editType || ref.EDIT_TYPE || 'Y'
 })
 
-const canAdd = computed(() => {
-  if (props.mode === 'view') return false
-  const type = editType.value
-  return type && type !== 'N' && type !== 'NS'
-})
-
 // 是否显示"新增行"按钮（仅 Y 类型显示）
 const canAddRow = computed(() => {
   if (props.mode === 'view') return false
@@ -458,7 +452,7 @@ const tableColumns = computed(() => {
   })
 
   // 添加业务列（处理必填标记）
-  editableColumns.value.forEach(col => {
+  editableColumns.value.forEach((col: any) => {
     const nullable = col.columnConfig.NULL_ABLE || col.columnConfig.nullable || col.columnConfig.nullAble
     const isRequired = nullable === 'N'
     const displayName = col.columnConfig.DISPLAY_NAME || col.columnConfig.displayName
@@ -578,7 +572,7 @@ function handleAddRow() {
   }
 
   // 初始化所有可编辑字段为 null
-  editableColumns.value.forEach(col => {
+  editableColumns.value.forEach((col: any) => {
     newRow[col.dataIndex] = null
   })
 
@@ -690,7 +684,7 @@ function handleAddDialog() {
 /**
  * 表单加载完成回调
  */
-function handleFormLoaded(config: any) {
+function handleFormLoaded(_config: any) {
 
   // 等待下一个 tick 确保 ref 已经绑定
   nextTick(() => {
@@ -751,7 +745,7 @@ async function handleSaveOrEdit(record: any, rowIndex: number) {
 /**
  * 保存新增的行
  */
-async function saveNewRecord(record: any, rowIndex: number) {
+async function saveNewRecord(record: any, _rowIndex: number) {
   try {
     const table = props.childTable.table
     const childTableName = table.NAME || table.name
@@ -759,7 +753,7 @@ async function saveNewRecord(record: any, rowIndex: number) {
 
     // 验证必填字段
     const validationResult = validateNewRecord(record)
-    if (!validationResult.valid) {
+    if (!validationResult.valid && validationResult.errors.length > 0) {
       Message.warning(validationResult.errors[0])
       return
     }
@@ -812,7 +806,7 @@ async function saveNewRecord(record: any, rowIndex: number) {
 
 
     // 调用 API 创建记录
-    const result = await metadataApi.createRecord(childTableName, saveData)
+    await metadataApi.createRecord(childTableName, saveData)
     Message.success('保存成功')
 
     // 重新加载数据
@@ -832,7 +826,7 @@ async function saveNewRecord(record: any, rowIndex: number) {
 function validateNewRecord(record: any): { valid: boolean; errors: string[] } {
   const errors: string[] = []
 
-  editableColumns.value.forEach(col => {
+  editableColumns.value.forEach((col: any) => {
     const value = record[col.dataIndex]
     const columnConfig = col.columnConfig
 
@@ -1141,7 +1135,7 @@ function validate(): { valid: boolean; errors: string[] } {
   const errors: string[] = []
 
   tableData.value.forEach((row, index) => {
-    editableColumns.value.forEach(col => {
+    editableColumns.value.forEach((col: any) => {
       const value = row[col.dataIndex]
       const columnConfig = col.columnConfig
 
@@ -1215,7 +1209,7 @@ onMounted(() => {
 })
 
 // 监听 parentRecordId 变化，重新加载数据
-watch(() => props.parentRecordId, (newVal, oldVal) => {
+watch(() => props.parentRecordId, (newVal, _oldVal) => {
   if (newVal && props.mode !== 'create') {
     loadChildData()
   }

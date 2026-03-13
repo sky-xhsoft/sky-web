@@ -149,8 +149,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
 import {
   IconApps,
-  IconLeft,
-  IconRight,
   IconCopy,
   IconPrinter,
   IconRefresh,
@@ -248,12 +246,7 @@ const mask = computed(() => {
 // 按钮权限
 const canCreate = computed(() => mask.value.includes('A'))     // Add - 新增
 const canEdit = computed(() => mask.value.includes('M'))       // Modify - 修改
-const canDelete = computed(() => mask.value.includes('D'))     // Delete - 删除
-const canSubmit = computed(() => mask.value.includes('S'))     // Submit - 提交
-const canUnsubmit = computed(() => mask.value.includes('U'))   // Unsubmit - 反提交
 const canPrint = computed(() => mask.value.includes('P'))      // Print - 打印
-const canImport = computed(() => mask.value.includes('I'))     // Import - 导入
-const canExport = computed(() => mask.value.includes('E'))     // Export - 导出
 
 /**
  * 是否显示系统字段
@@ -289,7 +282,8 @@ async function loadConfig() {
 
     // 如果有子表，默认激活第一个
     if (detailTables.value.length > 0) {
-      activeDetailTab.value = String(detailTables.value[0].id)
+      const firstDetailTable = detailTables.value[0] as any
+      activeDetailTab.value = String(firstDetailTable.id)
     }
   } catch (error: any) {
     Message.error(error.message || '加载配置失败')
@@ -301,7 +295,7 @@ async function loadConfig() {
 /**
  * 表单加载完成
  */
-function handleFormLoaded(config: TableConfig) {
+function handleFormLoaded(_config: TableConfig) {
   // 加载记录列表用于上一条/下一条导航
   if (mode.value !== 'create') {
     loadRecordList()
@@ -319,19 +313,40 @@ function handleFormChange() {
  * 保存
  */
 async function handleSave() {
-  if (!formRef.value) return
+  console.log('handleSave called', formRef.value)
+  if (!formRef.value) {
+    console.log('formRef.value is null')
+    return
+  }
 
   try {
+    console.log('开始验证表单')
     // 验证表单
     const valid = await formRef.value.validate()
+    console.log('验证结果:', valid)
     if (!valid) {
       Message.warning('请检查表单填写')
       return
     }
 
+    const hasChildTables = tableConfig.value?.childTables && tableConfig.value.childTables.length > 0
+
     saving.value = true
 
-    // 保存
+    // 如果有子表，使用DynamicForm的提交逻辑（支持主子表同时保存）
+    if (hasChildTables) {
+      console.log('进入有子表分支，调用submit')
+      // DynamicForm会处理保存逻辑，保存成功后会触发submit事件，由handleFormSubmit处理后续逻辑
+      await formRef.value.submit({
+        preventDefault: () => {}
+      })
+      console.log('submit执行完成')
+      saving.value = false
+      return
+    }
+    console.log('进入无子表分支，执行原有保存逻辑')
+
+    // 没有子表，使用原有的保存逻辑
     if (mode.value === 'create') {
       // 新增模式：提交所有字段
       const formData = formRef.value.getFormData()
@@ -355,12 +370,12 @@ async function handleSave() {
           name: 'MetadataFormView',
           params: {
             tableId: tableId.value,
-            id: result.ID
+            id: String(result.ID)
           }
         })
       }
     } else {
-      // 编辑模式：只提交变更的字段
+      // 编辑模式
       const changedFields = formRef.value.getChangedFields()
 
       // 如果没有字段变更，提示用户
@@ -369,7 +384,6 @@ async function handleSave() {
         saving.value = false
         return
       }
-
 
       await formStore.updateRecord(
         (tableConfig.value!.table as any).NAME || (tableConfig.value!.table as any).name,
@@ -390,10 +404,39 @@ async function handleSave() {
 }
 
 /**
- * 表单提交（由 DynamicForm 触发）
+ * 表单提交（由 DynamicForm 触发，主子表保存成功后调用）
  */
-async function handleFormSubmit(data: FormData) {
-  await handleSave()
+async function handleFormSubmit(data: any) {
+  try {
+    Message.success('保存成功')
+    hasChanges.value = false
+
+    // 新增模式下跳转到编辑页
+    if (mode.value === 'create' && data?.ID) {
+      // 使用 navigationStore 跳转到编辑页（如果是通过 props 传入的参数）
+      if (props.tableId) {
+        navigationStore.navigateTo('MetadataFormView', `编辑${tableConfig.value!.table.DISPLAY_NAME}`, {
+          tableId: props.tableId,
+          recordId: data.ID,
+          mode: 'edit'
+        }, false) // 不推入历史栈，直接替换当前页面
+      } else {
+        // 兼容路由模式
+        router.replace({
+          name: 'MetadataFormView',
+          params: {
+            tableId: tableId.value,
+            id: String(data.ID)
+          }
+        })
+      }
+    } else {
+      // 编辑模式下刷新数据
+      await handleRefresh()
+    }
+  } catch (error: any) {
+    Message.error(error.message || '操作失败')
+  }
 }
 
 /**
@@ -521,31 +564,6 @@ async function loadRecordList() {
 /**
  * 上一条/下一条导航
  */
-async function handleNavigate(direction: 'previous' | 'next') {
-  if (hasChanges.value) {
-    const confirmed = await Modal.confirm({
-      title: '提示',
-      content: '表单有未保存的修改，确定要离开吗？'
-    })
-    if (!confirmed) return
-  }
-
-  const targetIndex = direction === 'previous'
-    ? currentIndex.value - 1
-    : currentIndex.value + 1
-
-  if (targetIndex < 0 || targetIndex >= recordList.value.length) return
-
-  const targetRecord = recordList.value[targetIndex]
-
-  router.push({
-    name: route.name as string,
-    params: {
-      tableId: tableId.value,
-      id: targetRecord.ID
-    }
-  })
-}
 
 /**
  * 子表 - 新增
@@ -572,7 +590,7 @@ function handleDetailEdit(detailTable: any, record: any) {
 /**
  * 子表 - 删除
  */
-async function handleDetailDelete(detailTable: any, record: any) {
+async function handleDetailDelete(_detailTable: any, record: any) {
   Message.success(`删除成功: ${record.DISPLAY_NAME || record.NAME}`)
 }
 
