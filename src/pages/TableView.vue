@@ -8,12 +8,6 @@ const tableName = computed(() => route.params.tableName || route.path.split('/')
 
 <template>
   <div class="table-view">
-    <div class="page-header">
-      <div>
-        <div class="title">{{ tableName }}</div>
-        <div class="subtitle">通用表页占位（后续可接入元数据与 CRUD）</div>
-      </div>
-    </div>
     <a-card>
       <p>这里将展示表 {{ tableName }} 的列表/表单等内容。</p>
     </a-card>
@@ -25,17 +19,5 @@ const tableName = computed(() => route.params.tableName || route.path.split('/')
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.title {
-  font-size: 18px;
-  font-weight: 700;
-}
-.subtitle {
-  color: var(--color-text-2);
 }
 </style>

@@ -12,17 +12,15 @@
         :model="queryForm"
         layout="inline"
         @submit="handleQuery"
+        class="query-form"
       >
-        <a-row v-if="queryColumns.length > 0" :gutter="[16, 16]" class="query-row">
-          <a-col
+        <template v-if="queryColumns.length > 0">
+          <a-form-item
             v-for="column in visibleQueryColumns"
             :key="column.DB_NAME || column.DB_NAME"
-            :span="6"
+            :label="column.DISPLAY_NAME || column.DISPLAY_NAME"
+            :field="column.DB_NAME || column.DB_NAME"
           >
-            <a-form-item
-              :label="column.DISPLAY_NAME || column.DISPLAY_NAME"
-              :field="column.DB_NAME || column.DB_NAME"
-            >
               <!-- 外键下拉选择 -->
               <ForeignKeyField
                 v-if="isForeignKeyColumn(column)"
@@ -93,19 +91,18 @@
                 @input="(value: string) => handleQueryInputChange(column, value)"
               />
             </a-form-item>
-          </a-col>
-        </a-row>
+        </template>
 
         <!-- 无查询字段提示 -->
         <div v-else class="query-empty">
           <span class="query-empty-text">暂无查询字段</span>
         </div>
 
-        <!-- 查询按钮区域 - 固定在右下角 -->
-        <div class="query-actions">
+        <!-- 查询按钮区域 -->
+        <div v-if="queryColumns.length > 0" class="query-actions">
           <a-space>
             <a-button
-              v-if="queryColumns.length > 4"
+              v-if="queryColumns.length > 3"
               type="text"
               @click="showAdvancedQuery = !showAdvancedQuery"
             >
@@ -640,8 +637,8 @@ const visibleQueryColumns = computed(() => {
   if (showAdvancedQuery.value) {
     return queryColumns.value
   }
-  // 默认只显示前4个
-  return queryColumns.value.slice(0, 4)
+  // 默认只显示前3个
+  return queryColumns.value.slice(0, 3)
 })
 
 /**
@@ -784,7 +781,7 @@ const scrollConfig = computed(() => {
 
   return {
     x: totalWidth,  // 水平滚动：设置为所有列宽度之和
-    y: 'calc(100vh - 320px)'  // 竖向滚动：根据视口高度自动计算，调整高度避免不必要的滚动条
+    y: 'auto'  // 竖向高度自动适应，由父容器flex布局控制
   }
 })
 
@@ -1628,26 +1625,31 @@ defineExpose({
   color: #1d2129;
 }
 
-.dynamic-table__query :deep(.arco-form) {
+.dynamic-table__query .query-form {
   padding: 16px;
-   /* 为按钮区域留出空间 */
+  padding-right: 260px; /* 为按钮留出足够空间 */
   position: relative;
+  min-height: 50px;
 }
 
-.dynamic-table__query :deep(.arco-form-item) {
-  margin-bottom: 0;
+.dynamic-table__query .query-form :deep(.arco-form-item) {
+  margin-bottom: 12px !important;
+  margin-right: 24px !important;
+  min-width: 180px;
+  max-width: 220px;
 }
 
-.dynamic-table__query .query-row {
-  width: 100%;
-}
-
-.query-actions {
-  position: absolute;
-  bottom: 16px;
-  right: 16px;
-  display: flex;
-  justify-content: flex-end;
+.dynamic-table__query .query-actions {
+  position: absolute !important;
+  top: 16px !important;
+  right: 16px !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  z-index: 999 !important;
+  background: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 /* 查询区域空状态 */
@@ -2136,7 +2138,7 @@ defineExpose({
   text-decoration: line-through !important;
 }
 
-/* 图例样式 */
+/* 图例样式 - 固定在页面底部 */
 .table-legend {
   display: flex;
   align-items: flex-start;
@@ -2144,9 +2146,19 @@ defineExpose({
   padding: 12px 16px;
   background: #f7f8fa;
   border-top: 1px solid #e5e6eb;
-  border-radius: 0 0 4px 4px;
   font-size: 13px;
   flex-wrap: wrap;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+/* 隐藏图例内部滚动条 */
+.table-legend::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .legend-title {
@@ -2183,6 +2195,19 @@ defineExpose({
 .legend-default {
   color: #1d2129;
   padding: 0 4px;
+}
+
+/* 让表格自动填充剩余空间 */
+.dynamic-table :deep(.arco-table) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dynamic-table :deep(.arco-table-body) {
+  flex: 1;
+  overflow-y: auto;
 }
 
 /* 图片单元格样式 */

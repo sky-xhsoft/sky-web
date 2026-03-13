@@ -62,24 +62,6 @@
       class="metadata-list-view__main"
       :class="{ 'sidebar-collapsed': sidebarCollapsed }"
     >
-      <!-- 面包屑导航 -->
-      <div class="main-breadcrumb">
-        <a-breadcrumb>
-          <a-breadcrumb-item>
-            <icon-apps />
-            元数据管理
-          </a-breadcrumb-item>
-          <a-breadcrumb-item v-if="currentSubsystem">
-            {{ currentSubsystem.SUBSYSTEM_NAME }}
-          </a-breadcrumb-item>
-          <a-breadcrumb-item v-if="currentCategory">
-            {{ currentCategory.CATEGORY_NAME }}
-          </a-breadcrumb-item>
-          <a-breadcrumb-item v-if="currentTable">
-            {{ currentTable.DISPLAY_NAME }}
-          </a-breadcrumb-item>
-        </a-breadcrumb>
-      </div>
 
       <!-- 筛选栏 - 隐式路由模式下，筛选功能已集成在 DynamicTable 组件中 -->
       <!--
@@ -437,7 +419,7 @@ async function loadTableById(tableId: number) {
 <style scoped>
 .metadata-list-view {
   display: flex;
-  height: 100vh;
+  height: 100%;
   background: #f5f5f5;
   overflow: hidden;
 }
@@ -526,24 +508,45 @@ async function loadTableById(tableId: number) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 隐藏滚动条但保留滚动功能 */
+.metadata-list-view__main :deep(.arco-scrollbar-track) {
+  display: none !important;
+}
+
+.metadata-list-view__main :deep(.dynamic-table) {
+  overflow-y: auto;
+}
+
+/* 隐藏DynamicTable内部滚动条 */
+.metadata-list-view__main :deep(.dynamic-table)::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.metadata-list-view__main :deep(.dynamic-table) {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* 隐藏Arco Table组件滚动条 */
+.metadata-list-view__main :deep(.arco-table-body)::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.metadata-list-view__main :deep(.arco-table-body) {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 .metadata-list-view__main.sidebar-collapsed {
   margin-left: -220px;
 }
 
-.main-breadcrumb {
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
-}
-
-.main-breadcrumb :deep(.arco-breadcrumb-item) {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
 
 .main-filter {
   padding: 16px 24px 0;
