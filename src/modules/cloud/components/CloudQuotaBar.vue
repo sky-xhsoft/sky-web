@@ -7,7 +7,7 @@
       <div class="cloud-quota-bar__title-section">
         <h3 class="cloud-quota-bar__title">存储空间</h3>
         <span class="cloud-quota-bar__text">
-          {{ formatSize(quota.usedSpace || 0) }} / {{ formatSize(quota.totalQuota || 0) }}
+          {{ formatSize((quota.usedSpace || quota.UsedSpace || 0)) }} / {{ formatSize((quota.totalQuota || quota.TotalQuota || 0)) }}
         </span>
       </div>
     </div>
@@ -67,37 +67,41 @@ const props = defineProps<Props>()
 
 const usagePercent = computed(() => {
   if (!props.quota) return 0
-  const total = Number(props.quota.totalQuota) || 0
-  const used = Number(props.quota.usedSpace) || 0
+  // 兼容大驼峰和小驼峰两种字段名
+  const total = Number(props.quota.totalQuota || props.quota.TotalQuota) || 0
+  const used = Number(props.quota.usedSpace || props.quota.UsedSpace) || 0
+
+  console.log('Quota calculation: quota =', props.quota)
+  console.log('Quota calculation: total =', total, 'used =', used, 'ratio =', used / total)
 
   if (total <= 0) return 0
 
-  // 计算比例（0-1），Arco Design 会自动乘以 100 来显示
+  // a-progress percent 需要 0-1
   const ratio = used / total
   return Math.min(1, Math.max(0, ratio))
 })
 
-// 用于显示的百分比文本（需要手动乘以 100）
+// 用于显示的百分比文本
 const displayPercent = computed(() => {
-  return (usagePercent.value * 100).toFixed(1)
+  return usagePercent.value.toFixed(1)
 })
 
 const progressColor = computed(() => {
-  const percent = usagePercent.value * 100 // 转换为百分比
+  const percent = usagePercent.value
   if (percent >= 90) return '#f53f3f'
   if (percent >= 70) return '#ff7d00'
   return '#00b42a'
 })
 
 const progressStatus = computed(() => {
-  const percent = usagePercent.value * 100 // 转换为百分比
+  const percent = usagePercent.value
   if (percent >= 90) return 'danger'
   if (percent >= 70) return 'warning'
   return 'success'
 })
 
 const percentClass = computed(() => {
-  const percent = usagePercent.value * 100 // 转换为百分比
+  const percent = usagePercent.value
   if (percent >= 90) return 'is-danger'
   if (percent >= 70) return 'is-warning'
   return 'is-safe'

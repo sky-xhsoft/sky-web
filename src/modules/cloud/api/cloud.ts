@@ -511,7 +511,19 @@ export async function batchMove(params: BatchMoveRequest): Promise<BatchMoveResp
  */
 export async function getQuota(): Promise<QuotaInfo> {
   const { data } = await api.get<ApiResponse<QuotaInfo>>('/cloud/quota')
-  return data?.data || {}
+  const quota = data?.data || {}
+
+  // 兼容大驼峰和小驼峰字段名，转换为前端期望的小驼峰
+  return {
+    id: quota.id || quota.ID,
+    userId: quota.userId || quota.UserId,
+    totalQuota: quota.totalQuota || quota.TotalQuota,
+    usedSpace: quota.usedSpace || quota.UsedSpace,
+    fileCount: quota.fileCount || quota.FileCount,
+    folderCount: quota.folderCount || quota.FolderCount,
+    maxFileSize: quota.maxFileSize || quota.MaxFileSize,
+    quotaType: quota.quotaType || quota.QuotaType,
+  }
 }
 
 // ==================== 分片上传和断点续传 API ====================
@@ -547,6 +559,8 @@ export async function initMultipartUpload(params: {
     chunkSize: params.chunkSize || 5242880, // 默认5MB
     folderId: params.folderId,
     storageType: params.storageType || 'local',
+  }, {
+    timeout: 60000, // 初始化上传设置60秒超时
   })
 
   return data.data
@@ -571,6 +585,7 @@ export async function uploadMultipartChunk(
 
   await api.post('/cloud/files/multipart/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 0, // 分片上传不限制超时
     signal,
   })
 }
@@ -603,6 +618,8 @@ export async function getMultipartUploadStatus(sessionId: number): Promise<{
 export async function completeMultipartUpload(sessionId: number): Promise<FileItem> {
   const { data } = await api.post<ApiResponse<any>>('/cloud/files/multipart/complete', {
     sessionId,
+  }, {
+    timeout: 0, // 合并分片可能需要较长时间，不限制超时
   })
 
   // 后端现在返回 CloudItem 格式，需要转换为 FileItem
@@ -642,6 +659,41 @@ export async function resumeMultipartUpload(fileMd5: string): Promise<{
     fileMd5,
   })
   return data.data
+}
+
+/**
+ * 获取分片预签名上传URL（前端直传模式）
+ * 对应后端: GET /api/v1/cloud/files/multipart/{sessionId}/presigned
+ */
+export async function getChunkPresignedURL(
+  sessionId: number,
+  chunkIndex: number
+): Promise<{
+  sessionId: number
+  chunkIndex: number
+  presignedUrl: string
+  expireSeconds: number
+}> {
+  const { data } = await api.get<ApiResponse<any>>(
+    `/cloud/files/multipart/${sessionId}/presigned?chunkIndex=${chunkIndex}`
+  )
+  return data.data
+}
+
+/**
+ * 标记分片已上传（前端直传模式，分片上传成功后调用）
+ * 对应后端: POST /api/v1/cloud/files/multipart/{sessionId}/chunk
+ */
+export async function markChunkUploaded(
+  sessionId: number,
+  chunkIndex: number,
+  etag?: string
+): Promise<void> {
+  let url = `/cloud/files/multipart/${sessionId}/chunk?chunkIndex=${chunkIndex}`
+  if (etag) {
+    url += `&etag=${encodeURIComponent(etag)}`
+  }
+  await api.post(url)
 }
 
 // ==================== 兼容旧接口（保持向后兼容）====================
@@ -924,8 +976,9 @@ export async function fetchItems(parentId?: number): Promise<{ folders: Folder[]
     FolderID: item.parentId ?? 0,
     UserID: item.ownerId || 0,
     CreateTime: item.createTime || '',
-    StoragePath: item.storagePath || '',
-    AccessURL: item.accessUrl || '',
+    StorageType: item.storageType || item.StorageType,
+    StoragePath: item.storagePath || item.StoragePath,
+    AccessURL: item.accessUrl || item.AccessURL,
   })
 
   const converted = {

@@ -119,7 +119,28 @@
                     :class="{ 'clickable': item.type === 'folder' || canPreview(item.name) }"
                     @click="item.type === 'folder' ? navigateToFolder(item.id, item.name) : handleFileClick(item)"
                 >
-                  <div class="file-card-icon">
+                  <!-- 图片 + accessUrl -->
+                  <div v-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'image'" class="file-card-preview-image">
+                    <img :src="getAccessUrl(item)" :alt="item.name" />
+                    <div class="file-card-overlay">
+                      <icon-eye :size="28" />
+                    </div>
+                  </div>
+                  <!-- 视频 + accessUrl -->
+                  <div v-else-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'video'" class="file-card-preview-video">
+                    <video
+                      :src="getAccessUrl(item)"
+                      muted
+                      preload="metadata"
+                      @click.stop="handlePreviewFile(item)"
+                    >
+                    </video>
+                    <div class="file-card-overlay" @click.stop="handlePreviewFile(item)">
+                      <icon-play-circle :size="32" color="white" />
+                    </div>
+                  </div>
+                  <!-- 其他类型显示图标 -->
+                  <div v-else class="file-card-icon">
                     <icon-folder v-if="item.type === 'folder'" :size="48" />
                     <icon-image v-else-if="getFileType(item.name) === 'image'" :size="48" />
                     <icon-video-camera v-else-if="getFileType(item.name) === 'video'" :size="48" />
@@ -127,11 +148,7 @@
                     <icon-file-pdf v-else-if="getFileType(item.name) === 'pdf'" :size="48" />
                     <icon-file v-else :size="48" />
                   </div>
-                  <div class="file-card-name" :title="item.name">{{ item.name }}</div>
-                  <div class="file-card-info">
-                    <span v-if="item.type === 'file'">{{ formatFileSize(item.size) }}</span>
-                    <span v-else>文件夹</span>
-                  </div>
+                  <div class="file-card-name" :title="item.displayName || item.name">{{ item.displayName || item.name }}</div>
                   <div class="file-card-actions" v-if="item.type === 'file'">
                     <a-button
                         v-if="canPreview(item.name)"
@@ -257,6 +274,7 @@ import {
   IconVideoCamera,
   IconMusic,
   IconFilePdf,
+  IconPlayCircle,
 } from '@arco-design/web-vue/es/icon'
 import { getShareInfo, accessShare, downloadShareFile, getShareFolderContent } from '@/modules/cloud/api/share'
 import type { ShareInfo } from '@/modules/cloud/types'
@@ -393,6 +411,25 @@ async function handleVerify() {
 async function handleDownload() {
   if (!shareInfo.value || shareInfo.value.resourceType !== 'file') return
 
+  // 如果是 oss 存储并且有 accessUrl，直接下载 oss URL
+  const file = shareInfo.value.file
+  if (file) {
+    const storageType = file.storageType || file.StorageType
+    const accessUrl = getAccessUrl(file)
+    if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
+      const link = document.createElement('a')
+      link.href = accessUrl
+      link.download = file.name || `file-${Date.now()}`
+      link.rel = 'noopener'
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      Message.success('开始下载')
+      return
+    }
+  }
+
   downloading.value = true
   try {
     await downloadShareFile(
@@ -440,13 +477,29 @@ async function loadFolderContent(parentId?: number) {
     // 添加文件
     if (content.files && content.files.length > 0) {
       content.files.forEach((file: any) => {
-        items.push({
-          id: file.id,
-          name: file.name || file.fileName,
-          type: 'file',
-          size: file.fileSize || 0,
-          updateTime: file.updateTime || '',
-        })
+        // 兼容多种字段名格式：Go后端JSON可能返回小驼峰
+        // name 不包含扩展名，fileExt 单独存储，需要拼接完整文件名
+        const baseName = file.name || file.Name || file.fileName || file.FileName || ''
+        let fileExt = file.fileExt || file.FileExt || ''
+        // 处理 fileExt 不带点的情况
+        if (fileExt && !fileExt.startsWith('.')) {
+          fileExt = '.' + fileExt
+        }
+        const fullName = baseName + fileExt
+
+        const item = {
+          id: file.id || file.ID || 0,
+          name: fullName,
+          displayName: baseName, // 显示用，不带扩展名
+          type: file.type || file.Type || 'file',
+          size: (file.fileSize || file.FileSize || file.size || file.Size || file.File_size || file.file_size || file.filesize || 0),
+          updateTime: file.updateTime || file.UpdateTime || file.createTime || file.CreateTime || '',
+          storageType: file.storageType || file.StorageType || '',
+          accessUrl: file.accessUrl || file.accessURL || file.AccessURL || file.AccessUrl || '',
+          fileExt: fileExt,
+        }
+        items.push(item)
+        console.log('Share file item:', item, 'hasAccessUrl:', hasAccessUrl(item), 'getFileType:', getFileType(item.name), 'fullName:', fullName)
       })
     }
 
@@ -501,6 +554,16 @@ function getFileType(fileName: string): 'image' | 'video' | 'audio' | 'pdf' | 't
   return 'unknown'
 }
 
+// 判断是否存在 accessUrl
+function hasAccessUrl(item: any): boolean {
+  return !!(item.accessUrl || item.accessURL || item.AccessURL)
+}
+
+// 获取 accessUrl
+function getAccessUrl(item: any): string {
+  return item.accessUrl || item.accessURL || item.AccessURL
+}
+
 // 判断文件是否可预览
 function canPreview(fileName: string): boolean {
   const type = getFileType(fileName)
@@ -528,7 +591,17 @@ function handlePreviewFile(file: any) {
 
   previewFile.value = file
   previewType.value = getFileType(file.name)
-  previewUrl.value = getFilePreviewUrl(file.id) // 缓存预览 URL
+
+  // 如果是 oss 存储并且有 accessUrl，直接使用 oss URL 预览
+  const storageType = file.storageType || file.StorageType
+  const accessUrl = getAccessUrl(file)
+  if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
+    previewUrl.value = accessUrl
+  } else {
+    // 其他情况使用后端预览接口
+    previewUrl.value = getFilePreviewUrl(file.id)
+  }
+
   previewVisible.value = true
 }
 
@@ -576,6 +649,22 @@ function handleFileClick(file: any) {
 
 // 下载文件
 function handleDownloadFile(file: any) {
+  // 如果是 oss 存储并且有 accessUrl，直接下载 oss URL
+  const storageType = file.storageType || file.StorageType
+  const accessUrl = getAccessUrl(file)
+  if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
+    const link = document.createElement('a')
+    link.href = accessUrl
+    link.download = file.name
+    link.rel = 'noopener'
+    link.target = '_blank'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    Message.success('开始下载')
+    return
+  }
+  // 其他情况使用后端下载接口
   const downloadUrl = getFileDownloadUrl(file.id)
   const link = document.createElement('a')
   link.href = downloadUrl
@@ -733,23 +822,37 @@ onMounted(() => {
 }
 
 .file-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
   gap: 16px;
   padding: 8px 0;
 }
 
-@media (max-width: 768px) {
+/* 平板 - 3列 */
+@media (min-width: 641px) {
   .file-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr) !important;
   }
 }
 
-@media (min-width: 1024px) {
+/* 小桌面 - 4列 */
+@media (min-width: 1025px) {
   .file-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* 大桌面 - 6列 */
+@media (min-width: 1441px) {
+  .file-grid {
+    grid-template-columns: repeat(6, 1fr) !important;
+  }
+}
+
+/* 超大桌面 - 8列 */
+@media (min-width: 1921px) {
+  .file-grid {
+    grid-template-columns: repeat(8, 1fr) !important;
   }
 }
 
@@ -757,11 +860,12 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px;
+  padding: 0;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   transition: all 0.2s;
   background: white;
+  overflow: hidden;
 }
 
 .file-card:hover {
@@ -777,9 +881,65 @@ onMounted(() => {
   background: #f9fafb;
 }
 
+/* 图片预览缩略图 */
+.file-card-preview-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.file-card-preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.file-card:hover .file-card-preview-image img {
+  transform: scale(1.05);
+}
+
+/* 视频预览 */
+.file-card-preview-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+}
+
+.file-card-preview-video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-card-preview-video .video-placeholder {
+  color: white;
+  opacity: 0.8;
+}
+
+/* 悬浮遮罩 */
+.file-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  color: white;
+}
+
+.file-card:hover .file-card-overlay {
+  opacity: 1;
+}
+
 .file-card-icon {
   color: #667eea;
-  margin-bottom: 12px;
+  margin: 16px 0 12px;
 }
 
 .file-card-name {
@@ -788,7 +948,7 @@ onMounted(() => {
   color: #1f2937;
   text-align: center;
   word-break: break-word;
-  margin-bottom: 8px;
+  margin: 12px 12px 8px;
   width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -801,10 +961,11 @@ onMounted(() => {
   font-size: 12px;
   color: #6b7280;
   margin-bottom: 8px;
+  padding: 0 12px;
 }
 
 .file-card-actions {
-  margin-top: 8px;
+  margin: 8px 0 12px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;

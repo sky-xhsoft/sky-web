@@ -2,7 +2,6 @@
   <div class="cloud-view">
     <!-- 主内容区 -->
     <div class="cloud-view__content">
-
       <!-- 主区域 -->
       <main ref="dropZoneRef" class="cloud-view__main" :class="{ 'drag-over': dragUpload.isDragging.value }">
         <!-- 拖拽上传提示覆盖层 -->
@@ -14,78 +13,112 @@
           </div>
         </div>
 
-        <!-- 顶部栏：面包屑 + 我的分享 + 配额 -->
-        <CloudTopBar
-          :items="store.breadcrumbs"
-          :current-id="store.currentFolderId"
-          @navigate="handleBreadcrumbNavigate"
-          @open-share-manager="handleOpenShareManager"
-        />
-
+        <!-- 顶部信息栏：面包屑 + 配额 + 我的分享 -->
+        <div class="cloud-view__header">
+          <div class="header-left">
+            <CloudBreadcrumb
+              :items="store.breadcrumbs"
+              :current-id="store.currentFolderId"
+              @navigate="handleBreadcrumbNavigate"
+            />
+          </div>
+          <div class="header-right">
+            <!-- 精简版配额显示 -->
+            <div class="quota-simple" v-if="store.quota">
+              <div class="quota-info">
+                <span class="quota-text">{{ formatFileSize(store.quota.usedSpace || 0) }} / {{ formatFileSize(store.quota.totalQuota || 0) }}</span>
+              </div>
+              <a-progress
+                :percent="(store.quota.usedSpace || 0) / (store.quota.totalQuota || 1)"
+                :show-text="false"
+                :stroke-width="6"
+                :status="(store.quota.usedSpace || 0) / (store.quota.totalQuota || 1) > 0.9 ? 'danger' : (store.quota.usedSpace || 0) / (store.quota.totalQuota || 1) > 0.7 ? 'warning' : 'success'"
+                class="quota-progress"
+              />
+            </div>
+            <a-button type="text" @click="handleOpenShareManager">
+              <template #icon><icon-share-alt /></template>
+              我的分享
+            </a-button>
+          </div>
+        </div>
 
         <!-- 工具栏 -->
-        <CloudToolbar
-          :view-mode="store.viewMode"
-          :refreshing="refreshing"
-          @upload="handleUpload"
-          @create-folder="handleShowCreateFolderDialog"
-          @refresh="handleRefresh"
-          @view-mode-change="handleViewModeChange"
-        >
-          <template #search>
-            <CloudSearchBar
-              v-model="searchQuery"
-              :searching="search.searching.value"
-              :result-count="search.resultCount.value"
-              @search="handleSearch"
-              @clear="handleClearSearch"
-            />
-          </template>
-          <template #sort>
-            <CloudSortDropdown
-              :sort-by="store.sortBy"
-              :sort-order="store.sortOrder"
-              @sort-by-change="handleSortByChange"
-              @sort-order-toggle="handleSortOrderToggle"
-            />
-          </template>
-        </CloudToolbar>
+        <div class="cloud-view__toolbar-wrapper">
+          <CloudToolbar
+            :view-mode="store.viewMode"
+            :refreshing="refreshing"
+            @upload="handleUpload"
+            @create-folder="handleShowCreateFolderDialog"
+            @refresh="handleRefresh"
+            @view-mode-change="handleViewModeChange"
+          >
+            <template #search>
+              <CloudSearchBar
+                v-model="searchQuery"
+                :searching="search.searching.value"
+                :result-count="search.resultCount.value"
+                @search="handleSearch"
+                @clear="handleClearSearch"
+              />
+            </template>
+            <template #sort>
+              <CloudSortDropdown
+                :sort-by="store.sortBy"
+                :sort-order="store.sortOrder"
+                @sort-by-change="handleSortByChange"
+                @sort-order-toggle="handleSortOrderToggle"
+              />
+            </template>
+          </CloudToolbar>
+        </div>
 
         <!-- 文件展示区 -->
-        <CloudFileDisplay
-          :view-mode="store.viewMode"
-          :items="store.gridItems"
-          :loading="store.loading.files"
-          :selected-ids="allSelectedIds"
-          :selectable="true"
-          @item-click="handleItemClick"
-          @item-double-click="handleItemDoubleClick"
-          @item-select="handleItemSelect"
-          @list-select="handleListSelect"
-          @item-action="handleItemAction"
-        />
+        <div class="cloud-view__files-wrapper">
+          <CloudFileDisplay
+            :view-mode="store.viewMode"
+            :items="store.gridItems"
+            :loading="store.loading.files"
+            :selected-ids="allSelectedIds"
+            :selectable="true"
+            @item-click="handleItemClick"
+            @item-double-click="handleItemDoubleClick"
+            @item-select="handleItemSelect"
+            @list-select="handleListSelect"
+            @item-action="handleItemAction"
+          />
+        </div>
 
+        <!-- 悬浮批量操作工具栏 - 选中文件时显示 -->
+        <transition name="slide-up">
+          <div v-if="selection.selectedCount.value > 0" class="cloud-view__batch-actions">
+            <div class="batch-actions__inner">
+              <div class="batch-info">
+                已选中 <span class="batch-count">{{ selection.selectedCount.value }}</span> 项
+                <span class="batch-size" v-if="selection.selectedTotalSize.value > 0">
+                  共 {{ formatFileSize(selection.selectedTotalSize.value) }}
+                </span>
+              </div>
+              <div class="batch-buttons">
+                <a-button size="small" @click="handleSelectAll">全选</a-button>
+                <a-button size="small" @click="handleClearSelection">取消</a-button>
+                <a-button size="small" @click="handleBatchDownload" :disabled="selection.getSelectedFiles().length === 0">
+                  <template #icon><icon-download /></template>
+                  下载
+                </a-button>
+                <a-button size="small" @click="handleShowMoveDialog">
+                  <template #icon><icon-sort /></template>
+                  移动
+                </a-button>
+                <a-button size="small" status="danger" @click="handleShowBatchDeleteDialog">
+                  <template #icon><icon-delete /></template>
+                  删除
+                </a-button>
+              </div>
+            </div>
+          </div>
+        </transition>
       </main>
-
-      <!-- 右侧栏：配额信息 + 批量操作 -->
-      <aside class="cloud-view__sidebar">
-        <CloudQuotaBar :quota="store.quota" />
-
-        <!-- 批量操作卡片 -->
-        <CloudBatchActions
-          v-if="selection.selectedCount.value > 0"
-          :visible="selection.selectedCount.value > 0"
-          :selected-count="selection.selectedCount.value"
-          :selected-size="selection.selectedTotalSize.value"
-          :total-count="store.files.length + store.currentFolderChildren.length"
-          :has-selected-files="selection.getSelectedFiles().length > 0"
-          @select-all="handleSelectAll"
-          @clear="handleClearSelection"
-          @download="handleBatchDownload"
-          @move="handleShowMoveDialog"
-          @delete="handleShowBatchDeleteDialog"
-        />
-      </aside>
     </div>
 
     <!-- 上传进度 -->
@@ -200,15 +233,13 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { IconShareAlt, IconCloudDownload } from '@arco-design/web-vue/es/icon'
+import { IconShareAlt, IconCloudDownload, IconDownload, IconSort, IconDelete } from '@arco-design/web-vue/es/icon'
 import type { TreeNodeData } from '@arco-design/web-vue'
 
 // 导入组件
 import {
   CloudBreadcrumb,
-  CloudTopBar,
   CloudFileDisplay,
-  CloudQuotaBar,
   CloudToolbar,
   CloudSearchBar,
   CloudSortDropdown,
@@ -604,6 +635,15 @@ async function handleDelete() {
   }
 
   if (success) {
+    // 删除成功后清空选中状态
+    if (currentItem.value) {
+      if (currentDeleteType.value === 'file') {
+        store.selectedFileIds.delete(currentItem.value.id)
+      } else if (currentDeleteType.value === 'folder') {
+        store.selectedFolderIds.delete(currentItem.value.id)
+      }
+    }
+
     dialogs.delete = false
     currentItem.value = null
   }
@@ -744,6 +784,16 @@ async function handlePreviewDownload() {
   }
 }
 
+/**
+ * 格式化文件大小
+ */
+function formatFileSize(size: number): string {
+  if (size < 1024) return size + ' B'
+  else if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB'
+  else if (size < 1024 * 1024 * 1024) return (size / (1024 * 1024)).toFixed(1) + ' MB'
+  else return (size / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
+}
+
 </script>
 
 <style scoped>
@@ -759,12 +809,10 @@ async function handlePreviewDownload() {
 .cloud-view__content {
   display: flex;
   flex: 1;
-  gap: 20px;
   padding: 20px;
   width: 100%;
   overflow: hidden;
 }
-
 
 .cloud-view__main {
   flex: 1;
@@ -779,12 +827,119 @@ async function handlePreviewDownload() {
   overflow: hidden;
 }
 
-/* 右侧栏 */
-.cloud-view__sidebar {
-  width: 360px;
+/* 顶部信息栏 */
+.cloud-view__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: linear-gradient(to right, #f8f9ff 0%, #ffffff 100%);
+  border-bottom: 1px solid #f0f0f0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header-left {
+  flex: 1;
+  min-width: 200px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 精简版配额显示 */
+.quota-simple {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 4px;
+  min-width: 180px;
+}
+
+.quota-text {
+  font-size: 12px;
+  color: #666;
+  font-family: 'Consolas', monospace;
+}
+
+.quota-progress {
+  width: 100%;
+  margin: 0;
+}
+
+/* 工具栏包装 */
+.cloud-view__toolbar-wrapper {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f5f5f5;
+  background: #fafafa;
+}
+
+/* 文件区域包装 */
+.cloud-view__files-wrapper {
+  flex: 1;
+  overflow: auto;
+  padding-bottom: 70px; /* 给悬浮工具栏留出空间 */
+}
+
+/* 悬浮批量操作栏 */
+.cloud-view__batch-actions {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  width: 90%;
+  max-width: 800px;
+}
+
+.batch-actions__inner {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(8px);
+  border: 1px solid #e8e8e8;
+}
+
+.batch-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #333;
+}
+
+.batch-count {
+  color: #165dff;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.batch-size {
+  color: #666;
+  font-size: 13px;
+}
+
+.batch-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* 悬浮工具栏动画 */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
 }
 
 /* 顶部栏：面包屑 + 操作按钮 */
@@ -885,36 +1040,138 @@ async function handlePreviewDownload() {
 
 /* 响应式调整 */
 
+/* 响应式适配 */
 @media (max-width: 1200px) {
-  .cloud-view__sidebar {
-    width: 300px;
+  .quota-simple {
+    min-width: 150px;
   }
 }
 
 @media (max-width: 968px) {
   .cloud-view__content {
-    flex-direction: column;
     padding: 12px;
   }
 
-  .cloud-view__sidebar {
-    width: 100%;
-    order: -1; /* 移到上方 */
-  }
-
-  .cloud-view__top-bar {
+  .cloud-view__header {
     flex-direction: column;
     align-items: flex-start;
     padding: 12px;
   }
 
-  .cloud-view__top-actions {
+  .header-right {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: space-between;
   }
 
-  .cloud-view__files {
-    min-height: 400px;
+  .quota-simple {
+    width: 100%;
+    max-width: 250px;
+  }
+
+  .cloud-view__toolbar-wrapper {
+    padding: 12px;
+  }
+}
+
+/* 移动端适配：768px以下 */
+@media (max-width: 768px) {
+  .cloud-view {
+    height: 100%;
+    min-height: calc(100vh - 64px);
+  }
+
+  .cloud-view__content {
+    padding: 8px;
+  }
+
+  .cloud-view__main {
+    border-radius: 8px;
+  }
+
+  .cloud-view__header {
+    padding: 12px;
+  }
+
+  .header-right {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .quota-inline {
+    max-width: 100%;
+  }
+
+  /* 工具栏适配 */
+  .cloud-view__toolbar {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .cloud-view__toolbar-left,
+  .cloud-view__toolbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .cloud-view__search-bar {
+    width: 100%;
+  }
+
+  /* 面包屑适配 */
+  .cloud-breadcrumb {
+    font-size: 14px;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 4px;
+  }
+
+  /* 批量操作悬浮栏适配 */
+  .cloud-view__batch-actions {
+    width: 95%;
+    bottom: 16px;
+  }
+
+  .batch-actions__inner {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .batch-info {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .batch-buttons {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* 对话框适配 */
+  .arco-modal {
+    width: 95% !important;
+    margin: 0 auto;
+  }
+
+  .arco-drawer {
+    width: 100% !important;
+  }
+
+  /* 上传进度条适配 */
+  .cloud-upload-progress {
+    padding: 8px 12px;
+  }
+
+  /* 拖拽提示适配 */
+  .drag-overlay-text {
+    font-size: 20px;
+  }
+
+  .drag-overlay-hint {
+    font-size: 14px;
   }
 }
 </style>
