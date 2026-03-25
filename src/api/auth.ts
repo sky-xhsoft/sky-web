@@ -19,11 +19,30 @@ export type UserInfo = {
   companyId: number
 }
 
+export type CompanyInfo = {
+  id: number
+  name: string
+  code: string
+  domain?: string
+  description: string
+  status: string
+}
+
+export type CompanyConf = {
+  id: number
+  sysCompanyId: number
+  secretId: string
+  secretKey: string
+  region: string
+}
+
 export type LoginResponse = {
   token: string
   refreshToken: string
   expiresIn: number
   user: UserInfo
+  company?: CompanyInfo
+  companyConf?: CompanyConf
 }
 
 export type RefreshTokenResponse = {

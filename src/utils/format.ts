@@ -84,3 +84,23 @@ export function formatTime(value: any): string {
     return String(value)
   }
 }
+
+/**
+ * 格式化文件大小
+ * @param size 文件大小（字节）
+ * @param decimals 小数位数，默认1位
+ * @returns 格式化后的大小字符串，如 "1.5 MB"
+ */
+export function formatFileSize(size: number, decimals: number = 1): string {
+  if (size === 0) return '0 B'
+  if (size < 0) return '0 B'
+
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+
+  const i = Math.floor(Math.log(size) / Math.log(k))
+  const formattedSize = size / Math.pow(k, i)
+
+  return `${formattedSize.toFixed(dm)} ${sizes[i]}`
+}

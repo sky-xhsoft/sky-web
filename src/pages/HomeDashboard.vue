@@ -508,4 +508,35 @@ onMounted(() => {
   color: #4e5969;
   margin-bottom: 4px;
 }
+
+/* 响应式适配：小屏幕 */
+@media (max-width: 768px) {
+  .welcome-section {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+    padding: 20px 16px;
+  }
+
+  .welcome-title {
+    font-size: 22px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 0 12px;
+  }
+
+  .shortcuts-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .row-section {
+    grid-template-columns: 1fr;
+  }
+
+  .section {
+    padding: 0 12px;
+  }
+}
 </style>

@@ -331,7 +331,9 @@ export function useCloudUpload() {
     store.uploadQueue.push(task)
 
     try {
-      const manager = new ResumableUploadManager(file, folderId)
+      const manager = new ResumableUploadManager(file, folderId, {
+        useDirectUpload: true, // 开启前端直传模式，直接上传到腾讯云COS，不经过后端中转
+      })
 
       // 设置进度回调，传入初始任务
     manager.setProgressCallback((progress) => {

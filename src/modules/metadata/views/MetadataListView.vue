@@ -1,94 +1,27 @@
 <!-- 元数据列表视图 -->
 <template>
-  <div class="metadata-list-view" :class="{ 'no-sidebar': true }">
-    <!-- 左侧导航树 - 隐式路由模式下隐藏（已在 BasicLayout 菜单中显示） -->
-    <aside v-if="false" class="metadata-list-view__sidebar">
-      <div class="sidebar-header">
-        <h3>元数据管理</h3>
-      </div>
-
-      <!-- 搜索框 -->
-      <div class="sidebar-search">
-        <a-input-search
-          v-model="searchKeyword"
-          placeholder="搜索表单"
-          allow-clear
-          @search="handleTreeSearch"
-        />
-      </div>
-
-      <!-- 树形菜单 -->
-      <div class="sidebar-tree">
-        <a-spin :loading="treeLoading" class="tree-spin">
-          <a-tree
-            v-if="filteredTree.length > 0"
-            :data="filteredTree"
-            :selected-keys="selectedKeys"
-            :expanded-keys="expandedKeys"
-            :show-line="true"
-            :block-node="true"
-            @select="handleNodeSelect"
-            @expand="handleNodeExpand"
-          >
-            <template #icon="{ node }">
-              <icon-folder v-if="node.type === 'subsystem'" />
-              <icon-folder v-else-if="node.type === 'category'" />
-              <icon-file v-else />
-            </template>
-          </a-tree>
-
-          <a-empty v-else description="暂无数据" />
-        </a-spin>
-      </div>
-
-      <!-- 折叠按钮 -->
-      <div class="sidebar-footer">
-        <a-button
-          type="text"
-          long
-          @click="toggleSidebar"
-        >
-          <template #icon>
-            <icon-menu-fold v-if="!sidebarCollapsed" />
-            <icon-menu-unfold v-else />
-          </template>
-          {{ sidebarCollapsed ? '展开' : '收起' }}
-        </a-button>
-      </div>
-    </aside>
+  <div class="metadata-list-view">
 
     <!-- 主内容区 -->
-    <main
-      class="metadata-list-view__main"
-      :class="{ 'sidebar-collapsed': sidebarCollapsed }"
-    >
-
-      <!-- 筛选栏 - 隐式路由模式下，筛选功能已集成在 DynamicTable 组件中 -->
-      <!--
-      <div v-if="currentTable" class="main-filter">
-        ...已注释，使用 DynamicTable 内置的筛选功能
-      </div>
-      -->
-
+    <main class="metadata-list-view__main">
       <!-- 表格区域 -->
       <div v-if="currentTable && currentTable.ID" class="main-table">
-        <a-card :bordered="false" class="table-card">
-          <DynamicTable
-            ref="tableRef"
-            :key="currentTable.ID"
-            :table-id="currentTable.ID"
-            :filters="currentFilters"
-            @create="handleCreate"
-            @view="handleView"
-            @edit="handleEdit"
-            @delete="handleDelete"
-          />
-        </a-card>
+        <!-- 动态表格组件，已经集成了查询区域、工具栏、表格 -->
+        <DynamicTable
+          ref="tableRef"
+          :key="currentTable.ID"
+          :table-id="currentTable.ID"
+          :filters="currentFilters"
+          @create="handleCreate"
+          @view="handleView"
+          @edit="handleEdit"
+          @delete="handleDelete"
+        />
       </div>
 
       <!-- 空状态 -->
       <div v-else class="main-empty">
-        <a-empty description="请从左侧选择表单">
+        <a-empty description="请从左侧菜单选择需要管理的表单">
           <template #image>
             <icon-file :size="64" />
           </template>
@@ -99,20 +32,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
-import {
-  IconFolder,
-  IconFile,
-  IconApps,
-  IconMenuFold,
-  IconMenuUnfold
-} from '@arco-design/web-vue/es/icon'
+import { IconApps, IconFile } from '@arco-design/web-vue/es/icon'
 import { DynamicTable } from '@/modules/metadata'
 import { useMetadataStore } from '@/modules/metadata'
 import { useNavigationStore } from '@/stores/navigation'
-import type { TreeNode, SysTable, Subsystem, TableCategory } from '@/modules/metadata'
+import type { SysTable } from '@/modules/metadata'
 
 // ==================== Props ====================
 
@@ -134,168 +61,9 @@ const navigationStore = useNavigationStore()
 
 // ==================== 状态 ====================
 
-const searchKeyword = ref('')
-const selectedKeys = ref<string[]>([])
-const expandedKeys = ref<string[]>([])
-const sidebarCollapsed = ref(false)
-const treeLoading = ref(false)
-
 const filterForm = ref<Record<string, any>>({})
 const currentFilters = ref<Record<string, any>>({})
-
-const currentSubsystem = ref<Subsystem | null>(null)
-const currentCategory = ref<TableCategory | null>(null)
 const currentTable = ref<SysTable | null>(null)
-
-// ==================== 计算属性 ====================
-
-/**
- * 树形数据
- */
-const treeData = computed(() => {
-  return metadataStore.subsystemTree
-})
-
-/**
- * 过滤后的树
- */
-const filteredTree = computed(() => {
-  if (!searchKeyword.value) {
-    return treeData.value
-  }
-
-  const keyword = searchKeyword.value.toLowerCase()
-
-  function filterNode(nodes: TreeNode[]): TreeNode[] {
-    return nodes
-      .map(node => {
-        const title = String(node.title).toLowerCase()
-        const children = node.children ? filterNode(node.children) : []
-
-        if (title.includes(keyword) || children.length > 0) {
-          return {
-            ...node,
-            children
-          }
-        }
-        return null
-      })
-      .filter(Boolean) as TreeNode[]
-  }
-
-  return filterNode(treeData.value)
-})
-
-/**
- * 筛选字段列表（前3个可见字段）
- */
-// ==================== 方法 ====================
-
-/**
- * 树搜索
- */
-function handleTreeSearch(value: string) {
-  if (value) {
-    // 展开所有匹配的节点
-    const allKeys: string[] = []
-    function collectKeys(nodes: TreeNode[]) {
-      nodes.forEach(node => {
-        allKeys.push(node.key as string)
-        if (node.children) {
-          collectKeys(node.children)
-        }
-      })
-    }
-    collectKeys(filteredTree.value)
-    expandedKeys.value = allKeys
-  } else {
-    // 恢复默认展开
-    if (treeData.value.length > 0 && treeData.value[0]?.key) {
-      expandedKeys.value = [treeData.value[0].key as string]
-    }
-  }
-}
-
-/**
- * 树节点选择
- */
-function handleNodeSelect(keys: string[], event: any) {
-  const key = keys[0]
-  if (!key) return
-
-  selectedKeys.value = [key]
-
-  const node = event.node
-  const nodeData = node.dataRef.data
-
-  // 更新当前选中的节点
-  if (node.dataRef.type === 'table') {
-    currentTable.value = nodeData
-    currentCategory.value = findCategoryByTableId(nodeData.ID)
-    currentSubsystem.value = findSubsystemByCategoryId(currentCategory.value?.ID)
-
-    // 清空筛选条件
-    filterForm.value = {}
-    currentFilters.value = {}
-
-    // 更新 URL，保持路由参数同步
-    router.push({
-      name: 'MetadataBrowse',
-      params: { tableId: String(nodeData.ID) }
-    })
-  } else {
-    currentTable.value = null
-    // 如果选择的不是表单节点，移除 tableId 参数
-    if (route.params.tableId) {
-      router.push({
-        name: 'MetadataBrowse'
-      })
-    }
-  }
-}
-
-/**
- * 树节点展开
- */
-function handleNodeExpand(keys: string[]) {
-  expandedKeys.value = keys
-}
-
-/**
- * 查找表类别
- */
-function findCategoryByTableId(tableId: number): TableCategory | null {
-  for (const [categoryId, tables] of metadataStore.tables.entries()) {
-    if (tables.some(t => t.ID === tableId)) {
-      for (const [, categories] of metadataStore.tableCategories.entries()) {
-        const category = categories.find(c => c.ID === categoryId)
-        if (category) return category
-      }
-    }
-  }
-  return null
-}
-
-/**
- * 查找子系统
- */
-function findSubsystemByCategoryId(categoryId?: number): Subsystem | null {
-  if (!categoryId) return null
-
-  for (const [subsystemId, categories] of metadataStore.tableCategories.entries()) {
-    if (categories.some(c => c.ID === categoryId)) {
-      return metadataStore.getSubsystemById(subsystemId) || null
-    }
-  }
-  return null
-}
-
-/**
- * 切换侧边栏
- */
-function toggleSidebar() {
-  sidebarCollapsed.value = !sidebarCollapsed.value
-}
 
 /**
  * 查询
@@ -378,9 +146,6 @@ watch(
     } else if (!newTableId) {
       // 如果 tableId 被清除，重置当前选择
       currentTable.value = null
-      currentCategory.value = null
-      currentSubsystem.value = null
-      selectedKeys.value = []
       currentFilters.value = {}
       filterForm.value = {}
 
@@ -419,88 +184,10 @@ async function loadTableById(tableId: number) {
 <style scoped>
 .metadata-list-view {
   display: flex;
-  height: 100%;
-  background: #f5f5f5;
-  overflow: hidden;
-}
-
-/* 左侧边栏 */
-.metadata-list-view__sidebar {
-  width: 280px;
-  background: #fff;
-  border-right: 1px solid #e8e8e8;
-  display: flex;
   flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.metadata-list-view__sidebar.collapsed {
-  width: 60px;
-}
-
-.sidebar-header {
-  padding: 16px;
-  border-bottom: 1px solid #e8e8e8;
-  background: linear-gradient(135deg, #2b9e91 0%, #1f7a6f 100%);
-}
-
-.sidebar-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.sidebar-search {
-  padding: 12px;
-  border-bottom: 1px solid #e8e8e8;
-}
-
-.sidebar-tree {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-}
-
-.tree-spin {
-  min-height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sidebar-tree :deep(.arco-tree-node) {
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.sidebar-tree :deep(.arco-tree-node:hover) {
-  background: #f5f5f5;
-}
-
-.sidebar-tree :deep(.arco-tree-node-selected) {
-  background: #e8f5f3;
-  color: #2b9e91;
-  font-weight: 500;
-}
-
-.sidebar-tree :deep(.arco-tree-node-title) {
-  font-size: 14px;
-}
-
-.sidebar-footer {
-  padding: 12px;
-  border-top: 1px solid #e8e8e8;
-}
-
-/* 隐式路由模式 - 无侧边栏 */
-.metadata-list-view.no-sidebar {
-  grid-template-columns: 1fr;
-}
-
-.metadata-list-view.no-sidebar .metadata-list-view__sidebar {
-  display: none;
+  height: 100%;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  overflow: hidden;
 }
 
 /* 主内容区 */
@@ -509,78 +196,19 @@ async function loadTableById(tableId: number) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* 隐藏滚动条但保留滚动功能 */
-.metadata-list-view__main :deep(.arco-scrollbar-track) {
-  display: none !important;
-}
-
-.metadata-list-view__main :deep(.dynamic-table) {
-  overflow-y: auto;
-}
-
-/* 隐藏DynamicTable内部滚动条 */
-.metadata-list-view__main :deep(.dynamic-table)::-webkit-scrollbar {
-  width: 0 !important;
-  height: 0 !important;
-}
-
-.metadata-list-view__main :deep(.dynamic-table) {
-  -ms-overflow-style: none !important;
-  scrollbar-width: none !important;
-}
-
-/* 隐藏Arco Table组件滚动条 */
-.metadata-list-view__main :deep(.arco-table-body)::-webkit-scrollbar {
-  width: 0 !important;
-  height: 0 !important;
-}
-
-.metadata-list-view__main :deep(.arco-table-body) {
-  -ms-overflow-style: none !important;
-  scrollbar-width: none !important;
-}
-
-.metadata-list-view__main.sidebar-collapsed {
-  margin-left: -220px;
-}
-
-
-.main-filter {
-  padding: 16px 24px 0;
-}
-
-.filter-card {
-  margin-bottom: 0;
+  height: 100%;
 }
 
 .main-table {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
+/* 移除原来的卡片样式，DynamicTable已经自带卡片样式 */
 .table-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.table-card :deep(.arco-card-body) {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-}
-
-.table-card :deep(.dynamic-table) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
+  display: none;
 }
 
 .main-empty {
@@ -588,39 +216,28 @@ async function loadTableById(tableId: number) {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin: 20px;
 }
 
 .main-empty :deep(.arco-empty-image) {
-  color: #bfbfbf;
+  color: #94a3b8;
 }
 
 /* 响应式 */
 @media (max-width: 768px) {
-  .metadata-list-view__sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 100;
-    transform: translateX(-100%);
-  }
-
-  .metadata-list-view__sidebar:not(.collapsed) {
-    transform: translateX(0);
+  .list-view-header {
+    padding: 12px 16px;
   }
 
   .metadata-list-view__main {
-    margin-left: 0 !important;
+    padding: 12px;
   }
 
-  .main-breadcrumb,
-  .main-filter,
-  .main-table {
-  }
-
-  .filter-card :deep(.arco-col) {
-    flex: 0 0 100%;
-    max-width: 100%;
+  .main-empty {
+    margin: 12px;
   }
 }
 </style>

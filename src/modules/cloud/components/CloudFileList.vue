@@ -26,7 +26,7 @@
       :row-selection="selectable ? rowSelection : undefined"
       :row-key="getRowKey"
       row-class="cloud-file-list__row"
-      :scroll="{ x: false }"
+      :scroll="{ x: 'auto' }"
       @row-click="handleRowClick"
       @row-dblclick="handleRowDoubleClick"
     >
@@ -234,17 +234,21 @@ function handleActionSelect(value: string | number | Record<string, any> | undef
   overflow: hidden; /* 防止溢出 */
 }
 
-/* 确保表格容器不会产生横向滚动 */
-:deep(.arco-table) {
-  overflow-x: hidden !important;
-}
-
+/* 表格响应式适配 */
 :deep(.arco-table-container) {
-  overflow-x: hidden !important;
+  overflow-x: auto;
 }
 
-:deep(.arco-table-content) {
-  overflow-x: hidden !important;
+/* 表格最小宽度，更容易触发横向滚动 */
+:deep(.arco-table) {
+  min-width: 800px !important;
+}
+
+/* 小屏幕下允许横向滚动 */
+@media (max-width: 768px) {
+  :deep(.arco-table) {
+    min-width: 700px;
+  }
 }
 
 .cloud-file-list__empty {

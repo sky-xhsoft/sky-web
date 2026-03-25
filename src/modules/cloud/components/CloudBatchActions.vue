@@ -13,7 +13,7 @@
           已选择 <strong>{{ selectedCount }}</strong> 项
         </span>
         <span v-if="selectedSize > 0" class="selected-size">
-          共 {{ formatSize(selectedSize) }}
+          共 {{ formatFileSize(selectedSize) }}
         </span>
       </div>
 
@@ -64,7 +64,7 @@ import {
   IconExport,
   IconDelete,
 } from '@arco-design/web-vue/es/icon'
-import { formatSize } from '@/modules/cloud/utils/format'
+import { formatFileSize } from '@/utils/format'
 
 interface Props {
   visible?: boolean

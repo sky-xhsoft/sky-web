@@ -1,6 +1,7 @@
 ﻿import { defineStore } from 'pinia'
-import { login as loginApi, logout as logoutApi, refreshAccessToken as refreshApi, type LoginRequest, type LoginResponse, type UserInfo } from '../api/auth'
+import { login as loginApi, logout as logoutApi, refreshAccessToken as refreshApi, type LoginRequest, type LoginResponse, type UserInfo, type CompanyInfo, type CompanyConf } from '../api/auth'
 import { clearAuth, getAccessToken, getRefreshToken, getStoredUser, saveAuth, setDeviceId, getDeviceId } from '../utils/token'
+import { COMPANY_STORAGE_KEY, COMPANY_CONF_STORAGE_KEY } from '../config'
 
 const fallbackDeviceId = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -9,11 +10,33 @@ const fallbackDeviceId = () => {
   return `device-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
+const getStoredCompany = (): CompanyInfo | null => {
+  const raw = localStorage.getItem(COMPANY_STORAGE_KEY)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as CompanyInfo
+  } catch (e) {
+    return null
+  }
+}
+
+const getStoredCompanyConf = (): CompanyConf | null => {
+  const raw = localStorage.getItem(COMPANY_CONF_STORAGE_KEY)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as CompanyConf
+  } catch (e) {
+    return null
+  }
+}
+
 type AuthState = {
   token: string
   refreshToken: string
   user: UserInfo | null
   deviceId: string
+  company: CompanyInfo | null
+  companyConf: CompanyConf | null
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -24,6 +47,8 @@ export const useAuthStore = defineStore('auth', {
       refreshToken: getRefreshToken() || '',
       user,
       deviceId: deviceId || getDeviceId() || fallbackDeviceId(),
+      company: getStoredCompany(),
+      companyConf: getStoredCompanyConf(),
     }
   },
   getters: {
@@ -46,6 +71,8 @@ export const useAuthStore = defineStore('auth', {
         refreshToken: this.refreshToken,
         user: this.user,
         deviceId: this.deviceId,
+        company: this.company,
+        companyConf: this.companyConf,
       })
       return res.token
     },
@@ -60,14 +87,25 @@ export const useAuthStore = defineStore('auth', {
       this.token = ''
       this.refreshToken = ''
       this.user = null
+      this.company = null
+      this.companyConf = null
       clearAuth()
     },
     applyLogin(res: LoginResponse, deviceId: string) {
       this.token = res.token
       this.refreshToken = res.refreshToken
       this.user = res.user
+      this.company = res.company || null
+      this.companyConf = res.companyConf || null
       this.deviceId = deviceId
-      saveAuth({ token: res.token, refreshToken: res.refreshToken, user: res.user, deviceId })
+      saveAuth({
+        token: res.token,
+        refreshToken: res.refreshToken,
+        user: res.user,
+        deviceId,
+        company: res.company,
+        companyConf: res.companyConf,
+      })
     },
   },
 })

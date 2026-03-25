@@ -137,6 +137,15 @@ function handleContextMenu(event: MouseEvent, item: GridItem) {
   }
 }
 
+/* 小屏手机适配 */
+@media (max-width: 480px) {
+  .cloud-file-grid__container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+}
+
 @media (min-width: 1440px) {
   .cloud-file-grid__container {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

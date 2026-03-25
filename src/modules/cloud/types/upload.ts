@@ -59,6 +59,8 @@ export interface UploadProgress {
 export interface ResumableUploadOptions {
   chunkSize?: number              // 分片大小（默认5MB）
   maxRetries?: number             // 最大重试次数（默认3次）
+  concurrentCount?: number        // 并发上传数量（默认3个）
+  useDirectUpload?: boolean       // 是否使用直传模式（前端直接上传到云存储，不经过后端中转）
   onProgress?: (progress: UploadProgress) => void    // 进度回调
   onChunkComplete?: (chunkIndex: number) => void     // 分片完成回调
   signal?: AbortSignal            // 取消信号

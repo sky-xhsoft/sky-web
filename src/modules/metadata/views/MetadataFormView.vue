@@ -635,8 +635,9 @@ watch(
 .metadata-form-view {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background: #f5f5f5;
+  height: 100%;
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   overflow: hidden;
 }
 
@@ -645,14 +646,20 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 16px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+  z-index: 10;
 }
 
 .header-left {
   flex: 1;
+  min-width: 0;
+}
+
+.header-left :deep(.arco-breadcrumb) {
+  font-size: 14px;
 }
 
 .header-left :deep(.arco-breadcrumb-item) {
@@ -663,40 +670,105 @@ watch(
 
 .header-right {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.header-right :deep(.arco-btn) {
+  border-radius: 6px;
+}
+
+.header-right :deep(.arco-btn-primary) {
+  background: linear-gradient(135deg, #165dff 0%, #3b82f6 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(22, 93, 255, 0.25);
 }
 
 /* 主内容区 */
 .metadata-form-view__main {
   width: 100%;
   flex: 1;
-  padding: 4px 4px;
+  padding: 20px;
   overflow-y: auto;
 }
 
 .form-spin {
   width: 100%;
-  min-height: 400px;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .form-card {
   width: 100% !important;
   display: block;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  background: #ffffff;
 }
 
 .form-card :deep(.arco-card-body) {
   width: 100% !important;
   display: block;
-  padding: 24px;
+  padding: 32px;
+}
+
+/* 表单样式优化 */
+:deep(.arco-form) {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+:deep(.arco-form-item) {
+  margin-bottom: 24px;
+}
+
+:deep(.arco-form-label) {
+  font-weight: 500;
+  color: #334155;
+}
+
+:deep(.arco-input),
+:deep(.arco-select),
+:deep(.arco-date-picker),
+:deep(.arco-input-number) {
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  transition: all 0.2s ease;
+}
+
+:deep(.arco-input):focus,
+:deep(.arco-select):focus,
+:deep(.arco-date-picker):focus,
+:deep(.arco-input-number):focus {
+  border-color: #165dff;
+  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.1);
 }
 
 /* 子表区域 */
 .detail-tables {
-  margin-top: 24px;
+  margin-top: 32px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 24px;
+}
+
+.detail-tables :deep(.arco-tabs) {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.detail-tables :deep(.arco-tabs-nav) {
+  margin-bottom: 16px;
 }
 
 .detail-tables :deep(.arco-tabs-content) {
-  padding-top: 16px;
+  padding-top: 0;
 }
 
 /* 打印样式 */
@@ -707,15 +779,32 @@ watch(
 
   .metadata-form-view__main {
     padding: 0;
+    background: #ffffff;
+  }
+
+  .form-card {
+    box-shadow: none;
+    border: 1px solid #e2e8f0;
   }
 }
 
-/* 响应式 */
+/* 响应式适配 */
+@media (max-width: 1200px) {
+  :deep(.arco-form) {
+    max-width: 100%;
+  }
+
+  .form-card :deep(.arco-card-body) {
+    padding: 24px;
+  }
+}
+
 @media (max-width: 768px) {
   .metadata-form-view__header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+    padding: 12px 16px;
   }
 
   .header-left,
@@ -726,6 +815,13 @@ watch(
   .header-right :deep(.arco-space) {
     width: 100%;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .header-right :deep(.arco-btn) {
+    font-size: 13px;
+    padding: 0 12px;
   }
 
   .metadata-form-view__main {
@@ -734,6 +830,35 @@ watch(
 
   .form-card :deep(.arco-card-body) {
     padding: 16px;
+  }
+
+  /* 小屏幕下表单改为单列布局 */
+  :deep(.arco-form-item) {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  :deep(.arco-form-label-col) {
+    width: 100% !important;
+    margin-bottom: 6px;
+    text-align: left;
+  }
+
+  :deep(.arco-form-wrapper-col) {
+    width: 100% !important;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 480px) {
+  .header-right :deep(.arco-space) {
+    justify-content: center;
+  }
+
+  .header-right :deep(.arco-btn) {
+    flex: 1;
+    min-width: 80px;
   }
 }
 </style>

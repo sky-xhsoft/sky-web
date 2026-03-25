@@ -34,6 +34,26 @@ export function useCloudFile() {
 
     downloadingFiles.value.add(file.ID)
     try {
+      // 如果是 oss 存储并且有 accessURL，直接下载
+      // 兼容多种字段命名格式
+      const fileAny = file as any
+      const storageType = fileAny.storageType || fileAny.StorageType
+      const accessUrl = fileAny.accessUrl || fileAny.accessURL || fileAny.AccessURL
+
+      if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
+        // 直接触发浏览器下载 oss URL
+        const link = document.createElement('a')
+        link.href = accessUrl
+        link.download = file.FileName || `file-${file.ID}`
+        link.rel = 'noopener'
+        link.target = '_blank'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        Message.success(`开始下载：${file.FileName}`)
+        return true
+      }
+      // 其他情况走后端下载
       await downloadFile(file.ID, file.FileName)
       Message.success(`开始下载：${file.FileName}`)
       return true

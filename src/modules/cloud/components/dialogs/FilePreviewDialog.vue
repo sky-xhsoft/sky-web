@@ -335,9 +335,22 @@ async function loadPreview() {
       const blob = await fetchFileBlob(props.file.ID)
       textContent.value = await blob.text()
     } else {
-      // 图片、视频、音频、PDF 都需要通过 blob 方式加载（因为需要鉴权）
-      const blob = await fetchFileBlob(props.file.ID)
-      previewUrl.value = URL.createObjectURL(blob)
+      // 检查是否是 oss 存储并且有 accessURL
+      // oss 存储直接播放公网 URL，不需要通过后端获取 blob
+      const fileAny = props.file as any
+      const storageType = fileAny.storageType || fileAny.StorageType
+      const accessUrl = fileAny.accessUrl || fileAny.accessURL || fileAny.AccessURL
+
+      const isOssWithAccessUrl = storageType === 'oss' && accessUrl && accessUrl.length > 0
+
+      if (isOssWithAccessUrl) {
+        // oss 直接使用 accessURL
+        previewUrl.value = accessUrl
+      } else {
+        // 其他存储需要通过 blob 方式加载（因为需要鉴权）
+        const blob = await fetchFileBlob(props.file.ID)
+        previewUrl.value = URL.createObjectURL(blob)
+      }
     }
   } catch (error: any) {
     console.error('加载预览失败:', error)

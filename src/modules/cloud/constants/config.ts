@@ -15,6 +15,9 @@ export const RESUMABLE_UPLOAD_CONFIG = {
   /** 重试延迟（毫秒） */
   RETRY_DELAY: 1000,
 
+  /** 并发上传数量 */
+  CONCURRENT_COUNT: 3,
+
   /** 是否启用断点续传（可通过环境变量控制） */
   ENABLED: true,
 }

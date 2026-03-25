@@ -774,14 +774,10 @@ const paginationConfig = computed(() => ({
  * 滚动配置
  */
 const scrollConfig = computed(() => {
-  // 计算所有列的总宽度
-  const totalWidth = columns.value.reduce((sum, col) => {
-    return sum + (col.width || 180)
-  }, 0)
-
+  // 固定足够大的水平滚动宽度，确保字段多时自动出现滚动条
   return {
-    x: totalWidth,  // 水平滚动：设置为所有列宽度之和
-    y: 'auto'  // 竖向高度自动适应，由父容器flex布局控制
+    x: 1800,  // 固定水平滚动宽度，字段多时自动出现横向滚动条
+    y: 500  // 竖向最大高度500px，超过时滚动，表头固定
   }
 })
 
@@ -1572,6 +1568,7 @@ defineExpose({
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
+  overflow-x: auto !important;
 }
 
 /* 选择+序号列样式 */
@@ -1652,6 +1649,59 @@ defineExpose({
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+/* 响应式适配：小屏幕 */
+@media (max-width: 768px) {
+  .dynamic-table__query .query-form {
+    padding-right: 16px;
+    padding-bottom: 70px;
+  }
+
+  .dynamic-table__query .query-form :deep(.arco-form-item) {
+    width: 100%;
+    max-width: 100%;
+    margin-right: 0;
+  }
+
+  .dynamic-table__query .query-actions {
+    top: auto;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    justify-content: center;
+  }
+
+  .dynamic-table__toolbar {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .dynamic-table__toolbar .toolbar-left,
+  .dynamic-table__toolbar .toolbar-right {
+    justify-content: center;
+  }
+
+  .dynamic-table :deep(.arco-table-body) {
+    font-size: 12px;
+  }
+
+  .dynamic-table :deep(.arco-table-th) {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+
+  .dynamic-table :deep(.arco-table-td) {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+
+  .table-legend {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
 /* 查询区域空状态 */
 .query-empty {
   padding: 24px 16px;
@@ -1678,9 +1728,19 @@ defineExpose({
   align-items: center;
 }
 
-/* 表格容器 - 支持固定列和滚动 */
+
+/* 表格最小宽度，保证列不会被过度挤压，更容易触发横向滚动 */
+/* 表格容器强制横向滚动 */
 .dynamic-table :deep(.arco-table-container) {
-  overflow: auto;
+  overflow-x: auto !important;
+  width: 100% !important;
+}
+
+/* 表格最小宽度，保证列不会被过度挤压，更容易触发横向滚动 */
+.dynamic-table :deep(.arco-table) {
+  min-width: 500px !important;
+  width: auto !important;
+  table-layout: fixed !important; /* 固定列宽布局，配合固定列使用 */
 }
 
 /* 表格布局 - 使用固定布局以确保列对齐 */
@@ -2198,15 +2258,33 @@ defineExpose({
 }
 
 /* 让表格自动填充剩余空间 */
+/* 表格独立滚动容器 - 仅表格部分滚动 */
+.table-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* 表格最小宽度，保证列不会被过度挤压，更容易触发横向滚动 */
+/* 表格容器强制横向滚动 */
+.dynamic-table :deep(.arco-table-container) {
+  overflow-x: auto !important;
+  width: 100% !important;
+}
+
+/* 表格最小宽度，保证列不会被过度挤压，更容易触发横向滚动 */
 .dynamic-table :deep(.arco-table) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+  min-width: 500px !important;
+  width: auto !important;
+  table-layout: fixed !important; /* 固定列宽布局，配合固定列使用 */
+}
+
+/* 表格横向滚动 */
+.dynamic-table :deep(.arco-table) {
+  width: 100%;
 }
 
 .dynamic-table :deep(.arco-table-body) {
-  flex: 1;
   overflow-y: auto;
 }
 

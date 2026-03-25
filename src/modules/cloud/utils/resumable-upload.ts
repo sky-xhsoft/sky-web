@@ -12,6 +12,8 @@ import {
   completeMultipartUpload,
   abortMultipartUpload,
   resumeMultipartUpload,
+  getChunkPresignedURL,
+  markChunkUploaded,
 } from '@/modules/cloud/api'
 import type {
   ResumableUploadOptions,
@@ -19,6 +21,7 @@ import type {
   ChunkInfo,
 } from '@/modules/cloud/types'
 import { RESUMABLE_UPLOAD_CONFIG } from '@/modules/cloud/constants/config'
+import { Message } from '@arco-design/web-vue'
 
 /**
  * 计算文件hash（用于秒传检测）
@@ -91,6 +94,7 @@ export class ResumableUploadManager {
   private folderId: number
   private options: ResumableUploadOptions
   private chunks: Blob[] = []
+  private chunkMd5Cache: string[] = [] // 缓存每个分片的MD5，避免重复计算
   private uploadedChunks: Set<number> = new Set()
   private sessionId?: number // 改为 sessionId (number)
   private fileHash?: string
@@ -109,6 +113,8 @@ export class ResumableUploadManager {
     this.options = {
       chunkSize: RESUMABLE_UPLOAD_CONFIG.CHUNK_SIZE,
       maxRetries: RESUMABLE_UPLOAD_CONFIG.MAX_RETRIES,
+      concurrentCount: RESUMABLE_UPLOAD_CONFIG.CONCURRENT_COUNT,
+      useDirectUpload: false,
       ...options,
     }
   }
@@ -147,6 +153,8 @@ export class ResumableUploadManager {
    */
   async start(): Promise<number> {
     try {
+      Message.info(`开始上传：${this.file.name}`)
+
       // 1. 计算文件hash
       this.updateProgress({ status: 'uploading', progress: 0, uploadedSize: 0 })
 
@@ -171,23 +179,105 @@ export class ResumableUploadManager {
       // 3. 检查是否秒传（所有分片都已上传）
       if (session.uploadedChunks.length === session.totalChunks) {
         // 秒传成功，直接完成
-        const result = await completeMultipartUpload(this.sessionId)
-        this.updateProgress({ status: 'completed', progress: 100, uploadedSize: this.file.size })
-        return result.ID
+        Message.loading('文件已存在，正在秒传...', 0)
+        try {
+          const result = await completeMultipartUpload(this.sessionId)
+          this.updateProgress({ status: 'completed', progress: 100, uploadedSize: this.file.size })
+          Message.clear()
+          Message.success(`秒传成功：${this.file.name}`)
+          return result.ID
+        } catch (e: any) {
+          Message.clear()
+          throw e
+        }
       }
 
       // 4. 分片文件
       this.chunks = sliceFile(this.file, this.chunkSize)
+      this.chunkMd5Cache = new Array(this.chunks.length)
 
-      // 5. 记录已上传的分片（断点恢复）
+      // 5. 预先计算所有分片的MD5（一次性计算，避免上传过程中重复计算）
+      for (let i = 0; i < this.chunks.length; i++) {
+        // 更新进度：hash计算占10%，已经完成整体文件hash，现在计算分片hash占额外5%
+        const progress = 10 + Math.floor((i / this.chunks.length) * 5)
+        this.updateProgress({ progress, uploadedSize: 0 })
+
+        this.chunkMd5Cache[i] = await this.calculateChunkMD5(this.chunks[i])
+      }
+
+      // 6. 记录已上传的分片（断点恢复）
       session.uploadedChunks.forEach((index) => this.uploadedChunks.add(index))
 
-      // 6. 上传未完成的分片
+      // 7. 上传未完成的分片
       await this.uploadChunks()
 
-      // 7. 完成上传（合并分片）
-      const result = await completeMultipartUpload(this.sessionId)
+      // 等待一小段时间，让所有数据库事务都提交完成
+      // 避免因为事务还没提交就开始校验，导致误判缺失分片而重复上传
+      await new Promise(resolve => setTimeout(resolve, 1500))
 
+      // 8. 确认所有分片都上传完成（和后端校验，避免前端统计错误）
+      let uploadStatus = await getMultipartUploadStatus(this.sessionId)
+      const missingChunks: number[] = []
+
+      // 检查是否有缺失的分片
+      for (let i = 0; i < this.chunks.length; i++) {
+        if (!uploadStatus.uploadedChunks.includes(i)) {
+          missingChunks.push(i)
+        }
+      }
+
+      // 如果有缺失的分片，重新上传
+      if (missingChunks.length > 0) {
+        Message.info(`检测到${missingChunks.length}个分片上传失败，正在重新上传...`)
+
+        // 重新上传缺失的分片
+        await Promise.all(missingChunks.map(chunkIndex =>
+          this.uploadChunkWithRetry(chunkIndex, this.chunks[chunkIndex])
+        ))
+
+        // 再次校验
+        uploadStatus = await getMultipartUploadStatus(this.sessionId)
+        for (let i = 0; i < this.chunks.length; i++) {
+          if (!uploadStatus.uploadedChunks.includes(i)) {
+            throw new Error(`分片${i}上传失败，请重试`)
+          }
+        }
+      }
+
+      // 8. 完成上传（合并分片，带重试）
+      Message.loading('所有分片上传完成，正在合并文件，请稍候...', 0)
+      let mergeRetries = 0
+      const maxMergeRetries = 3 // 最多重试3次
+      let result: any
+
+      while (mergeRetries < maxMergeRetries) {
+        try {
+          // 重试前先查询上传状态，避免重复调用已经在合并的接口
+          if (mergeRetries > 0) {
+            const uploadStatus = await getMultipartUploadStatus(this.sessionId)
+            if (uploadStatus.status === 'completed') {
+              // 已经合并完成，直接返回
+              // 查询文件信息这里需要后端返回fileId，但是后端接口只返回状态，我们直接尝试调用complete
+            }
+          }
+
+          result = await completeMultipartUpload(this.sessionId)
+          break
+        } catch (error: any) {
+          mergeRetries++
+          if (mergeRetries >= maxMergeRetries) {
+            Message.clear()
+            this.updateProgress({ status: 'failed', error: error.message })
+            throw error
+          }
+          // 合并失败后等待5秒再重试，给后端足够的处理时间
+          console.warn(`合并分片失败，重试第${mergeRetries}次...`, error)
+          await new Promise(resolve => setTimeout(resolve, 5000))
+        }
+      }
+
+      Message.clear()
+      Message.success(`上传成功：${this.file.name}`)
       this.updateProgress({ status: 'completed', progress: 100, uploadedSize: this.file.size })
       return result.ID
     } catch (error: any) {
@@ -213,33 +303,42 @@ export class ResumableUploadManager {
   }
 
   /**
-   * 上传所有分片
+   * 上传所有分片（并发上传）
    */
   private async uploadChunks(): Promise<void> {
     const totalChunks = this.chunks.length
     const startProgress = 10 // hash完成后的进度
     const uploadProgress = 85 // 上传占85%进度
-    const actualChunkSize = this.chunkSize || this.options.chunkSize! // 使用实际的分片大小
+    const concurrentCount = this.options.concurrentCount || RESUMABLE_UPLOAD_CONFIG.CONCURRENT_COUNT
 
+    // 收集所有需要上传的分片
+    const chunksToUpload: number[] = []
     for (let i = 0; i < totalChunks; i++) {
-      // 跳过已上传的分片
-      if (this.uploadedChunks.has(i)) {
-        continue
+      if (!this.uploadedChunks.has(i)) {
+        chunksToUpload.push(i)
       }
+    }
 
-      // 检查是否被取消
-      if (this.abortController?.signal.aborted) {
-        throw new Error('上传已取消')
-      }
+    if (chunksToUpload.length === 0) {
+      // 所有分片都已上传
+      this.updateProgress({
+        progress: startProgress + uploadProgress,
+        uploadedSize: this.file.size,
+      })
+      return
+    }
 
-      // 上传分片（带重试）- 会自动添加到 uploadedChunks
-      await this.uploadChunkWithRetry(i, this.chunks[i])
+    // 并发控制
+    const queue: Promise<void>[] = []
+    let activeCount = 0
+    let index = 0
 
-      // 计算已上传的分片数量（包括之前已上传的）
+    // 更新进度的函数
+    const updateProgress = () => {
       const uploadedChunkCount = this.uploadedChunks.size
-      const progress = startProgress + Math.floor((uploadedChunkCount) / totalChunks * uploadProgress)
+      const progress = startProgress + Math.floor((uploadedChunkCount / totalChunks) * uploadProgress)
 
-      // 计算实际上传的字节数 - 基于所有已上传的分片（包括之前已上传的）
+      // 计算实际上传的字节数
       let uploadedBytes = 0
       for (let j = 0; j < totalChunks; j++) {
         if (this.uploadedChunks.has(j)) {
@@ -252,30 +351,82 @@ export class ResumableUploadManager {
         uploadedSize: Math.min(uploadedBytes, this.file.size),
       })
     }
+
+    return new Promise((resolve, reject) => {
+      // 处理下一个分片
+      const processNext = async () => {
+        if (this.abortController?.signal.aborted) {
+          return reject(new Error('上传已取消'))
+        }
+
+        if (index >= chunksToUpload.length && activeCount === 0) {
+          // 所有分片上传完成
+          updateProgress()
+          return resolve()
+        }
+
+        while (activeCount < concurrentCount && index < chunksToUpload.length) {
+          const chunkIndex = chunksToUpload[index]
+          index++
+          activeCount++
+
+          this.uploadChunkWithRetry(chunkIndex, this.chunks[chunkIndex])
+            .then(() => {
+              updateProgress()
+            })
+            .catch((error) => {
+              reject(error)
+            })
+            .finally(() => {
+              activeCount--
+              processNext()
+            })
+        }
+      }
+
+      processNext()
+    })
   }
 
   /**
-   * 上传单个分片（带重试）
+   * 上传单个分片（带重试）- 后端中转模式
    */
   private async uploadChunkWithRetry(
     chunkIndex: number,
     chunk: Blob,
     retries: number = 0
   ): Promise<void> {
+    if (this.options.useDirectUpload) {
+      return this.uploadChunkWithRetryDirect(chunkIndex, chunk, retries)
+    }
+
     try {
-      this.abortController = new AbortController()
+      // 每个分片使用独立的AbortController，避免并发上传时互相覆盖
+      const abortController = new AbortController()
 
-      // 计算分片MD5
-      const chunkMd5 = await this.calculateChunkMD5(chunk)
+      // 监听全局取消信号
+      const globalAbortListener = () => abortController.abort()
+      if (this.abortController) {
+        this.abortController.signal.addEventListener('abort', globalAbortListener)
+      }
 
-      // 上传分片
+      // 从缓存获取分片MD5（已预先计算，不需要重复计算）
+      const chunkMd5 = this.chunkMd5Cache[chunkIndex]
+
+      // 上传分片到后端
+      console.log(`[后端中转] 上传分片${chunkIndex}，sessionId: ${this.sessionId}, md5: ${chunkMd5}, size: ${chunk.size}`)
       await uploadMultipartChunk(
         this.sessionId!,
         chunkIndex,
         chunkMd5,
         chunk,
-        this.abortController.signal
+        abortController.signal
       )
+
+      // 移除监听
+      if (this.abortController) {
+        this.abortController.signal.removeEventListener('abort', globalAbortListener)
+      }
 
       this.uploadedChunks.add(chunkIndex)
     } catch (error: any) {
@@ -286,12 +437,88 @@ export class ResumableUploadManager {
 
       // 重试
       if (retries < this.options.maxRetries!) {
-        console.warn(`分片${chunkIndex}上传失败，重试第${retries + 1}次...`)
+        console.warn(`分片${chunkIndex}上传失败，重试第${retries + 1}次，错误原因：`, error)
         await new Promise((resolve) => setTimeout(resolve, 1000 * (retries + 1))) // 指数退避
         return await this.uploadChunkWithRetry(chunkIndex, chunk, retries + 1)
       }
 
-      throw new Error(`分片${chunkIndex}上传失败: ${error.message}`)
+      console.error(`分片${chunkIndex}最终上传失败，错误原因：`, error)
+      throw new Error(`分片${chunkIndex}上传失败: ${error.message || '网络错误'}`)
+    }
+  }
+
+  /**
+   * 上传单个分片（带重试）- 直传模式（前端直接上传到云存储）
+   */
+  private async uploadChunkWithRetryDirect(
+    chunkIndex: number,
+    chunk: Blob,
+    retries: number = 0
+  ): Promise<void> {
+    try {
+      if (!this.sessionId) {
+        throw new Error('上传会话未初始化')
+      }
+
+      // 每个分片使用独立的AbortController
+      const abortController = new AbortController()
+
+      // 监听全局取消信号
+      const globalAbortListener = () => abortController.abort()
+      if (this.abortController) {
+        this.abortController.signal.addEventListener('abort', globalAbortListener)
+      }
+
+      // 从后端获取预签名URL
+      console.log(`[直传] 获取分片${chunkIndex}预签名URL`)
+      const { presignedUrl } = await getChunkPresignedURL(this.sessionId, chunkIndex)
+
+      // 直接上传分片到预签名URL
+      console.log(`[直传] 上传分片${chunkIndex}，size: ${chunk.size}`)
+
+      // 使用 fetch 直接上传
+      const response = await fetch(presignedUrl, {
+        method: 'PUT',
+        body: chunk,
+        signal: abortController.signal,
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`上传失败，状态码: ${response.status}`)
+      }
+
+      // 获取响应头中的 ETag（云存储返回的分片ETag，用于后续合并）
+      const etag = response.headers.get('ETag')
+      console.log(`[直传] 分片${chunkIndex}上传完成，ETag: ${etag}`)
+
+      // 移除监听
+      if (this.abortController) {
+        this.abortController.signal.removeEventListener('abort', globalAbortListener)
+      }
+
+      // 通知后端标记分片已上传，并传递ETag
+      await markChunkUploaded(this.sessionId!, chunkIndex, etag || undefined)
+
+      this.uploadedChunks.add(chunkIndex)
+      console.log(`[直传] 分片${chunkIndex}上传成功`)
+    } catch (error: any) {
+      // 如果是取消操作，直接抛出
+      if (error.name === 'AbortError' || this.abortController?.signal.aborted) {
+        throw new Error('上传已取消')
+      }
+
+      // 重试
+      if (retries < this.options.maxRetries!) {
+        console.warn(`[直传] 分片${chunkIndex}上传失败，重试第${retries + 1}次，错误原因：`, error)
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (retries + 1))) // 指数退避
+        return await this.uploadChunkWithRetryDirect(chunkIndex, chunk, retries + 1)
+      }
+
+      console.error(`[直传] 分片${chunkIndex}最终上传失败，错误原因：`, error)
+      throw new Error(`分片${chunkIndex}直传失败: ${error.message || '网络错误'}`)
     }
   }
 
@@ -361,7 +588,9 @@ export async function uploadWithResumable(
   folderId: number,
   onProgress?: (progress: UploadTask) => void
 ): Promise<number> {
-  const manager = new ResumableUploadManager(file, folderId)
+  const manager = new ResumableUploadManager(file, folderId, {
+    useDirectUpload: true,
+  })
 
   if (onProgress) {
     manager.setProgressCallback(onProgress)
@@ -382,7 +611,9 @@ export async function resumeUploadByMd5(
   const session = await resumeMultipartUpload(fileMd5)
 
   // 创建上传管理器
-  const manager = new ResumableUploadManager(file, 0) // folderId会被忽略，因为会话已存在
+  const manager = new ResumableUploadManager(file, 0, {
+    useDirectUpload: true,
+  }) // folderId会被忽略，因为会话已存在
 
   if (onProgress) {
     manager.setProgressCallback(onProgress)

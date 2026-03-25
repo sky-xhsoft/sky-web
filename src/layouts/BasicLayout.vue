@@ -38,6 +38,8 @@ const navigationStore = useNavigationStore()
 
 // 标签页右键菜单当前操作的key
 const currentRightClickTabKey = ref<string>('')
+// 移动端侧边栏显示控制
+const mobileSidebarShow = ref(false)
 
 // 标签页右键菜单选项
 const tabContextMenuOptions = [
@@ -452,7 +454,18 @@ const goHome = async () => {
 }
 
 const toggleSidebar = () => {
-  menuStore.toggleSidebar()
+  if (window.innerWidth <= 768) {
+    mobileSidebarShow.value = !mobileSidebarShow.value
+  } else {
+    menuStore.toggleSidebar()
+  }
+}
+
+/**
+ * 移动端点击遮罩层关闭侧边栏
+ */
+const toggleMobileSidebar = () => {
+  mobileSidebarShow.value = false
 }
 
 /**
@@ -578,7 +591,7 @@ watch(
       </div>
     </header>
     <div class="main-layout">
-      <aside class="side-nav" :class="{ collapsed: menuStore.sidebarCollapsed }">
+      <aside class="side-nav" :class="{ collapsed: menuStore.sidebarCollapsed, 'mobile-show': mobileSidebarShow }">
         <a-menu
           v-model:openKeys="openKeys"
           v-model:selectedKeys="selectedKeys"
@@ -606,6 +619,12 @@ watch(
           </template>
         </a-menu>
       </aside>
+      <!-- 移动端遮罩层 -->
+      <div
+        class="mobile-overlay"
+        :class="{ show: mobileSidebarShow }"
+        @click="toggleMobileSidebar"
+      ></div>
       <div class="content-wrapper">
         <!-- 标签页栏 - 现在放在右侧内容区域顶部 -->
         <div class="tabs-bar">
@@ -842,6 +861,7 @@ watch(
   margin-left: 230px;
   transition: margin-left 0.2s ease;
   height: 100%;
+  min-width: 0;
 }
 
 .content-wrapper.collapsed {
@@ -852,9 +872,11 @@ watch(
   padding: 20px;
   background: #ffffff;
   flex: 1;
+  overflow-x: hidden;
   overflow-y: auto;
   position: relative;
   border-radius: 10px;
+  width: calc(100% - 40px);
   box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
   margin: 10px;
 }
@@ -938,5 +960,93 @@ watch(
 .side-nav :deep(.arco-menu-inner) {
   padding: 8px 0 14px 0 !important;
   margin: 0 !important;
+}
+
+/* 响应式适配：小屏幕 */
+@media (max-width: 768px) {
+  .side-nav {
+    position: fixed;
+    left: -240px;
+    top: 0;
+    bottom: 0;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    height: 100vh !important;
+  }
+
+  .side-nav.collapsed {
+    left: -60px;
+  }
+
+  .side-nav.mobile-show {
+    left: 0;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  }
+
+  .content-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .content-wrapper.collapsed {
+    margin-left: 0 !important;
+  }
+
+  .tabs-bar {
+    padding: 0 8px;
+  }
+
+  .page-tabs :deep(.arco-tabs-header) {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .page-tabs :deep(.arco-tabs-nav-list) {
+    flex-wrap: nowrap;
+  }
+
+  .sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app-header .header-right {
+    gap: 8px;
+  }
+
+  .app-header .header-right .user-info span {
+    display: none;
+  }
+
+  /* 遮罩层 */
+  .mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    display: none;
+  }
+
+  .mobile-overlay.show {
+    display: block;
+  }
+
+  .brand-area {
+    width: auto;
+    min-width: auto;
+    padding: 0 16px;
+  }
+
+  .brand-text {
+    display: none;
+  }
+
+  .root-menu-bar {
+    display: none;
+  }
 }
 </style>
