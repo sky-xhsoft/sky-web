@@ -1,4 +1,4 @@
-﻿import { DEVICE_ID_STORAGE_KEY, REFRESH_TOKEN_STORAGE_KEY, TOKEN_STORAGE_KEY, USER_STORAGE_KEY, COMPANY_STORAGE_KEY, COMPANY_CONF_STORAGE_KEY } from '../config'
+import { DEVICE_ID_STORAGE_KEY, REFRESH_TOKEN_STORAGE_KEY, TOKEN_STORAGE_KEY, USER_STORAGE_KEY, COMPANY_STORAGE_KEY, COMPANY_CONF_STORAGE_KEY } from '../config'
 import type { CompanyInfo, CompanyConf } from '../api/auth'
 
 type StoredUser = {
@@ -16,9 +16,11 @@ type StoredAuth = {
   deviceId: string
   company: CompanyInfo | null
   companyConf: CompanyConf | null
+  loginType: 'live' | 'cloud' | null
 }
 
 const storage = window.localStorage
+const LOGIN_TYPE_STORAGE_KEY = 'sky-web:login-type'
 
 export function getDeviceId(): string | null {
   return storage.getItem(DEVICE_ID_STORAGE_KEY)
@@ -26,6 +28,21 @@ export function getDeviceId(): string | null {
 
 export function setDeviceId(id: string) {
   storage.setItem(DEVICE_ID_STORAGE_KEY, id)
+}
+
+export function getLoginType(): 'live' | 'cloud' | null {
+  const raw = storage.getItem(LOGIN_TYPE_STORAGE_KEY)
+  if (!raw) return null
+  const type = raw as 'live' | 'cloud'
+  return ['live', 'cloud'].includes(type) ? type : null
+}
+
+export function setLoginType(type: 'live' | 'cloud' | null) {
+  if (type) {
+    storage.setItem(LOGIN_TYPE_STORAGE_KEY, type)
+  } else {
+    storage.removeItem(LOGIN_TYPE_STORAGE_KEY)
+  }
 }
 
 export function saveAuth(payload: StoredAuth) {
@@ -43,6 +60,7 @@ export function saveAuth(payload: StoredAuth) {
     storage.removeItem(COMPANY_CONF_STORAGE_KEY)
   }
   setDeviceId(payload.deviceId)
+  setLoginType(payload.loginType)
 }
 
 export function clearAuth() {
@@ -52,6 +70,7 @@ export function clearAuth() {
   storage.removeItem(DEVICE_ID_STORAGE_KEY)
   storage.removeItem(COMPANY_STORAGE_KEY)
   storage.removeItem(COMPANY_CONF_STORAGE_KEY)
+  // 不清除 loginType，这样用户退出登录后还能记住之前的登录模式
 }
 
 export function getAccessToken(): string | null {
@@ -72,4 +91,3 @@ export function getStoredUser(): { user: StoredUser | null; deviceId: string | n
     return { user: null, deviceId: getDeviceId() }
   }
 }
-

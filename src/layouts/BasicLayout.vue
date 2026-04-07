@@ -287,8 +287,19 @@ async function loadComponent(path: string) {
   // 其他路由
   switch (path) {
     case '/':
-      currentComponent.value = componentRegistry.HomeDashboard
-      navigationStore.navigateTo('HomeDashboard', '首页', {}, false)
+      // 根路径不显示首页，根据登录类型跳转到对应系统的默认页面
+      const loginType = authStore.loginType
+      if (loginType === 'live') {
+        currentComponent.value = componentRegistry.LiveGuide
+        navigationStore.navigateTo('LiveGuide', '视频直播功能说明', {}, false)
+      } else if (loginType === 'cloud') {
+        currentComponent.value = componentRegistry.Cloud
+        navigationStore.navigateTo('Cloud', '云盘', {}, false)
+      } else {
+        // 默认跳转到直播系统的默认页面
+        currentComponent.value = componentRegistry.LiveGuide
+        navigationStore.navigateTo('LiveGuide', '视频直播功能说明', {}, false)
+      }
       break
     case '/cloud':
       currentComponent.value = componentRegistry.Cloud
@@ -444,13 +455,42 @@ const onRootClick = async (key: string) => {
 }
 
 const handleLogout = async () => {
+  // 保存当前的登录类型，用于退出后跳转
+  const savedLoginType = authStore.loginType
+
+  // 1. 使用 navigationStore 的 closeAllTabs 方法彻底清理所有标签页和状态
+  navigationStore.closeAllTabs()
+
+  // 2. 清理菜单缓存
+  menuStore.reset()
+
+  // 3. 重置当前组件显示为空白
+  currentComponent.value = {
+    render: () => h('div', { class: 'empty-page' }, '')
+  }
+
+  // 4. 调用退出登录 API
   await authStore.logout()
-  router.push({ name: 'login' })
+
+  // 5. 跳转到登录页，如果有之前的登录类型，带上该类型
+  if (savedLoginType) {
+    router.push({ name: 'login', query: { type: savedLoginType } })
+  } else {
+    router.push({ name: 'login' })
+  }
 }
 
 const goHome = async () => {
-  // 跳转到首页
-  navigationStore.navigateTo('HomeDashboard', '首页', {}, false)
+  // 跳转到对应系统的默认页面，而不是首页
+  const loginType = authStore.loginType
+  if (loginType === 'live') {
+    await loadComponent('/LiveGuide')
+  } else if (loginType === 'cloud') {
+    await loadComponent('/cloud')
+  } else {
+    // 默认跳转到直播系统的默认页面
+    await loadComponent('/LiveGuide')
+  }
 }
 
 const toggleSidebar = () => {
@@ -499,6 +539,29 @@ onMounted(async () => {
 
   openKeys.value = defaultOpenKeys.value
 
+  // 根据登录类型初始化显示的页面
+  if (authStore.isAuthenticated) {
+    // 检查当前标签页是否与登录类型匹配
+    const loginType = authStore.loginType
+    const isTabMatchingType = navigationStore.tabs.length > 0 && (
+      (loginType === 'live' && navigationStore.tabs.some(tab => tab.componentName === 'LiveGuide')) ||
+      (loginType === 'cloud' && navigationStore.tabs.some(tab => tab.componentName === 'Cloud'))
+    )
+
+    // 如果没有标签页，或者标签页类型不匹配，重新加载
+    if (navigationStore.tabs.length === 0 || !isTabMatchingType) {
+      navigationStore.closeAllTabs()
+      if (loginType === 'live') {
+        await loadComponent('/LiveGuide')
+      } else if (loginType === 'cloud') {
+        await loadComponent('/cloud')
+      } else {
+        // 默认跳转到直播系统的默认页面
+        await loadComponent('/LiveGuide')
+      }
+    }
+  }
+
   // 初始化内容容器的折叠状态
   const contentWrapper = document.querySelector('.content-wrapper')
   if (contentWrapper && menuStore.sidebarCollapsed) {
@@ -511,8 +574,19 @@ watch(
   () => navigationStore.current.componentName,
   async (componentName) => {
     if (!componentName) {
-      // 组件名为空，默认显示首页
-      currentComponent.value = componentRegistry.HomeDashboard
+      // 组件名为空，根据登录类型显示对应的默认页面，不显示首页
+      const loginType = authStore.loginType
+      if (loginType === 'live') {
+        currentComponent.value = componentRegistry.LiveGuide
+        navigationStore.navigateTo('LiveGuide', '视频直播功能说明', {}, false)
+      } else if (loginType === 'cloud') {
+        currentComponent.value = componentRegistry.Cloud
+        navigationStore.navigateTo('Cloud', '云盘', {}, false)
+      } else {
+        // 默认跳转到直播系统的默认页面
+        currentComponent.value = componentRegistry.LiveGuide
+        navigationStore.navigateTo('LiveGuide', '视频直播功能说明', {}, false)
+      }
       return
     }
     try {
@@ -556,6 +630,49 @@ watch(
   },
   { immediate: true }
 )
+
+// 监听认证状态变化，当用户重新登录时检查是否需要重新初始化页面
+watch(
+  () => authStore.isAuthenticated,
+  async (newVal) => {
+    if (newVal) {
+      // 检查当前标签页是否与登录类型匹配
+      const loginType = authStore.loginType
+      const isTabMatchingType = navigationStore.tabs.length > 0 && (
+        (loginType === 'live' && navigationStore.tabs.some(tab => tab.componentName === 'LiveGuide')) ||
+        (loginType === 'cloud' && navigationStore.tabs.some(tab => tab.componentName === 'Cloud'))
+      )
+
+      // 如果没有标签页，或者标签页类型不匹配，重新加载
+      if (navigationStore.tabs.length === 0 || !isTabMatchingType) {
+        navigationStore.closeAllTabs()
+        if (loginType === 'live') {
+          await loadComponent('/LiveGuide')
+        } else if (loginType === 'cloud') {
+          await loadComponent('/cloud')
+        } else {
+          // 默认跳转到直播系统的默认页面
+          await loadComponent('/LiveGuide')
+        }
+      }
+    }
+  },
+  { immediate: true }
+)
+
+// 监听路由变化，根据路由路径加载对应的组件
+watch(
+  () => route.path,
+  async (path) => {
+    if (authStore.isAuthenticated) {
+      // 当路由是 BasicLayout 下的子路由时，加载对应的组件
+      if (path !== '/') {
+        await loadComponent(path)
+      }
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -566,7 +683,7 @@ watch(
           <div class="brand-area" role="button" tabindex="0" @click="goHome">
             <div class="logo-mark">AI</div>
             <div class="brand-text">
-              <div class="brand-title">XH-TEC</div>
+              <div class="brand-title">ZiGeBo</div>
               <div class="brand-subtitle">数据中心</div>
             </div>
           </div>

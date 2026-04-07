@@ -182,30 +182,6 @@
             </div>
           </a-card>
 
-          <!-- 云盘 -->
-          <a-card class="module-card" :bordered="false" @click="navigateTo('/cloud')">
-            <div class="module-content">
-              <div class="module-header">
-                <div class="module-icon-wrapper" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
-                  <icon-cloud class="module-icon" />
-                </div>
-                <h3 class="module-name">云盘</h3>
-              </div>
-              <p class="module-description">统一管理直播相关文件</p>
-              <ul class="feature-list">
-                <li>集中存储录制和切片文件</li>
-                <li>文件夹分类管理和搜索</li>
-                <li>上传、下载和分享文件</li>
-                <li>查看文件详情和存储空间</li>
-              </ul>
-              <div class="module-footer">
-                <span class="module-action">
-                  进入管理
-                  <icon-right class="action-icon" />
-                </span>
-              </div>
-            </div>
-          </a-card>
         </div>
       </div>
     </div>
@@ -219,7 +195,6 @@ import {
   IconShareAlt,
   IconScissor,
   IconRecord,
-  IconCloud,
   IconRight
 } from '@arco-design/web-vue/es/icon'
 import { useNavigationStore } from '@/stores/navigation'
@@ -233,8 +208,7 @@ const navigateTo = (path: string) => {
     '/live/streams': { component: 'LiveStream', title: '直播流管理' },
     '/live/distribution': { component: 'PullStreamTask', title: '社媒分发' },
     '/live/highlight-clips': { component: 'LiveHighlightClips', title: '直播切片' },
-    '/live/recordings': { component: 'LiveRecordings', title: '直播录制' },
-    '/cloud': { component: 'Cloud', title: '云盘' }
+    '/live/recordings': { component: 'LiveRecordings', title: '直播录制' }
   }
 
   const route = routeMap[path]

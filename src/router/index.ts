@@ -1,7 +1,8 @@
-﻿import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import BasicLayout from '../layouts/BasicLayout.vue'
 import Dashboard from '../pages/Dashboard.vue'
+import Welcome from '../pages/Welcome.vue'
 import Login from '../pages/Login.vue'
 import Share from '../pages/Share.vue'
 import LiveDomain from '../pages/LiveDomain.vue'
@@ -13,6 +14,12 @@ import { useAuthStore } from '../stores/auth'
 import { useMenuStore } from '../stores/menu'
 
 const routes: RouteRecordRaw[] = [
+  {
+    path: '/',
+    name: 'welcome',
+    component: Welcome,
+    meta: { title: '欢迎使用', requiresAuth: false },
+  },
   {
     path: '/login',
     name: 'login',
@@ -81,6 +88,20 @@ const routes: RouteRecordRaw[] = [
         component: LiveRoomForm,
         meta: { title: '编辑直播间', requiresAuth: true },
       },
+      // 云盘系统
+      {
+        path: 'cloud',
+        name: 'cloud',
+        component: () => import('../pages/Cloud.vue'),
+        meta: { title: '云盘系统', requiresAuth: true },
+      },
+      // 直播功能说明页面
+      {
+        path: 'LiveGuide',
+        name: 'live-guide',
+        component: () => import('../pages/LiveGuide.vue'),
+        meta: { title: '视频直播功能说明', requiresAuth: true },
+      },
       // 直播管理详情页面
       {
         path: 'live/rooms/detail/:id',
@@ -101,18 +122,49 @@ router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth !== false)
   const isLoginRoute = to.name === 'login'
+  const isWelcomeRoute = to.name === 'welcome'
+  const hasTypeParam = to.query.type !== undefined && to.query.type !== null && to.query.type !== ''
+
+  // 如果已经登录且 URL 中有 type 参数，访问任何路径都直接跳转到对应系统页面
+  if (auth.isAuthenticated && hasTypeParam) {
+    const loginType = (to.query.type as string) || 'live'
+    // 只有当目标路径不是对应系统页面时才跳转
+    const targetPath = loginType === 'live' ? '/LiveGuide' : '/cloud'
+    if (to.path !== targetPath) {
+      next({ path: targetPath })
+      return
+    }
+  }
+
+  // 当欢迎页面且有 type 参数时，直接跳转到登录页面，不显示首页
+  if (isWelcomeRoute && hasTypeParam && !auth.isAuthenticated) {
+    next({ name: 'login', query: { type: to.query.type } })
+    return
+  }
+
+  if (isWelcomeRoute && auth.isAuthenticated) {
+    const loginType = (to.query.type as string) || 'live'
+    next({ path: loginType === 'live' ? '/LiveGuide' : '/cloud' })
+    return
+  }
 
   if (isLoginRoute && auth.isAuthenticated) {
-    next({ path: '/' })
+    const loginType = (to.query.type as string) || 'live'
+    next({ path: loginType === 'live' ? '/LiveGuide' : '/cloud' })
     return
   }
 
   if (requiresAuth && !auth.isAuthenticated) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
+    if (to.name === 'app' || to.fullPath === '/') {
+      // 默认路由访问需要认证时，重定向到欢迎页面
+      next({ name: 'welcome' })
+    } else {
+      next({ name: 'login', query: { redirect: to.fullPath } })
+    }
     return
   }
 
-  if (!isLoginRoute && auth.isAuthenticated) {
+  if (!isLoginRoute && !isWelcomeRoute && auth.isAuthenticated) {
     const menuStore = useMenuStore()
     if (!menuStore.menus.length && !menuStore.loading) {
       try {
@@ -121,12 +173,9 @@ router.beforeEach(async (to, from, next) => {
         Message.error('加载菜单失败')
       }
     }
-    // 仍然需要注册路由，但不会真正使用它们（用于兼容性）
-    menuStore.ensureRoutes(router)
   }
 
   next()
 })
 
 export default router
-

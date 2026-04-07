@@ -1,6 +1,6 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import { login as loginApi, logout as logoutApi, refreshAccessToken as refreshApi, type LoginRequest, type LoginResponse, type UserInfo, type CompanyInfo, type CompanyConf } from '../api/auth'
-import { clearAuth, getAccessToken, getRefreshToken, getStoredUser, saveAuth, setDeviceId, getDeviceId } from '../utils/token'
+import { clearAuth, getAccessToken, getRefreshToken, getStoredUser, saveAuth, setDeviceId, getDeviceId, getLoginType } from '../utils/token'
 import { COMPANY_STORAGE_KEY, COMPANY_CONF_STORAGE_KEY } from '../config'
 
 const fallbackDeviceId = () => {
@@ -37,6 +37,7 @@ type AuthState = {
   deviceId: string
   company: CompanyInfo | null
   companyConf: CompanyConf | null
+  loginType: 'live' | 'cloud' | null
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -49,17 +50,27 @@ export const useAuthStore = defineStore('auth', {
       deviceId: deviceId || getDeviceId() || fallbackDeviceId(),
       company: getStoredCompany(),
       companyConf: getStoredCompanyConf(),
+      loginType: (getLoginType() as 'live' | 'cloud' | null) || null,
     }
   },
   getters: {
     isAuthenticated: (state) => Boolean(state.token),
   },
   actions: {
-    async login(payload: Omit<LoginRequest, 'clientType' | 'deviceId'> & { deviceName?: string }) {
+    async login(payload: Omit<LoginRequest, 'clientType' | 'deviceId'> & { deviceName?: string; loginType?: 'live' | 'cloud' }) {
       const ensuredDeviceId = this.deviceId || fallbackDeviceId()
       setDeviceId(ensuredDeviceId)
-      const res = await loginApi({ ...payload, clientType: 'web', deviceId: ensuredDeviceId })
-      this.applyLogin(res, ensuredDeviceId)
+
+      // 根据登录类型设置客户端类型
+      const clientType = payload.loginType === 'live' ? 'live-web' : 'cloud-web'
+
+      const res = await loginApi({
+        ...payload,
+        clientType: clientType,
+        deviceId: ensuredDeviceId,
+      })
+
+      this.applyLogin(res, ensuredDeviceId, payload.loginType)
       return res
     },
     async refresh() {
@@ -73,6 +84,7 @@ export const useAuthStore = defineStore('auth', {
         deviceId: this.deviceId,
         company: this.company,
         companyConf: this.companyConf,
+        loginType: this.loginType,
       })
       return res.token
     },
@@ -89,15 +101,18 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       this.company = null
       this.companyConf = null
+      // 不清除 loginType，这样用户退出登录后还能记住之前的登录模式
       clearAuth()
     },
-    applyLogin(res: LoginResponse, deviceId: string) {
+    applyLogin(res: LoginResponse, deviceId: string, loginType: 'live' | 'cloud' | null = null) {
       this.token = res.token
       this.refreshToken = res.refreshToken
       this.user = res.user
       this.company = res.company || null
       this.companyConf = res.companyConf || null
       this.deviceId = deviceId
+      this.loginType = loginType
+
       saveAuth({
         token: res.token,
         refreshToken: res.refreshToken,
@@ -105,8 +120,8 @@ export const useAuthStore = defineStore('auth', {
         deviceId,
         company: res.company,
         companyConf: res.companyConf,
+        loginType: loginType,
       })
     },
   },
 })
-

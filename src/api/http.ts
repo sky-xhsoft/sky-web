@@ -74,6 +74,9 @@ api.interceptors.response.use(
               refreshToken,
               user,
               deviceId: ensuredDeviceId,
+              company: null,
+              companyConf: null,
+              loginType: null,
             })
             return data.token
           })

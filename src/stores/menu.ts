@@ -2,6 +2,7 @@
 import { fetchUserMenuTree, type MenuTreeNode } from '../api/menu'
 import type { Router, RouteRecordRaw } from 'vue-router'
 import TableView from '../pages/TableView.vue'
+import { useAuthStore } from './auth'
 
 export type AppRouteLike = MenuTreeNode & { path?: string; title?: string; children?: AppRouteLike[] }
 
@@ -74,7 +75,9 @@ export const useMenuStore = defineStore('menu', {
     async loadMenus() {
       this.loading = true
       try {
-        const data = await fetchUserMenuTree()
+        const authStore = useAuthStore()
+        const systemType = authStore.loginType
+        const data = await fetchUserMenuTree(systemType || '')
         this.menus = data || []
         this.routesAdded = false
         return this.menus

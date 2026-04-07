@@ -17,96 +17,67 @@ export interface TabItem {
   title: string            // 标签显示标题
   componentName: string    // 组件名称
   params: Record<string, any> // 组件参数
-  isFixed?: boolean        // 是否固定（首页固定不可关闭）
+  isFixed?: boolean        // 是否固定（没有固定标签）
 }
 
 export const useNavigationStore = defineStore('navigation', () => {
-  // 当前导航状态
+  // 当前导航状态 - 初始为空，由 BasicLayout 根据登录类型初始化
   const current = ref<NavigationState>({
-    componentName: 'HomeDashboard',
-    title: '首页',
+    componentName: '',
+    title: '',
     params: {}
   })
 
   // 导航历史栈
   const history = ref<NavigationState[]>([])
 
-  // 标签页状态
-  const tabs = ref<TabItem[]>([
-    {
-      key: 'HomeDashboard-{}',
-      title: '首页',
-      componentName: 'HomeDashboard',
-      params: {},
-      isFixed: true
-    }
-  ])
-  const activeTabKey = ref<string>('HomeDashboard-{}')
-  const keepAliveIncludes = ref<string[]>(['HomeDashboard'])
+  // 标签页状态 - 没有默认标签
+  const tabs = ref<TabItem[]>([])
+  const activeTabKey = ref<string>('')
+  const keepAliveIncludes = ref<string[]>([])
 
   // 从localStorage恢复标签页状态
   const loadTabsFromStorage = () => {
     const savedTabs = localStorage.getItem('navigation_tabs')
     const savedActiveKey = localStorage.getItem('navigation_active_tab')
 
-    // 确保首页标签始终存在
-    const homeTab: TabItem = {
-      key: 'HomeDashboard-{}',
-      title: '首页',
-      componentName: 'HomeDashboard',
-      params: {},
-      isFixed: true
-    }
-
     if (savedTabs) {
       try {
         const parsedTabs = JSON.parse(savedTabs)
-        // 处理旧数据：确保只有首页是固定标签，其他标签都可关闭
+        // 移除旧的首页标签
         const processedTabs = parsedTabs
-          .filter((tab: TabItem) => tab.key !== 'LiveRoomList-{}') // 移除旧的默认固定标签
+          .filter((tab: TabItem) => tab.key !== 'HomeDashboard-{}')
           .map((tab: TabItem) => ({
             ...tab,
-            isFixed: false // 其他标签都不是固定的
+            isFixed: false // 没有固定标签
           }))
 
-        // 检查是否已经有首页标签
-        const hasHomeTab = processedTabs.some((tab: TabItem) => tab.key === 'HomeDashboard-{}')
-        if (!hasHomeTab) {
-          // 没有首页标签，添加到最前面
-          tabs.value = [homeTab, ...processedTabs]
-        } else {
-          // 确保首页标签是固定的
-          tabs.value = processedTabs.map((tab: TabItem) =>
-            tab.key === 'HomeDashboard-{}' ? { ...tab, isFixed: true } : tab
-          )
-        }
+        tabs.value = processedTabs
 
-        // 如果处理后没有其他标签，只保留首页
+        // 如果没有标签，则为空
         if (tabs.value.length === 0) {
-          tabs.value = [homeTab]
+          activeTabKey.value = ''
         }
       } catch (e) {
         console.error('Failed to load tabs from localStorage', e)
-        // 加载失败，使用默认标签
-        tabs.value = [homeTab]
+        // 加载失败，使用空标签
+        tabs.value = []
       }
     } else {
-      // 没有保存的标签，使用默认标签
-      tabs.value = [homeTab]
+      // 没有保存的标签，使用空标签
+      tabs.value = []
     }
 
     if (savedActiveKey) {
-      // 确保激活的标签存在
-      const tabExists = tabs.value.some(tab => tab.key === savedActiveKey)
-      // 如果之前的激活标签是旧默认的直播间管理，现在默认改为首页
-      if (tabExists && savedActiveKey !== 'LiveRoomList-{}') {
+      // 确保激活的标签存在且不是首页
+      const tabExists = tabs.value.some(tab => tab.key === savedActiveKey && tab.key !== 'HomeDashboard-{}')
+      if (tabExists) {
         activeTabKey.value = savedActiveKey
       } else {
-        // 激活的标签不存在或者是旧默认页，默认激活首页
-        activeTabKey.value = 'HomeDashboard-{}'
+        activeTabKey.value = tabs.value.length > 0 ? tabs.value[0].key : ''
       }
     } else {
-      activeTabKey.value = 'HomeDashboard-{}'
+      activeTabKey.value = tabs.value.length > 0 ? tabs.value[0].key : ''
     }
 
     // 同步当前导航状态到激活的标签
@@ -188,13 +159,22 @@ export const useNavigationStore = defineStore('navigation', () => {
 
     // 如果关闭的是当前激活的标签，切换到相邻标签
     if (key === activeTabKey.value) {
-      let newActiveKey: string
-      if (index < tabs.value.length) {
-        newActiveKey = tabs.value[index].key
+      if (tabs.value.length > 0) {
+        let newActiveKey: string
+        if (index < tabs.value.length) {
+          newActiveKey = tabs.value[index].key
+        } else {
+          newActiveKey = tabs.value[tabs.value.length - 1].key
+        }
+        switchTab(newActiveKey)
       } else {
-        newActiveKey = tabs.value[tabs.value.length - 1].key
+        activeTabKey.value = ''
+        current.value = {
+          componentName: '',
+          title: '',
+          params: {}
+        }
       }
-      switchTab(newActiveKey)
     }
 
     // 检查是否还有其他页面使用该组件，没有则从缓存中移除
@@ -244,17 +224,17 @@ export const useNavigationStore = defineStore('navigation', () => {
    * 关闭所有可关闭的标签页
    */
   function closeAllTabs(): void {
-    // 只保留固定标签
-    tabs.value = tabs.value.filter(tab => tab.isFixed)
+    // 没有固定标签，直接清空
+    tabs.value = []
+    activeTabKey.value = ''
+    current.value = {
+      componentName: '',
+      title: '',
+      params: {}
+    }
 
     // 清理缓存
-    const usedComponents = new Set(tabs.value.map(t => t.componentName))
-    keepAliveIncludes.value = keepAliveIncludes.value.filter(c => usedComponents.has(c))
-
-    // 切换到第一个标签
-    if (tabs.value.length > 0) {
-      switchTab(tabs.value[0].key)
-    }
+    keepAliveIncludes.value = []
   }
 
   /**
@@ -280,7 +260,7 @@ export const useNavigationStore = defineStore('navigation', () => {
    */
   function navigateTo(componentName: string, title: string, params?: Record<string, any>, pushToHistory: boolean = true) {
     // 将当前页面推入历史栈
-    if (pushToHistory) {
+    if (pushToHistory && current.value.componentName) {
       history.value.push({ ...current.value })
     }
 

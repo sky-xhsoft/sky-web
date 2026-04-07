@@ -10,8 +10,9 @@ export type MenuTreeNode = {
   children?: MenuTreeNode[]
 }
 
-export async function fetchUserMenuTree() {
-  const { data } = await api.get('/menus/user/tree')
+export async function fetchUserMenuTree(systemType?: string) {
+  const params = systemType ? { params: { type: systemType } } : {}
+  const { data } = await api.get('/menus/user/tree', params)
   return data?.data as MenuTreeNode[]
 }
 
