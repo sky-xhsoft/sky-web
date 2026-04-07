@@ -207,7 +207,8 @@ onBeforeUnmount(() => {
   background: #fff;
   min-height: 100vh;
   overflow-y: auto;
-  height: 850px;
+  height: auto;
+  min-height: 600px;
 }
 
 .preview-header {
@@ -230,11 +231,13 @@ onBeforeUnmount(() => {
 }
 
 .player-wrapper {
-  width: 100%;
+  width: 70%;
+  max-width: 800px;
   aspect-ratio: 16 / 9;
   background: #000;
   border-radius: 4px;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .stream-info {

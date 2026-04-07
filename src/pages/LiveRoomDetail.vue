@@ -63,23 +63,8 @@
                 </a-form-item>
               </a-col>
               <a-col :span="12">
-                <a-form-item label="直播间类型">
-                  {{ getRoomTypeText(roomInfo.roomType) }}
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
                 <a-form-item label="播出形式">
                   {{ getBroadcastFormatText(roomInfo.broadcastFormat) }}
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
-                <a-form-item label="直播间阶段">
-                  {{ getRoomStageText(roomInfo.roomStage) }}
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
-                <a-form-item label="显示方式">
-                  {{ getDisplayModeText(roomInfo.displayMode) }}
                 </a-form-item>
               </a-col>
               <a-col :span="12">
@@ -88,24 +73,11 @@
                 </a-form-item>
               </a-col>
               <a-col :span="12">
-                <a-form-item label="结束时间">
-                  {{ formatDateTime(roomInfo.endTime) }}
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
-                <a-form-item label="回放方式">
-                  {{ getPlaybackMethodText(roomInfo.playbackMethod) }}
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
                 <a-form-item label="状态">
                   {{ getStatusText(roomInfo.status) }}
                 </a-form-item>
               </a-col>
             </a-row>
-            <a-form-item label="直播间描述">
-              {{ roomInfo.description }}
-            </a-form-item>
             <a-form-item label="直播间封面">
               <a-image
                 :src="roomInfo.coverImage || '/default-cover.png'"
@@ -429,17 +401,6 @@ const handleDelete = () => {
   })
 }
 
-const getRoomTypeText = (roomType: string) => {
-  const map: Record<string, string> = {
-    'video': '视频直播',
-    'image': '图片直播',
-    'vr': 'VR直播',
-    'audio': '语音直播',
-    'graphic': '图文直播'
-  }
-  return map[roomType] || roomType
-}
-
 const getBroadcastFormatText = (broadcastFormat: string) => {
   const map: Record<string, string> = {
     'live': '直播',
@@ -447,53 +408,6 @@ const getBroadcastFormatText = (broadcastFormat: string) => {
     'pseudo': '伪直播'
   }
   return map[broadcastFormat] || broadcastFormat
-}
-
-const getRoomStageText = (roomStage: string) => {
-  const map: Record<string, string> = {
-    'formal': '正式直播',
-    'test': '测试直播'
-  }
-  return map[roomStage] || roomStage
-}
-
-const getDisplayModeText = (displayMode: string) => {
-  const map: Record<string, string> = {
-    'landscape': '横屏',
-    'portrait': '竖屏',
-    'three_screen': '三分屏'
-  }
-  return map[displayMode] || displayMode
-}
-
-const getViewingMethodText = (viewingMethod: string) => {
-  const map: Record<string, string> = {
-    'public': '公开',
-    'encrypted': '加密',
-    'paid': '付费',
-    'ticket': '购票进入',
-    'enterprise': '企业成员观看',
-    'custom': '自建成员观看'
-  }
-  return map[viewingMethod] || viewingMethod
-}
-
-const getPlaybackMethodText = (playbackMethod: string) => {
-  const map: Record<string, string> = {
-    'post_end': '结束后回放',
-    'real_time': '实时回放',
-    'no_playback': '结束后不回放'
-  }
-  return map[playbackMethod] || playbackMethod
-}
-
-const getPlaybackValidityText = (playbackValidity: string) => {
-  const map: Record<string, string> = {
-    'unlimited': '无限制',
-    'all_day': '全天',
-    'partial': '部分时段'
-  }
-  return map[playbackValidity] || playbackValidity
 }
 
 const getStatusText = (status: string) => {
