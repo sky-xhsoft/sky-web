@@ -851,25 +851,28 @@ onMounted(() => {
 .file-grid {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
-  gap: 20px;
+  gap: 16px;
   padding: 8px 0;
 }
 
 @media (min-width: 641px) {
   .file-grid {
     grid-template-columns: repeat(3, 1fr) !important;
+    gap: 20px;
   }
 }
 
 @media (min-width: 1025px) {
   .file-grid {
     grid-template-columns: repeat(4, 1fr) !important;
+    gap: 20px;
   }
 }
 
 @media (min-width: 1441px) {
   .file-grid {
     grid-template-columns: repeat(6, 1fr) !important;
+    gap: 20px;
   }
 }
 
@@ -1042,27 +1045,48 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .share-page {
-    padding: 16px;
+    padding: 12px;
   }
 
   .share-header {
-    padding: 24px 24px;
+    padding: 20px 20px;
   }
 
   .share-title {
-    font-size: 24px !important;
+    font-size: 20px !important;
+  }
+
+  .share-subtitle {
+    font-size: 13px !important;
+  }
+
+  .logo-section {
+    gap: 12px;
+  }
+
+  .logo-icon {
+    padding: 10px;
   }
 
   .password-form,
   .share-content {
-    padding: 32px 24px;
+    padding: 24px 20px;
   }
 
   .resource-preview,
   .file-detail {
     flex-direction: column;
     text-align: center;
-    padding: 20px;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .resource-icon {
+    transform: scale(0.8);
+  }
+
+  .file-preview-icon {
+    transform: scale(0.8);
   }
 
   .resource-info,
@@ -1070,21 +1094,226 @@ onMounted(() => {
     text-align: center;
   }
 
+  .resource-name {
+    font-size: 18px !important;
+  }
+
   .file-name {
-    font-size: 20px !important;
+    font-size: 18px !important;
   }
 
   .file-meta {
     justify-content: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .file-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px;
+  }
+
+  .file-card {
+    border-radius: 12px;
+  }
+
+  .file-card-icon {
+    margin: 12px 0 8px;
+    transform: scale(0.8);
+  }
+
+  .file-card-name {
+    margin: 8px 8px 6px;
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .file-card-actions {
+    margin: 6px 0 12px;
+    gap: 6px;
+  }
+
+  .file-card-actions :deep(.arco-btn) {
+    font-size: 12px !important;
+    height: 32px;
+    padding: 0 10px !important;
+  }
+
+  .breadcrumb {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+
+  .download-button {
+    width: 160px !important;
+    height: 44px !important;
+    font-size: 15px !important;
+  }
+
+  .empty-folder {
+    padding: 60px 20px !important;
+  }
+
+  .empty-folder :deep(.arco-icon) {
+    transform: scale(0.8);
+  }
+
+  .error-message {
+    padding: 60px 20px !important;
+  }
+
+  .error-icon {
+    transform: scale(0.8);
+  }
+
+  .error-content h2 {
+    font-size: 20px !important;
+  }
+
+  .error-content p {
+    font-size: 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .share-page {
+    padding: 10px;
+  }
+
+  .share-container {
+    border-radius: 16px;
+  }
+
+  .share-header {
+    padding: 16px 16px;
+  }
+
+  .share-title {
+    font-size: 18px !important;
+  }
+
+  .share-subtitle {
+    font-size: 12px !important;
+  }
+
+  .logo-icon {
+    padding: 8px;
+  }
+
+  .logo-icon :deep(.arco-icon) {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .password-form,
+  .share-content {
+    padding: 20px 16px;
+  }
+
+  .resource-preview,
+  .file-detail {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .resource-icon :deep(.arco-icon),
+  .file-preview-icon :deep(.arco-icon) {
+    width: 56px !important;
+    height: 56px !important;
+  }
+
+  .resource-name {
+    font-size: 16px !important;
+  }
+
+  .file-name {
+    font-size: 16px !important;
+  }
+
+  .file-meta {
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .file-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+
+  .file-card-icon {
+    margin: 10px 0 6px;
+  }
+
+  .file-card-icon :deep(.arco-icon) {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .file-card-name {
+    margin: 6px 6px 4px;
+    font-size: 12px;
+    -webkit-line-clamp: 1;
+  }
+
+  .file-card-actions {
+    margin: 4px 0 10px;
+    gap: 5px;
+  }
+
+  .file-card-actions :deep(.arco-btn) {
+    font-size: 11px !important;
+    height: 30px;
+    padding: 0 8px !important;
+  }
+
+  .folder-content {
+    margin-top: 30px;
+    padding-top: 24px;
+  }
+
+  .breadcrumb {
+    font-size: 11px;
+    padding: 8px 10px;
+    margin-bottom: 16px;
+  }
+
+  .content-header {
+    margin-bottom: 30px;
+  }
+
+  .action-section {
+    margin-top: 24px;
+  }
+
+  .download-button {
+    width: 140px !important;
+    height: 42px !important;
+    font-size: 14px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .share-title {
+    font-size: 16px !important;
+  }
+
+  .share-subtitle {
+    font-size: 11px !important;
   }
 
   .file-grid {
     grid-template-columns: 1fr !important;
+    gap: 12px;
   }
 
-  .breadcrumb {
-    font-size: 13px;
-    padding: 12px;
+  .file-card-name {
+    font-size: 14px;
+  }
+
+  .file-card-actions :deep(.arco-btn) {
+    font-size: 12px !important;
+    height: 34px;
+    padding: 0 12px !important;
   }
 }
 </style>
