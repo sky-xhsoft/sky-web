@@ -21,7 +21,7 @@
             </a-button>
           </div>
           <div class="info-row">
-            <span class="info-label">提取码:</span>
+            <span class="info-label">访问密码:</span>
             <span class="info-value copyable" @click="handleCopyCode">{{ shareCode }}</span>
             <a-button size="mini" type="text" @click="handleCopyCode">
               <icon-copy />
