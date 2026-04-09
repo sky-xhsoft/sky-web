@@ -20,14 +20,6 @@
               复制
             </a-button>
           </div>
-          <div class="info-row">
-            <span class="info-label">分享码:</span>
-            <span class="info-value copyable" @click="handleCopyCode">{{ shareCode }}</span>
-            <a-button size="mini" type="text" @click="handleCopyCode">
-              <icon-copy />
-              复制
-            </a-button>
-          </div>
           <div class="info-row" v-if="props.share?.password">
             <span class="info-label">访问密码:</span>
             <span class="info-value copyable" @click="handleCopyPassword">{{ props.share.password }}</span>
@@ -169,10 +161,6 @@ const shareLink = computed(() => {
   return `${window.location.origin}/share/${props.share.shareCode}`
 })
 
-const shareCode = computed(() => {
-  return props.share?.shareCode || ''
-})
-
 const createTime = computed(() => {
   return props.share?.createTime || ''
 })
@@ -222,15 +210,6 @@ function handleCopyLink() {
   if (!shareLink.value) return
   navigator.clipboard.writeText(shareLink.value).then(() => {
     Message.success('链接已复制')
-  }).catch(() => {
-    Message.error('复制失败，请手动复制')
-  })
-}
-
-function handleCopyCode() {
-  if (!shareCode.value) return
-  navigator.clipboard.writeText(shareCode.value).then(() => {
-    Message.success('分享码已复制')
   }).catch(() => {
     Message.error('复制失败，请手动复制')
   })

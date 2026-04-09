@@ -12,6 +12,7 @@ import type { TabItem } from '../stores/navigation'
 import HomeDashboard from '../pages/HomeDashboard.vue'
 import Dashboard from '../pages/Dashboard.vue'
 import Cloud from '../pages/Cloud.vue'
+import CloudShareManager from '../pages/CloudShareManager.vue'
 import SystemManagement from '../pages/SystemManagement.vue'
 import LiveGuide from '../pages/LiveGuide.vue'
 import TableView from '../pages/TableView.vue'
@@ -156,6 +157,7 @@ const componentRegistry: Record<string, any> = {
   HomeDashboard,
   Dashboard,
   Cloud,
+  CloudShareManager,
   SystemManagement,
   LiveGuide,
   TableView,

@@ -210,31 +210,16 @@
       @download="handlePreviewDownload"
     />
 
-    <!-- 分享管理抽屉 -->
-    <a-drawer
-      v-model:visible="shareManagerVisible"
-      title="分享管理"
-      width="600px"
-      :footer="false"
-    >
-      <CloudShareManager
-        :shares="store.myShares"
-        :loading="store.loading.shares"
-        @refresh="handleRefreshShares"
-        @copy="handleCopyShareLink"
-        @edit="handleOpenEditShare"
-        @view-stats="handleOpenShareStats"
-        @delete="handleDeleteShare"
-      />
-    </a-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import { IconShareAlt, IconCloudDownload, IconDownload, IconSort, IconDelete } from '@arco-design/web-vue/es/icon'
 import type { TreeNodeData } from '@arco-design/web-vue'
+import { useNavigationStore } from '@/stores/navigation'
 
 // 导入组件
 import {
@@ -247,7 +232,6 @@ import {
   CloudFileList,
   CloudBatchActions,
   CloudUploadProgress,
-  CloudShareManager,
   CloudDialogManager,
   CreateFolderDialog,
   RenameDialog,
@@ -280,6 +264,7 @@ import type { GridItem, Folder as FolderType, ShareCreateParams, ShareListItem }
 
 // ==================== 初始化 ====================
 const store = useCloudStore()
+const navigationStore = useNavigationStore()
 const navigation = useCloudNavigation()
 const folder = useCloudFolder()
 const file = useCloudFile()
@@ -305,7 +290,7 @@ const dragUpload = useDragUpload(dropZoneRef, {
 
 // ==================== 状态 ====================
 const refreshing = ref(false)
-const shareManagerVisible = ref(false)
+const router = useRouter()
 
 // 搜索关键词（双向绑定）
 const searchQuery = computed({
@@ -698,8 +683,7 @@ function handleClearCompletedUploads() {
 
 // ==================== 分享管理 ====================
 function handleOpenShareManager() {
-  shareManagerVisible.value = true
-  handleRefreshShares()
+  navigationStore.navigateTo('CloudShareManager', '我的分享', {}, false)
 }
 
 async function handleRefreshShares() {

@@ -19,7 +19,7 @@
           />
           <a-select v-model="filterStatus" placeholder="筛选状态" style="width: 120px">
             <a-option value="all">
-              <template #icon><icon-all /></template>
+              <template #icon><icon-apps /></template>
               全部
             </a-option>
             <a-option value="active">
@@ -77,7 +77,7 @@
       class="cloud-share-manager__empty"
     >
       <template #image>
-        <icon-empty-box />
+        <icon-empty />
       </template>
     </a-empty>
 
@@ -200,17 +200,6 @@
       </div>
     </div>
 
-    <!-- 批量删除按钮（当有选中项时显示）
-    <div v-if="selectedShares.length > 0" class="cloud-share-manager__batch-actions">
-      <span class="batch-info">已选择 {{ selectedShares.length }} 项</span>
-      <a-button size="small" status="danger" @click="handleBatchDelete">
-        <icon-delete />
-        批量删除
-      </a-button>
-      <a-button size="small" @click="clearSelection">
-        取消选择
-      </a-button>
-    </div>
   </div>
 </template>
 
@@ -232,8 +221,8 @@ import {
   IconFile,
   IconFolder,
   IconMore,
-  IconAll,
-  IconEmptyBox,
+  IconApps,
+  IconEmpty,
 } from '@arco-design/web-vue/es/icon'
 import type { ShareListItem } from '@/modules/cloud/types'
 import { formatDate } from '@/modules/cloud/utils/format'
@@ -329,11 +318,11 @@ const filteredShares = computed(() => {
 
 // 统计数据
 const activeShareCount = computed(() => {
-  return props.shares.filter((share) => !isExpired(share))).length
+  return props.shares.filter((share) => !isExpired(share)).length
 })
 
 const expiredShareCount = computed(() => {
-  return props.shares.filter((share) => isExpired(share))).length
+  return props.shares.filter((share) => isExpired(share)).length
 })
 
 function handleRefresh() {

@@ -111,6 +111,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../pages/LiveRoomDetail.vue'),
         meta: { title: '直播间详情', requiresAuth: true },
       },
+      // 分享管理页面
+      {
+        path: 'cloud/shares',
+        name: 'cloud-shares',
+        component: () => import('../pages/CloudShareManager.vue'),
+        meta: { title: '我的分享', requiresAuth: true },
+      },
     ],
   },
 ]
