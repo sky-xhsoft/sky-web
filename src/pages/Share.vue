@@ -5,11 +5,10 @@
       <div class="share-header">
         <div class="logo-section">
           <div class="logo-icon">
-            <icon-share-alt :size="32" />
+            <icon-share-alt :size="24" />
           </div>
           <div class="logo-text">
             <h1 class="share-title">云盘分享</h1>
-            <p class="share-subtitle">安全便捷的文件分享服务</p>
           </div>
         </div>
       </div>
@@ -20,8 +19,8 @@
           <div class="form-content">
             <div class="resource-preview" v-if="shareInfo">
               <div class="resource-icon">
-                <icon-file v-if="shareInfo.resourceType === 'file'" :size="72" />
-                <icon-folder v-else :size="72" />
+                <icon-file v-if="shareInfo.resourceType === 'file'" :size="36" />
+                <icon-folder v-else :size="36" />
               </div>
               <div class="resource-info">
                 <div class="resource-name">{{ getResourceName() }}</div>
@@ -73,8 +72,8 @@
             <div class="file-detail">
               <div class="file-preview">
                 <div class="file-preview-icon">
-                  <icon-file v-if="shareInfo.resourceType === 'file'" :size="88" />
-                  <icon-folder v-else :size="88" />
+                  <icon-file v-if="shareInfo.resourceType === 'file'" :size="36" />
+                  <icon-folder v-else :size="36" />
                 </div>
               </div>
               <div class="file-info">
@@ -157,12 +156,12 @@
                   </div>
                   <!-- 其他类型显示图标 -->
                   <div v-else class="file-card-icon">
-                    <icon-folder v-if="item.type === 'folder'" :size="56" />
-                    <icon-image v-else-if="getFileType(item.name) === 'image'" :size="56" />
-                    <icon-video-camera v-else-if="getFileType(item.name) === 'video'" :size="56" />
-                    <icon-music v-else-if="getFileType(item.name) === 'audio'" :size="56" />
-                    <icon-file-pdf v-else-if="getFileType(item.name) === 'pdf'" :size="56" />
-                    <icon-file v-else :size="56" />
+                    <icon-folder v-if="item.type === 'folder'" :size="80" />
+                    <icon-image v-else-if="getFileType(item.name) === 'image'" :size="80" />
+                    <icon-video-camera v-else-if="getFileType(item.name) === 'video'" :size="80" />
+                    <icon-music v-else-if="getFileType(item.name) === 'audio'" :size="80" />
+                    <icon-file-pdf v-else-if="getFileType(item.name) === 'pdf'" :size="80" />
+                    <icon-file v-else :size="80" />
                   </div>
                   <div class="file-card-name" :title="item.displayName || item.name">{{ item.displayName || item.name }}</div>
                   <div class="file-card-actions" v-if="item.type === 'file'">
@@ -645,28 +644,39 @@ onMounted(() => {
 
 <style scoped>
 .share-page {
-  min-height: 100vh;
+  height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 0;
 }
 
 .share-container {
   width: 100%;
+  height: 100%;
   max-width: 900px;
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  border-radius: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   animation: slideIn 0.4s ease-out;
+  display: flex;
+  flex-direction: column;
 }
+
+.share-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
 
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -677,24 +687,24 @@ onMounted(() => {
 .share-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 32px 40px;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
 .logo-icon {
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 6px;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
 }
 
 .logo-text {
@@ -702,43 +712,53 @@ onMounted(() => {
 }
 
 .share-title {
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0 0 6px;
-  letter-spacing: -0.5px;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.3px;
 }
 
 .share-subtitle {
-  font-size: 14px;
+  font-size: 13px;
   opacity: 0.9;
   margin: 0;
   font-weight: 400;
 }
 
 .password-form {
-  padding: 48px 40px;
+  padding: 16px 16px;
   text-align: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .form-content {
   max-width: 450px;
-  margin: 0 auto;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
 }
 
 .resource-preview {
   display: flex;
   align-items: center;
-  gap: 24px;
-  margin-bottom: 40px;
-  padding: 24px;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px;
   background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid #e5e7eb;
+  min-height: auto;
 }
 
 .resource-icon {
   color: #667eea;
   flex-shrink: 0;
+  transform: scale(0.6);
 }
 
 .resource-info {
@@ -747,19 +767,19 @@ onMounted(() => {
 }
 
 .resource-name {
-  font-size: 20px;
+  font-size: 12px;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
   word-break: break-all;
 }
 
 .resource-meta {
-  font-size: 14px;
+  font-size: 11px;
   color: #6b7280;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1px;
 }
 
 .sharer-info {
@@ -768,21 +788,21 @@ onMounted(() => {
 }
 
 .share-content {
-  padding: 40px;
+  padding: 16px;
 }
 
 .content-header {
-  margin-bottom: 40px;
+  margin-bottom: 16px;
 }
 
 .file-detail {
   display: flex;
   align-items: center;
-  gap: 24px;
-  margin-bottom: 32px;
-  padding: 24px;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px;
   background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid #e5e7eb;
 }
 
@@ -792,6 +812,7 @@ onMounted(() => {
 
 .file-preview-icon {
   color: #667eea;
+  transform: scale(0.6);
 }
 
 .file-info {
@@ -799,80 +820,85 @@ onMounted(() => {
 }
 
 .file-name {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   color: #1f2937;
-  margin: 0 0 16px;
+  margin: 0 0 4px;
   word-break: break-all;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
 .file-meta {
-  font-size: 14px;
+  font-size: 11px;
   color: #6b7280;
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 6px;
   align-items: center;
 }
 
 .file-meta span {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 3px;
 }
 
 .action-section {
   display: flex;
   justify-content: center;
-  margin-top: 32px;
+  margin-top: 10px;
 }
 
 .download-button {
-  width: 200px;
-  height: 48px;
-  font-size: 16px;
+  width: 140px;
+  height: 36px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .folder-content {
-  margin-top: 40px;
-  border-top: 2px solid #f3f4f6;
-  padding-top: 32px;
+  margin-top: 12px;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
 .breadcrumb {
-  margin-bottom: 24px;
-  padding: 16px;
+  margin-bottom: 8px;
+  padding: 6px 8px;
   background: #f9fafb;
-  border-radius: 12px;
+  border-radius: 6px;
 }
 
 .file-grid {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
-  gap: 16px;
-  padding: 8px 0;
+  gap: 8px;
+  padding: 4px 0;
+  flex: 1;
 }
 
 @media (min-width: 641px) {
   .file-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 20px;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
   }
 }
 
 @media (min-width: 1025px) {
   .file-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 20px;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
   }
 }
 
 @media (min-width: 1441px) {
   .file-grid {
-    grid-template-columns: repeat(6, 1fr) !important;
-    gap: 20px;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
   }
 }
 
@@ -882,8 +908,8 @@ onMounted(() => {
   align-items: center;
   padding: 0;
   border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  transition: all 0.3s ease;
+  border-radius: 8px;
+  transition: all 0.2s ease;
   background: white;
   overflow: hidden;
   position: relative;
@@ -891,8 +917,8 @@ onMounted(() => {
 
 .file-card:hover {
   border-color: #667eea;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
-  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+  transform: translateY(-2px);
 }
 
 .file-card.clickable {
@@ -906,7 +932,7 @@ onMounted(() => {
 .file-card-preview {
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 16/9;
   overflow: hidden;
   background: #f3f4f6;
 }
@@ -930,11 +956,11 @@ onMounted(() => {
 .file-card-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.3s ease;
   color: white;
 }
@@ -945,16 +971,27 @@ onMounted(() => {
 
 .file-card-icon {
   color: #667eea;
-  margin: 20px 0 16px;
+  margin: 0;
+  width: 100%;
+  aspect-ratio: 16/9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+}
+
+.file-card-icon :deep(.arco-icon) {
+  width: 80% !important;
+  height: 80% !important;
 }
 
 .file-card-name {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   color: #1f2937;
   text-align: center;
   word-break: break-word;
-  margin: 16px 16px 12px;
+  margin: 8px 8px 6px;
   width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -964,11 +1001,17 @@ onMounted(() => {
 }
 
 .file-card-actions {
-  margin: 12px 0 16px;
+  margin: 0 0 10px;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+.file-card-actions :deep(.arco-btn) {
+  font-size: 11px !important;
+  height: 28px;
+  padding: 0 10px !important;
 }
 
 .preview-container {
@@ -1045,48 +1088,48 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .share-page {
-    padding: 12px;
+    padding: 0;
   }
 
   .share-header {
-    padding: 20px 20px;
+    padding: 12px 16px;
   }
 
   .share-title {
-    font-size: 20px !important;
+    font-size: 16px !important;
   }
 
   .share-subtitle {
-    font-size: 13px !important;
+    font-size: 12px !important;
   }
 
   .logo-section {
-    gap: 12px;
+    gap: 8px;
   }
 
   .logo-icon {
-    padding: 10px;
+    padding: 6px;
   }
 
   .password-form,
   .share-content {
-    padding: 24px 20px;
+    padding: 16px 14px;
   }
 
   .resource-preview,
   .file-detail {
     flex-direction: column;
     text-align: center;
-    padding: 16px;
-    gap: 16px;
+    padding: 12px;
+    gap: 12px;
   }
 
   .resource-icon {
-    transform: scale(0.8);
+    transform: scale(0.6);
   }
 
   .file-preview-icon {
-    transform: scale(0.8);
+    transform: scale(0.6);
   }
 
   .resource-info,
@@ -1095,225 +1138,224 @@ onMounted(() => {
   }
 
   .resource-name {
-    font-size: 18px !important;
+    font-size: 14px !important;
   }
 
   .file-name {
-    font-size: 18px !important;
+    font-size: 14px !important;
   }
 
   .file-meta {
     justify-content: center;
-    gap: 12px;
-    font-size: 13px;
+    gap: 8px;
+    font-size: 12px;
   }
 
   .file-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px;
+    gap: 8px;
   }
 
   .file-card {
-    border-radius: 12px;
+    border-radius: 8px;
   }
 
   .file-card-icon {
-    margin: 12px 0 8px;
-    transform: scale(0.8);
+    margin: 6px 0 2px;
   }
 
   .file-card-name {
-    margin: 8px 8px 6px;
+    margin: 4px 4px 2px;
     font-size: 13px;
     line-height: 1.3;
   }
 
   .file-card-actions {
-    margin: 6px 0 12px;
-    gap: 6px;
+    margin: 2px 0 6px;
+    gap: 4px;
   }
 
   .file-card-actions :deep(.arco-btn) {
     font-size: 12px !important;
-    height: 32px;
-    padding: 0 10px !important;
-  }
-
-  .breadcrumb {
-    font-size: 12px;
-    padding: 10px 12px;
-  }
-
-  .download-button {
-    width: 160px !important;
-    height: 44px !important;
-    font-size: 15px !important;
-  }
-
-  .empty-folder {
-    padding: 60px 20px !important;
-  }
-
-  .empty-folder :deep(.arco-icon) {
-    transform: scale(0.8);
-  }
-
-  .error-message {
-    padding: 60px 20px !important;
-  }
-
-  .error-icon {
-    transform: scale(0.8);
-  }
-
-  .error-content h2 {
-    font-size: 20px !important;
-  }
-
-  .error-content p {
-    font-size: 14px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .share-page {
-    padding: 10px;
-  }
-
-  .share-container {
-    border-radius: 16px;
-  }
-
-  .share-header {
-    padding: 16px 16px;
-  }
-
-  .share-title {
-    font-size: 18px !important;
-  }
-
-  .share-subtitle {
-    font-size: 12px !important;
-  }
-
-  .logo-icon {
-    padding: 8px;
-  }
-
-  .logo-icon :deep(.arco-icon) {
-    width: 24px !important;
-    height: 24px !important;
-  }
-
-  .password-form,
-  .share-content {
-    padding: 20px 16px;
-  }
-
-  .resource-preview,
-  .file-detail {
-    padding: 14px;
-    gap: 12px;
-  }
-
-  .resource-icon :deep(.arco-icon),
-  .file-preview-icon :deep(.arco-icon) {
-    width: 56px !important;
-    height: 56px !important;
-  }
-
-  .resource-name {
-    font-size: 16px !important;
-  }
-
-  .file-name {
-    font-size: 16px !important;
-  }
-
-  .file-meta {
-    gap: 10px;
-    font-size: 12px;
-  }
-
-  .file-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px;
-  }
-
-  .file-card-icon {
-    margin: 10px 0 6px;
-  }
-
-  .file-card-icon :deep(.arco-icon) {
-    width: 40px !important;
-    height: 40px !important;
-  }
-
-  .file-card-name {
-    margin: 6px 6px 4px;
-    font-size: 12px;
-    -webkit-line-clamp: 1;
-  }
-
-  .file-card-actions {
-    margin: 4px 0 10px;
-    gap: 5px;
-  }
-
-  .file-card-actions :deep(.arco-btn) {
-    font-size: 11px !important;
-    height: 30px;
-    padding: 0 8px !important;
-  }
-
-  .folder-content {
-    margin-top: 30px;
-    padding-top: 24px;
+    height: 24px;
+    padding: 0 6px !important;
   }
 
   .breadcrumb {
     font-size: 11px;
     padding: 8px 10px;
-    margin-bottom: 16px;
-  }
-
-  .content-header {
-    margin-bottom: 30px;
-  }
-
-  .action-section {
-    margin-top: 24px;
   }
 
   .download-button {
-    width: 140px !important;
-    height: 42px !important;
-    font-size: 14px !important;
+    width: 120px !important;
+    height: 38px !important;
+    font-size: 13px !important;
+  }
+
+  .empty-folder {
+    padding: 40px 20px !important;
+  }
+
+  .empty-folder :deep(.arco-icon) {
+    transform: scale(0.7);
+  }
+
+  .error-message {
+    padding: 40px 20px !important;
+  }
+
+  .error-icon {
+    transform: scale(0.7);
+  }
+
+  .error-content h2 {
+    font-size: 18px !important;
+  }
+
+  .error-content p {
+    font-size: 13px !important;
   }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 480px) {
+  .share-page {
+    padding: 0;
+  }
+
+  .share-container {
+    border-radius: 12px;
+  }
+
+  .share-header {
+    padding: 10px 14px;
+  }
+
   .share-title {
-    font-size: 16px !important;
+    font-size: 15px !important;
   }
 
   .share-subtitle {
     font-size: 11px !important;
   }
 
+  .logo-icon {
+    padding: 5px;
+  }
+
+  .logo-icon :deep(.arco-icon) {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .password-form,
+  .share-content {
+    padding: 14px 12px;
+  }
+
+  .resource-preview,
+  .file-detail {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .resource-icon :deep(.arco-icon),
+  .file-preview-icon :deep(.arco-icon) {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .resource-name {
+    font-size: 13px !important;
+  }
+
+  .file-name {
+    font-size: 13px !important;
+  }
+
+  .file-meta {
+    gap: 6px;
+    font-size: 11px;
+  }
+
   .file-grid {
-    grid-template-columns: 1fr !important;
-    gap: 12px;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px;
+  }
+
+  .file-card-icon {
+    margin: 4px 0 2px;
+  }
+
+  .file-card-icon :deep(.arco-icon) {
+    width: 32px !important;
+    height: 32px !important;
   }
 
   .file-card-name {
-    font-size: 14px;
+    margin: 3px 3px 1px;
+    font-size: 12px;
+    -webkit-line-clamp: 1;
+  }
+
+  .file-card-actions {
+    margin: 2px 0 4px;
+    gap: 3px;
   }
 
   .file-card-actions :deep(.arco-btn) {
+    font-size: 9px !important;
+    height: 22px;
+    padding: 0 5px !important;
+  }
+
+  .folder-content {
+    margin-top: 20px;
+    padding-top: 16px;
+  }
+
+  .breadcrumb {
+    font-size: 10px;
+    padding: 6px 8px;
+    margin-bottom: 12px;
+  }
+
+  .content-header {
+    margin-bottom: 20px;
+  }
+
+  .action-section {
+    margin-top: 16px;
+  }
+
+  .download-button {
+    width: 110px !important;
+    height: 36px !important;
     font-size: 12px !important;
-    height: 34px;
-    padding: 0 12px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .share-title {
+    font-size: 14px !important;
+  }
+
+  .share-subtitle {
+    font-size: 10px !important;
+  }
+
+  .file-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  .file-card-name {
+    font-size: 13px;
+  }
+
+  .file-card-actions :deep(.arco-btn) {
+    font-size: 10px !important;
+    height: 28px;
+    padding: 0 8px !important;
   }
 }
 </style>
