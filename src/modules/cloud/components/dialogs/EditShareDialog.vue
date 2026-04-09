@@ -21,9 +21,17 @@
             </a-button>
           </div>
           <div class="info-row">
-            <span class="info-label">访问密码:</span>
+            <span class="info-label">分享码:</span>
             <span class="info-value copyable" @click="handleCopyCode">{{ shareCode }}</span>
             <a-button size="mini" type="text" @click="handleCopyCode">
+              <icon-copy />
+              复制
+            </a-button>
+          </div>
+          <div class="info-row" v-if="props.share?.password">
+            <span class="info-label">访问密码:</span>
+            <span class="info-value copyable" @click="handleCopyPassword">{{ props.share.password }}</span>
+            <a-button size="mini" type="text" @click="handleCopyPassword">
               <icon-copy />
               复制
             </a-button>
@@ -222,7 +230,16 @@ function handleCopyLink() {
 function handleCopyCode() {
   if (!shareCode.value) return
   navigator.clipboard.writeText(shareCode.value).then(() => {
-    Message.success('提取码已复制')
+    Message.success('分享码已复制')
+  }).catch(() => {
+    Message.error('复制失败，请手动复制')
+  })
+}
+
+function handleCopyPassword() {
+  if (!props.share?.password) return
+  navigator.clipboard.writeText(props.share.password).then(() => {
+    Message.success('访问密码已复制')
   }).catch(() => {
     Message.error('复制失败，请手动复制')
   })
