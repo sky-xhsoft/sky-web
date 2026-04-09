@@ -3,60 +3,99 @@
     v-model:visible="dialogVisible"
     title="编辑分享"
     :ok-loading="loading"
-    width="500px"
+    width="600px"
     @ok="handleOk"
     @cancel="handleCancel"
+    :footer-extra="renderFooterExtra"
   >
-    <a-form :model="form" layout="vertical">
-      <a-form-item label="分享链接">
+    <a-form :model="form" layout="vertical" ref="formRef">
+      <!-- 分享基本信息 -->
+      <a-form-item label="分享信息">
         <div class="share-info">
-          <span class="info-label">链接:</span>
-          <span class="info-value">{{ shareLink }}</span>
-        </div>
-        <div class="share-info">
-          <span class="info-label">提取码:</span>
-          <span class="info-value">{{ shareCode }}</span>
+          <div class="info-row">
+            <span class="info-label">链接:</span>
+            <span class="info-value copyable" @click="handleCopyLink">{{ shareLink }}</span>
+            <a-button size="mini" type="text" @click="handleCopyLink">
+              <icon-copy />
+              复制
+            </a-button>
+          </div>
+          <div class="info-row">
+            <span class="info-label">提取码:</span>
+            <span class="info-value copyable" @click="handleCopyCode">{{ shareCode }}</span>
+            <a-button size="mini" type="text" @click="handleCopyCode">
+              <icon-copy />
+              复制
+            </a-button>
+          </div>
         </div>
       </a-form-item>
 
+      <!-- 有效期设置 -->
       <a-form-item
         field="expirationDays"
         label="有效期"
         :rules="[{ required: true, message: '请选择有效期' }]"
       >
-        <a-select v-model="form.expirationDays" placeholder="请选择有效期">
-          <a-option :value="1">1天</a-option>
-          <a-option :value="7">7天</a-option>
-          <a-option :value="30">30天</a-option>
-          <a-option :value="0">永久</a-option>
-        </a-select>
+        <a-radio-group v-model="form.expirationDays" button-style="solid">
+          <a-radio-button :value="1">1天</a-radio-button>
+          <a-radio-button :value="7">7天</a-radio-button>
+          <a-radio-button :value="30">30天</a-radio-button>
+          <a-radio-button :value="0">永久</a-radio-button>
+        </a-radio-group>
+        <div class="hint" v-if="form.expirationDays === 0">
+          永久分享将长期有效，请谨慎设置
+        </div>
+        <div class="hint" v-else>
+          分享将在 {{ form.expirationDays }} 天后过期
+        </div>
       </a-form-item>
 
+      <!-- 访问密码 -->
       <a-form-item label="访问密码">
         <a-input-password
           v-model="form.password"
           placeholder="留空则不设置密码"
           :max-length="20"
           allow-clear
+          show-password-toggle
         >
+          <template #prefix>
+            <icon-lock v-if="form.password" />
+            <icon-unlock v-else />
+          </template>
           <template #suffix>
-            <a-button size="mini" type="text" @click="generatePassword">
-              生成
+            <a-button size="mini" type="text" @click="generatePassword" :disabled="generating">
+              <icon-rotate-cw v-if="generating" />
+              {{ generating ? '生成中...' : '生成' }}
             </a-button>
           </template>
         </a-input-password>
-        <div class="hint">修改密码后，旧密码将失效</div>
-      </a-form-item>
-
-      <a-form-item label="创建时间">
-        <div class="share-info">
-          <span class="info-value">{{ formatDate(createTime) }}</span>
+        <div class="hint">
+          <icon-info-circle /> 修改密码后，旧密码将立即失效
         </div>
       </a-form-item>
 
-      <a-form-item v-if="expirationTime" label="过期时间">
-        <div class="share-info">
-          <span class="info-value">{{ formatDate(expirationTime) }}</span>
+      <!-- 分享详情信息 -->
+      <a-form-item label="分享详情">
+        <div class="share-details">
+          <div class="detail-row">
+            <span class="detail-label">创建时间:</span>
+            <span class="detail-value">{{ formatDate(createTime) }}</span>
+          </div>
+          <div class="detail-row" v-if="expirationTime">
+            <span class="detail-label">过期时间:</span>
+            <span class="detail-value" :class="{ 'text-warning': isExpiringSoon }">
+              {{ formatDate(expirationTime) }}
+              <span v-if="isExpiringSoon" class="expiration-warning">(即将过期)</span>
+            </span>
+          </div>
+          <div class="detail-row" v-if="form.expirationDays > 0">
+            <span class="detail-label">剩余天数:</span>
+            <span class="detail-value" :class="{ 'text-danger': remainingDays <= 1, 'text-warning': remainingDays <= 3 }">
+              {{ remainingDays }} 天
+            </span>
+          </div>
         </div>
       </a-form-item>
     </a-form>
@@ -64,7 +103,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, h } from 'vue'
+import { Message } from '@arco-design/web-vue'
+import { IconCopy, IconLock, IconUnlock, IconRotateCw, IconInfoCircle } from '@arco-design/web-vue/es/icon'
 import type { ShareListItem } from '@/modules/cloud/types'
 import { formatDate } from '@/modules/cloud/utils/format'
 
@@ -88,6 +129,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const dialogVisible = ref(props.visible)
+const formRef = ref()
+const generating = ref(false)
+
 const form = ref({
   expirationDays: 7,
   password: '',
@@ -128,6 +172,15 @@ const expirationTime = computed(() => {
   return props.share?.expireTime || ''
 })
 
+const remainingDays = computed(() => {
+  return calculateRemainingDays(props.share?.expireTime)
+})
+
+const isExpiringSoon = computed(() => {
+  const days = remainingDays.value
+  return days > 0 && days <= 3
+})
+
 function calculateRemainingDays(expirationTime?: string): number {
   if (!expirationTime) return 0
   const expTime = new Date(expirationTime).getTime()
@@ -138,55 +191,98 @@ function calculateRemainingDays(expirationTime?: string): number {
 }
 
 function generateRandomPassword(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let password = ''
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     password += chars.charAt(Math.floor(Math.random() * chars.length))
   }
   return password
 }
 
 function generatePassword() {
-  form.value.password = generateRandomPassword()
+  generating.value = true
+  // 模拟生成动画
+  setTimeout(() => {
+    form.value.password = generateRandomPassword()
+    generating.value = false
+    Message.success('密码已生成')
+  }, 300)
+}
+
+function handleCopyLink() {
+  if (!shareLink.value) return
+  navigator.clipboard.writeText(shareLink.value).then(() => {
+    Message.success('链接已复制')
+  }).catch(() => {
+    Message.error('复制失败，请手动复制')
+  })
+}
+
+function handleCopyCode() {
+  if (!shareCode.value) return
+  navigator.clipboard.writeText(shareCode.value).then(() => {
+    Message.success('提取码已复制')
+  }).catch(() => {
+    Message.error('复制失败，请手动复制')
+  })
 }
 
 function handleOk() {
-  const params: { expirationDays: number; password?: string } = {
-    expirationDays: form.value.expirationDays,
-  }
+  formRef.value?.validate().then(() => {
+    const params: { expirationDays: number; password?: string } = {
+      expirationDays: form.value.expirationDays,
+    }
 
-  // 只在有密码时添加
-  if (form.value.password.trim()) {
-    params.password = form.value.password.trim()
-  }
+    // 只在有密码时添加
+    if (form.value.password.trim()) {
+      params.password = form.value.password.trim()
+    }
 
-  emit('confirm', params)
+    emit('confirm', params)
+  }).catch(() => {
+    // 验证失败，不提交
+  })
 }
 
 function handleCancel() {
   dialogVisible.value = false
+}
+
+// 渲染 footer 额外内容
+function renderFooterExtra() {
+  return h('div', { class: 'footer-extra' }, [
+    h(IconInfoCircle, { style: 'margin-right: 4px;' }),
+    '修改后分享链接保持不变'
+  ])
 }
 </script>
 
 <style scoped>
 .share-info {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-row {
+  display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
   background: #f9fafb;
-  border-radius: 4px;
-  margin-bottom: 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
-.share-info:last-child {
-  margin-bottom: 0;
+.info-row:hover {
+  background: #f3f4f6;
 }
 
 .info-label {
   font-size: 13px;
   color: #6b7280;
-  min-width: 60px;
+  min-width: 50px;
+  font-weight: 500;
 }
 
 .info-value {
@@ -196,11 +292,98 @@ function handleCancel() {
   font-family: monospace;
   overflow-x: auto;
   white-space: nowrap;
+  flex: 1;
+}
+
+.copyable {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.copyable:hover {
+  color: #3b82f6;
 }
 
 .hint {
-  margin-top: 4px;
+  margin-top: 6px;
   font-size: 12px;
   color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hint.warning {
+  color: #f59e0b;
+}
+
+.hint.danger {
+  color: #ef4444;
+}
+
+.share-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.detail-label {
+  font-size: 13px;
+  color: #6b7280;
+  min-width: 70px;
+}
+
+.detail-value {
+  font-size: 13px;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.detail-value.text-warning {
+  color: #f59e0b;
+}
+
+.detail-value.text-danger {
+  color: #ef4444;
+}
+
+.expiration-warning {
+  font-size: 12px;
+  color: #f59e0b;
+  margin-left: 4px;
+}
+
+.footer-extra {
+  font-size: 13px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 响应式适配 */
+@media (max-width: 640px) {
+  .info-label,
+  .detail-label {
+    min-width: 40px;
+    font-size: 12px;
+  }
+
+  .info-value,
+  .detail-value {
+    font-size: 12px;
+  }
+
+  .hint {
+    font-size: 11px;
+  }
 }
 </style>
