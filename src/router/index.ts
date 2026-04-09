@@ -43,7 +43,9 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'app',
-        component: LiveRoomList,  // 默认显示直播间管理页面
+        component: {  // 空组件，完全由 BasicLayout 控制显示
+          render: (h: any) => h('div')
+        },
         meta: { title: '应用', requiresAuth: true },
       },
       // 直播域名管理页面

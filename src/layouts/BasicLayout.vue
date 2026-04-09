@@ -1,11 +1,12 @@
 ﻿<script setup lang="ts">
-import { computed, onMounted, ref, watch, shallowRef, nextTick, h } from 'vue'
+import { computed, onMounted, ref, watch, shallowRef, nextTick, h, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Menu, Message, Tabs, Dropdown } from '@arco-design/web-vue'
 import { IconApps, IconMenuFold, IconMenuUnfold, IconRefresh, IconClose, IconCloseCircle } from '@arco-design/web-vue/es/icon'
 import { useMenuStore } from '../stores/menu'
 import { useAuthStore } from '../stores/auth'
 import { useNavigationStore } from '../stores/navigation'
+import type { TabItem } from '../stores/navigation'
 
 // 导入常用组件
 import HomeDashboard from '../pages/HomeDashboard.vue'
@@ -38,6 +39,10 @@ const navigationStore = useNavigationStore()
 
 // 标签页右键菜单当前操作的key
 const currentRightClickTabKey = ref<string>('')
+// 右键菜单显示状态
+const contextMenuVisible = ref(false)
+// 右键菜单位置
+const contextMenuPosition = ref({ x: 0, y: 0 })
 // 移动端侧边栏显示控制
 const mobileSidebarShow = ref(false)
 
@@ -64,6 +69,36 @@ const tabContextMenuOptions = [
     icon: IconCloseCircle
   }
 ]
+
+/**
+ * 处理标签页右键点击
+ */
+const handleTabContextMenu = (e: MouseEvent, key: string) => {
+  e.preventDefault()
+  e.stopPropagation()
+  currentRightClickTabKey.value = key
+  contextMenuPosition.value = { x: e.clientX, y: e.clientY }
+  contextMenuVisible.value = true
+}
+
+/**
+ * 关闭右键菜单
+ */
+const closeContextMenu = () => {
+  contextMenuVisible.value = false
+}
+
+// 监听点击事件，关闭右键菜单
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', closeContextMenu)
+}
+
+// 组件卸载时清理事件监听器
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('click', closeContextMenu)
+  }
+})
 
 /**
  * 标签页切换回调
@@ -113,13 +148,7 @@ const onTabContextMenuClick = (key: string) => {
       navigationStore.closeAllTabs()
       break
   }
-}
-
-/**
- * 标签页右键菜单显示回调
- */
-const onTabContextMenu = (key: string) => {
-  currentRightClickTabKey.value = key
+  contextMenuVisible.value = false
 }
 
 // 组件映射表
@@ -524,6 +553,22 @@ const handleCloseAllTabs = () => {
   navigationStore.closeAllTabs()
 }
 
+/**
+ * 渲染标签页标题（带右键菜单支持）
+ */
+const renderTabPaneTitle = (tab: TabItem) => {
+  return h('div', {
+    class: 'tab-title-wrapper',
+    onContextmenu: (e: MouseEvent) => handleTabContextMenu(e, tab.key),
+    onClick: (e: MouseEvent) => {
+      // 防止点击标签标题时触发外层点击事件导致菜单关闭
+      e.stopPropagation()
+    }
+  }, [
+    h('span', { class: 'tab-title-text' }, tab.title)
+  ])
+}
+
 onMounted(async () => {
   if (!menuStore.menus.length && authStore.isAuthenticated) {
     try {
@@ -539,7 +584,7 @@ onMounted(async () => {
 
   openKeys.value = defaultOpenKeys.value
 
-  // 根据登录类型初始化显示的页面
+  // 根据登录类型初始化显示的页面（确保刷新时正确显示）
   if (authStore.isAuthenticated) {
     // 检查当前标签页是否与登录类型匹配
     const loginType = authStore.loginType
@@ -552,12 +597,24 @@ onMounted(async () => {
     if (navigationStore.tabs.length === 0 || !isTabMatchingType) {
       navigationStore.closeAllTabs()
       if (loginType === 'live') {
-        await loadComponent('/LiveGuide')
+        // 初始化固定标签页
+        navigationStore.initializeDefaultTab('LiveGuide', '视频直播功能说明', {})
+        currentComponent.value = componentRegistry.LiveGuide
       } else if (loginType === 'cloud') {
-        await loadComponent('/cloud')
+        // 初始化固定标签页
+        navigationStore.initializeDefaultTab('Cloud', '云盘', {})
+        currentComponent.value = componentRegistry.Cloud
       } else {
         // 默认跳转到直播系统的默认页面
-        await loadComponent('/LiveGuide')
+        navigationStore.initializeDefaultTab('LiveGuide', '视频直播功能说明', {})
+        currentComponent.value = componentRegistry.LiveGuide
+      }
+    } else {
+      // 如果标签页类型匹配，但没有显示对应组件，手动设置
+      if (loginType === 'live' && currentComponent.value !== componentRegistry.LiveGuide) {
+        currentComponent.value = componentRegistry.LiveGuide
+      } else if (loginType === 'cloud' && currentComponent.value !== componentRegistry.Cloud) {
+        currentComponent.value = componentRegistry.Cloud
       }
     }
   }
@@ -578,14 +635,11 @@ watch(
       const loginType = authStore.loginType
       if (loginType === 'live') {
         currentComponent.value = componentRegistry.LiveGuide
-        navigationStore.navigateTo('LiveGuide', '视频直播功能说明', {}, false)
       } else if (loginType === 'cloud') {
         currentComponent.value = componentRegistry.Cloud
-        navigationStore.navigateTo('Cloud', '云盘', {}, false)
       } else {
         // 默认跳转到直播系统的默认页面
         currentComponent.value = componentRegistry.LiveGuide
-        navigationStore.navigateTo('LiveGuide', '视频直播功能说明', {}, false)
       }
       return
     }
@@ -634,7 +688,7 @@ watch(
 // 监听认证状态变化，当用户重新登录时检查是否需要重新初始化页面
 watch(
   () => authStore.isAuthenticated,
-  async (newVal) => {
+  (newVal) => {
     if (newVal) {
       // 检查当前标签页是否与登录类型匹配
       const loginType = authStore.loginType
@@ -647,12 +701,12 @@ watch(
       if (navigationStore.tabs.length === 0 || !isTabMatchingType) {
         navigationStore.closeAllTabs()
         if (loginType === 'live') {
-          await loadComponent('/LiveGuide')
+          navigationStore.initializeDefaultTab('LiveGuide', '视频直播功能说明', {})
         } else if (loginType === 'cloud') {
-          await loadComponent('/cloud')
+          navigationStore.initializeDefaultTab('Cloud', '云盘', {})
         } else {
           // 默认跳转到直播系统的默认页面
-          await loadComponent('/LiveGuide')
+          navigationStore.initializeDefaultTab('LiveGuide', '视频直播功能说明', {})
         }
       }
     }
@@ -668,6 +722,16 @@ watch(
       // 当路由是 BasicLayout 下的子路由时，加载对应的组件
       if (path !== '/') {
         await loadComponent(path)
+      } else {
+        // 当路径是 '/' 时，根据登录类型显示对应的页面
+        const loginType = authStore.loginType
+        if (loginType === 'live') {
+          currentComponent.value = componentRegistry.LiveGuide
+        } else if (loginType === 'cloud') {
+          currentComponent.value = componentRegistry.Cloud
+        } else {
+          currentComponent.value = componentRegistry.LiveGuide
+        }
       }
     }
   },
@@ -757,7 +821,6 @@ watch(
             :editable="true"
             @update:active-key="onTabChange"
             @delete="onTabClose"
-            @contextmenu="(e, key) => { e.preventDefault(); onTabContextMenu(key); }"
             class="page-tabs"
           >
             <!-- 标签栏右侧操作按钮 -->
@@ -776,28 +839,42 @@ watch(
             <a-tab-pane
               v-for="tab in navigationStore.tabs"
               :key="tab.key"
-              :title="tab.title"
               :closable="!tab.isFixed"
             >
+              <template #title>
+                <div
+                  class="tab-title-wrapper"
+                  @contextmenu.stop="(e) => handleTabContextMenu(e, tab.key)"
+                >
+                  {{ tab.title }}
+                </div>
+              </template>
             </a-tab-pane>
-
-            <!-- 右键菜单 -->
-            <template #contextMenu>
-              <a-dropdown @menu-item-click="onTabContextMenuClick" popup-arrow>
-                <template #content>
-                  <a-menu>
-                    <a-menu-item
-                      v-for="item in tabContextMenuOptions"
-                      :key="item.key"
-                    >
-                      <component :is="item.icon" class="mr-2" />
-                      {{ item.title }}
-                    </a-menu-item>
-                  </a-menu>
-                </template>
-              </a-dropdown>
-            </template>
           </a-tabs>
+
+          <!-- 右键菜单 -->
+          <div
+            v-if="contextMenuVisible"
+            class="tab-context-menu"
+            :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
+            @click.stop
+            @contextmenu.stop
+          >
+            <a-menu
+              @menu-item-click="onTabContextMenuClick"
+              :selected-keys="[]"
+            >
+              <a-menu-item
+                v-for="item in tabContextMenuOptions"
+                :key="item.key"
+              >
+                <template #icon>
+                  <component :is="item.icon" />
+                </template>
+                {{ item.title }}
+              </a-menu-item>
+            </a-menu>
+          </div>
         </div>
         <main class="app-content">
           <!-- 使用动态组件，传递 navigationStore 中的参数 -->
@@ -874,6 +951,43 @@ watch(
 
 .page-tabs :deep(.arco-tabs-tab-remove) {
   margin-left: 8px;
+}
+
+/* 右键菜单样式 */
+.tab-context-menu {
+  position: fixed;
+  z-index: 10000;
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
+  padding: 4px 0;
+}
+
+.tab-context-menu :deep(.arco-menu) {
+  min-width: 160px;
+  border: none;
+  box-shadow: none;
+}
+
+.tab-context-menu :deep(.arco-menu-item) {
+  height: 32px;
+  line-height: 32px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.tab-context-menu :deep(.arco-menu-item:hover) {
+  background: #f5f6fa;
+}
+
+/* 标签页标题容器 */
+.tab-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 0 8px;
 }
 .header-inner {
   display: grid;
