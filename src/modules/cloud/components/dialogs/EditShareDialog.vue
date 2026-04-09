@@ -34,20 +34,20 @@
       <!-- 有效期设置 -->
       <a-form-item
         field="expirationDays"
-        label="有效期"
+        label="新有效期"
         :rules="[{ required: true, message: '请选择有效期' }]"
       >
-        <a-radio-group v-model="form.expirationDays" button-style="solid">
-          <a-radio-button :value="1">1天</a-radio-button>
-          <a-radio-button :value="7">7天</a-radio-button>
-          <a-radio-button :value="30">30天</a-radio-button>
-          <a-radio-button :value="0">永久</a-radio-button>
-        </a-radio-group>
+        <a-select v-model="form.expirationDays" placeholder="请选择有效期">
+          <a-option :value="1">1天</a-option>
+          <a-option :value="7">7天</a-option>
+          <a-option :value="30">30天</a-option>
+          <a-option :value="0">永久</a-option>
+        </a-select>
         <div class="hint" v-if="form.expirationDays === 0">
           永久分享将长期有效，请谨慎设置
         </div>
         <div class="hint" v-else>
-          分享将在 {{ form.expirationDays }} 天后过期
+          分享将在 {{ form.expirationDays }} 天后过期（从现在开始计算）
         </div>
       </a-form-item>
 
@@ -143,8 +143,9 @@ watch(
     dialogVisible.value = newValue
     if (newValue && props.share) {
       // 根据当前分享信息初始化表单
+      // expirationDays 默认为7天，用户可以修改
       form.value = {
-        expirationDays: calculateRemainingDays(props.share.expireTime),
+        expirationDays: 7,
         password: props.share.password || '',
       }
     }
