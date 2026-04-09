@@ -191,6 +191,7 @@ import api from '../api/http'
 import dayjs from 'dayjs'
 import { generatePushURL, generatePlayURL } from '../api/live'
 import { IconExport, IconScissor, IconFile } from '@arco-design/web-vue/es/icon'
+import config from '../config/index'
 
 const route = useRoute()
 const router = useRouter()
@@ -220,11 +221,14 @@ const pullUrls = ref({
 const generatePushUrls = async () => {
   try {
     const expireTime = dayjs().add(7, 'day').unix()
+    const pushDomain = roomInfo.value.pushDomain || config.live.defaultPushDomain
+    const pushApp = roomInfo.value.pushApp || config.live.defaultApp
+    const streamName = String(roomInfo.value.streamName || roomInfo.value.id)
     const response = await generatePushURL({
-      domainName: roomInfo.value.pushDomain || 'upload.skyzhou.cn',
-      appName: roomInfo.value.pushApp || 'live',
-      streamName: String(roomInfo.value.streamName || roomInfo.value.id),
-      streamKey: 'd0d87c303d4df45fd648af77ea4a9516',
+      domainName: pushDomain,
+      appName: pushApp,
+      streamName: streamName,
+      streamKey: config.live.defaultStreamKey,
       expireTime: expireTime
     })
     if (response.data?.data) {
@@ -232,17 +236,19 @@ const generatePushUrls = async () => {
       pushUrls.value.rtmp = data.pushUrl || ''
       pushUrls.value.webrtc = data.pushUrlWebRtc || ''
       pushUrls.value.srt = data.pushUrlSrt || ''
-      pushUrls.value.obsServer = `rtmp://${roomInfo.value.pushDomain || 'upload.skyzhou.cn'}/${roomInfo.value.pushApp || 'live'}/`
-      pushUrls.value.obsStreamKey = String(roomInfo.value.streamName || roomInfo.value.id) + '?' + new URLSearchParams(new URL(data.pushUrl || '').search)
+      pushUrls.value.obsServer = `rtmp://${pushDomain}/${pushApp}/`
+      pushUrls.value.obsStreamKey = streamName + '?' + new URLSearchParams(new URL(data.pushUrl || '').search)
     }
   } catch (error: any) {
     console.error('生成推流地址失败:', error)
     // 使用默认地址
+    const pushDomain = roomInfo.value.pushDomain || config.live.defaultPushDomain
+    const pushApp = roomInfo.value.pushApp || config.live.defaultApp
     const streamName = String(roomInfo.value.streamName || roomInfo.value.id)
-    pushUrls.value.rtmp = `rtmp://${roomInfo.value.pushDomain || 'upload.skyzhou.cn'}/${roomInfo.value.pushApp || 'live'}/${streamName}?txSecret=a88a10b5546f11fb27d03f49163f0d2f&txTime=69AB479A`
-    pushUrls.value.webrtc = `webrtc://${roomInfo.value.pushDomain || 'upload.skyzhou.cn'}/${roomInfo.value.pushApp || 'live'}/${streamName}?txSecret=a88a10b5546f11fb27d03f49163f0d2f&txTime=69AB479A`
-    pushUrls.value.srt = `srt://${roomInfo.value.pushDomain || 'upload.skyzhou.cn'}:9000?streamid=#!::h=${roomInfo.value.pushDomain || 'upload.skyzhou.cn'}/${roomInfo.value.pushApp || 'live'}/${streamName},txSecret=a88a10b5546f11fb27d03f49163f0d2f,txTime=69AB479A`
-    pushUrls.value.obsServer = `rtmp://${roomInfo.value.pushDomain || 'upload.skyzhou.cn'}/${roomInfo.value.pushApp || 'live'}/`
+    pushUrls.value.rtmp = `rtmp://${pushDomain}/${pushApp}/${streamName}?txSecret=a88a10b5546f11fb27d03f49163f0d2f&txTime=69AB479A`
+    pushUrls.value.webrtc = `webrtc://${pushDomain}/${pushApp}/${streamName}?txSecret=a88a10b5546f11fb27d03f49163f0d2f&txTime=69AB479A`
+    pushUrls.value.srt = `srt://${pushDomain}:9000?streamid=#!::h=${pushDomain}/${pushApp}/${streamName},txSecret=a88a10b5546f11fb27d03f49163f0d2f,txTime=69AB479A`
+    pushUrls.value.obsServer = `rtmp://${pushDomain}/${pushApp}/`
     pushUrls.value.obsStreamKey = `${streamName}?txSecret=a88a10b5546f11fb27d03f49163f0d2f&txTime=69AB479A`
   }
 }
@@ -251,10 +257,13 @@ const generatePushUrls = async () => {
 const generatePullUrls = async () => {
   try {
     const expireTime = dayjs().add(7, 'day').unix()
+    const playDomain = roomInfo.value.playDomain || config.live.defaultPlayDomain
+    const playApp = roomInfo.value.playApp || config.live.defaultApp
+    const streamName = String(roomInfo.value.streamName || roomInfo.value.id)
     const response = await generatePlayURL({
-      playDomain: roomInfo.value.playDomain || 'play.skyzhou.cn',
-      appName: roomInfo.value.playApp || 'live',
-      streamName: String(roomInfo.value.streamName || roomInfo.value.id),
+      playDomain: playDomain,
+      appName: playApp,
+      streamName: streamName,
       playKey: '',
       expireTime: expireTime
     })
@@ -267,10 +276,12 @@ const generatePullUrls = async () => {
   } catch (error: any) {
     console.error('生成拉流地址失败:', error)
     // 使用默认地址
+    const playDomain = roomInfo.value.playDomain || config.live.defaultPlayDomain
+    const playApp = roomInfo.value.playApp || config.live.defaultApp
     const streamName = String(roomInfo.value.streamName || roomInfo.value.id)
-    pullUrls.value.rtmp = `rtmp://${roomInfo.value.playDomain || 'play.skyzhou.cn'}/${roomInfo.value.playApp || 'live'}/${streamName}`
-    pullUrls.value.flv = `http://${roomInfo.value.playDomain || 'play.skyzhou.cn'}/${roomInfo.value.playApp || 'live'}/${streamName}.flv`
-    pullUrls.value.hls = `http://${roomInfo.value.playDomain || 'play.skyzhou.cn'}/${roomInfo.value.playApp || 'live'}/${streamName}.m3u8`
+    pullUrls.value.rtmp = `rtmp://${playDomain}/${playApp}/${streamName}`
+    pullUrls.value.flv = `http://${playDomain}/${playApp}/${streamName}.flv`
+    pullUrls.value.hls = `http://${playDomain}/${playApp}/${streamName}.m3u8`
   }
 }
 
