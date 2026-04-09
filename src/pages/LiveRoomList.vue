@@ -128,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useNavigationStore } from '../stores/navigation'
 import api from '../api/http'
@@ -139,6 +139,7 @@ const navigationStore = useNavigationStore()
 const loading = ref(false)
 const tableData = ref([])
 const domains = ref<{ name: string; type: number }[]>([])
+let unregisterBackCallback: (() => void) | null = null
 
 // 加载域名列表
 const loadDomains = async () => {
@@ -542,6 +543,21 @@ const handleBackToSite = () => {
 onMounted(() => {
   loadDomains()
   fetchData()
+
+  // 注册返回回调，从创建/编辑直播间返回时刷新数据
+  unregisterBackCallback = navigationStore.onBack((fromComponent, toComponent) => {
+    if (toComponent === 'LiveRoomList' && (fromComponent === 'LiveRoomForm')) {
+      console.log('从创建/编辑直播间返回，刷新列表数据')
+      fetchData()
+    }
+  })
+})
+
+// 卸载时取消注册
+onUnmounted(() => {
+  if (unregisterBackCallback) {
+    unregisterBackCallback()
+  }
 })
 </script>
 

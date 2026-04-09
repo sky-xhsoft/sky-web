@@ -6,6 +6,9 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
+// 事件回调类型
+type BackCallback = (fromComponent: string, toComponent: string) => void
+
 export interface NavigationState {
   componentName: string     // 当前显示的组件名
   title: string            // 当前标题
@@ -35,6 +38,36 @@ export const useNavigationStore = defineStore('navigation', () => {
   const tabs = ref<TabItem[]>([])
   const activeTabKey = ref<string>('')
   const keepAliveIncludes = ref<string[]>([])
+
+  // 返回回调
+  const backCallbacks = ref<BackCallback[]>([])
+
+  /**
+   * 注册返回回调
+   */
+  function onBack(callback: BackCallback): () => void {
+    backCallbacks.value.push(callback)
+    // 返回取消注册函数
+    return () => {
+      const index = backCallbacks.value.indexOf(callback)
+      if (index > -1) {
+        backCallbacks.value.splice(index, 1)
+      }
+    }
+  }
+
+  /**
+   * 触发返回回调
+   */
+  function triggerBackCallbacks(fromComponent: string, toComponent: string): void {
+    backCallbacks.value.forEach(callback => {
+      try {
+        callback(fromComponent, toComponent)
+      } catch (e) {
+        console.error('Back callback error:', e)
+      }
+    })
+  }
 
   // 从localStorage恢复标签页状态
   const loadTabsFromStorage = () => {
@@ -275,18 +308,55 @@ export const useNavigationStore = defineStore('navigation', () => {
   }
 
   /**
+   * 初始化默认标签页
+   * @param componentName 组件名称
+   * @param title 标签标题
+   * @param params 组件参数
+   */
+  function initializeDefaultTab(componentName: string, title: string, params?: Record<string, any>): void {
+    if (tabs.value.length === 0) {
+      const newTab: TabItem = {
+        key: generateTabKey(componentName, params),
+        title,
+        componentName,
+        params: params || {},
+        isFixed: true
+      }
+      tabs.value.push(newTab)
+      activeTabKey.value = newTab.key
+
+      // 添加到keep-alive缓存
+      if (!keepAliveIncludes.value.includes(componentName)) {
+        keepAliveIncludes.value.push(componentName)
+      }
+
+      current.value = {
+        componentName,
+        title,
+        params: params || {}
+      }
+    }
+  }
+
+  /**
    * 返回上一页
    * @returns 是否成功返回（如果历史栈为空则返回false）
    */
   function goBack(): boolean {
     if (history.value.length > 0) {
       const previous = history.value.pop()!
+      const fromComponent = current.value.componentName
+      const toComponent = previous.componentName
+
       // 不推入历史栈，避免循环
       current.value = previous
 
       // 切换到对应的标签页
       const key = generateTabKey(previous.componentName, previous.params)
       switchTab(key)
+
+      // 触发返回回调
+      triggerBackCallbacks(fromComponent, toComponent)
 
       return true
     }
@@ -323,6 +393,9 @@ export const useNavigationStore = defineStore('navigation', () => {
     closeOtherTabs,
     closeAllTabs,
     updateTabTitle,
-    updateCurrentTabTitle
+    updateCurrentTabTitle,
+    initializeDefaultTab,
+    onBack,
+    triggerBackCallbacks
   }
 })
