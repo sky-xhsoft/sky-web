@@ -66,7 +66,7 @@
           </template>
           <template #suffix>
             <a-button size="mini" type="text" @click="generatePassword" :disabled="generating">
-              <icon-rotate-cw v-if="generating" />
+              <icon-refresh v-if="generating" />
               {{ generating ? '生成中...' : '生成' }}
             </a-button>
           </template>
@@ -105,7 +105,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, h } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { IconCopy, IconLock, IconUnlock, IconRotateCw, IconInfoCircle } from '@arco-design/web-vue/es/icon'
+import { IconCopy, IconLock, IconUnlock, IconRefresh, IconInfoCircle } from '@arco-design/web-vue/es/icon'
 import type { ShareListItem } from '@/modules/cloud/types'
 import { formatDate } from '@/modules/cloud/utils/format'
 
