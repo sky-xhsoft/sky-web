@@ -1,27 +1,36 @@
 <template>
   <div class="share-page">
     <div class="share-container">
-      <!-- Logo和标题 -->
+      <!-- 头部区域 -->
       <div class="share-header">
-        <h1 class="share-title">文件分享</h1>
-        <p class="share-subtitle">安全、便捷的文件分享服务</p>
+        <div class="logo-section">
+          <div class="logo-icon">
+            <icon-share-alt :size="32" />
+          </div>
+          <div class="logo-text">
+            <h1 class="share-title">云盘分享</h1>
+            <p class="share-subtitle">安全便捷的文件分享服务</p>
+          </div>
+        </div>
       </div>
 
       <!-- 密码验证表单 -->
       <div v-if="!verified" class="password-form">
         <a-spin :loading="loading" tip="验证中...">
           <div class="form-content">
-            <div class="share-info" v-if="shareInfo">
-              <div class="file-icon">
-                <icon-file v-if="shareInfo.resourceType === 'file'" :size="64" />
-                <icon-folder v-else :size="64" />
+            <div class="resource-preview" v-if="shareInfo">
+              <div class="resource-icon">
+                <icon-file v-if="shareInfo.resourceType === 'file'" :size="72" />
+                <icon-folder v-else :size="72" />
               </div>
-              <div class="file-name">{{ getResourceName() }}</div>
-              <div class="file-meta">
-                <span v-if="shareInfo.resourceType === 'file'">
-                  {{ formatFileSize(getFileSize()) }}
-                </span>
-                <span class="sharer">分享者: {{ shareInfo.sharer }}</span>
+              <div class="resource-info">
+                <div class="resource-name">{{ getResourceName() }}</div>
+                <div class="resource-meta">
+                  <span v-if="shareInfo.resourceType === 'file'">
+                    {{ formatFileSize(getFileSize()) }}
+                  </span>
+                  <span class="sharer-info">分享者: {{ shareInfo.sharer }}</span>
+                </div>
               </div>
             </div>
 
@@ -47,6 +56,9 @@
               </a-form-item>
 
               <a-button type="primary" html-type="submit" long size="large" :loading="loading">
+                <template #icon>
+                  <icon-unlock />
+                </template>
                 访问分享
               </a-button>
             </a-form>
@@ -58,32 +70,36 @@
       <div v-else class="share-content">
         <a-spin :loading="loading">
           <div class="content-header">
-            <div class="file-info">
-              <div class="file-icon-large">
-                <icon-file v-if="shareInfo.resourceType === 'file'" :size="80" />
-                <icon-folder v-else :size="80" />
+            <div class="file-detail">
+              <div class="file-preview">
+                <div class="file-preview-icon">
+                  <icon-file v-if="shareInfo.resourceType === 'file'" :size="88" />
+                  <icon-folder v-else :size="88" />
+                </div>
               </div>
-              <div class="file-details">
-                <h2 class="file-name-large">{{ getResourceName() }}</h2>
-                <div class="file-meta-large">
+              <div class="file-info">
+                <h2 class="file-name">{{ getResourceName() }}</h2>
+                <div class="file-meta">
                   <span v-if="shareInfo.resourceType === 'file'">
-                    大小: {{ formatFileSize(getFileSize()) }}
+                    <icon-file :size="14" /> {{ formatFileSize(getFileSize()) }}
                   </span>
-                  <span>分享者: {{ shareInfo.sharer }}</span>
+                  <span>
+                    <icon-user :size="14" /> {{ shareInfo.sharer }}
+                  </span>
                   <span v-if="shareInfo.share.expireTime">
-                    过期时间: {{ formatDate(shareInfo.share.expireTime) }}
+                    <icon-clock-circle :size="14" /> {{ formatDate(shareInfo.share.expireTime) }}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div class="actions">
+            <div class="action-section" v-if="shareInfo.resourceType === 'file'">
               <a-button
-                  v-if="shareInfo.resourceType === 'file'"
                   type="primary"
                   size="large"
                   :loading="downloading"
                   @click="handleDownload"
+                  class="download-button"
               >
                 <template #icon>
                   <icon-download />
@@ -119,15 +135,15 @@
                     :class="{ 'clickable': item.type === 'folder' || canPreview(item.name) }"
                     @click="item.type === 'folder' ? navigateToFolder(item.id, item.name) : handleFileClick(item)"
                 >
-                  <!-- 图片 + accessUrl -->
-                  <div v-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'image'" class="file-card-preview-image">
+                  <!-- 图片预览 -->
+                  <div v-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'image'" class="file-card-preview">
                     <img :src="getAccessUrl(item)" :alt="item.name" />
                     <div class="file-card-overlay">
-                      <icon-eye :size="28" />
+                      <icon-eye :size="32" />
                     </div>
                   </div>
-                  <!-- 视频 + accessUrl -->
-                  <div v-else-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'video'" class="file-card-preview-video">
+                  <!-- 视频预览 -->
+                  <div v-else-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'video'" class="file-card-preview video-preview">
                     <video
                       :src="getAccessUrl(item)"
                       muted
@@ -136,17 +152,17 @@
                     >
                     </video>
                     <div class="file-card-overlay" @click.stop="handlePreviewFile(item)">
-                      <icon-play-circle :size="32" color="white" />
+                      <icon-play-circle :size="36" color="white" />
                     </div>
                   </div>
                   <!-- 其他类型显示图标 -->
                   <div v-else class="file-card-icon">
-                    <icon-folder v-if="item.type === 'folder'" :size="48" />
-                    <icon-image v-else-if="getFileType(item.name) === 'image'" :size="48" />
-                    <icon-video-camera v-else-if="getFileType(item.name) === 'video'" :size="48" />
-                    <icon-music v-else-if="getFileType(item.name) === 'audio'" :size="48" />
-                    <icon-file-pdf v-else-if="getFileType(item.name) === 'pdf'" :size="48" />
-                    <icon-file v-else :size="48" />
+                    <icon-folder v-if="item.type === 'folder'" :size="56" />
+                    <icon-image v-else-if="getFileType(item.name) === 'image'" :size="56" />
+                    <icon-video-camera v-else-if="getFileType(item.name) === 'video'" :size="56" />
+                    <icon-music v-else-if="getFileType(item.name) === 'audio'" :size="56" />
+                    <icon-file-pdf v-else-if="getFileType(item.name) === 'pdf'" :size="56" />
+                    <icon-file v-else :size="56" />
                   </div>
                   <div class="file-card-name" :title="item.displayName || item.name">{{ item.displayName || item.name }}</div>
                   <div class="file-card-actions" v-if="item.type === 'file'">
@@ -175,7 +191,7 @@
                 </div>
               </div>
               <div v-if="folderFiles.length === 0" class="empty-folder">
-                <icon-folder :size="64" style="color: #d1d5db;" />
+                <icon-folder :size="80" style="color: #e5e7eb;" />
                 <p>此文件夹为空</p>
               </div>
             </a-spin>
@@ -185,9 +201,13 @@
 
       <!-- 错误提示 -->
       <div v-if="notFound" class="error-message">
-        <icon-exclamation-circle :size="64" />
-        <h2>分享不存在或已失效</h2>
-        <p>请检查分享链接是否正确，或联系分享者重新分享</p>
+        <div class="error-icon">
+          <icon-exclamation-circle :size="80" />
+        </div>
+        <div class="error-content">
+          <h2>分享不存在或已失效</h2>
+          <p>请检查分享链接是否正确，或联系分享者重新分享</p>
+        </div>
       </div>
     </div>
 
@@ -275,6 +295,10 @@ import {
   IconMusic,
   IconFilePdf,
   IconPlayCircle,
+  IconShareAlt,
+  IconUser,
+  IconClockCircle,
+  IconUnlock
 } from '@arco-design/web-vue/es/icon'
 import { getShareInfo, accessShare, downloadShareFile, getShareFolderContent } from '@/modules/cloud/api/share'
 import type { ShareInfo } from '@/modules/cloud/types'
@@ -296,20 +320,17 @@ const form = ref({
 
 const shareInfo = ref<ShareInfo | null>(null)
 const folderFiles = ref<any[]>([])
-const currentFolderId = ref<number | undefined>(undefined) // 当前文件夹ID
-const folderPath = ref<Array<{ id: number | undefined; name: string }>>([]) // 面包屑路径
+const currentFolderId = ref<number | undefined>(undefined)
+const folderPath = ref<Array<{ id: number | undefined; name: string }>>([])
 
-// 预览相关
 const previewVisible = ref(false)
 const previewFile = ref<any>(null)
 const previewType = ref<'image' | 'video' | 'audio' | 'pdf' | 'text' | 'unknown'>('unknown')
-const previewUrl = ref<string>('') // 缓存的预览 URL
+const previewUrl = ref<string>('')
 
-// 媒体元素的引用
 const videoRef = ref<HTMLVideoElement | null>(null)
 const audioRef = ref<HTMLAudioElement | null>(null)
 
-// 获取资源名称
 function getResourceName(): string {
   if (!shareInfo.value) return ''
   if (shareInfo.value.resourceType === 'file') {
@@ -318,13 +339,11 @@ function getResourceName(): string {
   return shareInfo.value.folder?.name || '文件夹'
 }
 
-// 获取文件大小
 function getFileSize(): number {
   if (!shareInfo.value || shareInfo.value.resourceType !== 'file') return 0
   return shareInfo.value.file?.fileSize || 0
 }
 
-// 格式化文件大小
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B'
   const k = 1024
@@ -333,12 +352,10 @@ function formatFileSize(bytes: number): string {
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
 
-// 格式化日期
 function formatDate(date: string): string {
   return new Date(date).toLocaleString('zh-CN')
 }
 
-// 加载分享信息
 async function loadShareInfo() {
   loading.value = true
   error.value = ''
@@ -346,21 +363,14 @@ async function loadShareInfo() {
     const info = await getShareInfo(shareCode.value)
     shareInfo.value = info
 
-    // 如果是公开分享，直接验证通过
     if (info.share.shareType === 'public') {
       verified.value = true
-
-      // 如果是文件夹分享，自动加载文件夹内容
       if (info.resourceType === 'folder') {
         showFolderContent.value = true
-
-        // 初始化面包屑路径
         folderPath.value = [{ id: undefined, name: info.folder?.name || '根目录' }]
         currentFolderId.value = undefined
-
         await loadFolderContent()
       }
-    } else {
     }
   } catch (e: any) {
     console.error('获取分享信息失败:', e)
@@ -374,7 +384,6 @@ async function loadShareInfo() {
   }
 }
 
-// 验证密码
 async function handleVerify() {
   if (!form.value.password.trim()) {
     error.value = '请输入访问密码'
@@ -389,14 +398,10 @@ async function handleVerify() {
     verified.value = true
     Message.success('验证成功')
 
-    // 如果是文件夹分享，自动加载文件夹内容
     if (info.resourceType === 'folder') {
       showFolderContent.value = true
-
-      // 初始化面包屑路径
       folderPath.value = [{ id: undefined, name: info.folder?.name || '根目录' }]
       currentFolderId.value = undefined
-
       await loadFolderContent()
     }
   } catch (e: any) {
@@ -407,11 +412,9 @@ async function handleVerify() {
   }
 }
 
-// 下载文件
 async function handleDownload() {
   if (!shareInfo.value || shareInfo.value.resourceType !== 'file') return
 
-  // 如果是 oss 存储并且有 accessUrl，直接下载 oss URL
   const file = shareInfo.value.file
   if (file) {
     const storageType = file.storageType || file.StorageType
@@ -445,23 +448,12 @@ async function handleDownload() {
   }
 }
 
-// 查看文件夹
-async function handleViewFolder() {
-  showFolderContent.value = true
-  await loadFolderContent()
-}
-
-// 加载文件夹内容
 async function loadFolderContent(parentId?: number) {
   loadingFiles.value = true
   try {
-    // 如果 parentId 为 undefined，不传递参数（后端会使用分享的根文件夹ID）
     const content = await getShareFolderContent(shareCode.value, parentId)
-
-    // 转换为表格数据格式
     const items: any[] = []
 
-    // 添加文件夹
     if (content.folders && content.folders.length > 0) {
       content.folders.forEach((folder: any) => {
         items.push({
@@ -474,14 +466,10 @@ async function loadFolderContent(parentId?: number) {
       })
     }
 
-    // 添加文件
     if (content.files && content.files.length > 0) {
       content.files.forEach((file: any) => {
-        // 兼容多种字段名格式：Go后端JSON可能返回小驼峰
-        // name 不包含扩展名，fileExt 单独存储，需要拼接完整文件名
         const baseName = file.name || file.Name || file.fileName || file.FileName || ''
         let fileExt = file.fileExt || file.FileExt || ''
-        // 处理 fileExt 不带点的情况
         if (fileExt && !fileExt.startsWith('.')) {
           fileExt = '.' + fileExt
         }
@@ -490,16 +478,15 @@ async function loadFolderContent(parentId?: number) {
         const item = {
           id: file.id || file.ID || 0,
           name: fullName,
-          displayName: baseName, // 显示用，不带扩展名
+          displayName: baseName,
           type: file.type || file.Type || 'file',
-          size: (file.fileSize || file.FileSize || file.size || file.Size || file.File_size || file.file_size || file.filesize || 0),
+          size: (file.fileSize || file.FileSize || file.size || file.Size || 0),
           updateTime: file.updateTime || file.UpdateTime || file.createTime || file.CreateTime || '',
           storageType: file.storageType || file.StorageType || '',
           accessUrl: file.accessUrl || file.accessURL || file.AccessURL || file.AccessUrl || '',
           fileExt: fileExt,
         }
         items.push(item)
-        console.log('Share file item:', item, 'hasAccessUrl:', hasAccessUrl(item), 'getFileType:', getFileType(item.name), 'fullName:', fullName)
       })
     }
 
@@ -512,30 +499,20 @@ async function loadFolderContent(parentId?: number) {
   }
 }
 
-// 导航到指定文件夹
 async function navigateToFolder(folderId?: number, folderName?: string) {
-
-  // 如果点击的是面包屑，需要更新路径
   if (folderName === undefined) {
-    // 点击面包屑导航
     const pathIndex = folderPath.value.findIndex(item => item.id === folderId)
     if (pathIndex !== -1) {
-      // 截断路径到点击的位置
       folderPath.value = folderPath.value.slice(0, pathIndex + 1)
       currentFolderId.value = folderId
     }
   } else {
-    // 进入子文件夹
     folderPath.value.push({ id: folderId, name: folderName })
     currentFolderId.value = folderId
   }
-
-
-  // 加载文件夹内容
   await loadFolderContent(currentFolderId.value)
 }
 
-// 判断文件类型
 function getFileType(fileName: string): 'image' | 'video' | 'audio' | 'pdf' | 'text' | 'unknown' {
   const ext = fileName.split('.').pop()?.toLowerCase() || ''
 
@@ -554,35 +531,27 @@ function getFileType(fileName: string): 'image' | 'video' | 'audio' | 'pdf' | 't
   return 'unknown'
 }
 
-// 判断是否存在 accessUrl
 function hasAccessUrl(item: any): boolean {
   return !!(item.accessUrl || item.accessURL || item.AccessURL)
 }
 
-// 获取 accessUrl
 function getAccessUrl(item: any): string {
   return item.accessUrl || item.accessURL || item.AccessURL
 }
 
-// 判断文件是否可预览
 function canPreview(fileName: string): boolean {
   const type = getFileType(fileName)
   return ['image', 'video', 'audio', 'pdf', 'text'].includes(type)
 }
 
-// 获取文件预览URL
 function getFilePreviewUrl(fileId: number): string {
-  // 使用相对路径，开发环境会通过 Vite 代理
   return `/api/v1/cloud/shares/${shareCode.value}/files/${fileId}/preview`
 }
 
-// 获取文件下载URL
 function getFileDownloadUrl(fileId: number): string {
-  // 使用相对路径，开发环境会通过 Vite 代理
   return `/api/v1/cloud/shares/${shareCode.value}/files/${fileId}/download`
 }
 
-// 预览文件
 function handlePreviewFile(file: any) {
   if (!canPreview(file.name)) {
     Message.warning('该文件类型不支持预览')
@@ -592,23 +561,19 @@ function handlePreviewFile(file: any) {
   previewFile.value = file
   previewType.value = getFileType(file.name)
 
-  // 如果是 oss 存储并且有 accessUrl，直接使用 oss URL 预览
   const storageType = file.storageType || file.StorageType
   const accessUrl = getAccessUrl(file)
   if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
     previewUrl.value = accessUrl
   } else {
-    // 其他情况使用后端预览接口
     previewUrl.value = getFilePreviewUrl(file.id)
   }
 
   previewVisible.value = true
 }
 
-// 关闭预览
 function closePreview() {
   try {
-    // 停止视频播放并释放资源
     if (videoRef.value) {
       videoRef.value.pause()
       videoRef.value.currentTime = 0
@@ -616,7 +581,6 @@ function closePreview() {
       videoRef.value.load()
     }
 
-    // 停止音频播放并释放资源
     if (audioRef.value) {
       audioRef.value.pause()
       audioRef.value.currentTime = 0
@@ -627,10 +591,8 @@ function closePreview() {
     console.warn('关闭预览时清理媒体资源失败:', error)
   }
 
-  // 立即关闭 Modal
   previewVisible.value = false
 
-  // 使用 nextTick 确保 Modal 开始关闭后再清理数据
   nextTick(() => {
     previewFile.value = null
     previewType.value = 'unknown'
@@ -638,7 +600,6 @@ function closePreview() {
   })
 }
 
-// 处理文件点击
 function handleFileClick(file: any) {
   if (canPreview(file.name)) {
     handlePreviewFile(file)
@@ -647,9 +608,7 @@ function handleFileClick(file: any) {
   }
 }
 
-// 下载文件
 function handleDownloadFile(file: any) {
-  // 如果是 oss 存储并且有 accessUrl，直接下载 oss URL
   const storageType = file.storageType || file.StorageType
   const accessUrl = getAccessUrl(file)
   if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
@@ -664,7 +623,6 @@ function handleDownloadFile(file: any) {
     Message.success('开始下载')
     return
   }
-  // 其他情况使用后端下载接口
   const downloadUrl = getFileDownloadUrl(file.id)
   const link = document.createElement('a')
   link.href = downloadUrl
@@ -688,7 +646,7 @@ onMounted(() => {
 <style scoped>
 .share-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -697,60 +655,106 @@ onMounted(() => {
 
 .share-container {
   width: 100%;
+  max-width: 900px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .share-header {
-  text-align: center;
-  padding: 40px 20px 30px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  padding: 32px 40px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo-icon {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.logo-text {
+  flex: 1;
 }
 
 .share-title {
   font-size: 28px;
-  font-weight: 600;
-  margin: 0 0 8px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  letter-spacing: -0.5px;
 }
 
 .share-subtitle {
   font-size: 14px;
   opacity: 0.9;
   margin: 0;
+  font-weight: 400;
 }
 
 .password-form {
-  padding: 40px;
+  padding: 48px 40px;
   text-align: center;
 }
 
 .form-content {
-  max-width: 400px;
+  max-width: 450px;
   margin: 0 auto;
 }
 
-.share-info {
-  text-align: center;
-  margin-bottom: 30px;
+.resource-preview {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 40px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
 }
 
-.file-icon {
+.resource-icon {
   color: #667eea;
-  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
-.file-name {
-  font-size: 18px;
-  font-weight: 500;
+.resource-info {
+  flex: 1;
+  text-align: left;
+}
+
+.resource-name {
+  font-size: 20px;
+  font-weight: 600;
   color: #1f2937;
   margin-bottom: 8px;
   word-break: break-all;
 }
 
-.file-meta {
+.resource-meta {
   font-size: 14px;
   color: #6b7280;
   display: flex;
@@ -758,8 +762,9 @@ onMounted(() => {
   gap: 4px;
 }
 
-.sharer {
+.sharer-info {
   color: #667eea;
+  font-weight: 500;
 }
 
 .share-content {
@@ -767,92 +772,104 @@ onMounted(() => {
 }
 
 .content-header {
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 }
 
-.file-info {
+.file-detail {
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 24px;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
 }
 
-.file-icon-large {
-  color: #667eea;
+.file-preview {
   flex-shrink: 0;
 }
 
-.file-details {
+.file-preview-icon {
+  color: #667eea;
+}
+
+.file-info {
   flex: 1;
-  min-width: 0;
 }
 
-.file-name-large {
+.file-name {
   font-size: 24px;
-  font-weight: 600;
+  font-weight: 700;
   color: #1f2937;
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   word-break: break-all;
+  line-height: 1.3;
 }
 
-.file-meta-large {
+.file-meta {
   font-size: 14px;
   color: #6b7280;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.file-meta span {
+  display: flex;
+  align-items: center;
   gap: 6px;
 }
 
-.actions {
+.action-section {
   display: flex;
-  gap: 12px;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.download-button {
+  width: 200px;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .folder-content {
-  margin-top: 30px;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 20px;
+  margin-top: 40px;
+  border-top: 2px solid #f3f4f6;
+  padding-top: 32px;
 }
 
 .breadcrumb {
-  margin-bottom: 20px;
-  padding: 12px 16px;
+  margin-bottom: 24px;
+  padding: 16px;
   background: #f9fafb;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .file-grid {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
-  gap: 16px;
+  gap: 20px;
   padding: 8px 0;
 }
 
-/* 平板 - 3列 */
 @media (min-width: 641px) {
   .file-grid {
     grid-template-columns: repeat(3, 1fr) !important;
   }
 }
 
-/* 小桌面 - 4列 */
 @media (min-width: 1025px) {
   .file-grid {
     grid-template-columns: repeat(4, 1fr) !important;
   }
 }
 
-/* 大桌面 - 6列 */
 @media (min-width: 1441px) {
   .file-grid {
     grid-template-columns: repeat(6, 1fr) !important;
-  }
-}
-
-/* 超大桌面 - 8列 */
-@media (min-width: 1921px) {
-  .file-grid {
-    grid-template-columns: repeat(8, 1fr) !important;
   }
 }
 
@@ -862,15 +879,17 @@ onMounted(() => {
   align-items: center;
   padding: 0;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s;
+  border-radius: 16px;
+  transition: all 0.3s ease;
   background: white;
   overflow: hidden;
+  position: relative;
 }
 
 .file-card:hover {
   border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+  transform: translateY(-4px);
 }
 
 .file-card.clickable {
@@ -881,8 +900,7 @@ onMounted(() => {
   background: #f9fafb;
 }
 
-/* 图片预览缩略图 */
-.file-card-preview-image {
+.file-card-preview {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
@@ -890,46 +908,31 @@ onMounted(() => {
   background: #f3f4f6;
 }
 
-.file-card-preview-image img {
+.file-card-preview.video-preview {
+  aspect-ratio: 16/9;
+}
+
+.file-card-preview img,
+.file-card-preview video {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s;
+  transition: transform 0.3s ease;
 }
 
-.file-card:hover .file-card-preview-image img {
+.file-card:hover .file-card-preview img {
   transform: scale(1.05);
 }
 
-/* 视频预览 */
-.file-card-preview-video {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16/9;
-  overflow: hidden;
-}
-
-.file-card-preview-video video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.file-card-preview-video .video-placeholder {
-  color: white;
-  opacity: 0.8;
-}
-
-/* 悬浮遮罩 */
 .file-card-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.3s ease;
   color: white;
 }
 
@@ -939,16 +942,16 @@ onMounted(() => {
 
 .file-card-icon {
   color: #667eea;
-  margin: 16px 0 12px;
+  margin: 20px 0 16px;
 }
 
 .file-card-name {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: #1f2937;
   text-align: center;
   word-break: break-word;
-  margin: 12px 12px 8px;
+  margin: 16px 16px 12px;
   width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -957,15 +960,8 @@ onMounted(() => {
   -webkit-box-orient: vertical;
 }
 
-.file-card-info {
-  font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 8px;
-  padding: 0 12px;
-}
-
 .file-card-actions {
-  margin: 8px 0 12px;
+  margin: 12px 0 16px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -995,8 +991,8 @@ onMounted(() => {
   max-height: 70vh;
   overflow: auto;
   background: #f9fafb;
-  padding: 16px;
-  border-radius: 8px;
+  padding: 20px;
+  border-radius: 12px;
 }
 
 .preview-text pre {
@@ -1010,48 +1006,85 @@ onMounted(() => {
 
 .empty-folder {
   text-align: center;
-  padding: 60px 20px;
+  padding: 80px 20px;
   color: #9ca3af;
 }
 
 .empty-folder p {
-  margin-top: 16px;
-  font-size: 14px;
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.file-item.clickable {
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.file-item.clickable:hover {
-  color: #667eea;
-}
-
-.file-item.clickable:hover span {
-  text-decoration: underline;
+  margin-top: 20px;
+  font-size: 16px;
+  color: #6b7280;
 }
 
 .error-message {
   text-align: center;
-  padding: 60px 40px;
-  color: #6b7280;
+  padding: 80px 40px;
+  color: #9ca3af;
 }
 
-.error-message h2 {
-  font-size: 20px;
+.error-icon {
+  color: #f53f3f;
+  margin-bottom: 24px;
+}
+
+.error-content h2 {
+  font-size: 24px;
   color: #1f2937;
-  margin: 20px 0 12px;
+  margin: 0 0 12px;
+  font-weight: 700;
 }
 
-.error-message p {
-  font-size: 14px;
-  margin: 0;
+.error-content p {
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .share-page {
+    padding: 16px;
+  }
+
+  .share-header {
+    padding: 24px 24px;
+  }
+
+  .share-title {
+    font-size: 24px !important;
+  }
+
+  .password-form,
+  .share-content {
+    padding: 32px 24px;
+  }
+
+  .resource-preview,
+  .file-detail {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .resource-info,
+  .file-info {
+    text-align: center;
+  }
+
+  .file-name {
+    font-size: 20px !important;
+  }
+
+  .file-meta {
+    justify-content: center;
+  }
+
+  .file-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .breadcrumb {
+    font-size: 13px;
+    padding: 12px;
+  }
 }
 </style>
