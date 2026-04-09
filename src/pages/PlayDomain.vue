@@ -328,6 +328,9 @@ const addFormRules: Record<string, FieldRule | FieldRule[]> = {
 const filteredDomains = computed(() => {
   let result = domains.value.filter(d => d.type === 1)
 
+  // 过滤掉以 tlivecloud.com 为后缀的域名
+  result = result.filter(d => !d.name.endsWith('tlivecloud.com'))
+
   // 根据搜索关键词过滤
   if (searchKeyword.value) {
     const keyword = searchKeyword.value.toLowerCase()
