@@ -1,21 +1,36 @@
 <template>
   <div class="share-page">
-    <div class="share-container">
-      <!-- 头部区域 -->
-      <div class="share-header">
-        <div class="logo-section">
-          <div class="logo-icon">
-            <icon-share-alt :size="24" />
-          </div>
-          <div class="logo-text">
-            <h1 class="share-title">云盘分享</h1>
+    <!-- 语言切换按钮 -->
+    <div class="language-switcher">
+      <a-dropdown @select="handleLanguageChange">
+        <a-button type="text" class="lang-btn">
+          {{ currentLang === 'zh-CN' ? '中文' : 'EN' }}
+          <icon-down />
+        </a-button>
+        <template #content>
+          <a-doption value="zh-CN">中文</a-doption>
+          <a-doption value="en-US">English</a-doption>
+        </template>
+      </a-dropdown>
+    </div>
+
+    <!-- 密码验证阶段 -->
+    <div v-if="!verified" class="password-wrapper">
+      <div class="password-container">
+        <!-- 头部区域 -->
+        <div class="share-header">
+          <div class="logo-section">
+            <div class="logo-icon">
+              <icon-share-alt :size="24" />
+            </div>
+            <div class="logo-text">
+              <h1 class="share-title">{{ $t('share.title') }}</h1>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- 密码验证表单 -->
-      <div v-if="!verified" class="password-form">
-        <a-spin :loading="loading" tip="验证中...">
+        <!-- 密码验证表单 -->
+        <a-spin :loading="loading" tip="{{ $t('share.verifying') }}">
           <div class="form-content">
             <div class="resource-preview" v-if="shareInfo">
               <div class="resource-icon">
@@ -28,7 +43,7 @@
                   <span v-if="shareInfo.resourceType === 'file'">
                     {{ formatFileSize(getFileSize()) }}
                   </span>
-                  <span class="sharer-info">分享者: {{ shareInfo.sharer }}</span>
+                  <span class="sharer-info">{{ $t('share.resource.sharer') }}: {{ shareInfo.sharer }}</span>
                 </div>
               </div>
             </div>
@@ -36,14 +51,14 @@
             <a-form :model="form" layout="vertical" @submit="handleVerify">
               <a-form-item
                   field="password"
-                  label="访问密码"
-                  :rules="[{ required: true, message: '请输入访问密码' }]"
+                  :label="$t('share.password.label')"
+                  :rules="[{ required: true, message: $t('share.password.required') }]"
                   :validate-status="error ? 'error' : undefined"
                   :help="error"
               >
                 <a-input-password
                     v-model="form.password"
-                    placeholder="请输入访问密码"
+                    :placeholder="$t('share.password.placeholder')"
                     size="large"
                     allow-clear
                     @press-enter="handleVerify"
@@ -58,284 +73,436 @@
                 <template #icon>
                   <icon-unlock />
                 </template>
-                访问分享
+                {{ $t('share.password.accessBtn') }}
               </a-button>
             </a-form>
           </div>
         </a-spin>
       </div>
+    </div>
 
-      <!-- 分享内容展示 -->
-      <div v-else class="share-content">
-        <a-spin :loading="loading">
-          <div class="content-header">
-            <div class="file-detail">
-              <div class="file-preview">
-                <div class="file-preview-icon">
-                  <icon-file v-if="shareInfo.resourceType === 'file'" :size="36" />
-                  <icon-folder v-else :size="36" />
-                </div>
-              </div>
-              <div class="file-info">
-                <h2 class="file-name">{{ getResourceName() }}</h2>
-                <div class="file-meta">
-                  <span v-if="shareInfo.resourceType === 'file'">
-                    <icon-file :size="14" /> {{ formatFileSize(getFileSize()) }}
-                  </span>
-                  <span>
-                    <icon-user :size="14" /> {{ shareInfo.sharer }}
-                  </span>
-                  <span v-if="shareInfo.share.expireTime">
-                    <icon-clock-circle :size="14" /> {{ formatDate(shareInfo.share.expireTime) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div class="action-section" v-if="shareInfo.resourceType === 'file'">
-              <a-button
-                  type="primary"
-                  size="large"
-                  :loading="downloading"
-                  @click="handleDownload"
-                  class="download-button"
-              >
-                <template #icon>
-                  <icon-download />
-                </template>
-                下载文件
-              </a-button>
-            </div>
-          </div>
-
-          <!-- 文件夹内容列表 -->
-          <div v-if="shareInfo.resourceType === 'folder'" class="folder-content">
-            <!-- 面包屑导航 -->
-            <div class="breadcrumb" v-if="folderPath.length > 0">
-              <a-breadcrumb>
-                <a-breadcrumb-item
-                    v-for="(item, index) in folderPath"
-                    :key="index"
-                    @click="navigateToFolder(item.id)"
-                    style="cursor: pointer;"
-                >
-                  {{ item.name }}
-                </a-breadcrumb-item>
-              </a-breadcrumb>
-            </div>
-
-            <!-- 网格视图 -->
-            <a-spin :loading="loadingFiles">
-              <div class="file-grid">
-                <div
-                    v-for="item in folderFiles"
-                    :key="item.id"
-                    class="file-card"
-                    :class="{ 'clickable': item.type === 'folder' || canPreview(item.name) }"
-                    @click="item.type === 'folder' ? navigateToFolder(item.id, item.name) : handleFileClick(item)"
-                >
-                  <!-- 图片预览 -->
-                  <div v-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'image'" class="file-card-preview">
-                    <img :src="getAccessUrl(item)" :alt="item.name" />
-                    <div class="file-card-overlay">
-                      <icon-eye :size="32" />
-                    </div>
-                  </div>
-                  <!-- 视频预览 -->
-                  <div v-else-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'video'" class="file-card-preview video-preview">
-                    <video
-                      :src="getAccessUrl(item)"
-                      muted
-                      preload="metadata"
-                      @click.stop="handlePreviewFile(item)"
-                    >
-                    </video>
-                    <div class="file-card-overlay" @click.stop="handlePreviewFile(item)">
-                      <icon-play-circle :size="36" color="white" />
-                    </div>
-                  </div>
-                  <!-- 其他类型显示图标 -->
-                  <div v-else class="file-card-icon">
-                    <icon-folder v-if="item.type === 'folder'" :size="80" />
-                    <icon-image v-else-if="getFileType(item.name) === 'image'" :size="80" />
-                    <icon-video-camera v-else-if="getFileType(item.name) === 'video'" :size="80" />
-                    <icon-music v-else-if="getFileType(item.name) === 'audio'" :size="80" />
-                    <icon-file-pdf v-else-if="getFileType(item.name) === 'pdf'" :size="80" />
-                    <icon-file v-else :size="80" />
-                  </div>
-                  <div class="file-card-name" :title="item.displayName || item.name">{{ item.displayName || item.name }}</div>
-                  <div class="file-card-actions" v-if="item.type === 'file'">
-                    <a-button
-                        v-if="canPreview(item.name)"
-                        type="primary"
-                        size="small"
-                        @click.stop="handlePreviewFile(item)"
-                    >
-                      <template #icon>
-                        <icon-eye />
-                      </template>
-                      预览
-                    </a-button>
-                    <a-button
-                        type="outline"
-                        size="small"
-                        @click.stop="handleDownloadFile(item)"
-                    >
-                      <template #icon>
-                        <icon-download />
-                      </template>
-                      下载
-                    </a-button>
-                  </div>
-                </div>
-              </div>
-              <div v-if="folderFiles.length === 0" class="empty-folder">
-                <icon-folder :size="80" style="color: #e5e7eb;" />
-                <p>此文件夹为空</p>
-              </div>
-            </a-spin>
-          </div>
-        </a-spin>
+    <!-- 错误提示 -->
+    <div v-if="notFound" class="error-message">
+      <div class="error-icon">
+        <icon-exclamation-circle :size="80" />
       </div>
-
-      <!-- 错误提示 -->
-      <div v-if="notFound" class="error-message">
-        <div class="error-icon">
-          <icon-exclamation-circle :size="80" />
-        </div>
-        <div class="error-content">
-          <h2>分享不存在或已失效</h2>
-          <p>请检查分享链接是否正确，或联系分享者重新分享</p>
-        </div>
+      <div class="error-content">
+        <h2>{{ $t('share.notFound.title') }}</h2>
+        <p>{{ $t('share.notFound.desc') }}</p>
       </div>
     </div>
 
-    <!-- 文件预览对话框 -->
-    <a-modal
-        v-model:visible="previewVisible"
-        :title="previewFile?.name"
-        :width="previewType === 'image' ? '80%' : '90%'"
-        unmount-on-close
-        @cancel="closePreview"
-    >
-      <div class="preview-container">
-        <!-- 图片预览 -->
-        <div v-if="previewType === 'image'" class="preview-image">
-          <img :src="previewUrl" :alt="previewFile?.name || ''" />
+    <!-- 已验证 - 视频分享页面（PC 三栏布局） -->
+    <template v-else-if="isDesktop">
+      <div class="pc-layout">
+        <!-- 左侧 - 视频列表 -->
+        <div class="left-sidebar">
+          <div class="sidebar-header">
+            <div class="project-title">{{ projectTitle }}</div>
+            <a-icon-trigger class="collapse-trigger" @click="leftCollapsed = !leftCollapsed">
+              <icon-menu-unfold v-if="leftCollapsed" />
+              <icon-menu-fold v-else />
+            </a-icon-trigger>
+          </div>
+
+          <div v-show="!leftCollapsed" class="video-list-container">
+            <!-- 过滤工具栏 -->
+            <div class="filter-bar">
+              <a-button type="text" size="small">
+                {{ $t('filters.tag') }}
+                <icon-caret-down />
+              </a-button>
+              <a-button type="text" size="small">
+                {{ $t('filters.date') }}
+                <icon-caret-down />
+              </a-button>
+              <a-button type="text" size="small">
+                {{ $t('filters.sort') }}
+                <icon-caret-down />
+              </a-button>
+              <div class="filter-spacer"></div>
+              <a-button type="primary" size="small" @click="downloadCurrent">
+                <icon-download />
+                {{ $t('player.download') }}
+              </a-button>
+              <a-tag :color="currentVideo?.grade === 'good' ? 'arcoblue' : 'gray'">
+                {{ currentVideo?.grade === 'good' ? $t('player.good') : '' }}
+              </a-tag>
+            </div>
+
+            <!-- 视频列表 -->
+            <div class="video-list">
+              <div
+                  v-for="(video, index) in videoList"
+                  :key="video.id"
+                  class="video-item"
+                  :class="{ active: currentIndex === index }"
+                  @click="selectVideo(index, video)"
+              >
+                <div class="video-thumbnail">
+                  <img v-if="video.thumbnail" :src="video.thumbnail" :alt="video.name" />
+                  <div v-else class="thumbnail-placeholder">
+                    <icon-video-camera :size="32" color="#9ca3af" />
+                  </div>
+                  <div class="duration-badge" v-if="video.duration">
+                    {{ formatDuration(video.duration) }}
+                  </div>
+                  <div class="grade-badge" v-if="video.grade === 'good'">
+                    <a-badge :dot="true" status="success" />
+                    <span>{{ $t('player.good') }}</span>
+                  </div>
+                </div>
+                <div class="video-info">
+                  <div class="video-name">{{ video.name }}</div>
+                  <div class="video-meta" v-if="video.date">{{ video.date }}</div>
+                </div>
+                <icon-right />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- 视频预览 -->
-        <div v-else-if="previewType === 'video'" class="preview-video">
-          <video
+        <!-- 中间 - 播放器 -->
+        <div class="main-player">
+          <!-- 顶部布局工具栏 -->
+          <div class="player-toolbar">
+            <a-space>
+              <a-button
+                  v-for="(layout, key) in layoutOptions"
+                  :key="key"
+                  :type="currentLayout === key ? 'primary' : 'text'"
+                  size="small"
+                  @click="currentLayout = key"
+              >
+                {{ $t(`layout.${key}`) }}
+              </a-button>
+            </a-space>
+            <a-space>
+              <a-button type="primary" size="small" @click="downloadCurrent">
+                <icon-download />
+                {{ $t('player.download') }}
+              </a-button>
+              <a-tag :color="currentVideo?.grade === 'good' ? 'arcoblue' : 'gray'">
+                {{ currentVideo?.grade === 'good' ? $t('player.good') : '' }}
+              </a-tag>
+            </a-space>
+          </div>
+
+          <!-- 播放器区域 -->
+          <div class="player-container">
+            <video
               ref="videoRef"
               controls
-              :src="previewUrl"
-              style="width: 100%; max-height: 70vh;"
+              :src="currentVideoSrc"
+              :poster="currentVideo?.thumbnail"
+            >
+              {{ $t('player.duration') }}
+            </video>
+            <div class="play-overlay" v-if="!playing" @click="togglePlay">
+              <div class="play-button">
+                <icon-play-circle :size="64" color="white" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧 - 信息面板 -->
+        <div class="right-sidebar">
+          <!-- 自定义信息 -->
+          <div class="info-section">
+            <div class="section-title">{{ $t('player.customInfo') }}</div>
+            <div class="grade-stars">
+              <span class="grade-label">Grade</span>
+              <div class="stars">
+                <icon-star v-for="i in 5" :key="i" :color="i <= (currentVideo?.gradeValue || 0) ? '#e7c300' : '#9ca3af'" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 录制信息 -->
+          <div class="info-section">
+            <div class="section-title">{{ $t('player.recordInfo') }}</div>
+            <div class="info-grid">
+              <div class="info-item">{{ $t('player.scene') }}</div>
+              <div class="info-item">{{ $t('player.shoot') }}</div>
+              <div class="info-item">{{ $t('player.take') }}</div>
+            </div>
+          </div>
+
+          <!-- 基本信息 -->
+          <div class="info-section">
+            <div class="section-title">{{ $t('player.overview') }}</div>
+            <div class="info-row">
+              <span class="info-label">{{ $t('player.fileFormat') }}</span>
+              <span class="info-value">{{ currentInfo.fileFormat }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">{{ $t('player.uploadUser') }}</span>
+              <span class="info-value">{{ currentInfo.uploadUser }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">{{ $t('player.uploadTime') }}</span>
+              <span class="info-value">{{ currentInfo.uploadTime }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">{{ $t('player.fileSize') }}</span>
+              <span class="info-value">{{ currentInfo.fileSize }}</span>
+            </div>
+
+            <a-select
+              v-model="currentInfo.acronym"
+              :placeholder="$t('player.acronym')"
+              :style="{ width: '100%', marginTop: '12px' }"
+            >
+              <a-select-option value="CH">{{ $t('player.acronym') }} - CH</a-select-option>
+              <a-select-option value="EN">{{ $t('player.acronym') }} - EN</a-select-option>
+            </a-select>
+
+            <div class="info-row" style="margin-top: 12px;">
+              <span class="info-label">{{ $t('player.audioFileNumber') }}</span>
+              <a-button size="small" type="outline" style="margin-left: auto;">
+                <icon-plus />
+                {{ $t('player.add') }}
+              </a-button>
+            </div>
+
+            <a-textarea
+              v-model="currentInfo.remark"
+              :placeholder="$t('player.remark')"
+              :rows="3"
+              style="margin-top: 12px;"
+            />
+          </div>
+
+          <!-- 视频信息 -->
+          <div class="info-section" v-if="currentVideo">
+            <div class="section-title">{{ $t('player.videoInfo') }}</div>
+            <div class="info-row">
+              <span class="info-label">{{ $t('player.resolution') }}</span>
+              <span class="info-value">{{ currentVideo.resolution || '1920 x 1080' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">{{ $t('player.frameRate') }}</span>
+              <span class="info-value">{{ currentVideo.frameRate || '50 fps' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">{{ $t('player.duration') }}</span>
+              <span class="info-value">{{ formatDuration(currentVideo.duration || 120) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">{{ $t('player.bitrate') }}</span>
+              <span class="info-value">{{ currentVideo.bitrate || '4 Mbps' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">{{ $t('player.codec') }}</span>
+              <span class="info-value">{{ currentVideo.codec || 'H264' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- 已验证 - 视频分享页面（Mobile 布局） -->
+    <template v-else>
+      <div class="mobile-layout">
+        <!-- 顶部项目标题 -->
+        <div class="mobile-header">
+          <div class="mobile-logo">
+            <div class="logo-icon">
+              <img src="https://wcwl.cn/wcwl.png" alt="logo" />
+            </div>
+            <div class="project-name">{{ projectTitle }}</div>
+          </div>
+        </div>
+
+        <!-- 播放器 -->
+        <div class="mobile-player">
+          <video
+            ref="videoRefMobile"
+            controls
+            :src="currentVideoSrc"
+            :poster="currentVideo?.thumbnail"
           >
             您的浏览器不支持视频播放
           </video>
         </div>
 
-        <!-- 音频预览 -->
-        <div v-else-if="previewType === 'audio'" class="preview-audio">
-          <audio
-              ref="audioRef"
-              controls
-              :src="previewUrl"
-              style="width: 100%;"
+        <!-- 标签栏 -->
+        <div class="tag-scroll">
+          <div class="tag-list">
+            <a-tag
+                v-for="(tag, index) in tags"
+                :key="index"
+                :color="activeTagIndex === index ? 'arcoblue' : 'default'"
+                class="tag-item"
+                @click="activeTagIndex = index"
+            >
+              {{ tag }}
+            </a-tag>
+            <a-button type="text" class="filter-btn">
+              <icon-filter />
+            </a-button>
+          </div>
+        </div>
+
+        <!-- 视频网格列表 -->
+        <div class="mobile-video-grid">
+          <div
+              v-for="(video, index) in videoList"
+              :key="video.id"
+              class="mobile-video-card"
+              :class="{ active: currentIndex === index }"
+              @click="selectVideo(index, video)"
           >
-            您的浏览器不支持音频播放
-          </audio>
-        </div>
-
-        <!-- PDF预览 -->
-        <div v-else-if="previewType === 'pdf'" class="preview-pdf">
-          <iframe :src="previewUrl" style="width: 100%; height: 70vh; border: none;"></iframe>
-        </div>
-
-        <!-- 文本预览 -->
-        <div v-else-if="previewType === 'text'" class="preview-text">
-          <pre>{{ previewFile?.content || '加载中...' }}</pre>
+            <div class="card-thumbnail">
+              <img v-if="video.thumbnail" :src="video.thumbnail" :alt="video.name" />
+              <div v-else class="thumbnail-placeholder">
+                <icon-video-camera :size="40" color="#9ca3af" />
+              </div>
+              <div class="duration-badge" v-if="video.duration">
+                {{ formatDuration(video.duration) }}
+              </div>
+              <div class="grade-badge" v-if="video.grade === 'good'">
+                <a-badge :dot="true" status="success" />
+                <span>{{ $t('player.good') }}</span>
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="card-name">{{ video.name }}</div>
+              <icon-right />
+            </div>
+          </div>
         </div>
       </div>
-
-      <template #footer>
-        <a-space>
-          <a-button @click="closePreview">关闭</a-button>
-          <a-button
-              v-if="previewFile"
-              type="primary"
-              @click="handleDownloadFile(previewFile)"
-          >
-            <template #icon>
-              <icon-download />
-            </template>
-            下载
-          </a-button>
-        </a-space>
-      </template>
-    </a-modal>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, computed, watch, nextTick, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'
 import {
   IconFile,
   IconFolder,
   IconLock,
   IconDownload,
-  IconEye,
   IconExclamationCircle,
-  IconImage,
-  IconVideoCamera,
-  IconMusic,
-  IconFilePdf,
-  IconPlayCircle,
   IconShareAlt,
-  IconUser,
-  IconClockCircle,
-  IconUnlock
+  IconUnlock,
+  IconDown,
+  IconCaretDown,
+  IconRight,
+  IconDownload as IconDownload2,
+  IconMenuFold,
+  IconMenuUnfold,
+  IconPlus,
+  IconFilter,
+  IconStar,
+  IconPlayCircle,
+  IconVideoCamera
 } from '@arco-design/web-vue/es/icon'
+import { changeLanguage, getCurrentLanguage } from '@/locales'
 import { getShareInfo, accessShare, downloadShareFile, getShareFolderContent } from '@/modules/cloud/api/share'
 import type { ShareInfo } from '@/modules/cloud/types'
 
+const { t, locale } = useI18n()
 const route = useRoute()
 const shareCode = ref(route.params.code as string)
 
+// 响应式布局检测
+const isDesktop = ref(window.innerWidth > 700)
+const currentLang = ref(getCurrentLanguage())
+
+// 密码验证状态
 const loading = ref(false)
 const downloading = ref(false)
-const loadingFiles = ref(false)
 const verified = ref(false)
 const notFound = ref(false)
 const error = ref('')
-const showFolderContent = ref(false)
 
 const form = ref({
   password: '',
 })
 
 const shareInfo = ref<ShareInfo | null>(null)
-const folderFiles = ref<any[]>([])
-const currentFolderId = ref<number | undefined>(undefined)
-const folderPath = ref<Array<{ id: number | undefined; name: string }>>([])
 
-const previewVisible = ref(false)
-const previewFile = ref<any>(null)
-const previewType = ref<'image' | 'video' | 'audio' | 'pdf' | 'text' | 'unknown'>('unknown')
-const previewUrl = ref<string>('')
+// 播放器状态
+const playing = ref(false)
+const leftCollapsed = ref(false)
+const currentLayout = ref('mono')
+const layoutOptions = {
+  mono: 'mono',
+  dual: 'dual',
+  quad: 'quad',
+  'multi': 'multi',
+  overlay: 'overlay'
+}
+
+// 视频列表
+const currentIndex = ref(0)
+const videoList = ref([
+  {
+    id: 1,
+    name: 'recorder_2024-10-20-10-42-35',
+    thumbnail: '',
+    duration: 120,
+    date: '10-20 02:00',
+    grade: 'good',
+    gradeValue: 5,
+    resolution: '1920 x 1080',
+    frameRate: '50 fps',
+    bitrate: '4 Mbps',
+    codec: 'H264',
+    url: ''
+  },
+])
+
+// 标签
+const tags = ref(['Chery', '品质', 'KO', '奇迹', 'OJ', '机场'])
+const activeTagIndex = ref(0)
+
+// 项目标题
+const projectTitle = ref('Chery International UserSummit')
+
+// 当前视频信息面板
+const currentInfo = ref({
+  fileFormat: 'MP4',
+  uploadUser: 'chery international',
+  uploadTime: '2024/10/20 10:44',
+  fileSize: '',
+  acronym: '',
+  remark: ''
+})
 
 const videoRef = ref<HTMLVideoElement | null>(null)
-const audioRef = ref<HTMLAudioElement | null>(null)
+const videoRefMobile = ref<HTMLVideoElement | null>(null)
+
+// 计算当前视频
+const currentVideo = computed(() => videoList.value[currentIndex.value])
+const currentVideoSrc = computed(() => {
+  if (!currentVideo.value || !currentVideo.value.url) {
+    // 如果是分享文件夹，这里应该从后端获取实际视频地址
+    // 暂时返回空，实际由后端返回
+    return ''
+  }
+  return currentVideo.value.url
+})
+
+// 语言切换
+function handleLanguageChange(key: string) {
+  changeLanguage(key)
+  currentLang.value = key
+  locale.value = key
+}
 
 function getResourceName(): string {
   if (!shareInfo.value) return ''
   if (shareInfo.value.resourceType === 'file') {
-    return shareInfo.value.file?.name || '文件'
+    return shareInfo.value.file?.name || t('share.resource.file')
   }
-  return shareInfo.value.folder?.name || '文件夹'
+  return shareInfo.value.folder?.name || t('share.resource.folder')
 }
 
 function getFileSize(): number {
@@ -351,8 +518,10 @@ function formatFileSize(bytes: number): string {
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
 
-function formatDate(date: string): string {
-  return new Date(date).toLocaleString('zh-CN')
+function formatDuration(seconds: number): string {
+  const minutes = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
 async function loadShareInfo() {
@@ -365,10 +534,34 @@ async function loadShareInfo() {
     if (info.share.shareType === 'public') {
       verified.value = true
       if (info.resourceType === 'folder') {
-        showFolderContent.value = true
-        folderPath.value = [{ id: undefined, name: info.folder?.name || '根目录' }]
-        currentFolderId.value = undefined
         await loadFolderContent()
+      } else if (info.resourceType === 'file') {
+        // 单个视频文件，直接加载
+        const file = info.file
+        if (file) {
+          videoList.value = [{
+            id: file.id,
+            name: file.name,
+            thumbnail: '',
+            duration: Math.floor((file.fileSize || 0) / (4 * 1024 * 1024) * 60),
+            date: new Date().toLocaleDateString(),
+            grade: 'good',
+            gradeValue: 5,
+            resolution: '1920 x 1080',
+            frameRate: '50 fps',
+            bitrate: '4 Mbps',
+            codec: 'H264',
+            url: file.accessUrl || file.accessURL
+          }]
+          currentInfo.value = {
+            fileFormat: 'MP4',
+            uploadUser: info.sharer || 'unknown',
+            uploadTime: new Date().toLocaleString(),
+            fileSize: formatFileSize(file.fileSize || 0),
+            acronym: '',
+            remark: ''
+          }
+        }
       }
     }
   } catch (e: any) {
@@ -376,7 +569,7 @@ async function loadShareInfo() {
     if (e?.response?.status === 404) {
       notFound.value = true
     } else {
-      Message.error(e?.message || '获取分享信息失败')
+      Message.error(e?.message || t('messages.loadFailed'))
     }
   } finally {
     loading.value = false
@@ -385,7 +578,7 @@ async function loadShareInfo() {
 
 async function handleVerify() {
   if (!form.value.password.trim()) {
-    error.value = '请输入访问密码'
+    error.value = t('share.password.required')
     return
   }
 
@@ -395,75 +588,53 @@ async function handleVerify() {
     const info = await accessShare(shareCode.value, form.value.password)
     shareInfo.value = info
     verified.value = true
-    Message.success('验证成功')
+    Message.success(t('messages.verifySuccess'))
 
     if (info.resourceType === 'folder') {
-      showFolderContent.value = true
-      folderPath.value = [{ id: undefined, name: info.folder?.name || '根目录' }]
-      currentFolderId.value = undefined
       await loadFolderContent()
+    } else if (info.resourceType === 'file') {
+      const file = info.file
+      if (file) {
+        videoList.value = [{
+          id: file.id,
+          name: file.name,
+          thumbnail: '',
+          duration: Math.floor((file.fileSize || 0) / (4 * 1024 * 1024) * 60),
+          date: new Date().toLocaleDateString(),
+          grade: 'good',
+          gradeValue: 5,
+          resolution: '1920 x 1080',
+          frameRate: '50 fps',
+          bitrate: '4 Mbps',
+          codec: 'H264',
+          url: getAccessUrl(file)
+        }]
+        currentInfo.value = {
+          fileFormat: 'MP4',
+          uploadUser: info.sharer || 'unknown',
+          uploadTime: new Date().toLocaleString(),
+          fileSize: formatFileSize(file.fileSize || 0),
+          acronym: '',
+          remark: ''
+        }
+      }
     }
   } catch (e: any) {
     console.error('访问分享失败:', e)
-    error.value = e?.message || '密码错误，请重试'
+    error.value = e?.message || t('share.password.error')
   } finally {
     loading.value = false
   }
 }
 
-async function handleDownload() {
-  if (!shareInfo.value || shareInfo.value.resourceType !== 'file') return
-
-  const file = shareInfo.value.file
-  if (file) {
-    const storageType = file.storageType || file.StorageType
-    const accessUrl = getAccessUrl(file)
-    if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
-      const link = document.createElement('a')
-      link.href = accessUrl
-      link.download = file.name || `file-${Date.now()}`
-      link.rel = 'noopener'
-      link.target = '_blank'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      Message.success('开始下载')
-      return
-    }
-  }
-
-  downloading.value = true
-  try {
-    await downloadShareFile(
-        shareCode.value,
-        shareInfo.value.file?.name || `file-${Date.now()}`
-    )
-    Message.success('开始下载')
-  } catch (e: any) {
-    console.error('下载失败:', e)
-    Message.error(e?.message || '下载失败')
-  } finally {
-    downloading.value = false
-  }
+function getAccessUrl(item: any): string {
+  return item.accessUrl || item.accessURL || item.AccessURL
 }
 
 async function loadFolderContent(parentId?: number) {
-  loadingFiles.value = true
   try {
     const content = await getShareFolderContent(shareCode.value, parentId)
     const items: any[] = []
-
-    if (content.folders && content.folders.length > 0) {
-      content.folders.forEach((folder: any) => {
-        items.push({
-          id: folder.id,
-          name: folder.name,
-          type: 'folder',
-          size: 0,
-          updateTime: folder.updateTime || '',
-        })
-      })
-    }
 
     if (content.files && content.files.length > 0) {
       content.files.forEach((file: any) => {
@@ -474,291 +645,228 @@ async function loadFolderContent(parentId?: number) {
         }
         const fullName = baseName + fileExt
 
-        const item = {
-          id: file.id || file.ID || 0,
-          name: fullName,
-          displayName: baseName,
-          type: file.type || file.Type || 'file',
-          size: (file.fileSize || file.FileSize || file.size || file.Size || 0),
-          updateTime: file.updateTime || file.UpdateTime || file.createTime || file.CreateTime || '',
-          storageType: file.storageType || file.StorageType || '',
-          accessUrl: file.accessUrl || file.accessURL || file.AccessURL || file.AccessUrl || '',
-          fileExt: fileExt,
+        // 判断是否是视频文件
+        const ext = fileExt.toLowerCase()
+        const videoExts = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv']
+        if (videoExts.includes(ext)) {
+          items.push({
+            id: file.id || file.ID || 0,
+            name: fullName,
+            thumbnail: '',
+            duration: Math.floor((file.fileSize || 0) / (4 * 1024 * 1024) * 60) || 120,
+            date: file.updateTime || file.createTime || '',
+            grade: 'good', // 默认标记为good
+            gradeValue: 5,
+            resolution: '1920 x 1080',
+            frameRate: '50 fps',
+            bitrate: '4 Mbps',
+            codec: 'H264',
+            url: getAccessUrl(file)
+          })
         }
-        items.push(item)
       })
     }
 
-    folderFiles.value = items
+    videoList.value = items
+    if (items.length > 0) {
+      currentInfo.value = {
+        fileFormat: 'MP4',
+        uploadUser: shareInfo.value?.sharer || 'unknown',
+        uploadTime: new Date().toLocaleString(),
+        fileSize: formatFileSize(items[0]?.duration * 4 * 1024 * 1024) || '',
+        acronym: '',
+        remark: ''
+      }
+    }
   } catch (e: any) {
     console.error('加载文件夹内容失败:', e)
-    Message.error(e?.message || '加载文件夹内容失败')
-  } finally {
-    loadingFiles.value = false
+    Message.error(e?.message || t('messages.loadFailed'))
   }
 }
 
-async function navigateToFolder(folderId?: number, folderName?: string) {
-  if (folderName === undefined) {
-    const pathIndex = folderPath.value.findIndex(item => item.id === folderId)
-    if (pathIndex !== -1) {
-      folderPath.value = folderPath.value.slice(0, pathIndex + 1)
-      currentFolderId.value = folderId
-    }
-  } else {
-    folderPath.value.push({ id: folderId, name: folderName })
-    currentFolderId.value = folderId
-  }
-  await loadFolderContent(currentFolderId.value)
-}
-
-function getFileType(fileName: string): 'image' | 'video' | 'audio' | 'pdf' | 'text' | 'unknown' {
-  const ext = fileName.split('.').pop()?.toLowerCase() || ''
-
-  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']
-  const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv']
-  const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'm4a']
-  const pdfExts = ['pdf']
-  const textExts = ['txt', 'md', 'json', 'xml', 'csv', 'log']
-
-  if (imageExts.includes(ext)) return 'image'
-  if (videoExts.includes(ext)) return 'video'
-  if (audioExts.includes(ext)) return 'audio'
-  if (pdfExts.includes(ext)) return 'pdf'
-  if (textExts.includes(ext)) return 'text'
-
-  return 'unknown'
-}
-
-function hasAccessUrl(item: any): boolean {
-  return !!(item.accessUrl || item.accessURL || item.AccessURL)
-}
-
-function getAccessUrl(item: any): string {
-  return item.accessUrl || item.accessURL || item.AccessURL
-}
-
-function canPreview(fileName: string): boolean {
-  const type = getFileType(fileName)
-  return ['image', 'video', 'audio', 'pdf', 'text'].includes(type)
-}
-
-function getFilePreviewUrl(fileId: number): string {
-  return `/api/v1/cloud/shares/${shareCode.value}/files/${fileId}/preview`
-}
-
-function getFileDownloadUrl(fileId: number): string {
-  return `/api/v1/cloud/shares/${shareCode.value}/files/${fileId}/download`
-}
-
-function handlePreviewFile(file: any) {
-  if (!canPreview(file.name)) {
-    Message.warning('该文件类型不支持预览')
-    return
+function selectVideo(index: number, video: any) {
+  currentIndex.value = index
+  playing.value = false
+  currentInfo.value = {
+    fileFormat: 'MP4',
+    uploadUser: shareInfo.value?.sharer || 'unknown',
+    uploadTime: video.date || new Date().toLocaleString(),
+    fileSize: formatFileSize(video.duration * 4 * 1024 * 1024),
+    acronym: '',
+    remark: ''
   }
 
-  previewFile.value = file
-  previewType.value = getFileType(file.name)
-
-  const storageType = file.storageType || file.StorageType
-  const accessUrl = getAccessUrl(file)
-  if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
-    previewUrl.value = accessUrl
-  } else {
-    previewUrl.value = getFilePreviewUrl(file.id)
-  }
-
-  previewVisible.value = true
-}
-
-function closePreview() {
-  try {
-    if (videoRef.value) {
-      videoRef.value.pause()
-      videoRef.value.currentTime = 0
-      videoRef.value.src = ''
-      videoRef.value.load()
-    }
-
-    if (audioRef.value) {
-      audioRef.value.pause()
-      audioRef.value.currentTime = 0
-      audioRef.value.src = ''
-      audioRef.value.load()
-    }
-  } catch (error) {
-    console.warn('关闭预览时清理媒体资源失败:', error)
-  }
-
-  previewVisible.value = false
-
+  // 自动播放
   nextTick(() => {
-    previewFile.value = null
-    previewType.value = 'unknown'
-    previewUrl.value = ''
+    const videoEl = isDesktop.value ? videoRef.value : videoRefMobile.value
+    if (videoEl) {
+      videoEl.play()
+      playing.value = true
+    }
   })
 }
 
-function handleFileClick(file: any) {
-  if (canPreview(file.name)) {
-    handlePreviewFile(file)
-  } else {
-    handleDownloadFile(file)
-  }
-}
-
-function handleDownloadFile(file: any) {
-  const storageType = file.storageType || file.StorageType
-  const accessUrl = getAccessUrl(file)
-  if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
+function downloadCurrent() {
+  if (!currentVideo.value) return
+  const url = currentVideo.value.url
+  if (url && url.length > 0) {
     const link = document.createElement('a')
-    link.href = accessUrl
-    link.download = file.name
+    link.href = url
+    link.download = currentVideo.value.name
     link.rel = 'noopener'
     link.target = '_blank'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    Message.success('开始下载')
+    Message.success(t('share.actions.startDownload'))
     return
   }
-  const downloadUrl = getFileDownloadUrl(file.id)
-  const link = document.createElement('a')
-  link.href = downloadUrl
-  link.download = file.name
-  link.style.display = 'none'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  Message.success('开始下载')
+
+  downloading.value = true
+  downloadShareFile(
+    shareCode.value,
+    currentVideo.value.name
+  ).finally(() => {
+    downloading.value = false
+  })
+}
+
+function togglePlay() {
+  const videoEl = isDesktop.value ? videoRef.value : videoRefMobile.value
+  if (videoEl) {
+    if (playing.value) {
+      videoEl.pause()
+    } else {
+      videoEl.play()
+    }
+    playing.value = !playing.value
+  }
+}
+
+// 监听窗口大小变化
+function handleResize() {
+  isDesktop.value = window.innerWidth > 700
 }
 
 onMounted(() => {
+  window.addEventListener('resize', handleResize)
   if (!shareCode.value) {
     notFound.value = true
     return
   }
   loadShareInfo()
+
+  // 清理
+  onUnmounted(() => {
+    window.removeEventListener('resize', handleResize)
+  })
+})
+
+// 监听播放状态
+watch(currentVideoSrc, () => {
+  playing.value = false
 })
 </script>
 
 <style scoped>
 .share-page {
+  width: 100vw;
   height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: #1a1a2e;
+  color: #e5e7eb;
+  overflow: hidden;
+  position: relative;
+}
+
+.language-switcher {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1000;
+}
+
+.lang-btn {
+  color: #e5e7eb !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+.lang-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+
+/* ========== 密码验证页面 ========== */
+.password-wrapper {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
 
-.share-container {
+.password-container {
   width: 100%;
-  height: 100%;
-  max-width: 900px;
-  background: white;
-  border-radius: 0;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  background: #16213e;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   overflow: hidden;
-  animation: slideIn 0.4s ease-out;
-  display: flex;
-  flex-direction: column;
-}
-
-.share-content {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .share-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 12px 16px;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  padding: 16px 20px;
 }
 
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .logo-icon {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 6px;
-  padding: 6px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(8px);
 }
 
-.logo-text {
-  flex: 1;
-}
-
-.share-title {
-  font-size: 16px;
+.logo-text h1 {
+  margin: 0;
+  font-size: 18px;
   font-weight: 600;
-  margin: 0;
-  letter-spacing: -0.3px;
-}
-
-.share-subtitle {
-  font-size: 13px;
-  opacity: 0.9;
-  margin: 0;
-  font-weight: 400;
 }
 
 .password-form {
-  padding: 16px 16px;
-  text-align: center;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  padding: 24px 20px;
 }
 
 .form-content {
-  max-width: 450px;
-  margin: auto;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  flex: 1;
+  gap: 16px;
 }
 
 .resource-preview {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  padding: 8px;
-  background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  min-height: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 16px;
 }
 
 .resource-icon {
-  color: #667eea;
   flex-shrink: 0;
-  transform: scale(0.6);
+  color: #667eea;
 }
 
 .resource-info {
@@ -767,19 +875,19 @@ onMounted(() => {
 }
 
 .resource-name {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 2px;
+  color: #e5e7eb;
+  margin-bottom: 4px;
   word-break: break-all;
 }
 
 .resource-meta {
-  font-size: 11px;
-  color: #6b7280;
+  font-size: 12px;
+  color: #9ca3af;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
 .sharer-info {
@@ -787,575 +895,528 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.share-content {
-  padding: 16px;
+/* ========== PC 三栏布局 ========== */
+.pc-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-.content-header {
-  margin-bottom: 16px;
+/* 左侧边栏 */
+.left-sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: #161d31;
+  border-right: 1px solid #2a2a3e;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
 }
 
-.file-detail {
+.left-sidebar.collapsed {
+  width: 48px;
+  min-width: 48px;
+}
+
+.sidebar-header {
   display: flex;
   align-items: center;
+  padding: 12px 10px;
+  border-bottom: 1px solid #2a2a3e;
   gap: 8px;
-  margin-bottom: 10px;
-  padding: 8px;
-  background: linear-gradient(135deg, #f8f9ff 0%, #eef2ff 100%);
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
 }
 
-.file-preview {
+.project-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.collapse-trigger {
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collapse-trigger:hover {
+  color: #e5e7eb;
+}
+
+.video-list-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 6px;
+  gap: 4px;
+  border-bottom: 1px solid #2a2a3e;
   flex-shrink: 0;
 }
 
-.file-preview-icon {
-  color: #667eea;
-  transform: scale(0.6);
+.filter-bar .arco-btn-text {
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 4px 8px;
 }
 
-.file-info {
+.filter-bar .arco-btn-text:hover {
+  color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.filter-spacer {
   flex: 1;
 }
 
-.file-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 4px;
-  word-break: break-all;
-  line-height: 1.2;
-}
-
-.file-meta {
-  font-size: 11px;
-  color: #6b7280;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-
-.file-meta span {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.action-section {
-  display: flex;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.download-button {
-  width: 140px;
-  height: 36px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.folder-content {
-  margin-top: 12px;
-  border-top: 1px solid #f3f4f6;
-  padding-top: 10px;
+.video-list {
   flex: 1;
-  display: flex;
-  flex-direction: column;
   overflow-y: auto;
+  padding: 6px;
 }
 
-.breadcrumb {
-  margin-bottom: 8px;
-  padding: 6px 8px;
-  background: #f9fafb;
-  border-radius: 6px;
-}
-
-.file-grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 8px;
-  padding: 4px 0;
-  flex: 1;
-}
-
-@media (min-width: 641px) {
-  .file-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px;
-  }
-}
-
-@media (min-width: 1025px) {
-  .file-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px;
-  }
-}
-
-@media (min-width: 1441px) {
-  .file-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px;
-  }
-}
-
-.file-card {
+.video-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 0;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  background: white;
-  overflow: hidden;
-  position: relative;
-}
-
-.file-card:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
-  transform: translateY(-2px);
-}
-
-.file-card.clickable {
+  gap: 8px;
+  padding: 6px;
+  margin-bottom: 6px;
+  border-radius: 6px;
   cursor: pointer;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
 }
 
-.file-card.clickable:hover {
-  background: #f9fafb;
+.video-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(102, 126, 234, 0.3);
 }
 
-.file-card-preview {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16/9;
+.video-item.active {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: #667eea;
+}
+
+.video-thumbnail {
+  width: 64px;
+  height: 40px;
+  border-radius: 4px;
   overflow: hidden;
-  background: #f3f4f6;
+  flex-shrink: 0;
+  position: relative;
+  background: #2a2a3e;
 }
 
-.file-card-preview.video-preview {
-  aspect-ratio: 16/9;
-}
-
-.file-card-preview img,
-.file-card-preview video {
+.video-thumbnail img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
 }
 
-.file-card:hover .file-card-preview img {
-  transform: scale(1.05);
+.thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #2a2a3e;
 }
 
-.file-card-overlay {
+.duration-badge {
   position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 1;
-  transition: opacity 0.3s ease;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(0, 0, 0, 0.7);
   color: white;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 2px;
 }
 
-.file-card:hover .file-card-overlay {
-  opacity: 1;
-}
-
-.file-card-icon {
-  color: #667eea;
-  margin: 0;
-  width: 100%;
-  aspect-ratio: 16/9;
+.grade-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #36d399;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 2px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: #f3f4f6;
+  gap: 2px;
 }
 
-.file-card-icon :deep(.arco-icon) {
-  width: 80% !important;
-  height: 80% !important;
+.video-info {
+  flex: 1;
+  min-width: 0;
 }
 
-.file-card-name {
+.video-name {
   font-size: 12px;
-  font-weight: 500;
-  color: #1f2937;
-  text-align: center;
-  word-break: break-word;
-  margin: 8px 8px 6px;
-  width: 100%;
+  color: #e5e7eb;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
 }
 
-.file-card-actions {
-  margin: 0 0 10px;
+.video-meta {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.video-item > .arco-icon {
+  color: #6b7280;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+/* 中间播放器 */
+.main-player {
+  flex: 1;
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  background: #0a0a0a;
+  overflow: hidden;
 }
 
-.file-card-actions :deep(.arco-btn) {
-  font-size: 11px !important;
-  height: 28px;
-  padding: 0 10px !important;
-}
-
-.preview-container {
+.player-toolbar {
   display: flex;
-  justify-content: center;
   align-items: center;
-  min-height: 300px;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #1a1a2e;
+  border-bottom: 1px solid #2a2a3e;
+  flex-shrink: 0;
 }
 
-.preview-image img {
+.player-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.player-container video {
   max-width: 100%;
-  max-height: 70vh;
+  max-height: 100%;
+}
+
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
+.play-button {
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.play-overlay:hover .play-button {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* 右侧信息面板 */
+.right-sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: #161d31;
+  border-left: 1px solid #2a2a3e;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.info-section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e5e7eb;
+  margin-bottom: 12px;
+}
+
+.grade-stars {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.grade-label {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.stars {
+  display: flex;
+  gap: 4px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.info-grid .info-item {
+  text-align: center;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.info-label {
+  font-size: 13px;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.info-value {
+  font-size: 13px;
+  color: #e5e7eb;
+  flex: 1;
+  text-align: right;
+}
+
+/* ========== Mobile 布局 ========== */
+.mobile-layout {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #1a1a2e;
+  overflow: hidden;
+}
+
+.mobile-header {
+  padding: 8px 12px;
+  background: #161d31;
+  border-bottom: 1px solid #2a2a3e;
+  flex-shrink: 0;
+}
+
+.mobile-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-logo .logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
+}
+
+.mobile-logo .logo-icon img {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
-.preview-video,
-.preview-audio,
-.preview-pdf {
+.project-name {
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-player {
   width: 100%;
+  background: #000;
+  flex-shrink: 0;
 }
 
-.preview-text {
-  max-height: 70vh;
-  overflow: auto;
-  background: #f9fafb;
-  padding: 20px;
-  border-radius: 12px;
+.mobile-player video {
+  width: 100%;
+  display: block;
 }
 
-.preview-text pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: 'Courier New', monospace;
+.tag-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 8px 8px;
+  background: #161d31;
+  border-bottom: 1px solid #2a2a3e;
+  flex-shrink: 0;
+}
+
+.tag-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-item {
+  flex-shrink: 0;
+}
+
+.filter-btn {
+  color: #9ca3af;
+  padding: 0 6px;
+}
+
+.mobile-video-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.mobile-video-card {
+  background: #161d31;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.mobile-video-card:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.mobile-video-card.active {
+  border-color: #36d399;
+}
+
+.card-thumbnail {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #2a2a3e;
+  overflow: hidden;
+}
+
+.card-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-info {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  gap: 6px;
+}
+
+.card-name {
+  flex: 1;
   font-size: 14px;
-  line-height: 1.6;
+  color: #e5e7eb;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.empty-folder {
+.card-info > .arco-icon {
+  color: #6b7280;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ========== 错误页面 ========== */
+.error-message {
   text-align: center;
   padding: 80px 20px;
   color: #9ca3af;
-}
-
-.empty-folder p {
-  margin-top: 20px;
-  font-size: 16px;
-  color: #6b7280;
-}
-
-.error-message {
-  text-align: center;
-  padding: 80px 40px;
-  color: #9ca3af;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .error-icon {
-  color: #f53f3f;
+  color: #f87272;
   margin-bottom: 24px;
 }
 
 .error-content h2 {
   font-size: 24px;
-  color: #1f2937;
+  color: #e5e7eb;
   margin: 0 0 12px;
   font-weight: 700;
 }
 
 .error-content p {
   font-size: 15px;
-  color: #6b7280;
+  color: #9ca3af;
   line-height: 1.6;
 }
 
-@media (max-width: 768px) {
-  .share-page {
-    padding: 0;
-  }
-
-  .share-header {
-    padding: 12px 16px;
-  }
-
-  .share-title {
-    font-size: 16px !important;
-  }
-
-  .share-subtitle {
-    font-size: 12px !important;
-  }
-
-  .logo-section {
-    gap: 8px;
-  }
-
-  .logo-icon {
-    padding: 6px;
-  }
-
-  .password-form,
-  .share-content {
-    padding: 16px 14px;
-  }
-
-  .resource-preview,
-  .file-detail {
-    flex-direction: column;
-    text-align: center;
-    padding: 12px;
-    gap: 12px;
-  }
-
-  .resource-icon {
-    transform: scale(0.6);
-  }
-
-  .file-preview-icon {
-    transform: scale(0.6);
-  }
-
-  .resource-info,
-  .file-info {
-    text-align: center;
-  }
-
-  .resource-name {
-    font-size: 14px !important;
-  }
-
-  .file-name {
-    font-size: 14px !important;
-  }
-
-  .file-meta {
-    justify-content: center;
-    gap: 8px;
-    font-size: 12px;
-  }
-
-  .file-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8px;
-  }
-
-  .file-card {
-    border-radius: 8px;
-  }
-
-  .file-card-icon {
-    margin: 6px 0 2px;
-  }
-
-  .file-card-name {
-    margin: 4px 4px 2px;
-    font-size: 13px;
-    line-height: 1.3;
-  }
-
-  .file-card-actions {
-    margin: 2px 0 6px;
-    gap: 4px;
-  }
-
-  .file-card-actions :deep(.arco-btn) {
-    font-size: 12px !important;
-    height: 24px;
-    padding: 0 6px !important;
-  }
-
-  .breadcrumb {
-    font-size: 11px;
-    padding: 8px 10px;
-  }
-
-  .download-button {
-    width: 120px !important;
-    height: 38px !important;
-    font-size: 13px !important;
-  }
-
-  .empty-folder {
-    padding: 40px 20px !important;
-  }
-
-  .empty-folder :deep(.arco-icon) {
-    transform: scale(0.7);
-  }
-
-  .error-message {
-    padding: 40px 20px !important;
-  }
-
-  .error-icon {
-    transform: scale(0.7);
-  }
-
-  .error-content h2 {
-    font-size: 18px !important;
-  }
-
-  .error-content p {
-    font-size: 13px !important;
-  }
+/* ========== 滚动条样式 ========== */
+.video-list::-webkit-scrollbar,
+.right-sidebar::-webkit-scrollbar,
+.mobile-video-grid::-webkit-scrollbar {
+  width: 6px;
 }
 
-@media (max-width: 480px) {
-  .share-page {
-    padding: 0;
-  }
-
-  .share-container {
-    border-radius: 12px;
-  }
-
-  .share-header {
-    padding: 10px 14px;
-  }
-
-  .share-title {
-    font-size: 15px !important;
-  }
-
-  .share-subtitle {
-    font-size: 11px !important;
-  }
-
-  .logo-icon {
-    padding: 5px;
-  }
-
-  .logo-icon :deep(.arco-icon) {
-    width: 20px !important;
-    height: 20px !important;
-  }
-
-  .password-form,
-  .share-content {
-    padding: 14px 12px;
-  }
-
-  .resource-preview,
-  .file-detail {
-    padding: 10px;
-    gap: 10px;
-  }
-
-  .resource-icon :deep(.arco-icon),
-  .file-preview-icon :deep(.arco-icon) {
-    width: 48px !important;
-    height: 48px !important;
-  }
-
-  .resource-name {
-    font-size: 13px !important;
-  }
-
-  .file-name {
-    font-size: 13px !important;
-  }
-
-  .file-meta {
-    gap: 6px;
-    font-size: 11px;
-  }
-
-  .file-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 6px;
-  }
-
-  .file-card-icon {
-    margin: 4px 0 2px;
-  }
-
-  .file-card-icon :deep(.arco-icon) {
-    width: 32px !important;
-    height: 32px !important;
-  }
-
-  .file-card-name {
-    margin: 3px 3px 1px;
-    font-size: 12px;
-    -webkit-line-clamp: 1;
-  }
-
-  .file-card-actions {
-    margin: 2px 0 4px;
-    gap: 3px;
-  }
-
-  .file-card-actions :deep(.arco-btn) {
-    font-size: 9px !important;
-    height: 22px;
-    padding: 0 5px !important;
-  }
-
-  .folder-content {
-    margin-top: 20px;
-    padding-top: 16px;
-  }
-
-  .breadcrumb {
-    font-size: 10px;
-    padding: 6px 8px;
-    margin-bottom: 12px;
-  }
-
-  .content-header {
-    margin-bottom: 20px;
-  }
-
-  .action-section {
-    margin-top: 16px;
-  }
-
-  .download-button {
-    width: 110px !important;
-    height: 36px !important;
-    font-size: 12px !important;
-  }
+.video-list::-webkit-scrollbar-track,
+.right-sidebar::-webkit-scrollbar-track,
+.mobile-video-grid::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-@media (max-width: 360px) {
-  .share-title {
-    font-size: 14px !important;
-  }
+.video-list::-webkit-scrollbar-thumb,
+.right-sidebar::-webkit-scrollbar-thumb,
+.mobile-video-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
 
-  .share-subtitle {
-    font-size: 10px !important;
-  }
+.video-list::-webkit-scrollbar-thumb:hover,
+.right-sidebar::-webkit-scrollbar-thumb:hover,
+.mobile-video-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
 
-  .file-grid {
-    grid-template-columns: 1fr !important;
-    gap: 8px;
-  }
+.tag-scroll::-webkit-scrollbar {
+  height: 4px;
+}
 
-  .file-card-name {
-    font-size: 13px;
-  }
+.tag-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
 
-  .file-card-actions :deep(.arco-btn) {
-    font-size: 10px !important;
-    height: 28px;
-    padding: 0 8px !important;
-  }
+.tag-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
 }
 </style>
