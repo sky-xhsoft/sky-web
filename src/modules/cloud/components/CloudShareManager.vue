@@ -162,20 +162,12 @@
 
         <!-- 操作按钮 -->
         <div class="share-item__actions">
+          <a-button size="small" type="text" @click="handleCopy(share)" :disabled="isExpired(share)">
+            <icon-copy />
+            复制链接
+          </a-button>
           <a-dropdown trigger="click">
             <template #content>
-              <a-doption @click="handleCopy(share)" :disabled="isExpired(share)">
-                <icon-copy />
-                复制链接
-              </a-doption>
-              <a-doption @click="handleCopyShareCode(share)" :disabled="isExpired(share)">
-                <icon-link />
-                复制分享码
-              </a-doption>
-              <a-doption v-if="share.password" @click="handleCopyPassword(share)">
-                <icon-lock />
-                复制访问密码
-              </a-doption>
               <a-doption @click="handleEdit(share)" :disabled="isExpired(share)">
                 <icon-edit />
                 编辑
@@ -338,20 +330,47 @@ function handleCopy(share: ShareListItem) {
 }
 
 function handleCopyShareCode(share: ShareListItem) {
-  navigator.clipboard.writeText(share.shareCode).then(() => {
-    Message.success('分享码已复制')
-  }).catch(() => {
-    Message.error('复制失败，请手动复制')
-  })
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(share.shareCode).then(() => {
+      Message.success('分享码已复制')
+    }).catch(() => {
+      fallbackCopy(share.shareCode, '分享码已复制')
+    })
+  } else {
+    fallbackCopy(share.shareCode, '分享码已复制')
+  }
 }
 
 function handleCopyPassword(share: ShareListItem) {
   if (!share.password) return
-  navigator.clipboard.writeText(share.password).then(() => {
-    Message.success('访问密码已复制')
-  }).catch(() => {
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(share.password).then(() => {
+      Message.success('访问密码已复制')
+    }).catch(() => {
+      fallbackCopy(share.password, '访问密码已复制')
+    })
+  } else {
+    fallbackCopy(share.password, '访问密码已复制')
+  }
+}
+
+function fallbackCopy(text: string, successMsg: string) {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  textarea.style.top = '-9999px'
+  document.body.appendChild(textarea)
+  textarea.select()
+  try {
+    document.execCommand('copy')
+    Message.success(successMsg)
+  } catch (err) {
     Message.error('复制失败，请手动复制')
-  })
+  } finally {
+    document.body.removeChild(textarea)
+  }
 }
 
 function handleEdit(share: ShareListItem) {

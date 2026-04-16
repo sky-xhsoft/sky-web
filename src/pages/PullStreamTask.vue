@@ -30,13 +30,6 @@
         创建分发任务
       </a-button>
       <div class="action-right">
-        <a-range-picker
-            v-model="dateRange"
-            show-time
-            format="YYYY-MM-DD HH:mm:ss"
-            style="width: 380px"
-            @change="handleDateRangeChange"
-        />
         <a-input-search
             v-model="searchKeyword"
             placeholder="请输入关键字进行搜索"
@@ -221,7 +214,6 @@ const loading = ref(false)
 const taskList = ref<PullStreamTaskInfo[]>([])
 const allTaskList = ref<PullStreamTaskInfo[]>([]) // 存储所有任务（未过滤）
 const searchKeyword = ref('')
-const dateRange = ref<[string, string]>([])
 
 // 统计数据（动态计算）
 const totalTasksLimit = ref(188) // 任务配额上限，可以从后端获取
@@ -238,24 +230,6 @@ const expiredTasks = computed(() => {
     return endTime < now
   }).length
 })
-
-// 初始化默认时间范围（前7天到当前时间）
-const initDefaultDateRange = () => {
-  const now = new Date()
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-
-  const formatDate = (date: Date) => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-    const seconds = String(date.getSeconds()).padStart(2, '0')
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-  }
-
-  dateRange.value = [formatDate(sevenDaysAgo), formatDate(now)]
-}
 
 // 分页
 const pagination = reactive({
@@ -595,20 +569,8 @@ const loadTaskList = async () => {
       })
     }
 
-    // 根据时间范围过滤数据（基于任务开始时间）
-    if (dateRange.value && dateRange.value.length === 2) {
-      const [startTime, endTime] = dateRange.value
-      const startTimestamp = new Date(startTime).getTime()
-      const endTimestamp = new Date(endTime).getTime()
-
-      taskList.value = filteredByRoomId.filter((task: any) => {
-        const taskStartTime = new Date(task.startTime).getTime()
-        return taskStartTime >= startTimestamp && taskStartTime <= endTimestamp
-      })
-    } else {
-      taskList.value = filteredByRoomId
-    }
-
+    // 直接使用全部过滤后的数据，不进行时间范围过滤
+    taskList.value = filteredByRoomId
     pagination.total = taskList.value.length
   } catch (error) {
     console.error('加载任务列表失败:', error)
@@ -733,10 +695,6 @@ const getRegionText = (region: string) => {
 }
 
 // 操作方法
-const handleDateRangeChange = () => {
-  loadTaskList()
-}
-
 const handleSearch = () => {
   loadTaskList()
 }
@@ -847,7 +805,6 @@ const viewTaskStatus = async (task: PullStreamTaskInfo) => {
 }
 
 onMounted(() => {
-  initDefaultDateRange()
   loadTaskList()
   startRunningStatusTimer()
 

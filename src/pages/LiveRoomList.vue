@@ -10,6 +10,20 @@
           创建直播
         </a-button>
       </a-space>
+      <a-space size="medium">
+        <a-button @click="handleRefresh">
+          <template #icon>
+            <icon-refresh />
+          </template>
+          刷新
+        </a-button>
+        <a-button v-if="selectedRows.length > 0" type="primary" status="danger" @click="handleBatchDelete">
+          <template #icon>
+            <icon-delete />
+          </template>
+          批量删除 ({{ selectedRows.length }})
+        </a-button>
+      </a-space>
     </div>
 
     <!-- 搜索栏 -->
@@ -32,6 +46,7 @@
           v-model="searchForm.filterType"
           placeholder="直播名称"
           style="width: 150px"
+          @change="handleSearch"
         >
           <a-option value="roomName">直播名称</a-option>
           <a-option value="id">直播ID</a-option>
@@ -63,6 +78,8 @@
       @page-size-change="handlePageSizeChange"
       row-key="id"
       :row-selection="rowSelection"
+      @selectionChange="handleSelectionChange"
+      @selectAll="handleSelectAll"
     >
       <template #roomInfo="{ record }">
         <div class="room-info">
@@ -115,7 +132,7 @@
                 <icon-edit />
                 编辑
               </a-doption>
-              <a-doption v-if="record.status === 'draft' || record.status === 'scheduled'" @click="handleRecycle(record)">
+              <a-doption v-if="record.status !== 'live'" @click="handleRecycle(record)">
                 <icon-delete />
                 删除
               </a-doption>
@@ -134,12 +151,16 @@ import { useNavigationStore } from '../stores/navigation'
 import api from '../api/http'
 import { listDomains } from '../api/live'
 import dayjs from 'dayjs'
+import { IconRefresh, IconDelete } from '@arco-design/web-vue/es/icon'
 
 const navigationStore = useNavigationStore()
 const loading = ref(false)
 const tableData = ref([])
 const domains = ref<{ name: string; type: number }[]>([])
 let unregisterBackCallback: (() => void) | null = null
+
+// 选中的行
+const selectedRows = ref<any[]>([])
 
 // 加载域名列表
 const loadDomains = async () => {
@@ -171,10 +192,29 @@ const pagination = reactive({
   showPageSize: true
 })
 
+// 行选择配置
 const rowSelection = reactive({
   type: 'checkbox',
-  showCheckedAll: true
+  showCheckedAll: true,
+  selectable: (record: any) => record.status !== 'live'
 })
+
+// 处理选择变化
+const handleSelectionChange = (rowKeys: any[]) => {
+  // 根据选中的行 keys 找到对应的记录
+  selectedRows.value = tableData.value.filter(record => rowKeys.includes(record.id))
+}
+
+// 处理全选
+const handleSelectAll = (checked: boolean) => {
+  if (checked) {
+    // 全选时，只选中非直播状态的记录
+    selectedRows.value = tableData.value.filter(record => record.status !== 'live')
+  } else {
+    // 取消全选时，清空选中数据
+    selectedRows.value = []
+  }
+}
 
 const columns = [
   {
@@ -308,19 +348,15 @@ const fetchData = async () => {
       const result = response.data.data
       const rawData = result.data || []
 
-      console.log('原始数据数组:', rawData)
-
       // 确保 rawData 是数组
       if (Array.isArray(rawData)) {
         tableData.value = rawData.map((item: any) => convertToFrontendFormat(item))
-        console.log('转换后的表格数据:', tableData.value)
       } else {
         console.warn('返回的数据不是数组:', rawData)
         tableData.value = []
       }
 
       pagination.total = result.total || 0
-      console.log('分页信息:', pagination)
     }
   } catch (error: any) {
     console.error('获取数据失败:', error)
@@ -332,6 +368,10 @@ const fetchData = async () => {
 
 const handleCreate = () => {
   navigationStore.navigateTo('LiveRoomForm', '创建直播间', {}, true)
+}
+
+const handleRefresh = () => {
+  fetchData()
 }
 
 const handleSearch = () => {
@@ -358,6 +398,62 @@ const handleManage = (record: any) => {
   navigationStore.navigateTo('LiveRoomDetail', '直播间详情', { id: record.id }, false)
 }
 
+const handleBatchDelete = () => {
+  if (selectedRows.value.length === 0) {
+    return
+  }
+
+  Modal.confirm({
+    title: '确认批量删除',
+    content: `确定要将选中的 ${selectedRows.value.length} 个直播间移至回收站吗？`,
+    onOk: async () => {
+      try {
+        for (const record of selectedRows.value) {
+          const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
+          if (!getResponse.data?.data) {
+            continue
+          }
+          await api.put(`/data/LIVE_ROOM/${record.id}`, {
+            ...getResponse.data.data,
+            IS_ACTIVE: 'N'
+          })
+        }
+        Message.success(`已成功删除 ${selectedRows.value.length} 个直播间`)
+        // 清空选中的行
+        selectedRows.value = []
+        fetchData()
+      } catch (error: any) {
+        Message.error(error.message || '批量删除失败')
+      }
+    }
+  })
+}
+
+const handleRecycle = (record: any) => {
+  Modal.confirm({
+    title: '确认回收',
+    content: `确定要将直播间"${record.roomName}"移至回收站吗？`,
+    onOk: async () => {
+      try {
+        const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
+        if (!getResponse.data?.data) {
+          Message.error('获取数据失败')
+          return
+        }
+        await api.put(`/data/LIVE_ROOM/${record.id}`, {
+          ...getResponse.data.data,
+          IS_ACTIVE: 'N'
+        })
+        Message.success('已移至回收站')
+        fetchData()
+      } catch (error: any) {
+        Message.error(error.message || '回收失败')
+      }
+    }
+  })
+}
+
+// 其他处理函数（保持不变）
 const handleShare = (record: any) => {
   Message.info('分享功能开发中')
 }
@@ -392,7 +488,6 @@ const handleRefreshPassword = (record: any) => {
     content: '确定要刷新该直播间的观看密码吗？',
     onOk: async () => {
       try {
-        // 生成新密码
         const newPassword = Math.random().toString(36).slice(-8)
         const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
         if (!getResponse.data?.data) {
@@ -407,30 +502,6 @@ const handleRefreshPassword = (record: any) => {
         fetchData()
       } catch (error: any) {
         Message.error(error.message || '刷新密码失败')
-      }
-    }
-  })
-}
-
-const handleRecycle = (record: any) => {
-  Modal.confirm({
-    title: '确认回收',
-    content: `确定要将直播间"${record.roomName}"移至回收站吗？`,
-    onOk: async () => {
-      try {
-        const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
-        if (!getResponse.data?.data) {
-          Message.error('获取数据失败')
-          return
-        }
-        await api.put(`/data/LIVE_ROOM/${record.id}`, {
-          ...getResponse.data.data,
-          IS_ACTIVE: 'N'
-        })
-        Message.success('已移至回收站')
-        fetchData()
-      } catch (error: any) {
-        Message.error(error.message || '回收失败')
       }
     }
   })
@@ -458,18 +529,13 @@ const handleRecordings = (record: any) => {
 
 const handlePreview = async (record: any) => {
   try {
-    // 获取播放域名（类型为1的域名）
     const playDomain = domains.value.find(d => d.type === 1)
-
     if (!playDomain) {
       Message.warning('未找到播放域名，请先添加播放域名')
       return
     }
-
-    // 使用默认值
     const streamName = record.streamName || String(record.id)
     const appName = 'live'
-
     navigationStore.navigateTo('LivePreview', '直播预览', {
       streamName,
       appName,
@@ -483,23 +549,17 @@ const handlePreview = async (record: any) => {
 
 const handleCopy = async (record: any) => {
   try {
-    // 先获取原记录数据
     const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
-
     if (!getResponse.data?.data) {
       Message.error('获取数据失败')
       return
     }
-
     const originalData = getResponse.data.data
-
-    // 复制数据并创建新记录（使用大写下划线格式）
     const copyData = {
       ...originalData,
-      ID: undefined, // 移除 ID，让后端自动生成
+      ID: undefined,
       ROOM_NAME: `${originalData.ROOM_NAME} - 副本`
     }
-
     await api.post('/data/LIVE_ROOM', copyData)
     Message.success('复制成功')
     fetchData()
@@ -511,17 +571,12 @@ const handleCopy = async (record: any) => {
 
 const handleStartLive = async (record: any) => {
   try {
-    // 先获取完整的原始数据
     const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
-
     if (!getResponse.data?.data) {
       Message.error('获取数据失败')
       return
     }
-
     const originalData = getResponse.data.data
-
-    // 更新状态和开始时间（使用MySQL格式）
     await api.put(`/data/LIVE_ROOM/${record.id}`, {
       ...originalData,
       STATUS: 'live',
@@ -536,24 +591,19 @@ const handleStartLive = async (record: any) => {
 }
 
 const handleBackToSite = () => {
-  // TODO: 跳转到回收站
   Message.info('回收站功能开发中')
 }
 
 onMounted(() => {
   loadDomains()
   fetchData()
-
-  // 注册返回回调，从创建/编辑直播间返回时刷新数据
   unregisterBackCallback = navigationStore.onBack((fromComponent, toComponent) => {
     if (toComponent === 'LiveRoomList' && (fromComponent === 'LiveRoomForm')) {
-      console.log('从创建/编辑直播间返回，刷新列表数据')
       fetchData()
     }
   })
 })
 
-// 卸载时取消注册
 onUnmounted(() => {
   if (unregisterBackCallback) {
     unregisterBackCallback()
@@ -595,7 +645,6 @@ onUnmounted(() => {
         font-size: 13px;
         font-weight: 500;
         margin-bottom: 4px;
-
         text-overflow: ellipsis;
         white-space: nowrap;
       }

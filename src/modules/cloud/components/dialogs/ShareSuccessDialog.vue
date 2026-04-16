@@ -115,12 +115,36 @@ async function handleCopy() {
       text += `\n有效期至：${formatExpireTime(props.expireTime)}`
     }
 
-    await navigator.clipboard.writeText(text)
-    Message.success('已复制到剪贴板')
-  } catch (e) {
-    console.error('复制失败:', e)
-    Message.error('复制失败，请手动复制')
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text)
+        Message.success('已复制到剪贴板')
+      } catch (e) {
+        console.error('复制失败:', e)
+        fallbackCopy(text, '已复制到剪贴板')
+      }
+    } else {
+      fallbackCopy(text, '已复制到剪贴板')
+    }
   }
+
+  function fallbackCopy(text: string, successMsg: string) {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.left = '-9999px'
+    textarea.style.top = '-9999px'
+    document.body.appendChild(textarea)
+    textarea.select()
+    try {
+      document.execCommand('copy')
+      Message.success(successMsg)
+    } catch (err) {
+      console.error('复制失败:', err)
+      Message.error('复制失败，请手动复制')
+    } finally {
+      document.body.removeChild(textarea)
+    }
 }
 
 function handleOpen() {

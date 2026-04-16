@@ -140,16 +140,6 @@
                 <span class="meta-value">{{ formatDate(share.createTime) }}</span>
               </span>
             </div>
-            <div class="share-quick-copy">
-              <a-tag size="mini" @click.stop="handleCopyShareCode(share)" :bordered="false" color="arcoblue">
-                <icon-copy />
-                复制链接
-              </a-tag>
-              <a-tag v-if="share.password" size="mini" @click.stop="handleCopyPassword(share)" :bordered="false" color="green">
-                <icon-lock />
-                复制密码
-              </a-tag>
-            </div>
           </div>
 
           <!-- 状态标签 -->
@@ -173,20 +163,12 @@
 
           <!-- 操作按钮 -->
           <div class="share-item__actions">
+            <a-button size="small" type="text" @click="handleCopy(share)" :disabled="isExpired(share)">
+              <icon-copy />
+              复制链接
+            </a-button>
             <a-dropdown trigger="click">
               <template #content>
-                <a-doption @click="handleCopy(share)" :disabled="isExpired(share)">
-                  <icon-copy />
-                  复制链接
-                </a-doption>
-                <a-doption @click="handleCopyShareCode(share)" :disabled="isExpired(share)">
-                  <icon-link />
-                  复制分享码
-                </a-doption>
-                <a-doption v-if="share.password" @click="handleCopyPassword(share)">
-                  <icon-lock />
-                  复制访问密码
-                </a-doption>
                 <a-doption @click="handleEdit(share)" :disabled="isExpired(share)">
                   <icon-edit />
                   编辑

@@ -13,6 +13,7 @@
     <div class="preview-content">
       <div class="player-wrapper">
         <video
+          :key="playerKey"
           id="player-container-id"
           width="100%"
           height="100%"
@@ -65,6 +66,9 @@ const props = defineProps<{
 // 播放器实例
 let player: any = null
 
+// 用于强制重新渲染 video 元素的 key
+const playerKey = ref(0)
+
 // 流信息
 const streamInfo = ref({
   streamName: props.streamName || '',
@@ -103,9 +107,55 @@ const generatePlayUrl = async () => {
   }
 }
 
+// 销毁播放器
+const destroyPlayer = () => {
+  if (player) {
+    try {
+      player.pause && player.pause()
+    } catch (e) {
+      // 忽略
+    }
+    try {
+      player.dispose && player.dispose()
+    } catch (e) {
+      console.error('播放器dispose失败:', e)
+    }
+    player = null
+  }
+
+  // 清空 video 元素
+  const videoElement = document.getElementById('player-container-id') as HTMLVideoElement
+  if (videoElement) {
+    videoElement.pause()
+    videoElement.removeAttribute('src')
+    videoElement.load()
+    // 移除所有子元素
+    while (videoElement.firstChild) {
+      videoElement.removeChild(videoElement.firstChild)
+    }
+  }
+
+  // 查找并移除 TCPlayer 创建的额外元素
+  const playerWrapper = document.querySelector('.player-wrapper')
+  if (playerWrapper) {
+    const children = playerWrapper.querySelectorAll('div, video')
+    children.forEach(child => {
+      if (child.id !== 'player-container-id') {
+        child.remove()
+      }
+    })
+  }
+}
+
 // 初始化播放器
 const initPlayer = () => {
   try {
+    // 先确保销毁旧的播放器
+    destroyPlayer()
+
+    // 更新 key，强制重新渲染 video 元素
+    playerKey.value++
+
     // 检查 TCPlayer 是否已加载
     if (typeof (window as any).TCPlayer === 'undefined') {
       Message.error('播放器加载失败，请刷新页面重试')
@@ -118,24 +168,27 @@ const initPlayer = () => {
       return
     }
 
-    // 创建播放器实例
-    player = (window as any).TCPlayer('player-container-id', {
-      sources: [{
-        src: playUrl.value
-      }],
-      // licenseUrl: 'your-license-url', // 如果需要 license，请在这里配置
-      autoplay: true,
-      controls: true,
-      width: '100%',
-      height: '100%',
-      fluid: true,
-      language: 'zh-CN',
-      plugins: {
-        ContinuePlay: {
-          auto: true
+    // 等待一下 DOM 更新
+    setTimeout(() => {
+      // 创建播放器实例
+      player = (window as any).TCPlayer('player-container-id', {
+        sources: [{
+          src: playUrl.value
+        }],
+        // licenseUrl: 'your-license-url', // 如果需要 license，请在这里配置
+        autoplay: true,
+        controls: true,
+        width: '100%',
+        height: '100%',
+        fluid: true,
+        language: 'zh-CN',
+        plugins: {
+          ContinuePlay: {
+            auto: true
+          }
         }
-      }
-    })
+      })
+    }, 100)
 
   } catch (error) {
     console.error('播放器初始化失败:', error)
@@ -145,38 +198,48 @@ const initPlayer = () => {
 
 // 返回
 const goBack = () => {
-  navigationStore.goBack()
+  // 先销毁播放器
+  destroyPlayer()
+  // 直接导航到直播间列表页面
+  navigationStore.navigateTo('LiveRoomList', '直播间管理', {}, false)
 }
 
 // 复制到剪贴板
 const copyToClipboard = (text: string) => {
   if (!text) return
 
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => {
-      Message.success('已复制到剪贴板')
-    }).catch(() => {
-      Message.error('复制失败')
-    })
-  } else {
-    try {
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      textarea.style.position = 'fixed'
-      textarea.style.opacity = '0'
-      document.body.appendChild(textarea)
-      textarea.select()
-      const successful = document.execCommand('copy')
-      document.body.removeChild(textarea)
-
-      if (successful) {
+  // 先检查 navigator.clipboard 是否可用
+  if (navigator.clipboard && window.isSecureContext) {
+    // 在安全上下文（HTTPS）中使用新 API
+    navigator.clipboard.writeText(text)
+      .then(() => {
         Message.success('已复制到剪贴板')
-      } else {
-        Message.error('复制失败')
-      }
-    } catch (err) {
-      Message.error('复制失败，请手动复制')
-    }
+      })
+      .catch(() => {
+        fallbackCopy(text)
+      })
+  } else {
+    // 在非安全上下文（HTTP）或不支持的浏览器中使用降级方案
+    fallbackCopy(text)
+  }
+}
+
+// 降级方案：使用传统方法复制
+const fallbackCopy = (text: string) => {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  textarea.style.top = '-9999px'
+  document.body.appendChild(textarea)
+  textarea.select()
+  try {
+    document.execCommand('copy')
+    Message.success('已复制到剪贴板')
+  } catch (err) {
+    Message.error('复制失败')
+  } finally {
+    document.body.removeChild(textarea)
   }
 }
 
@@ -191,13 +254,7 @@ onMounted(() => {
 
 // 组件卸载前清理
 onBeforeUnmount(() => {
-  if (player) {
-    try {
-      player.dispose()
-    } catch (error) {
-      console.error('播放器销毁失败:', error)
-    }
-  }
+  destroyPlayer()
 })
 </script>
 
@@ -238,6 +295,7 @@ onBeforeUnmount(() => {
   border-radius: 4px;
   overflow: hidden;
   margin: 0 auto;
+  position: relative;
 }
 
 .stream-info {

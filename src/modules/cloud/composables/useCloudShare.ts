@@ -178,20 +178,50 @@ export function useCloudShare() {
    * @param share 分享对象
    */
   async function copyShareLink(share: ShareListItem) {
-    try {
-      const baseUrl = window.location.origin
-      const shareUrl = `${baseUrl}/share/${share.shareCode}`
-      const text = share.password
-        ? `分享链接：${shareUrl}\n提取码：${share.password}`
-        : `分享链接：${shareUrl}`
+    const baseUrl = window.location.origin
+    const shareUrl = `${baseUrl}/share/${share.shareCode}`
+    const text = share.password
+      ? `分享链接：${shareUrl}\n提取码：${share.password}`
+      : `分享链接：${shareUrl}`
 
-      await navigator.clipboard.writeText(text)
+    // 先检查 navigator.clipboard 是否可用
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text)
+        Message.success('已复制分享链接到剪贴板')
+        return true
+      } catch (e) {
+        console.error('复制失败:', e)
+        // 尝试降级方案
+        return fallbackCopy(text)
+      }
+    } else {
+      // 在非安全上下文或不支持的浏览器中使用降级方案
+      return fallbackCopy(text)
+    }
+  }
+
+  /**
+   * 降级方案：使用传统方法复制
+   */
+  function fallbackCopy(text: string): boolean {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.left = '-9999px'
+    textarea.style.top = '-9999px'
+    document.body.appendChild(textarea)
+    textarea.select()
+    try {
+      document.execCommand('copy')
       Message.success('已复制分享链接到剪贴板')
       return true
     } catch (e) {
       console.error('复制失败:', e)
       Message.error('复制失败，请手动复制')
       return false
+    } finally {
+      document.body.removeChild(textarea)
     }
   }
 

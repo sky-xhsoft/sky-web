@@ -208,20 +208,48 @@ function generatePassword() {
 
 function handleCopyLink() {
   if (!shareLink.value) return
-  navigator.clipboard.writeText(shareLink.value).then(() => {
-    Message.success('链接已复制')
-  }).catch(() => {
-    Message.error('复制失败，请手动复制')
-  })
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(shareLink.value).then(() => {
+      Message.success('链接已复制')
+    }).catch(() => {
+      fallbackCopy(shareLink.value, '链接已复制')
+    })
+  } else {
+    fallbackCopy(shareLink.value, '链接已复制')
+  }
 }
 
 function handleCopyPassword() {
   if (!props.share?.password) return
-  navigator.clipboard.writeText(props.share.password).then(() => {
-    Message.success('访问密码已复制')
-  }).catch(() => {
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(props.share.password).then(() => {
+      Message.success('访问密码已复制')
+    }).catch(() => {
+      fallbackCopy(props.share.password, '访问密码已复制')
+    })
+  } else {
+    fallbackCopy(props.share.password, '访问密码已复制')
+  }
+}
+
+function fallbackCopy(text: string, successMsg: string) {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  textarea.style.top = '-9999px'
+  document.body.appendChild(textarea)
+  textarea.select()
+  try {
+    document.execCommand('copy')
+    Message.success(successMsg)
+  } catch (err) {
     Message.error('复制失败，请手动复制')
-  })
+  } finally {
+    document.body.removeChild(textarea)
+  }
 }
 
 function handleOk() {

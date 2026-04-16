@@ -309,28 +309,40 @@ const getObsStreamKey = () => {
 // 复制到剪贴板
 const copyToClipboard = (text: string) => {
   if (!text) return
-  navigator.clipboard.writeText(text)
-    .then(() => {
-      Message.success('已复制到剪贴板')
-    })
-    .catch(() => {
-      // 降级方案：使用传统方法复制
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      textarea.style.position = 'fixed'
-      textarea.style.left = '-9999px'
-      textarea.style.top = '-9999px'
-      document.body.appendChild(textarea)
-      textarea.select()
-      try {
-        document.execCommand('copy')
+
+  // 先检查 navigator.clipboard 是否可用
+  if (navigator.clipboard && window.isSecureContext) {
+    // 在安全上下文（HTTPS）中使用新 API
+    navigator.clipboard.writeText(text)
+      .then(() => {
         Message.success('已复制到剪贴板')
-      } catch (err) {
-        Message.error('复制失败')
-      } finally {
-        document.body.removeChild(textarea)
-      }
-    })
+      })
+      .catch(() => {
+        fallbackCopy(text)
+      })
+  } else {
+    // 在非安全上下文（HTTP）或不支持的浏览器中使用降级方案
+    fallbackCopy(text)
+  }
+}
+
+// 降级方案：使用传统方法复制
+const fallbackCopy = (text: string) => {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  textarea.style.top = '-9999px'
+  document.body.appendChild(textarea)
+  textarea.select()
+  try {
+    document.execCommand('copy')
+    Message.success('已复制到剪贴板')
+  } catch (err) {
+    Message.error('复制失败')
+  } finally {
+    document.body.removeChild(textarea)
+  }
 }
 
 // 一键复制所有推流地址
@@ -373,6 +385,7 @@ const getHlsPullUrl = () => {
 }
 
 const handleBack = () => {
+  // 直接导航到直播间列表页面
   navigationStore.navigateTo('LiveRoomList', '直播间管理', {}, false)
 }
 
