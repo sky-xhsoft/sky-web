@@ -749,7 +749,7 @@ watch(
           <div class="brand-area" role="button" tabindex="0" @click="goHome">
             <div class="logo-mark">AI</div>
             <div class="brand-text">
-              <div class="brand-title">ZiGeBo</div>
+              <div class="brand-title">AI Live</div>
               <div class="brand-subtitle">数据中心</div>
             </div>
           </div>

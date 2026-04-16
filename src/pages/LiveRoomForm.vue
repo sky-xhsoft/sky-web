@@ -11,7 +11,7 @@
     </div>
 
     <a-alert type="info" show-icon style="margin-bottom: 16px">
-      请您遵守国家相关规定，禁止发布含有违法、违规、低俗、暴力、色情、虚假宣传等内容的直播。Zigebo将会对直播内容进行监管，如发现违规行为将会对直播内容进行下架、封禁等操作
+      请您遵守国家相关规定，禁止发布含有违法、违规、低俗、暴力、色情、虚假宣传等内容的直播。AI Live将会对直播内容进行监管，如发现违规行为将会对直播内容进行下架、封禁等操作
     </a-alert>
 
     <a-form :model="formData" :rules="rules" ref="formRef" layout="vertical" size="small">

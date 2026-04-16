@@ -11,8 +11,8 @@ const config = {
     defaultPlayDomain: import.meta.env.VITE_DEFAULT_PLAY_DOMAIN || 'play.skyzhou.cn',
     // 默认直播应用名
     defaultApp: import.meta.env.VITE_DEFAULT_LIVE_APP || 'live',
-    // 默认推流密钥（示例）
-    defaultStreamKey: 'd0d87c303d4df45fd648af77ea4a9516',
+    // 默认推流密钥
+    defaultStreamKey: import.meta.env.VITE_DEFAULT_STREAM_KEY || 'd0d87c303d4df45fd648af77ea4a9516',
   }
 }
 

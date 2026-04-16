@@ -138,7 +138,7 @@ router.beforeEach(async (to, from, next) => {
   if (auth.isAuthenticated && hasTypeParam) {
     const loginType = (to.query.type as string) || 'live'
     // 只有当目标路径不是对应系统页面时才跳转
-    const targetPath = loginType === 'live' ? '/LiveGuide' : '/cloud'
+    const targetPath = loginType === 'live' ? '/LiveGuide' : loginType === 'cloud' ? '/cloud' : '/LiveGuide' // all 类型默认跳转直播中心
     if (to.path !== targetPath) {
       next({ path: targetPath })
       return
@@ -153,13 +153,15 @@ router.beforeEach(async (to, from, next) => {
 
   if (isWelcomeRoute && auth.isAuthenticated) {
     const loginType = (to.query.type as string) || 'live'
-    next({ path: loginType === 'live' ? '/LiveGuide' : '/cloud' })
+    const targetPath = loginType === 'live' ? '/LiveGuide' : loginType === 'cloud' ? '/cloud' : '/LiveGuide' // all 类型默认跳转直播中心
+    next({ path: targetPath })
     return
   }
 
   if (isLoginRoute && auth.isAuthenticated) {
     const loginType = (to.query.type as string) || 'live'
-    next({ path: loginType === 'live' ? '/LiveGuide' : '/cloud' })
+    const targetPath = loginType === 'live' ? '/LiveGuide' : loginType === 'cloud' ? '/cloud' : '/LiveGuide' // all 类型默认跳转直播中心
+    next({ path: targetPath })
     return
   }
 

@@ -2,14 +2,14 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
-import { IconVideoCamera, IconCloud, IconHome, IconLeft } from '@arco-design/web-vue/es/icon'
+import { IconVideoCamera, IconCloud, IconHome, IconLeft, IconApps } from '@arco-design/web-vue/es/icon'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
-type LoginType = 'live' | 'cloud' | null
+type LoginType = 'live' | 'cloud' | 'all' | null
 
 const loginType = ref<LoginType>(null)
 
@@ -25,7 +25,7 @@ const submitting = ref(false)
 const pageConfig = computed(() => {
   if (loginType.value === 'live') {
     return {
-      title: 'ZiGeBo',
+      title: 'AI Live',
       subtitle: '直播平台',
       brandColor: '#ff6b6b',
       gradient: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
@@ -36,7 +36,7 @@ const pageConfig = computed(() => {
     }
   } else if (loginType.value === 'cloud') {
     return {
-      title: 'ZiGeBo',
+      title: 'AI Live',
       subtitle: '云盘系统',
       brandColor: '#165dff',
       gradient: 'linear-gradient(135deg, #165dff, #34c759)',
@@ -45,9 +45,20 @@ const pageConfig = computed(() => {
       icon: IconCloud,
       defaultPath: '/cloud'
     }
+  } else if (loginType.value === 'all') {
+    return {
+      title: 'AI Live',
+      subtitle: '综合中心',
+      brandColor: '#722ed1',
+      gradient: 'linear-gradient(135deg, #722ed1, #f5319d)',
+      bgGradient: 'radial-gradient(circle at 20% 20%, rgba(114, 46, 209, 0.15), transparent 40%), radial-gradient(circle at 80% 20%, rgba(245, 49, 157, 0.1), transparent 35%), #f5f7fb',
+      decorationGradient: 'radial-gradient(circle at 30% 60%, rgba(114, 46, 209, 0.2), transparent 40%), radial-gradient(circle at 80% 60%, rgba(245, 49, 157, 0.15), transparent 35%)',
+      icon: IconApps,
+      defaultPath: '/LiveGuide' // 默认跳转到直播中心，因为是综合中心可以访问所有功能
+    }
   }
   return {
-    title: 'ZiGeBo',
+    title: 'AI Live',
     subtitle: '云数据平台',
     brandColor: '#165dff',
     gradient: 'linear-gradient(135deg, #165dff, #34c759)',
@@ -87,8 +98,8 @@ const goBack = () => {
 onMounted(() => {
   // 从路由参数中获取登录类型
   const typeParam = route.query.type as string
-  if (typeParam === 'live' || typeParam === 'cloud') {
-    loginType.value = typeParam as 'live' | 'cloud'
+  if (typeParam === 'live' || typeParam === 'cloud' || typeParam === 'all') {
+    loginType.value = typeParam as 'live' | 'cloud' | 'all'
   }
 })
 </script>
