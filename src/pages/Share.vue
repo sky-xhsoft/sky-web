@@ -17,64 +17,47 @@
     <!-- 密码验证阶段 -->
     <div v-if="!verified" class="password-wrapper">
       <div class="password-container">
-        <!-- 头部区域 -->
-        <div class="share-header">
-          <div class="logo-section">
-            <div class="logo-icon">
-              <icon-share-alt :size="24" />
-            </div>
-            <div class="logo-text">
-              <h1 class="share-title">{{ $t('share.title') }}</h1>
-            </div>
-          </div>
-        </div>
-
-        <!-- 密码验证表单 -->
         <a-spin :loading="loading" tip="{{ $t('share.verifying') }}">
           <div class="form-content">
-            <div class="resource-preview" v-if="shareInfo">
-              <div class="resource-icon">
-                <icon-file v-if="shareInfo.resourceType === 'file'" :size="36" />
-                <icon-folder v-else :size="36" />
-              </div>
-              <div class="resource-info">
-                <div class="resource-name">{{ getResourceName() }}</div>
-                <div class="resource-meta">
-                  <span v-if="shareInfo.resourceType === 'file'">
-                    {{ formatFileSize(getFileSize()) }}
-                  </span>
-                  <span class="sharer-info">{{ $t('share.resource.sharer') }}: {{ shareInfo.sharer }}</span>
-                </div>
+            <!-- 顶部 Logo -->
+            <div class="top-logo">
+              <img src="https://wcwl.cn/wcwl.png" alt="WCWL" />
+            </div>
+
+            <!-- 预览图 -->
+            <div class="cover-preview" v-if="shareInfo">
+              <img v-if="shareInfo.cover" :src="shareInfo.cover" :alt="projectTitle" />
+              <div v-else class="cover-placeholder">
+                <img src="https://wcwl.cn/sample-cover.jpg" alt="preview" />
               </div>
             </div>
 
-            <a-form :model="form" layout="vertical" @submit="handleVerify">
-              <a-form-item
-                  field="password"
-                  :label="$t('share.password.label')"
-                  :rules="[{ required: true, message: $t('share.password.required') }]"
-                  :validate-status="error ? 'error' : undefined"
-                  :help="error"
-              >
-                <a-input-password
+            <!-- 标题信息 -->
+            <div class="title-section" v-if="shareInfo">
+              <h1 class="main-title">{{ projectTitle }}</h1>
+              <p class="sub-title">{{ $t('share.fromSharer', { name: shareInfo.sharer || 'unknown' }) }}</p>
+            </div>
+
+            <!-- 密码输入框 -->
+            <a-form :model="form" layout="vertical" @submit="handleVerify" class="password-form">
+              <div class="password-input-wrapper">
+                <a-input
                     v-model="form.password"
                     :placeholder="$t('share.password.placeholder')"
                     size="large"
-                    allow-clear
+                    class="password-input"
                     @press-enter="handleVerify"
+                />
+                <a-button
+                    type="primary"
+                    html-type="submit"
+                    :loading="loading"
+                    class="submit-btn"
                 >
-                  <template #prefix>
-                    <icon-lock />
-                  </template>
-                </a-input-password>
-              </a-form-item>
-
-              <a-button type="primary" html-type="submit" long size="large" :loading="loading">
-                <template #icon>
-                  <icon-unlock />
-                </template>
-                {{ $t('share.password.accessBtn') }}
-              </a-button>
+                  <icon-arrow-right />
+                </a-button>
+              </div>
+              <div v-if="error" class="error-text">{{ error }}</div>
             </a-form>
           </div>
         </a-spin>
@@ -394,6 +377,7 @@ import {
   IconDown,
   IconCaretDown,
   IconRight,
+  IconArrowRight,
   IconDownload as IconDownload2,
   IconMenuFold,
   IconMenuUnfold,
@@ -530,6 +514,15 @@ async function loadShareInfo() {
   try {
     const info = await getShareInfo(shareCode.value)
     shareInfo.value = info
+
+    // 更新项目标题（从分享名称提取）
+    if (info.share && info.share.name) {
+      projectTitle.value = info.share.name
+    } else if (info.folder && info.folder.name) {
+      projectTitle.value = info.folder.name
+    } else if (info.file && info.file.name) {
+      projectTitle.value = info.file.name
+    }
 
     if (info.share.shareType === 'public') {
       verified.value = true
@@ -804,95 +797,143 @@ watch(currentVideoSrc, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: #12121a;
 }
 
 .password-container {
   width: 100%;
-  max-width: 500px;
-  background: #16213e;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-}
-
-.share-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 16px 20px;
-}
-
-.logo-section {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.logo-icon {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  padding: 8px;
+  height: 100%;
+  max-width: 100%;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.logo-text h1 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.password-form {
-  padding: 24px 20px;
+  padding: 20px;
 }
 
 .form-content {
+  width: 100%;
+  max-width: 520px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  gap: 24px;
 }
 
-.resource-preview {
+.top-logo {
+  align-self: flex-start;
+  margin-bottom: 8px;
+}
+
+.top-logo img {
+  height: 48px;
+  width: auto;
+}
+
+.cover-preview {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.cover-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.cover-placeholder {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #1e1e2e;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.cover-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.title-section {
+  width: 100%;
+  text-align: center;
+}
+
+.main-title {
+  font-size: 42px;
+  font-weight: 500;
+  color: #ffffff;
+  margin: 0 0 12px;
+  line-height: 1.3;
+}
+
+.sub-title {
+  font-size: 28px;
+  font-weight: 400;
+  color: #888899;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.password-form {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.password-input-wrapper {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 16px;
+  background: #1e1e2e;
+  border-radius: 9999px;
+  padding: 4px;
+  overflow: hidden;
 }
 
-.resource-icon {
-  flex-shrink: 0;
-  color: #667eea;
-}
-
-.resource-info {
+.password-input {
   flex: 1;
-  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 12px 24px;
+  color: #fff;
+  font-size: 24px;
 }
 
-.resource-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #e5e7eb;
-  margin-bottom: 4px;
-  word-break: break-all;
+.password-input :deep(.arco-input-inner) {
+  background: transparent;
+  color: #fff;
+  font-size: 24px;
 }
 
-.resource-meta {
-  font-size: 12px;
-  color: #9ca3af;
+.password-input :deep(.arco-input-input) {
+  background: transparent;
+  color: #fff;
+  font-size: 24px;
+}
+
+.submit-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  padding: 0;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  background: #3b82f6;
+  border: none;
+  flex-shrink: 0;
 }
 
-.sharer-info {
-  color: #667eea;
-  font-weight: 500;
+.submit-btn:hover {
+  background: #2563eb;
+}
+
+.error-text {
+  color: #f87272;
+  font-size: 14px;
+  margin-top: 12px;
+  text-align: center;
 }
 
 /* ========== PC 三栏布局 ========== */

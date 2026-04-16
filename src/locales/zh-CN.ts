@@ -3,12 +3,13 @@ export default {
     title: '文件分享',
     password: {
       label: '访问密码',
-      placeholder: '请输入访问密码',
+      placeholder: 'Enter a 4-digit numeric',
       required: '请输入访问密码',
       error: '密码错误，请重试',
       accessBtn: '访问分享'
     },
     verifying: '验证中...',
+    fromSharer: 'From {name} shared',
     notFound: {
       title: '分享不存在或已失效',
       desc: '请检查分享链接是否正确，或联系分享者重新分享'

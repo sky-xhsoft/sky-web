@@ -3,12 +3,13 @@ export default {
     title: 'File Share',
     password: {
       label: 'Access Password',
-      placeholder: 'Please enter access password',
+      placeholder: 'Enter a 4-digit numeric',
       required: 'Please enter access password',
       error: 'Incorrect password, please try again',
       accessBtn: 'Access Share'
     },
     verifying: 'Verifying...',
+    fromSharer: 'From {name} shared',
     notFound: {
       title: 'Share does not exist or has expired',
       desc: 'Please check the share link or contact the sharer to re-share'
