@@ -188,7 +188,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, reactive, onMounted, computed, onUnmounted, watch} from 'vue'
+import {ref, reactive, onMounted, computed, onUnmounted, watch, onActivated} from 'vue'
 import {Message, Modal} from '@arco-design/web-vue'
 import {IconPlus, IconRefresh} from '@arco-design/web-vue/es/icon'
 import {formatDateTime} from '../utils/date'
@@ -850,6 +850,18 @@ onMounted(() => {
   initDefaultDateRange()
   loadTaskList()
   startRunningStatusTimer()
+
+  // 注册返回回调，当从表单页面返回时刷新列表
+  navigationStore.onBack((fromComponent: string, toComponent: string) => {
+    if (fromComponent === 'PullStreamTaskForm' && toComponent === 'PullStreamTask') {
+      loadTaskList()
+    }
+  })
+})
+
+// 当页面被激活时刷新列表（keep-alive 激活时）
+onActivated(() => {
+  loadTaskList()
 })
 </script>
 

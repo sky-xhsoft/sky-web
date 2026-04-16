@@ -299,6 +299,7 @@ const submitTask = async () => {
       await createPullStreamTask(createData)
       Message.success('创建任务成功')
     }
+    // 直接调用 loadTaskList 可能不够，因为我们需要刷新整个列表
     goBack()
   } catch (error) {
     console.error('提交任务失败:', error)
