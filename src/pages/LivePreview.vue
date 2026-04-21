@@ -175,7 +175,7 @@ const initPlayer = () => {
         sources: [{
           src: playUrl.value
         }],
-        // licenseUrl: 'your-license-url', // 如果需要 license，请在这里配置
+        licenseUrl: 'https://1401565388.trtcube-license.cn/license/v2/1401565388_1/v_cube.license',
         autoplay: true,
         controls: true,
         width: '100%',

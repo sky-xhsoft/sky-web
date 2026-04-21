@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>云盘分享 - Share Prototype</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-color: #00a8ff;
+      --primary-dark: #0066cc;
+      --primary-gradient: linear-gradient(135deg, #00a8ff 0%, #0066cc 100%);
+      --accent-gradient: linear-gradient(135deg, #e8f4ff 0%, #b3d8ff 100%);
+      --bg-page: #f5f7fa;
+      --bg-white: #ffffff;
+      --bg-card: #f0f8ff;
+      --bg-hover: #e6f2ff;
+      --text-primary: #1f2937;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --text-white: #ffffff;
+      --border-color: #d1e8ff;
+      --border-light: #e6f2ff;
+      --shadow-sm: 0 2px 8px rgba(0, 168, 255, 0.1);
+      --shadow-md: 0 4px 16px rgba(0, 168, 255, 0.15);
+      --shadow-lg: 0 8px 32px rgba(0, 168, 255, 0.2);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Inter', sans-serif;
+      background: var(--accent-gradient);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* 语言切换按钮 */
+    .language-switcher {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 4px;
+      z-index: 9998;
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .language-btn {
+      padding: 4px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 18px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+    }
+
+    .language-btn:hover {
+      background: var(--bg-hover);
+    }
+
+    .language-btn.active {
+      background: var(--primary-gradient);
+      color: white;
+    }
+
+
+    /* ========== 主页面容器 ========== */
+    .share-page {
+      min-height: 100vh;
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .share-container {
+      max-width: 800px;
+      width: 100%;
+      background: var(--bg-white);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* ========== 封面区域 ========== */
+    .cover-section {
+      width: 100%;
+      aspect-ratio: 16/9;
+      max-height: 500px;
+      background: var(--primary-gradient);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cover-section.has-cover {
+      background: transparent;
+    }
+
+    .cover-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .cover-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
+    }
+
+    .cover-section.has-cover .cover-gradient {
+      background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.7) 100%);
+    }
+
+    /* ========== 内容区域 ========== */
+    .content-section {
+      padding: 40px;
+    }
+
+    .resource-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 24px;
+    }
+
+    .resource-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(0, 168, 255, 0.1) 0%, rgba(0, 102, 204, 0.1) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .resource-icon svg {
+      width: 36px;
+      height: 36px;
+      fill: var(--primary-color);
+    }
+
+    .resource-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .resource-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      word-break: break-all;
+    }
+
+    .resource-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .form-section {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .password-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .password-input {
+      flex: 1;
+      padding: 16px 20px;
+      border: 2px solid var(--border-color);
+      border-radius: 14px;
+      font-size: 18px;
+      transition: all 0.2s ease;
+    }
+
+    .password-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 4px rgba(0, 168, 255, 0.1);
+    }
+
+    .submit-btn {
+      padding: 16px 40px;
+      background: var(--primary-gradient);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 102, 204, 0.4);
+    }
+
+    .error-text {
+      color: #ef4444;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    /* 面包屑导航 */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg-card);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+    }
+
+    .breadcrumb-item {
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      white-space: nowrap;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .breadcrumb-item:hover {
+      background: var(--bg-hover);
+      color: var(--primary-color);
+    }
+
+    .breadcrumb-item.active {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .breadcrumb-item.active:hover {
+      color: var(--primary-color);
+      cursor: pointer;
+    }
+
+    /* 文件网格 - 两列布局 */
+    .file-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 16px !important;
+      margin-top: 20px !important;
+    }
+
+    .file-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .file-card:hover {
+      border-color: var(--primary-color);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-4px);
+    }
+
+    .file-thumb {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .file-thumb svg {
+      width: 48px;
+      height: 48px;
+      fill: var(--primary-color);
+    }
+
+    .file-name {
+      padding: 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      word-break: break-all;
+    }
+
+    /* 错误状态 */
+    .error-state {
+      text-align: center;
+      padding: 80px 40px;
+    }
+
+    .error-state .error-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .error-state .error-icon svg {
+      width: 40px;
+      height: 40px;
+      fill: #ef4444;
+    }
+
+    .error-state h2 {
+      font-size: 24px;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .error-state p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    /* 演示控制 */
+    .demo-controls {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border-color);
+      z-index: 9997;
+      display: flex;
+      gap: 6px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .demo-btn {
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .demo-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .demo-btn.active {
+      background: var(--primary-gradient);
+      color: white;
+    }
+
+
+    /* ========== 响应式优化 ========== */
+    @media (max-width: 768px) {
+      .share-page {
+        padding: 0;
+        background: var(--bg-white);
+      }
+
+      .share-container {
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+
+      .content-section {
+        padding: 20px 16px;
+      }
+
+      .resource-card {
+        padding: 14px;
+        gap: 12px;
+      }
+
+      .resource-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+      }
+
+      .resource-icon svg {
+        width: 28px;
+        height: 28px;
+      }
+
+      .resource-name {
+        font-size: 16px;
+      }
+
+      .file-card {
+        border-radius: 12px;
+      }
+
+      .file-name {
+        font-size: 12px;
+        padding: 8px 10px;
+      }
+
+      .language-switcher {
+        top: 8px;
+        right: 8px;
+      }
+
+      .language-btn {
+        font-size: 12px;
+        padding: 3px 10px;
+      }
+
+      .demo-controls {
+        bottom: 12px;
+        padding: 6px 8px;
+      }
+
+      .demo-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .share-page {
+        padding: 0;
+        background: var(--bg-white);
+      }
+
+      .share-container {
+        max-width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+
+      .content-section {
+        padding: 16px;
+      }
+
+      .password-input-wrapper {
+        flex-direction: column;
+      }
+
+      .password-input {
+        width: 100%;
+      }
+
+      .submit-btn {
+        width: 100%;
+      }
+
+      .file-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+      }
+
+      .file-thumb {
+        aspect-ratio: 16/9;
+      }
+
+      .file-name {
+        font-size: 13px;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 语言切换 -->
+  <div class="language-switcher">
+    <button class="language-btn" data-lang="zh">中文</button>
+    <button class="language-btn active" data-lang="en">English</button>
+  </div>
+
+
+  <div class="share-page" id="mainPage">
+    <div class="share-container">
+      <div class="cover-section" id="coverSection">
+        <img class="cover-image" id="coverImage" alt="Cover">
+        <div class="cover-gradient"></div>
+      </div>
+
+      <div class="content-section">
+        <div id="passwordPage">
+          <div class="resource-card">
+            <div class="resource-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9 2-2-2h-8l-2-2z"/>
+              </svg>
+            </div>
+            <div class="resource-info">
+              <div class="resource-name" data-i18n="folder.name">Chery International UserSummit</div>
+              <div class="resource-meta">
+                <span data-i18n="folder.type">文件夹</span>
+                <span data-i18n="folder.sharer">分享者: chery international</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <label class="form-label" data-i18n="password.label">访问密码</label>
+            <div class="password-input-wrapper">
+              <input type="password" class="password-input" data-i18n-placeholder="password.placeholder" placeholder="请输入访问密码" id="passwordInput">
+              <button class="submit-btn" data-i18n="password.submit">访问</button>
+            </div>
+            <div class="error-text" id="errorText" style="display: none;" data-i18n="password.error">密码错误，请重试</div>
+          </div>
+        </div>
+
+        <div id="filesPage" style="display: none;">
+          <div class="resource-card">
+            <div class="resource-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9 2-2-2h-8l-2-2z"/>
+              </svg>
+            </div>
+            <div class="resource-info">
+              <div class="resource-name" data-i18n="folder.name">Chery International UserSummit</div>
+              <div class="resource-meta">
+                <span data-i18n="folder.sharer">分享者: chery international</span>
+                <span data-i18n="folder.date">2024/10/20</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="breadcrumb">
+            <span class="breadcrumb-item active" id="rootBreadcrumb" data-i18n="breadcrumb.root">根目录</span>
+          </div>
+
+          <div class="file-grid">
+            <div class="file-card">
+              <div class="file-thumb">
+                <svg viewBox="0 0 24 24">
+                  <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9 2-2-2h-8l-2-2z"/>
+                </svg>
+              </div>
+              <div class="file-name" data-i18n="file.photos">活动照片</div>
+            </div>
+            <div class="file-card">
+              <div class="file-thumb" style="background: linear-gradient(135deg, #2d5030 0%, #1a3020 100%);">
+                <svg viewBox="0 0 24 24">
+                  <path d="M15 8c0-1.38-.12-2.67-.35-3.86l2.12-2.12C17.42 3.88 18.47 6 19 8v6.59l2.35-2.35c.57.85 1 1.82 1.28 2.85L21 14.03V8zm-4-3l-1.41 1.41C9.97 6.64 10 6.83 10 7v10c0 1.1.9 2 2 2h3.59l-2.12 2.12c1.17.23 2.48.35 3.86.35v-2c-.95 0-1.85-.13-2.7-.35L11 19H9V5h1z"/>
+                </svg>
+              </div>
+              <div class="file-name" data-i18n="file.recorder">recorder_2024-10-20-10-42-35.mp4</div>
+            </div>
+            <div class="file-card">
+              <div class="file-thumb" style="background: linear-gradient(135deg, #2d4050 0%, #1a2530 100%);">
+                <svg viewBox="0 0 24 24">
+                  <path d="M15 8c0-1.38-.12-2.67-.35-3.86l2.12-2.12C17.42 3.88 18.47 6 19 8v6.59l2.35-2.35c.57.85 1 1.82 1.28 2.85L21 14.03V8zm-4-3l-1.41 1.41C9.97 6.64 10 6.83 10 7v10c0 1.1.9 2 2 2h3.59l-2.12 2.12c1.17.23 2.48.35 3.86.35v-2c-.95 0-1.85-.13-2.7-.35L11 19H9V5h1z"/>
+                </svg>
+              </div>
+              <div class="file-name" data-i18n="file.opening">opening_ceremony.mp4</div>
+            </div>
+            <div class="file-card">
+              <div class="file-thumb">
+                <svg viewBox="0 0 24 24">
+                  <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                </svg>
+              </div>
+              <div class="file-name" data-i18n="file.agenda">活动议程.pdf</div>
+            </div>
+            <div class="file-card">
+              <div class="file-thumb">
+                <svg viewBox="0 0 24 24">
+                  <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                </svg>
+              </div>
+              <div class="file-name" data-i18n="file现场">现场照片.jpg</div>
+            </div>
+            <div class="file-card">
+              <div class="file-thumb">
+                <svg viewBox="0 0 24 24">
+                  <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                </svg>
+              </div>
+              <div class="file-name" data-i18n="file.notes">会议记录.docx</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="errorPage" style="display: none;">
+          <div class="error-state">
+            <div class="error-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+            </div>
+            <h2 data-i18n="error.title">分享不存在或已失效</h2>
+            <p data-i18n="error.message">请检查分享链接是否正确，或联系分享者重新分享</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-controls">
+    <button class="demo-btn active" data-page="password" data-i18n="demo.password">密码页</button>
+    <button class="demo-btn" data-page="files" data-i18n="demo.files">文件列表</button>
+    <button class="demo-btn" data-page="error" data-i18n="demo.error">错误页</button>
+  </div>
+
+  <script>
+    const translations = {
+      'zh': {
+        'folder.name': 'Chery International UserSummit',
+        'folder.type': '文件夹',
+        'folder.sharer': '分享者: chery international',
+        'folder.date': '2024/10/20',
+        'password.label': '访问密码',
+        'password.placeholder': '请输入访问密码',
+        'password.submit': '访问',
+        'password.error': '密码错误，请重试',
+        'breadcrumb.root': '根目录',
+        'file.photos': '活动照片',
+        'file.recorder': 'recorder_2024-10-20-10-42-35.mp4',
+        'file.opening': 'opening_ceremony.mp4',
+        'file.agenda': '活动议程.pdf',
+        'file现场': '现场照片.jpg',
+        'file.notes': '会议记录.docx',
+        'error.title': '分享不存在或已失效',
+        'error.message': '请检查分享链接是否正确，或联系分享者重新分享',
+        'demo.password': '密码页',
+        'demo.files': '文件列表',
+        'demo.error': '错误页'
+      },
+      'en': {
+        'folder.name': 'Chery International UserSummit',
+        'folder.type': 'Folder',
+        'folder.sharer': 'Shared by: chery international',
+        'folder.date': '10/20/2024',
+        'password.label': 'Access Password',
+        'password.placeholder': 'Enter access password',
+        'password.submit': 'Access',
+        'password.error': 'Wrong password, please try again',
+        'breadcrumb.root': 'Root',
+        'file.photos': 'Event Photos',
+        'file.recorder': 'recorder_2024-10-20-10-42-35.mp4',
+        'file.opening': 'opening_ceremony.mp4',
+        'file.agenda': 'Event Agenda.pdf',
+        'file现场': 'On-site Photos.jpg',
+        'file.notes': 'Meeting Notes.docx',
+        'error.title': 'Share does not exist or has expired',
+        'error.message': 'Please check the share link or contact the sharer to re-share',
+        'demo.password': 'Password Page',
+        'demo.files': 'Files List',
+        'demo.error': 'Error Page'
+      }
+    };
+
+    let currentLang = 'en';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+
+      document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.dataset.i18n;
+        if (translations[lang][key]) {
+          element.textContent = translations[lang][key];
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+        const key = element.dataset.i18nPlaceholder;
+        if (translations[lang][key]) {
+          element.placeholder = translations[lang][key];
+        }
+      });
+
+      document.querySelectorAll('.language-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+      });
+    }
+
+    document.querySelectorAll('.language-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lang = btn.dataset.lang;
+        setLanguage(lang);
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const coverImage = document.getElementById('coverImage');
+      const coverSection = document.getElementById('coverSection');
+      coverImage.src = 'afb9e692c32dbeb268027dc114bba931.png';
+      coverSection.classList.add('has-cover');
+      setLanguage('en');
+    });
+
+    const passwordPage = document.getElementById('passwordPage');
+    const filesPage = document.getElementById('filesPage');
+    const errorPage = document.getElementById('errorPage');
+
+    document.querySelectorAll('.demo-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const page = btn.dataset.page;
+        passwordPage.style.display = 'none';
+        filesPage.style.display = 'none';
+        errorPage.style.display = 'none';
+
+        if (page === 'password') {
+          passwordPage.style.display = 'block';
+        } else if (page === 'files') {
+          filesPage.style.display = 'block';
+        } else if (page === 'error') {
+          errorPage.style.display = 'block';
+        }
+      });
+    });
+
+    document.getElementById('accessBtn').addEventListener('click', () => {
+      const password = document.getElementById('passwordInput').value;
+      if (password === '1234' || password === '') {
+        document.querySelector('.demo-btn[data-page="files"]').click();
+        document.getElementById('errorText').style.display = 'none';
+      } else {
+        document.getElementById('errorText').style.display = 'block';
+      }
+    });
+
+    document.getElementById('rootBreadcrumb').addEventListener('click', () => {
+      document.querySelector('.demo-btn[data-page="password"]').click();
+    });
+  </script>
+</body>
+</html>
