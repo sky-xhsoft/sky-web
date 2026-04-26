@@ -507,6 +507,22 @@ export const useCloudStore = defineStore('cloud', () => {
   }
 
   /**
+   * 移动文件夹
+   */
+  async function moveFolder(folderId: number, targetFolderId: number) {
+    try {
+      // 使用新的统一接口
+      await moveItemApi(folderId, { targetParentId: targetFolderId === 0 ? null : targetFolderId })
+      Message.success('移动文件夹成功')
+      await (currentFolderId.value === 0 ? loadFiles() : loadFolderContent(currentFolderId.value))
+    } catch (e: any) {
+      console.error('移动文件夹失败:', e)
+      Message.error(e?.message || '移动文件夹失败')
+      throw e
+    }
+  }
+
+  /**
    * 重命名文件
    */
   async function renameFile(fileId: number, newName: string) {
@@ -688,6 +704,7 @@ export const useCloudStore = defineStore('cloud', () => {
     renameFolder,
     deleteFile,
     moveFile,
+    moveFolder,
     renameFile,
     selectFile,
     selectFolder,

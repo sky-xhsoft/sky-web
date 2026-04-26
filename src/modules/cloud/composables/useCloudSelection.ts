@@ -223,23 +223,26 @@ export function useCloudSelection() {
   }
 
   /**
-   * 批量移动选中的文件
+   * 批量移动选中的文件和文件夹
    * @param targetFolderId 目标文件夹ID
    */
   async function batchMove(targetFolderId: number) {
     const selectedFiles = getSelectedFiles()
+    const selectedFolders = getSelectedFolders()
 
-    if (selectedFiles.length === 0) {
-      Message.warning('请先选择要移动的文件')
+    if (selectedFiles.length === 0 && selectedFolders.length === 0) {
+      Message.warning('请先选择要移动的项')
       return false
     }
 
     try {
+      const totalCount = selectedFiles.length + selectedFolders.length
+
       // 初始化进度状态
       batchProgress.value = {
         visible: true,
         title: '批量移动进度',
-        total: selectedFiles.length,
+        total: totalCount,
         completed: 0,
         successCount: 0,
         failed: 0,
@@ -247,13 +250,15 @@ export function useCloudSelection() {
         inProgress: true,
       }
 
-      // 获取选中的文件ID
+      // 获取选中的文件和文件夹ID
       const fileIds = Array.from(selectedFileIds.value)
+      const folderIds = Array.from(selectedFolderIds.value)
 
       // 调用批量移动API
       const result = await batchMoveApi({
         fileIds,
-        targetFolderId,
+        folderIds,
+        targetParentId: targetFolderId,
       })
 
       // 更新进度状态
@@ -267,20 +272,20 @@ export function useCloudSelection() {
       clearSelection()
 
       // 刷新数据
-      await store.loadFiles()
+      await Promise.all([store.currentFolderId === 0 ? store.loadFiles() : store.loadFolderContent(store.currentFolderId), store.loadQuota()])
 
       // 显示结果消息
       if (result.failedCount === 0) {
-        Message.success(`成功移动 ${result.successCount} 个文件`)
+        Message.success(`成功移动 ${result.successCount} 项`)
       } else if (result.successCount === 0) {
         // 全部失败
         Message.error(
-          `移动失败：${result.failedCount} 个文件无法移动`
+          `移动失败：${result.failedCount} 项无法移动`
         )
       } else {
         // 部分成功
         Message.warning(
-          `移动完成：成功 ${result.successCount} 个，失败 ${result.failedCount} 个`
+          `移动完成：成功 ${result.successCount} 项，失败 ${result.failedCount} 项`
         )
       }
 

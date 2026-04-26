@@ -476,7 +476,8 @@ export async function batchDelete(params: BatchDeleteRequest): Promise<BatchDele
  */
 export interface BatchMoveRequest {
   fileIds: number[]
-  targetFolderId: number
+  folderIds: number[]
+  targetParentId: number
 }
 
 /**
@@ -489,12 +490,13 @@ export interface BatchMoveResponse {
 }
 
 /**
- * 批量移动文件
+ * 批量移动文件和文件夹
  */
 export async function batchMove(params: BatchMoveRequest): Promise<BatchMoveResponse> {
-  const { data } = await api.post<ApiResponse<BatchMoveResponse>>('/cloud/batch/move', {
+  const { data } = await api.post<ApiResponse<BatchMoveResponse>>('/cloud/items/batch/move', {
     fileIds: params.fileIds,
-    targetFolderId: params.targetFolderId,
+    folderIds: params.folderIds,
+    targetParentId: params.targetParentId,
   })
 
   if (!data?.data) {
@@ -1041,16 +1043,3 @@ export async function batchDeleteItems(params: any): Promise<any> {
   return data.data
 }
 
-/**
- * 批量移动云盘项目
- * 对应后端: POST /api/v1/cloud/items/batch/move
- */
-export async function batchMoveItems(params: any): Promise<any> {
-  const { data } = await api.post<ApiResponse<any>>('/cloud/items/batch/move', params)
-
-  if (!data?.data) {
-    throw new Error('批量移动失败')
-  }
-
-  return data.data
-}

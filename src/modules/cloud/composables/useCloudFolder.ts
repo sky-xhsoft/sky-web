@@ -143,6 +143,21 @@ export function useCloudFolder() {
   }
 
   /**
+   * 移动文件夹
+   * @param folderId 文件夹ID
+   * @param targetFolderId 目标父文件夹ID
+   */
+  async function moveFolder(folderId: number, targetFolderId: number) {
+    try {
+      await store.moveFolder(folderId, targetFolderId)
+      return true
+    } catch (e) {
+      console.error('移动文件夹失败:', e)
+      return false
+    }
+  }
+
+  /**
    * 获取文件夹信息
    * @param folderId 文件夹ID
    */
@@ -207,6 +222,9 @@ export function useCloudFolder() {
     renameFolder,
     renameFolderWithDialog,
     renamingFolder,
+
+    // 移动操作
+    moveFolder,
 
     // 查询操作
     getFolderById,

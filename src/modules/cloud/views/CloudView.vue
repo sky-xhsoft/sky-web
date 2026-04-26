@@ -577,7 +577,8 @@ async function handleRename(newName: string) {
 
 async function handleMove(targetFolderId: number) {
   const selectedFiles = selection.getSelectedFiles()
-  if (selectedFiles.length === 0) return
+  const selectedFolders = selection.getSelectedFolders()
+  if (selectedFiles.length === 0 && selectedFolders.length === 0) return
 
   // 批量移动
   await selection.batchMove(targetFolderId)
