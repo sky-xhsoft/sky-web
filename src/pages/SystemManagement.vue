@@ -3,41 +3,60 @@ import { ref, computed, onMounted } from 'vue'
 import { IconApps, IconRight, IconSettings, IconUser, IconSafe, IconDesktop } from '@arco-design/web-vue/es/icon'
 import { useMenuStore } from '../stores/menu'
 import { useNavigationStore } from '../stores/navigation'
+import { useI18n } from 'vue-i18n'
 
 const menuStore = useMenuStore()
 const navigationStore = useNavigationStore()
+const { locale, t } = useI18n()
 
-// 系统架构说明
-const systemArchitecture = ref({
-  title: '系统架构概览',
-  description: '本系统采用元数据驱动的架构设计，通过配置化的方式实现灵活的业务功能扩展',
-  features: [
-    {
-      icon: '🏗️',
-      title: '元数据驱动',
-      description: '通过元数据配置实现动态表单、字段、权限等功能，无需修改代码即可扩展业务'
-    },
-    {
-      icon: '🔐',
-      title: '权限管理',
-      description: '基于用户-权限组-权限的三层权限体系，实现细粒度的访问控制'
-    },
-    {
-      icon: '📊',
-      title: '数据字典',
-      description: '统一管理系统中的枚举值、下拉选项等配置数据，保证数据一致性'
-    },
-    {
-      icon: '🔄',
-      title: '多租户支持',
-      description: '支持多公司、多子系统的数据隔离与管理，满足企业级应用需求'
-    }
-  ]
+// 系统架构说明（支持国际化）
+const systemArchitecture = computed(() => {
+  const isEN = locale.value === 'en-US'
+  return {
+    title: isEN ? 'System Architecture Overview' : '系统架构概览',
+    description: isEN
+      ? 'This system adopts a metadata-driven architecture design, enabling flexible business function expansion through configuration'
+      : '本系统采用元数据驱动的架构设计，通过配置化的方式实现灵活的业务功能扩展',
+    features: [
+      {
+        icon: '🏗️',
+        title: isEN ? 'Metadata Driven' : '元数据驱动',
+        description: isEN
+          ? 'Dynamic forms, fields, permissions and other functions are realized through metadata configuration, and business can be expanded without modifying code'
+          : '通过元数据配置实现动态表单、字段、权限等功能，无需修改代码即可扩展业务'
+      },
+      {
+        icon: '🔐',
+        title: isEN ? 'Permission Management' : '权限管理',
+        description: isEN
+          ? 'Three-level permission system based on user-permission group-permission, enabling fine-grained access control'
+          : '基于用户-权限组-权限的三层权限体系，实现细粒度的访问控制'
+      },
+      {
+        icon: '📊',
+        title: isEN ? 'Data Dictionary' : '数据字典',
+        description: isEN
+          ? 'Unified management of enumeration values, drop-down options and other configuration data in the system to ensure data consistency'
+          : '统一管理系统中的枚举值、下拉选项等配置数据，保证数据一致性'
+      },
+      {
+        icon: '🔄',
+        title: isEN ? 'Multi-Tenant Support' : '多租户支持',
+        description: isEN
+          ? 'Support data isolation and management of multi-company and multi-subsystem to meet enterprise application requirements'
+          : '支持多公司、多子系统的数据隔离与管理，满足企业级应用需求'
+      }
+    ]
+  }
 })
 
 // 功能模块分类（从后端菜单数据动态获取）
 const moduleCategories = computed(() => {
-  const systemManagementMenu = menuStore.menus.find((menu: any) => menu.name === '系统管理')
+  // 根据语言查找系统管理菜单
+  const isEN = locale.value === 'en-US'
+  const systemManagementMenu = menuStore.menus.find((menu: any) =>
+    isEN ? (menu.ename || menu.name).toLowerCase().includes('system') : menu.name.includes('系统管理')
+  )
 
   if (!systemManagementMenu || !systemManagementMenu.children) {
     return []
@@ -46,37 +65,48 @@ const moduleCategories = computed(() => {
   return systemManagementMenu.children.map((category: any) => {
     let icon = '📁'
     let color = '#165dff'
-    let description = category.name
+    const categoryName = isEN ? (category.ename || category.name) : category.name
+    let description = categoryName
 
-    // 根据分类名称设置图标和颜色
-    if (category.name.includes('元数据')) {
+    // 根据分类名称设置图标和颜色（支持中英文）
+    const categoryNameLower = categoryName.toLowerCase()
+    if (categoryName.includes('元数据') || categoryNameLower.includes('metadata')) {
       icon = '📊'
       color = '#165dff'
-      description = '系统基础数据配置，包括表结构、字段定义、数据字典等核心元数据'
-    } else if (category.name.includes('用户') || category.name.includes('权限')) {
+      description = isEN
+        ? 'System basic data configuration, including table structure, field definition, data dictionary, etc.'
+        : '系统基础数据配置，包括表结构、字段定义、数据字典等核心元数据'
+    } else if (categoryName.includes('用户') || categoryName.includes('权限') ||
+      categoryNameLower.includes('user') || categoryNameLower.includes('permission')) {
       icon = '🔐'
       color = '#00b42a'
-      description = '用户账号管理、权限组配置、访问控制等安全相关功能'
-    } else if (category.name.includes('日志')) {
+      description = isEN
+        ? 'User account management, permission group configuration, access control and other security related functions'
+        : '用户账号管理、权限组配置、访问控制等安全相关功能'
+    } else if (categoryName.includes('日志') || categoryNameLower.includes('log')) {
       icon = '📝'
       color = '#f7ba1e'
-      description = '系统操作日志、审计追踪、异常记录等监控功能'
-    } else if (category.name.includes('配置')) {
+      description = isEN
+        ? 'System operation log, audit trail, exception record and other monitoring functions'
+        : '系统操作日志、审计追踪、异常记录等监控功能'
+    } else if (categoryName.includes('配置') || categoryNameLower.includes('config')) {
       icon = '⚙️'
       color = '#f53f3f'
-      description = '系统参数配置、功能开关、环境设置等全局配置'
+      description = isEN
+        ? 'System parameter configuration, function switch, environment setting and other global configuration'
+        : '系统参数配置、功能开关、环境设置等全局配置'
     }
 
     return {
       key: category.id,
-      title: category.name,
+      title: categoryName,
       description: description,
       icon: icon,
       color: color,
       modules: (category.children || []).map((module: any) => ({
         id: module.id,
         name: module.name,
-        displayName: module.displayName,
+        displayName: isEN ? (module.ename || module.displayName || module.name) : (module.displayName || module.name),
         url: module.url,
         description: getModuleDescription(module.name, module.displayName)
       }))
@@ -123,37 +153,48 @@ const handleModuleClick = async (module: any) => {
   }
 }
 
-// 使用流程说明
-const usageFlow = ref([
-  {
-    step: 1,
-    title: '配置元数据',
-    description: '首先配置公司、子系统、表结构等基础元数据',
-    icon: '📊',
-    color: '#165dff'
-  },
-  {
-    step: 2,
-    title: '设置权限',
-    description: '创建用户账号、配置权限组和权限明细',
-    icon: '🔐',
-    color: '#00b42a'
-  },
-  {
-    step: 3,
-    title: '配置字典',
-    description: '维护数据字典、序号规则等业务配置',
-    icon: '📝',
-    color: '#f7ba1e'
-  },
-  {
-    step: 4,
-    title: '业务使用',
-    description: '基于配置的元数据开展具体业务操作',
-    icon: '🚀',
-    color: '#722ed1'
-  }
-])
+// 使用流程说明（支持国际化）
+const usageFlow = computed(() => {
+  const isEN = locale.value === 'en-US'
+  return [
+    {
+      step: 1,
+      title: isEN ? 'Configure Metadata' : '配置元数据',
+      description: isEN
+        ? 'First configure basic metadata such as company, subsystem, and table structure'
+        : '首先配置公司、子系统、表结构等基础元数据',
+      icon: '📊',
+      color: '#165dff'
+    },
+    {
+      step: 2,
+      title: isEN ? 'Set Permissions' : '设置权限',
+      description: isEN
+        ? 'Create user accounts, configure permission groups and permission details'
+        : '创建用户账号、配置权限组和权限明细',
+      icon: '🔐',
+      color: '#00b42a'
+    },
+    {
+      step: 3,
+      title: isEN ? 'Configure Dictionary' : '配置字典',
+      description: isEN
+        ? 'Maintain data dictionary, sequence rules and other business configurations'
+        : '维护数据字典、序号规则等业务配置',
+      icon: '📝',
+      color: '#f7ba1e'
+    },
+    {
+      step: 4,
+      title: isEN ? 'Business Usage' : '业务使用',
+      description: isEN
+        ? 'Carry out specific business operations based on the configured metadata'
+        : '基于配置的元数据开展具体业务操作',
+      icon: '🚀',
+      color: '#722ed1'
+    }
+  ]
+})
 </script>
 
 <template>
@@ -161,8 +202,12 @@ const usageFlow = ref([
     <!-- 系统架构特性 -->
     <div class="architecture-section">
       <div class="section-header">
-        <h2 class="section-title">🏗️ 系统架构特性</h2>
-        <p class="section-description">了解系统的核心设计理念和技术特点</p>
+        <h2 class="section-title">{{ locale === 'en-US' ? '🏗️ System Architecture Features' : '🏗️ 系统架构特性' }}</h2>
+        <p class="section-description">{{
+          locale === 'en-US'
+            ? 'Understand the core design concepts and technical features of the system'
+            : '了解系统的核心设计理念和技术特点'
+        }}</p>
       </div>
       <div class="features-grid">
         <a-card
@@ -183,8 +228,12 @@ const usageFlow = ref([
     <!-- 使用流程 -->
     <div class="flow-section">
       <div class="section-header">
-        <h2 class="section-title">🔄 系统配置流程</h2>
-        <p class="section-description">按照以下步骤完成系统初始化配置</p>
+        <h2 class="section-title">{{ locale === 'en-US' ? '🔄 System Configuration Process' : '🔄 系统配置流程' }}</h2>
+        <p class="section-description">{{
+          locale === 'en-US'
+            ? 'Complete system initialization configuration in the following steps'
+            : '按照以下步骤完成系统初始化配置'
+        }}</p>
       </div>
       <div class="flow-timeline">
         <div v-for="(item, index) in usageFlow" :key="item.step" class="flow-item">

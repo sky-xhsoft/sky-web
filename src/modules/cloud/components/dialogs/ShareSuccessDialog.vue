@@ -1,7 +1,7 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    title="分享创建成功"
+    :title="texts.shareCreatedTitle"
     :footer="false"
     width="500px"
     @cancel="handleClose"
@@ -13,17 +13,17 @@
 
       <div class="share-info">
         <div class="info-item">
-          <div class="info-label">分享链接</div>
+          <div class="info-label">{{ texts.shareLink }}</div>
           <div class="info-value link">{{ shareLink }}</div>
         </div>
 
         <div class="info-item" v-if="password">
-          <div class="info-label">访问密码</div>
+          <div class="info-label">{{ texts.accessPassword }}</div>
           <div class="info-value password">{{ password }}</div>
         </div>
 
         <div class="info-item" v-if="expireTime">
-          <div class="info-label">有效期至</div>
+          <div class="info-label">{{ texts.validUntil }}</div>
           <div class="info-value">{{ formatExpireTime(expireTime) }}</div>
         </div>
       </div>
@@ -33,19 +33,19 @@
           <template #icon>
             <icon-copy />
           </template>
-          复制链接和密码
+          {{ texts.copyLinkAndPassword }}
         </a-button>
         <a-button long @click="handleOpen" style="margin-top: 12px">
           <template #icon>
             <icon-link />
           </template>
-          在新标签页打开
+          {{ texts.openInNewTab }}
         </a-button>
       </div>
 
       <div class="tips">
         <icon-info-circle />
-        <span>请妥善保管分享链接和密码，分享后无法查看密码</span>
+        <span>{{ texts.shareSecurityTip }}</span>
       </div>
     </div>
   </a-modal>
@@ -53,6 +53,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'
 import {
   IconCheckCircleFill,
@@ -60,6 +61,21 @@ import {
   IconLink,
   IconInfoCircle,
 } from '@arco-design/web-vue/es/icon'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  shareCreatedTitle: t('cloud.shareCreatedTitle'),
+  shareLink: t('cloud.shareLink'),
+  accessPassword: t('cloud.accessPassword'),
+  validUntil: t('cloud.validUntil'),
+  copyLinkAndPassword: t('cloud.copyLinkAndPassword'),
+  openInNewTab: t('cloud.openInNewTab'),
+  shareSecurityTip: t('cloud.shareSecurityTip'),
+  copiedToClipboard: t('cloud.copiedToClipboard'),
+  copyFailed: t('cloud.copyFailed'),
+  forever: t('cloud.forever'),
+}))
 
 interface Props {
   visible?: boolean
@@ -101,30 +117,30 @@ const shareLink = computed(() => {
 })
 
 function formatExpireTime(time: string): string {
-  if (!time) return '永久有效'
-  return new Date(time).toLocaleString('zh-CN')
+  if (!time) return texts.value.forever
+  return new Date(time).toLocaleString()
 }
 
 async function handleCopy() {
   try {
-    let text = `分享链接：${shareLink.value}`
+    let text = `${texts.value.shareLink}：${shareLink.value}`
     if (props.password) {
-      text += `\n访问密码：${props.password}`
+      text += `\n${texts.value.accessPassword}：${props.password}`
     }
     if (props.expireTime) {
-      text += `\n有效期至：${formatExpireTime(props.expireTime)}`
+      text += `\n${texts.value.validUntil}：${formatExpireTime(props.expireTime)}`
     }
 
     if (navigator.clipboard && window.isSecureContext) {
       try {
         await navigator.clipboard.writeText(text)
-        Message.success('已复制到剪贴板')
+        Message.success(texts.value.copiedToClipboard)
       } catch (e) {
         console.error('复制失败:', e)
-        fallbackCopy(text, '已复制到剪贴板')
+        fallbackCopy(text, texts.value.copiedToClipboard)
       }
     } else {
-      fallbackCopy(text, '已复制到剪贴板')
+      fallbackCopy(text, texts.value.copiedToClipboard)
     }
   }
 
@@ -141,7 +157,7 @@ async function handleCopy() {
       Message.success(successMsg)
     } catch (err) {
       console.error('复制失败:', err)
-      Message.error('复制失败，请手动复制')
+      Message.error(texts.value.copyFailed)
     } finally {
       document.body.removeChild(textarea)
     }

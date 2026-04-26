@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'
 import { IconVideoCamera, IconCloud, IconHome, IconLeft, IconApps } from '@arco-design/web-vue/es/icon'
 import { useAuthStore } from '../stores/auth'
@@ -8,6 +9,7 @@ import { useAuthStore } from '../stores/auth'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 type LoginType = 'live' | 'cloud' | 'all' | null
 
@@ -26,7 +28,7 @@ const pageConfig = computed(() => {
   if (loginType.value === 'live') {
     return {
       title: 'AI Live',
-      subtitle: '直播平台',
+      subtitle: t('login.liveSystem'),
       brandColor: '#ff6b6b',
       gradient: 'linear-gradient(135deg, #ff6b6b, #ee5a24)',
       bgGradient: 'radial-gradient(circle at 20% 20%, rgba(255, 107, 107, 0.15), transparent 40%), radial-gradient(circle at 80% 20%, rgba(238, 90, 36, 0.1), transparent 35%), #f5f7fb',
@@ -37,7 +39,7 @@ const pageConfig = computed(() => {
   } else if (loginType.value === 'cloud') {
     return {
       title: 'AI Live',
-      subtitle: '云盘系统',
+      subtitle: t('login.cloudSystem'),
       brandColor: '#165dff',
       gradient: 'linear-gradient(135deg, #165dff, #34c759)',
       bgGradient: 'radial-gradient(circle at 20% 20%, rgba(22, 93, 255, 0.15), transparent 40%), radial-gradient(circle at 80% 20%, rgba(0, 201, 255, 0.1), transparent 35%), #f5f7fb',
@@ -48,18 +50,18 @@ const pageConfig = computed(() => {
   } else if (loginType.value === 'all') {
     return {
       title: 'AI Live',
-      subtitle: '综合中心',
+      subtitle: t('login.allSystem'),
       brandColor: '#722ed1',
       gradient: 'linear-gradient(135deg, #722ed1, #f5319d)',
       bgGradient: 'radial-gradient(circle at 20% 20%, rgba(114, 46, 209, 0.15), transparent 40%), radial-gradient(circle at 80% 20%, rgba(245, 49, 157, 0.1), transparent 35%), #f5f7fb',
       decorationGradient: 'radial-gradient(circle at 30% 60%, rgba(114, 46, 209, 0.2), transparent 40%), radial-gradient(circle at 80% 60%, rgba(245, 49, 157, 0.15), transparent 35%)',
       icon: IconApps,
-      defaultPath: '/LiveGuide' // 默认跳转到直播中心，因为是综合中心可以访问所有功能
+      defaultPath: '/LiveGuide'
     }
   }
   return {
     title: 'AI Live',
-    subtitle: '云数据平台',
+    subtitle: t('login.allSystem'),
     brandColor: '#165dff',
     gradient: 'linear-gradient(135deg, #165dff, #34c759)',
     bgGradient: 'radial-gradient(circle at 20% 20%, rgba(22, 93, 255, 0.15), transparent 40%), radial-gradient(circle at 80% 20%, rgba(0, 201, 255, 0.1), transparent 35%), #f5f7fb',
@@ -78,13 +80,13 @@ const handleSubmit = async (data: any) => {
       companyId: form.companyId,
       loginType: loginType.value || 'live',
     })
-    Message.success('登录成功')
+    Message.success(t('login.loginSuccess'))
 
     // 确定登录后跳转的路径
     const redirect = (route.query.redirect as string) || pageConfig.value.defaultPath
     router.push(redirect)
   } catch (err: any) {
-    const msg = err?.response?.data?.message || '登录失败，请检查账号信息'
+    const msg = err?.response?.data?.message || t('login.loginFailed')
     Message.error(msg)
   } finally {
     submitting.value = false
@@ -108,7 +110,7 @@ onMounted(() => {
   <div class="login-page" :style="{ background: pageConfig.bgGradient }">
     <div class="back-button" @click="goBack">
       <IconLeft />
-      <span>返回选择</span>
+      <span>{{ t('welcome.enterSystem') }}</span>
     </div>
 
     <a-card class="login-card" :bordered="false">
@@ -121,20 +123,20 @@ onMounted(() => {
       </div>
 
       <a-form :model="form" layout="vertical" @submit="handleSubmit">
-        <a-form-item field="username" label="用户名">
-          <a-input v-model="form.username" placeholder="请输入用户名" />
+        <a-form-item field="username" :label="t('login.username')">
+          <a-input v-model="form.username" :placeholder="t('login.usernamePlaceholder')" />
         </a-form-item>
-        <a-form-item field="password" label="密码">
-          <a-input-password v-model="form.password" placeholder="请输入密码" allow-clear />
+        <a-form-item field="password" :label="t('login.password')">
+          <a-input-password v-model="form.password" :placeholder="t('login.passwordPlaceholder')" allow-clear />
         </a-form-item>
         <a-button type="primary" long :loading="submitting" html-type="submit" :style="{ background: pageConfig.gradient, borderColor: 'transparent' }">
-          登录
+          {{ t('login.loginBtn') }}
         </a-button>
       </a-form>
 
       <div class="platform-indicator">
         <span :style="{ color: pageConfig.brandColor }">●</span>
-        <span>{{ loginType === 'live' ? '直播中心' : loginType === 'cloud' ? '云盘中心' : '综合中心' }}</span>
+        <span>{{ loginType === 'live' ? t('login.liveSystem') : loginType === 'cloud' ? t('login.cloudSystem') : t('login.allSystem') }}</span>
       </div>
     </a-card>
 

@@ -124,6 +124,7 @@ export const useCloudStore = defineStore('cloud', () => {
         type: 'folder',
         id: folder.ID || folder.id || 0,
         name: folder.name,
+        eName: folder.eName,
         meta: formatDate(folder.CreateTime || folder.createTime || ''),
         icon: '📁',
         color: '#f59e0b',
@@ -139,6 +140,7 @@ export const useCloudStore = defineStore('cloud', () => {
         type: 'file',
         id: file.ID,
         name: file.FileName,
+        eName: file.EName,
         meta: `${formatSize(file.FileSize)} · ${formatDate(file.CreateTime)}`,
         icon: iconConfig.icon,
         color: iconConfig.color,
@@ -425,12 +427,13 @@ export const useCloudStore = defineStore('cloud', () => {
   /**
    * 创建文件夹
    */
-  async function createFolder(folderName: string, parentId?: number) {
+  async function createFolder(folderName: string, parentId?: number, eName?: string) {
     try {
       // 使用新的统一接口
       await createItemApi({
         itemType: 'folder',
         name: folderName,
+        eName: eName,
         parentId: parentId ?? (currentFolderId.value === 0 ? null : currentFolderId.value),
       })
       Message.success('创建文件夹成功')
@@ -461,10 +464,10 @@ export const useCloudStore = defineStore('cloud', () => {
   /**
    * 重命名文件夹
    */
-  async function renameFolder(folderId: number, newName: string) {
+  async function renameFolder(folderId: number, newName: string, eName?: string) {
     try {
       // 使用新的统一接口
-      await renameItemApi(folderId, { newName })
+      await renameItemApi(folderId, { newName, eName })
       Message.success('重命名文件夹成功')
       await Promise.all([currentFolderId.value === 0 ? loadFiles() : loadFolderContent(currentFolderId.value)])
     } catch (e: any) {
@@ -509,10 +512,10 @@ export const useCloudStore = defineStore('cloud', () => {
   /**
    * 重命名文件
    */
-  async function renameFile(fileId: number, newName: string) {
+  async function renameFile(fileId: number, newName: string, eName?: string) {
     try {
       // 使用新的统一接口
-      await renameItemApi(fileId, { newName })
+      await renameItemApi(fileId, { newName, eName })
       Message.success('重命名文件成功')
       await (currentFolderId.value === 0 ? loadFiles() : loadFolderContent(currentFolderId.value))
     } catch (e: any) {

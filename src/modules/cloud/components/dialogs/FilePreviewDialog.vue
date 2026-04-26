@@ -26,7 +26,7 @@
             <template #icon>
               <icon-download />
             </template>
-            下载
+            {{ texts.download }}
           </a-button>
           <a-button
             v-if="canNavigate"
@@ -38,7 +38,7 @@
             <template #icon>
               <icon-left />
             </template>
-            上一个
+            {{ texts.previous }}
           </a-button>
           <a-button
             v-if="canNavigate"
@@ -50,7 +50,7 @@
             <template #icon>
               <icon-right />
             </template>
-            下一个
+            {{ texts.next }}
           </a-button>
         </div>
       </div>
@@ -59,7 +59,7 @@
     <!-- 加载状态 -->
     <div v-if="loading" class="preview-loading">
       <a-spin :size="50" />
-      <p>正在加载...</p>
+      <p>{{ texts.loading }}</p>
     </div>
 
     <!-- 预览内容 -->
@@ -124,12 +124,12 @@
       <!-- 不支持的格式 -->
       <div v-else class="preview-unsupported">
         <icon-file />
-        <p>暂不支持预览此类型文件</p>
+        <p>{{ texts.previewNotSupported }}</p>
         <a-button type="primary" @click="handleDownload">
           <template #icon>
             <icon-download />
           </template>
-          下载文件
+          {{ texts.downloadFile }}
         </a-button>
       </div>
     </div>
@@ -137,15 +137,15 @@
     <!-- 文件信息 -->
     <div class="preview-info">
       <div class="info-item">
-        <span class="info-label">文件大小:</span>
+        <span class="info-label">{{ texts.fileSizeLabel }}</span>
         <span class="info-value">{{ fileSize }}</span>
       </div>
       <div class="info-item">
-        <span class="info-label">文件类型:</span>
+        <span class="info-label">{{ texts.fileTypeLabel }}</span>
         <span class="info-value">{{ fileType }}</span>
       </div>
       <div class="info-item">
-        <span class="info-label">创建时间:</span>
+        <span class="info-label">{{ texts.createTimeLabel }}</span>
         <span class="info-value">{{ createTime }}</span>
       </div>
     </div>
@@ -154,6 +154,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'
 import {
   IconDownload,
@@ -166,6 +167,21 @@ import { useCloudFile } from '@/modules/cloud/composables'
 import { formatSize as formatFileSize, formatDate } from '@/modules/cloud/utils/format'
 import type { FileItem } from '@/modules/cloud/types'
 import type { FileCategory } from '@/modules/cloud/composables/useCloudPreview'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  previewTitle: t('cloud.previewTitle'),
+  download: t('cloud.download'),
+  previous: t('cloud.previous'),
+  next: t('cloud.next'),
+  loading: t('cloud.loading'),
+  previewNotSupported: t('cloud.previewNotSupported'),
+  downloadFile: t('cloud.downloadFile'),
+  fileSizeLabel: t('cloud.fileSizeLabel'),
+  fileTypeLabel: t('cloud.fileTypeLabel'),
+  createTimeLabel: t('cloud.createTimeLabel'),
+}))
 
 // 导入预览子组件
 import ImagePreview from './previews/ImagePreview.vue'

@@ -49,6 +49,7 @@ export async function fetchFolders(parentId?: number): Promise<Folder[]> {
     ID: folder.ID || folder.id || 0,
     id: folder.id || folder.ID || 0,
     name: folder.name || '',
+    eName: folder.eName || folder.EName,
     parentId: folder.parentId ?? null,
     ownerId: folder.ownerId || folder.ownerID || 0,
     path: folder.path || '',
@@ -86,6 +87,7 @@ export async function fetchFolderTree(): Promise<Folder[]> {
     ID: folder.ID || folder.id || 0,
     id: folder.id || folder.ID || 0,
     name: folder.name || '',
+    eName: folder.eName || folder.EName,
     parentId: folder.parentId ?? null,
     ownerId: folder.ownerId || folder.ownerID || 0,
     path: folder.path || '',
@@ -160,6 +162,7 @@ export async function fetchFiles(folderId = 0): Promise<FileItem[]> {
   return list.map((item) => ({
     ID: item.ID || item.id,
     FileName: item.FileName || item.fileName || item.name || '',
+    EName: item.EName || item.eName,
     FileSize: item.FileSize || item.fileSize || 0,
     FileType: item.FileType || item.fileType || '',
     FileExt: item.FileExt || item.fileExt || '',
@@ -189,12 +192,16 @@ export async function searchFiles(params: FileSearchParams): Promise<FileItem[]>
 export async function uploadFile(
   file: File,
   folderId = 0,
+  eName?: string,
   onProgress?: (percent: number, loaded: number, total: number) => void,
   signal?: AbortSignal
 ): Promise<FileItem> {
   const formData = new FormData()
   formData.append('file', file)
   formData.append('folderId', String(folderId))
+  if (eName) {
+    formData.append('eName', eName)
+  }
 
   const { data } = await api.post<ApiResponse<FileItem>>('/cloud/files/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -627,6 +634,7 @@ export async function completeMultipartUpload(sessionId: number): Promise<FileIt
   return {
     ID: item.id || item.ID || 0,
     FileName: item.name || item.FileName || '',
+    EName: item.eName || item.EName,
     FileSize: item.fileSize || item.FileSize || 0,
     FileType: item.fileType || item.FileType || '',
     FileExt: item.fileExt || item.FileExt || '',
@@ -895,6 +903,7 @@ export async function fetchFolderContent(folderId?: number): Promise<{ folders: 
     ID: folder.ID || folder.id || 0,
     id: folder.id || folder.ID || 0,
     name: folder.name || '',
+    eName: folder.eName || folder.EName,
     parentId: folder.parentId ?? null,
     ownerId: folder.ownerId || folder.ownerID || 0,
     path: folder.path || '',
@@ -917,6 +926,7 @@ export async function fetchFolderContent(folderId?: number): Promise<{ folders: 
   const convertFile = (file: any): FileItem => ({
     ID: file.ID || file.id,
     FileName: file.FileName || file.fileName || file.name || '',
+    EName: file.EName || file.eName,
     FileSize: file.FileSize || file.fileSize || 0,
     FileType: file.FileType || file.fileType || '',
     FileExt: file.FileExt || file.fileExt || '',
@@ -949,6 +959,7 @@ export async function fetchItems(parentId?: number): Promise<{ folders: Folder[]
     ID: item.id || 0,
     id: item.id || 0,
     name: item.name || '',
+    eName: item.eName || item.EName,
     parentId: item.parentId ?? null,
     ownerId: item.ownerId || 0,
     path: item.path || '',
@@ -970,6 +981,7 @@ export async function fetchItems(parentId?: number): Promise<{ folders: Folder[]
   const convertFile = (item: any): FileItem => ({
     ID: item.id || 0,
     FileName: item.name || '',
+    EName: item.eName || item.EName,
     FileSize: item.fileSize || 0,
     FileType: item.fileType || '',
     FileExt: item.fileExt || '',
@@ -1015,7 +1027,7 @@ export async function deleteItem(id: number): Promise<void> {
  * 重命名云盘项目
  * 对应后端: PUT /api/v1/cloud/items/:id/rename
  */
-export async function renameItem(id: number, params: { newName: string }): Promise<void> {
+export async function renameItem(id: number, params: { newName: string; eName?: string }): Promise<void> {
   await api.put(`/cloud/items/${id}/rename`, params)
 }
 

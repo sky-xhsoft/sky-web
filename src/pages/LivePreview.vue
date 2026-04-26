@@ -15,8 +15,7 @@
         <video
           :key="playerKey"
           id="player-container-id"
-          width="100%"
-          height="100%"
+          style="width: 100%; height: 100%; object-fit: contain;"
           preload="auto"
           playsinline
           webkit-playsinline
@@ -179,12 +178,28 @@ const initPlayer = () => {
         autoplay: true,
         controls: true,
         width: '100%',
-        height: '100%',
-        fluid: true,
+        height: 'auto',
+        fluid: false,
         language: 'zh-CN',
         plugins: {
           ContinuePlay: {
             auto: true
+          }
+        }
+      })
+
+      // 监听视频加载完成，动态调整竖屏显示
+      player.on('loadedmetadata', () => {
+        const videoEl = document.querySelector('#player-container-id video') as HTMLVideoElement
+        if (videoEl) {
+          const { videoWidth, videoHeight } = videoEl
+          // 检测是否为竖屏视频 (高度 > 宽度)
+          if (videoHeight > videoWidth) {
+            const playerWrapper = document.querySelector('.player-wrapper') as HTMLElement
+            if (playerWrapper) {
+              // 为竖屏视频调整容器，限制最大宽度
+              playerWrapper.style.maxWidth = '500px'
+            }
           }
         }
       })
@@ -288,14 +303,45 @@ onBeforeUnmount(() => {
 }
 
 .player-wrapper {
-  width: 70%;
-  max-width: 800px;
-  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-width: 900px;
   background: #000;
   border-radius: 4px;
   overflow: hidden;
   margin: 0 auto;
   position: relative;
+}
+
+/* 覆盖 video.js 默认的 16:9 比例 */
+.player-wrapper :deep(.video-js.vjs-fluid),
+.player-wrapper :deep(.video-js.vjs-16-9),
+.player-wrapper :deep(.video-js.vjs-4-3) {
+  padding-top: 0 !important;
+}
+
+/* 让播放器容器自适应内容 */
+.player-wrapper :deep(.video-js) {
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 450px !important;
+  max-height: 85vh !important;
+}
+
+/* 关键：视频元素使用 contain 确保完整显示，不被裁切 */
+.player-wrapper :deep(.vjs-tech) {
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+  max-height: 85vh !important;
+  object-fit: contain !important;
+}
+
+.player-wrapper :deep(video) {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 85vh !important;
+  object-fit: contain !important;
 }
 
 .stream-info {

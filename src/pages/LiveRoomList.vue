@@ -7,7 +7,7 @@
           <template #icon>
             <icon-plus />
           </template>
-          创建直播
+          {{ texts.createLive }}
         </a-button>
       </a-space>
       <a-space size="medium">
@@ -15,13 +15,13 @@
           <template #icon>
             <icon-refresh />
           </template>
-          刷新
+          {{ texts.refresh }}
         </a-button>
         <a-button v-if="selectedRows.length > 0" type="primary" status="danger" @click="handleBatchDelete">
           <template #icon>
             <icon-delete />
           </template>
-          批量删除 ({{ selectedRows.length }})
+          {{ texts.batchDelete }} ({{ selectedRows.length }})
         </a-button>
       </a-space>
     </div>
@@ -31,31 +31,31 @@
       <a-space size="medium">
         <a-dropdown trigger="click">
           <a-button>
-            所有筛选
+            {{ texts.allFilters }}
             <icon-down />
           </a-button>
           <template #content>
-            <a-doption>直播类型</a-doption>
-            <a-doption>直播形式</a-doption>
-            <a-doption>直播状态</a-doption>
-            <a-doption>观看方式</a-doption>
+            <a-doption>{{ texts.roomType }}</a-doption>
+            <a-doption>{{ texts.broadcastFormat }}</a-doption>
+            <a-doption>{{ texts.status }}</a-doption>
+            <a-doption>{{ texts.viewingMethod }}</a-doption>
           </template>
         </a-dropdown>
 
         <a-select
           v-model="searchForm.filterType"
-          placeholder="直播名称"
+          :placeholder="texts.searchByRoomName"
           style="width: 150px"
           @change="handleSearch"
         >
-          <a-option value="roomName">直播名称</a-option>
-          <a-option value="id">直播ID</a-option>
-          <a-option value="streamName">流名称</a-option>
+          <a-option value="roomName">{{ texts.searchByRoomName }}</a-option>
+          <a-option value="id">{{ texts.searchById }}</a-option>
+          <a-option value="streamName">{{ texts.searchByStreamName }}</a-option>
         </a-select>
 
         <a-input
           v-model="searchForm.keyword"
-          placeholder="请输入直播名称"
+          :placeholder="texts.searchPlaceholder"
           style="width: 300px"
           allow-clear
         >
@@ -64,7 +64,7 @@
           </template>
         </a-input>
 
-        <a-button type="primary" @click="handleSearch">搜索</a-button>
+        <a-button type="primary" @click="handleSearch">{{ texts.search }}</a-button>
       </a-space>
     </div>
 
@@ -118,11 +118,11 @@
 
       <template #actions="{ record }">
         <a-space>
-          <a-link @click="handleManage(record)">管理</a-link>
-          <a-link v-if="record.status === 'live'" @click="handlePreview(record)">预览</a-link>
-          <a-link @click="handlePullStreamTask(record)">社媒分发</a-link>
-          <a-link @click="handleHighlightClips(record)">直播切片</a-link>
-          <a-link @click="handleRecordings(record)">直播录制</a-link>
+          <a-link @click="handleManage(record)">{{ texts.manage }}</a-link>
+          <a-link v-if="record.status === 'live'" @click="handlePreview(record)">{{ texts.preview }}</a-link>
+          <a-link @click="handlePullStreamTask(record)">{{ texts.socialDistribution }}</a-link>
+          <a-link @click="handleHighlightClips(record)">{{ texts.highlightClips }}</a-link>
+          <a-link @click="handleRecordings(record)">{{ texts.recordings }}</a-link>
           <a-dropdown trigger="click">
             <a-link>
               <icon-more />
@@ -130,11 +130,11 @@
             <template #content>
               <a-doption @click="handleEdit(record)">
                 <icon-edit />
-                编辑
+                {{ texts.edit }}
               </a-doption>
               <a-doption v-if="record.status !== 'live'" @click="handleRecycle(record)">
                 <icon-delete />
-                删除
+                {{ texts.delete }}
               </a-doption>
             </template>
           </a-dropdown>
@@ -145,19 +145,90 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useNavigationStore } from '../stores/navigation'
+import { useI18n } from 'vue-i18n'
 import api from '../api/http'
 import { listDomains } from '../api/live'
 import dayjs from 'dayjs'
 import { IconRefresh, IconDelete } from '@arco-design/web-vue/es/icon'
 
+const { t } = useI18n()
 const navigationStore = useNavigationStore()
 const loading = ref(false)
 const tableData = ref([])
 const domains = ref<{ name: string; type: number }[]>([])
 let unregisterBackCallback: (() => void) | null = null
+
+const texts = computed(() => ({
+  createLive: t('liveRoom.createLive'),
+  refresh: t('liveRoom.refresh'),
+  batchDelete: t('liveRoom.batchDelete'),
+  allFilters: t('liveRoom.allFilters'),
+  roomType: t('liveRoom.roomType'),
+  broadcastFormat: t('liveRoom.broadcastFormat'),
+  status: t('liveRoom.status'),
+  viewingMethod: t('liveRoom.viewingMethod'),
+  searchPlaceholder: t('liveRoom.searchPlaceholder'),
+  search: t('liveRoom.search'),
+  searchByRoomName: t('liveRoom.searchByRoomName'),
+  searchById: t('liveRoom.searchById'),
+  searchByStreamName: t('liveRoom.searchByStreamName'),
+  colId: t('liveRoom.colId'),
+  colRoom: t('liveRoom.colRoom'),
+  colBroadcastFormat: t('liveRoom.colBroadcastFormat'),
+  colStatus: t('liveRoom.colStatus'),
+  colStartTime: t('liveRoom.colStartTime'),
+  colActions: t('liveRoom.colActions'),
+  manage: t('liveRoom.manage'),
+  preview: t('liveRoom.preview'),
+  socialDistribution: t('liveRoom.socialDistribution'),
+  highlightClips: t('liveRoom.highlightClips'),
+  recordings: t('liveRoom.recordings'),
+  edit: t('liveRoom.edit'),
+  delete: t('liveRoom.delete'),
+  roomTypeVideo: t('liveRoom.roomTypeVideo'),
+  roomTypeImage: t('liveRoom.roomTypeImage'),
+  roomTypeVr: t('liveRoom.roomTypeVr'),
+  roomTypeAudio: t('liveRoom.roomTypeAudio'),
+  roomTypeGraphic: t('liveRoom.roomTypeGraphic'),
+  formatLive: t('liveRoom.formatLive'),
+  formatVod: t('liveRoom.formatVod'),
+  formatPseudo: t('liveRoom.formatPseudo'),
+  statusDraft: t('liveRoom.statusDraft'),
+  statusScheduled: t('liveRoom.statusScheduled'),
+  statusLive: t('liveRoom.statusLive'),
+  statusEnded: t('liveRoom.statusEnded'),
+  statusArchived: t('liveRoom.statusArchived'),
+  statusPublic: t('liveRoom.statusPublic'),
+  createTitle: t('liveRoom.createTitle'),
+  editTitle: t('liveRoom.editTitle'),
+  detailTitle: t('liveRoom.detailTitle'),
+  loadDataFailed: t('liveRoom.loadDataFailed'),
+  batchDeleteConfirmTitle: t('liveRoom.batchDeleteConfirmTitle'),
+  batchDeleteConfirmContent: t('liveRoom.batchDeleteConfirmContent'),
+  batchDeleteSuccess: t('liveRoom.batchDeleteSuccess'),
+  batchDeleteFailed: t('liveRoom.batchDeleteFailed'),
+  recycleConfirmTitle: t('liveRoom.recycleConfirmTitle'),
+  recycleConfirmContent: t('liveRoom.recycleConfirmContent'),
+  recycleSuccess: t('liveRoom.recycleSuccess'),
+  recycleFailed: t('liveRoom.recycleFailed'),
+  fetchDataFailed: t('liveRoom.fetchDataFailed'),
+  inDevelopment: t('liveRoom.inDevelopment'),
+  refreshPasswordTitle: t('liveRoom.refreshPasswordTitle'),
+  refreshPasswordContent: t('liveRoom.refreshPasswordContent'),
+  refreshPasswordSuccess: t('liveRoom.refreshPasswordSuccess'),
+  refreshPasswordFailed: t('liveRoom.refreshPasswordFailed'),
+  copySuccess: t('liveRoom.copySuccess'),
+  copyFailed: t('liveRoom.copyFailed'),
+  startLiveSuccess: t('liveRoom.startLiveSuccess'),
+  operationFailed: t('liveRoom.operationFailed'),
+  noPlayDomainWarning: t('liveRoom.noPlayDomainWarning'),
+  previewFailed: t('liveRoom.previewFailed'),
+  confirm: t('liveRoom.confirm'),
+  cancel: t('liveRoom.cancel'),
+}))
 
 // 选中的行
 const selectedRows = ref<any[]>([])
@@ -216,67 +287,67 @@ const handleSelectAll = (checked: boolean) => {
   }
 }
 
-const columns = [
+const columns = computed(() => [
   {
-    title: 'id',
+    title: texts.value.colId,
     dataIndex: 'id',
     width: 50
   },
   {
-    title: '直播间',
+    title: texts.value.colRoom,
     slotName: 'roomInfo',
     width: 180
   },
   {
-    title: '直播形式',
+    title: texts.value.colBroadcastFormat,
     slotName: 'broadcastFormat',
-    width: 80
+    width: 100
   },
   {
-    title: '直播状态',
+    title: texts.value.colStatus,
     slotName: 'status',
-    width: 80
+    width: 100
   },
   {
-    title: '开始',
+    title: texts.value.colStartTime,
     slotName: 'startTime',
     width: 180
   },
   {
-    title: '操作',
+    title: texts.value.colActions,
     slotName: 'actions',
     width: 280,
     fixed: 'right'
   }
-]
+])
 
 const getRoomTypeText = (type: string) => {
   const map: Record<string, string> = {
-    video: '视频直播',
-    image: '图片直播',
-    vr: 'VR直播',
-    audio: '语音直播',
-    graphic: '图文直播'
+    video: texts.value.roomTypeVideo,
+    image: texts.value.roomTypeImage,
+    vr: texts.value.roomTypeVr,
+    audio: texts.value.roomTypeAudio,
+    graphic: texts.value.roomTypeGraphic
   }
   return map[type] || type
 }
 
 const getBroadcastFormatText = (format: string) => {
   const map: Record<string, string> = {
-    live: '直播',
-    vod: '点播/录播',
-    pseudo: '伪直播'
+    live: texts.value.formatLive,
+    vod: texts.value.formatVod,
+    pseudo: texts.value.formatPseudo
   }
   return map[format] || format
 }
 
 const getStatusText = (status: string) => {
   const map: Record<string, string> = {
-    draft: '未开始',
-    scheduled: '已排期',
-    live: '直播中',
-    ended: '已结束',
-    archived: '已归档'
+    draft: texts.value.statusDraft,
+    scheduled: texts.value.statusScheduled,
+    live: texts.value.statusLive,
+    ended: texts.value.statusEnded,
+    archived: texts.value.statusArchived
   }
   return map[status] || status
 }
@@ -325,8 +396,8 @@ const convertToFrontendFormat = (data: any) => {
     pushUrl: data.PUSH_URL || '',
     playUrl: data.PLAY_URL || '',
     channel: data.CHANNEL || '--',
-    viewingMethodText: data.VIEWING_METHOD || '公开',
-    statusText: data.STATUS || '草稿'
+    viewingMethodText: data.VIEWING_METHOD === 'public' ? texts.value.statusPublic : (data.VIEWING_METHOD || texts.value.statusPublic),
+    statusText: data.STATUS || ''
   }
 }
 
@@ -360,14 +431,14 @@ const fetchData = async () => {
     }
   } catch (error: any) {
     console.error('获取数据失败:', error)
-    Message.error(error.message || '获取数据失败')
+    Message.error(error.message || texts.value.loadDataFailed)
   } finally {
     loading.value = false
   }
 }
 
 const handleCreate = () => {
-  navigationStore.navigateTo('LiveRoomForm', '创建直播间', {}, true)
+  navigationStore.navigateTo('LiveRoomForm', texts.value.createTitle, {}, true)
 }
 
 const handleRefresh = () => {
@@ -391,11 +462,11 @@ const handlePageSizeChange = (pageSize: number) => {
 }
 
 const handleEdit = (record: any) => {
-  navigationStore.navigateTo('LiveRoomForm', '编辑直播间', { roomId: record.id }, true)
+  navigationStore.navigateTo('LiveRoomForm', texts.value.editTitle, { roomId: record.id }, true)
 }
 
 const handleManage = (record: any) => {
-  navigationStore.navigateTo('LiveRoomDetail', '直播间详情', { id: record.id }, false)
+  navigationStore.navigateTo('LiveRoomDetail', texts.value.detailTitle, { id: record.id }, false)
 }
 
 const handleBatchDelete = () => {
@@ -404,8 +475,10 @@ const handleBatchDelete = () => {
   }
 
   Modal.confirm({
-    title: '确认批量删除',
-    content: `确定要将选中的 ${selectedRows.value.length} 个直播间移至回收站吗？`,
+    title: texts.value.batchDeleteConfirmTitle,
+    content: texts.value.batchDeleteConfirmContent.replace('{count}', String(selectedRows.value.length)),
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     onOk: async () => {
       try {
         for (const record of selectedRows.value) {
@@ -418,12 +491,12 @@ const handleBatchDelete = () => {
             IS_ACTIVE: 'N'
           })
         }
-        Message.success(`已成功删除 ${selectedRows.value.length} 个直播间`)
+        Message.success(texts.value.batchDeleteSuccess.replace('{count}', String(selectedRows.value.length)))
         // 清空选中的行
         selectedRows.value = []
         fetchData()
       } catch (error: any) {
-        Message.error(error.message || '批量删除失败')
+        Message.error(error.message || texts.value.batchDeleteFailed)
       }
     }
   })
@@ -431,119 +504,123 @@ const handleBatchDelete = () => {
 
 const handleRecycle = (record: any) => {
   Modal.confirm({
-    title: '确认回收',
-    content: `确定要将直播间"${record.roomName}"移至回收站吗？`,
+    title: texts.value.recycleConfirmTitle,
+    content: texts.value.recycleConfirmContent.replace('{name}', record.roomName),
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     onOk: async () => {
       try {
         const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
         if (!getResponse.data?.data) {
-          Message.error('获取数据失败')
+          Message.error(texts.value.fetchDataFailed)
           return
         }
         await api.put(`/data/LIVE_ROOM/${record.id}`, {
           ...getResponse.data.data,
           IS_ACTIVE: 'N'
         })
-        Message.success('已移至回收站')
+        Message.success(texts.value.recycleSuccess)
         fetchData()
       } catch (error: any) {
-        Message.error(error.message || '回收失败')
+        Message.error(error.message || texts.value.recycleFailed)
       }
     }
   })
 }
 
-// 其他处理函数（保持不变）
+// 其他处理函数
 const handleShare = (record: any) => {
-  Message.info('分享功能开发中')
+  Message.info(texts.value.inDevelopment)
 }
 
 const handleRecommend = (record: any) => {
-  Message.info('推荐功能开发中')
+  Message.info(texts.value.inDevelopment)
 }
 
 const handleTag = (record: any) => {
-  Message.info('打标签功能开发中')
+  Message.info(texts.value.inDevelopment)
 }
 
 const handleDataAnalysis = (record: any) => {
-  Message.info('数据分析功能开发中')
+  Message.info(texts.value.inDevelopment)
 }
 
 const handleOperationRecommend = (record: any) => {
-  Message.info('推荐运营功能开发中')
+  Message.info(texts.value.inDevelopment)
 }
 
 const handleScreenInteraction = (record: any) => {
-  Message.info('大屏互动功能开发中')
+  Message.info(texts.value.inDevelopment)
 }
 
 const handleDownloadPlayback = (record: any) => {
-  Message.info('下载回放视频功能开发中')
+  Message.info(texts.value.inDevelopment)
 }
 
 const handleRefreshPassword = (record: any) => {
   Modal.confirm({
-    title: '刷新密码',
-    content: '确定要刷新该直播间的观看密码吗？',
+    title: texts.value.refreshPasswordTitle,
+    content: texts.value.refreshPasswordContent,
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     onOk: async () => {
       try {
         const newPassword = Math.random().toString(36).slice(-8)
         const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
         if (!getResponse.data?.data) {
-          Message.error('获取数据失败')
+          Message.error(texts.value.fetchDataFailed)
           return
         }
         await api.put(`/data/LIVE_ROOM/${record.id}`, {
           ...getResponse.data.data,
           VIEWING_PASSWORD: newPassword
         })
-        Message.success(`密码已刷新为: ${newPassword}`)
+        Message.success(texts.value.refreshPasswordSuccess.replace('{password}', newPassword))
         fetchData()
       } catch (error: any) {
-        Message.error(error.message || '刷新密码失败')
+        Message.error(error.message || texts.value.refreshPasswordFailed)
       }
     }
   })
 }
 
 const handleSetChannel = (record: any) => {
-  Message.info('设置直播频道功能开发中')
+  Message.info(texts.value.inDevelopment)
 }
 
 const handleAdminMonitor = (record: any) => {
-  Message.info('管理员监听功能开发中')
+  Message.info(texts.value.inDevelopment)
 }
 
 const handlePullStreamTask = (record: any) => {
-  navigationStore.navigateTo('PullStreamTask', '社媒分发', { roomId: record.id }, false)
+  navigationStore.navigateTo('PullStreamTask', texts.value.socialDistribution, { roomId: record.id }, false)
 }
 
 const handleHighlightClips = (record: any) => {
-  navigationStore.navigateTo('LiveHighlightClips', '高光切片', { roomId: record.id }, false)
+  navigationStore.navigateTo('LiveHighlightClips', texts.value.highlightClips, { roomId: record.id }, false)
 }
 
 const handleRecordings = (record: any) => {
-  navigationStore.navigateTo('LiveRecordings', '录制列表', { roomId: record.id }, false)
+  navigationStore.navigateTo('LiveRecordings', texts.value.recordings, { roomId: record.id }, false)
 }
 
 const handlePreview = async (record: any) => {
   try {
     const playDomain = domains.value.find(d => d.type === 1)
     if (!playDomain) {
-      Message.warning('未找到播放域名，请先添加播放域名')
+      Message.warning(texts.value.noPlayDomainWarning)
       return
     }
     const streamName = record.streamName || String(record.id)
     const appName = 'live'
-    navigationStore.navigateTo('LivePreview', '直播预览', {
+    navigationStore.navigateTo('LivePreview', texts.value.preview, {
       streamName,
       appName,
       playDomain: playDomain.name
     })
   } catch (error: any) {
     console.error('预览失败:', error)
-    Message.error('预览失败')
+    Message.error(texts.value.previewFailed)
   }
 }
 
@@ -551,7 +628,7 @@ const handleCopy = async (record: any) => {
   try {
     const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
     if (!getResponse.data?.data) {
-      Message.error('获取数据失败')
+      Message.error(texts.value.fetchDataFailed)
       return
     }
     const originalData = getResponse.data.data
@@ -561,11 +638,11 @@ const handleCopy = async (record: any) => {
       ROOM_NAME: `${originalData.ROOM_NAME} - 副本`
     }
     await api.post('/data/LIVE_ROOM', copyData)
-    Message.success('复制成功')
+    Message.success(texts.value.copySuccess)
     fetchData()
   } catch (error: any) {
     console.error('复制失败:', error)
-    Message.error(error.message || '复制失败')
+    Message.error(error.message || texts.value.copyFailed)
   }
 }
 
@@ -573,7 +650,7 @@ const handleStartLive = async (record: any) => {
   try {
     const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
     if (!getResponse.data?.data) {
-      Message.error('获取数据失败')
+      Message.error(texts.value.fetchDataFailed)
       return
     }
     const originalData = getResponse.data.data
@@ -582,16 +659,16 @@ const handleStartLive = async (record: any) => {
       STATUS: 'live',
       START_TIME: dayjs().format('YYYY-MM-DD HH:mm:ss')
     })
-    Message.success('直播已开始')
+    Message.success(texts.value.startLiveSuccess)
     fetchData()
   } catch (error: any) {
     console.error('操作失败:', error)
-    Message.error(error.message || '操作失败')
+    Message.error(error.message || texts.value.operationFailed)
   }
 }
 
 const handleBackToSite = () => {
-  Message.info('回收站功能开发中')
+  Message.info(texts.value.inDevelopment)
 }
 
 onMounted(() => {

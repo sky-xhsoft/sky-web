@@ -4,9 +4,9 @@
     <div class="page-header">
       <a-breadcrumb>
         <a-breadcrumb-item>
-          <a-link @click="goBack">社媒分发</a-link>
+          <a-link @click="goBack">{{ texts.socialDistribution }}</a-link>
         </a-breadcrumb-item>
-        <a-breadcrumb-item>{{ isEdit ? '编辑任务' : '创建任务' }}</a-breadcrumb-item>
+        <a-breadcrumb-item>{{ isEdit ? texts.editTask : texts.createTask }}</a-breadcrumb-item>
       </a-breadcrumb>
     </div>
 
@@ -15,11 +15,11 @@
       <a-form :model="taskForm" ref="taskFormRef" :label-col-props="{ span: 3 }" :wrapper-col-props="{ span: 21 }">
         <!-- 1. 配置任务基本信息 -->
         <div class="form-section">
-          <div class="section-title">1 配置任务基本信息</div>
-          <a-form-item label="任务备注" field="comment">
-            <a-input v-model="taskForm.comment" placeholder="请输入任务备注" />
+          <div class="section-title">{{ texts.basicInfoSection }}</div>
+          <a-form-item :label="texts.taskComment" field="comment">
+            <a-input v-model="taskForm.comment" :placeholder="texts.taskCommentPlaceholder" />
           </a-form-item>
-          <a-form-item label="任务时间" field="timeRange" :rules="[{ required: true, message: '请选择任务时间' }]">
+          <a-form-item :label="texts.taskTime" field="timeRange" :rules="[{ required: true, message: texts.taskTimeRequired }]">
             <a-range-picker
               v-model="taskForm.timeRange"
               show-time
@@ -31,44 +31,44 @@
 
         <!-- 2. 填写内容来源信息 -->
         <div class="form-section">
-          <div class="section-title">2 填写内容来源信息</div>
-          <a-form-item label="地域" field="region" :rules="[{ required: true, message: '请选择地域' }]">
-            <a-select v-model="taskForm.region" placeholder="请选择地域" :disabled="isEdit">
-              <a-option value="ap-bangkok">亚太东南（曼谷）</a-option>
-              <a-option value="ap-beijing">华北地区（北京）</a-option>
-              <a-option value="ap-chongqing">西南地区（重庆）</a-option>
-              <a-option value="ap-guangzhou">华南地区（广州）</a-option>
-              <a-option value="ap-hongkong">港澳台地区（中国香港）</a-option>
-              <a-option value="ap-seoul">亚太东北（首尔）</a-option>
-              <a-option value="ap-shanghai">华东地区（上海）</a-option>
-              <a-option value="ap-singapore">亚太东南（新加坡）</a-option>
-              <a-option value="ap-tokyo">亚太东北（东京）</a-option>
-              <a-option value="eu-frankfurt">欧洲地区（法兰克福）</a-option>
-              <a-option value="na-ashburn">美国东部（弗吉尼亚）</a-option>
-              <a-option value="na-siliconvalley">美国西部（硅谷）</a-option>
+          <div class="section-title">{{ texts.sourceInfoSection }}</div>
+          <a-form-item :label="texts.region" field="region" :rules="[{ required: true, message: texts.regionRequired }]">
+            <a-select v-model="taskForm.region" :placeholder="texts.regionPlaceholder" :disabled="isEdit">
+              <a-option value="ap-bangkok">{{ texts.regionBangkok }}</a-option>
+              <a-option value="ap-beijing">{{ texts.regionBeijing }}</a-option>
+              <a-option value="ap-chongqing">{{ texts.regionChongqing }}</a-option>
+              <a-option value="ap-guangzhou">{{ texts.regionGuangzhou }}</a-option>
+              <a-option value="ap-hongkong">{{ texts.regionHongkong }}</a-option>
+              <a-option value="ap-seoul">{{ texts.regionSeoul }}</a-option>
+              <a-option value="ap-shanghai">{{ texts.regionShanghai }}</a-option>
+              <a-option value="ap-singapore">{{ texts.regionSingapore }}</a-option>
+              <a-option value="ap-tokyo">{{ texts.regionTokyo }}</a-option>
+              <a-option value="eu-frankfurt">{{ texts.regionFrankfurt }}</a-option>
+              <a-option value="na-ashburn">{{ texts.regionAshburn }}</a-option>
+              <a-option value="na-siliconvalley">{{ texts.regionSiliconValley }}</a-option>
             </a-select>
           </a-form-item>
-          <a-form-item label="内容类型" field="sourceType" :rules="[{ required: true, message: '请选择内容类型' }]">
+          <a-form-item :label="texts.contentType" field="sourceType" :rules="[{ required: true, message: texts.contentTypeRequired }]">
             <a-radio-group v-model="taskForm.sourceType">
-              <a-radio value="PullLivePushLive">直播</a-radio>
+              <a-radio value="PullLivePushLive">{{ texts.live }}</a-radio>
             </a-radio-group>
           </a-form-item>
-          <a-form-item label="直播源地址" field="sourceUrl" :rules="[{ required: true, message: '请输入直播源地址' }]">
+          <a-form-item :label="texts.sourceUrl" field="sourceUrl" :rules="[{ required: true, message: texts.sourceUrlRequired }]">
             <a-textarea
               v-model="taskForm.sourceUrl"
               :rows="2"
-              placeholder="请输入直播源地址"
+              :placeholder="texts.sourceUrlPlaceholder"
             />
           </a-form-item>
         </div>
 
         <!-- 3. 填写接收内容的地址 -->
         <div class="form-section">
-          <div class="section-title">3 填写接收内容的地址</div>
-          <a-form-item label="目标地址" field="targetUrl" :rules="[{ required: true, message: '请输入目标地址' }]">
-            <a-input v-model="taskForm.targetUrl" placeholder="请输入用于接收内容的目标URL" />
+          <div class="section-title">{{ texts.targetInfoSection }}</div>
+          <a-form-item :label="texts.targetUrl" field="targetUrl" :rules="[{ required: true, message: texts.targetUrlRequired }]">
+            <a-input v-model="taskForm.targetUrl" :placeholder="texts.targetUrlPlaceholder" />
             <template #extra>
-              <a href="#" @click.prevent>添加目标地址</a> | 通过 <a href="#" @click.prevent>地址生成器</a> 生成
+              <a href="#" @click.prevent>{{ texts.addTargetUrl }}</a> | {{ texts.urlGenerator }} <a href="#" @click.prevent></a>
             </template>
           </a-form-item>
         </div>
@@ -76,8 +76,8 @@
         <!-- 操作按钮 -->
         <div class="form-actions">
           <a-space>
-            <a-button type="primary" @click="submitTask" :loading="submitting">保存</a-button>
-            <a-button @click="goBack">取消</a-button>
+            <a-button type="primary" @click="submitTask" :loading="submitting">{{ texts.save }}</a-button>
+            <a-button @click="goBack">{{ texts.cancel }}</a-button>
           </a-space>
         </div>
       </a-form>
@@ -88,6 +88,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useNavigationStore } from '../stores/navigation'
 import {
@@ -100,8 +101,54 @@ import type {
   UpdatePullStreamTaskRequest
 } from '../api/live'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const navigationStore = useNavigationStore()
+
+const texts = computed(() => ({
+  socialDistribution: t('pullStreamTask.socialDistribution'),
+  editTask: t('pullStreamTask.editTaskTitle'),
+  createTask: t('pullStreamTask.createTaskTitle'),
+  basicInfoSection: t('pullStreamTask.basicInfoSection'),
+  taskComment: t('pullStreamTask.taskComment'),
+  taskCommentPlaceholder: t('pullStreamTask.taskCommentPlaceholder'),
+  taskTime: t('pullStreamTask.taskTime'),
+  taskTimeRequired: t('pullStreamTask.taskTimeRequired'),
+  sourceInfoSection: t('pullStreamTask.sourceInfoSection'),
+  region: t('pullStreamTask.distributionRegion'),
+  regionRequired: t('pullStreamTask.regionRequired'),
+  regionPlaceholder: t('pullStreamTask.regionPlaceholder'),
+  contentType: t('pullStreamTask.sourceType'),
+  contentTypeRequired: t('pullStreamTask.contentTypeRequired'),
+  live: t('pullStreamTask.live'),
+  sourceUrl: t('pullStreamTask.sourceUrl'),
+  sourceUrlRequired: t('pullStreamTask.sourceUrlRequired'),
+  sourceUrlPlaceholder: t('pullStreamTask.sourceUrlPlaceholder'),
+  targetInfoSection: t('pullStreamTask.targetInfoSection'),
+  targetUrl: t('pullStreamTask.targetUrl'),
+  targetUrlRequired: t('pullStreamTask.targetUrlRequired'),
+  targetUrlPlaceholder: t('pullStreamTask.targetUrlPlaceholder'),
+  addTargetUrl: t('pullStreamTask.addTargetUrl'),
+  urlGenerator: t('pullStreamTask.urlGenerator'),
+  save: t('pullStreamTask.save'),
+  cancel: t('pullStreamTask.cancel'),
+  loadTaskDetailError: t('pullStreamTask.loadTaskDetailError'),
+  updateTaskSuccess: t('pullStreamTask.updateTaskSuccess'),
+  createTaskSuccess: t('pullStreamTask.createTaskSuccess'),
+  operationFailed: t('pullStreamTask.operationFailed'),
+  regionBangkok: t('pullStreamTask.regionBangkok'),
+  regionBeijing: t('pullStreamTask.regionBeijing'),
+  regionChongqing: t('pullStreamTask.regionChongqing'),
+  regionGuangzhou: t('pullStreamTask.regionGuangzhou'),
+  regionHongkong: t('pullStreamTask.regionHongkong'),
+  regionSeoul: t('pullStreamTask.regionSeoul'),
+  regionShanghai: t('pullStreamTask.regionShanghai'),
+  regionSingapore: t('pullStreamTask.regionSingapore'),
+  regionTokyo: t('pullStreamTask.regionTokyo'),
+  regionFrankfurt: t('pullStreamTask.regionFrankfurt'),
+  regionAshburn: t('pullStreamTask.regionAshburn'),
+  regionSiliconValley: t('pullStreamTask.regionSiliconValley'),
+}))
 
 // 从 navigationStore 获取参数
 const taskId = computed(() => navigationStore.current.params?.taskId || '')
@@ -165,7 +212,7 @@ const loadTaskDetail = async (id: string) => {
     }
   } catch (error) {
     console.error('加载任务详情失败:', error)
-    Message.error('加载任务详情失败')
+    Message.error(texts.value.loadTaskDetailError)
   }
 }
 
@@ -249,7 +296,7 @@ const submitTask = async () => {
       }
 
       await updatePullStreamTask(taskId.value, updateData)
-      Message.success('更新任务成功')
+      Message.success(texts.value.updateTaskSuccess)
     } else {
       // 创建任务
 
@@ -297,13 +344,13 @@ const submitTask = async () => {
       }
 
       await createPullStreamTask(createData)
-      Message.success('创建任务成功')
+      Message.success(texts.value.createTaskSuccess)
     }
     // 直接调用 loadTaskList 可能不够，因为我们需要刷新整个列表
     goBack()
   } catch (error) {
     console.error('提交任务失败:', error)
-    Message.error('操作失败')
+    Message.error(texts.value.operationFailed)
   } finally {
     submitting.value = false
   }

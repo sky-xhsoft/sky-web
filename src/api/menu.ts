@@ -3,6 +3,7 @@
 export type MenuTreeNode = {
   id: number
   name: string
+  ename?: string       // 英文名称
   displayName?: string
   orderno?: number
   type?: string

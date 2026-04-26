@@ -10,7 +10,7 @@
         <template #upload-button>
           <a-button type="primary">
             <icon-upload />
-            上传文件
+            {{ texts.upload }}
           </a-button>
         </template>
       </a-upload>
@@ -18,13 +18,13 @@
       <!-- 新建文件夹 -->
       <a-button @click="handleCreateFolder">
         <icon-folder-add />
-        新建文件夹
+        {{ texts.newFolder }}
       </a-button>
 
       <!-- 刷新 -->
       <a-button @click="handleRefresh" :loading="refreshing">
         <icon-refresh />
-        刷新
+        {{ texts.refresh }}
       </a-button>
     </div>
 
@@ -44,11 +44,11 @@
       >
         <a-radio value="grid">
           <icon-apps />
-          网格
+          {{ texts.viewGrid }}
         </a-radio>
         <a-radio value="list">
           <icon-list />
-          列表
+          {{ texts.viewList }}
         </a-radio>
       </a-radio-group>
     </div>
@@ -56,6 +56,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   IconUpload,
   IconFolderAdd,
@@ -64,6 +66,16 @@ import {
   IconList,
 } from '@arco-design/web-vue/es/icon'
 import type { RequestOption } from '@arco-design/web-vue'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  upload: t('cloud.upload'),
+  newFolder: t('cloud.newFolder'),
+  refresh: t('common.refresh'),
+  viewGrid: t('cloud.viewGrid'),
+  viewList: t('cloud.viewList'),
+}))
 
 interface Props {
   viewMode?: 'grid' | 'list'

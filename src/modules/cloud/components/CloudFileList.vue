@@ -39,7 +39,10 @@
           >
             {{ record.icon }}
           </span>
-          <span class="file-name" :title="record.name">{{ record.name }}</span>
+          <div class="file-name-wrapper">
+            <span class="file-name" :title="record.name">{{ record.name }}</span>
+            <span v-if="record.eName" class="file-ename" :title="record.eName">{{ record.eName }}</span>
+          </div>
         </div>
       </template>
 
@@ -287,12 +290,29 @@ function handleActionSelect(value: string | number | Record<string, any> | undef
   flex-shrink: 0;
 }
 
-.file-name {
+.file-name-wrapper {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.file-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.file-ename {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #6b7280;
 }
 
 .file-ext {

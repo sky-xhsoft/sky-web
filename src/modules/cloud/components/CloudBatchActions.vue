@@ -7,13 +7,13 @@
           :indeterminate="isIndeterminate"
           @change="handleSelectAll"
         >
-          全选
+          {{ texts.selectAll }}
         </a-checkbox>
         <span class="selected-count">
-          已选择 <strong>{{ selectedCount }}</strong> 项
+          {{ texts.selectedItemsLabel }}<strong>{{ selectedCount }}</strong>{{ texts.itemsUnit }}
         </span>
         <span v-if="selectedSize > 0" class="selected-size">
-          共 {{ formatFileSize(selectedSize) }}
+          {{ texts.totalSizeLabel }}{{ formatFileSize(selectedSize) }}
         </span>
       </div>
 
@@ -25,7 +25,7 @@
             :disabled="!hasSelectedFiles"
           >
             <icon-download />
-            下载
+            {{ texts.download }}
           </a-button>
           <a-button
             size="small"
@@ -33,7 +33,7 @@
             :disabled="selectedCount === 0"
           >
             <icon-export />
-            移动
+            {{ texts.move }}
           </a-button>
           <a-button
             size="small"
@@ -42,14 +42,14 @@
             :disabled="selectedCount === 0"
           >
             <icon-delete />
-            删除
+            {{ texts.delete }}
           </a-button>
           <a-button
             size="small"
             type="text"
             @click="handleClear"
           >
-            取消选择
+            {{ texts.clearSelection }}
           </a-button>
         </a-space>
       </div>
@@ -59,12 +59,26 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   IconDownload,
   IconExport,
   IconDelete,
 } from '@arco-design/web-vue/es/icon'
 import { formatFileSize } from '@/utils/format'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  selectAll: t('cloud.selectAll'),
+  selectedItemsLabel: t('cloud.selectedItemsLabel'),
+  itemsUnit: t('cloud.itemsUnit'),
+  totalSizeLabel: t('cloud.totalSizeLabel'),
+  download: t('cloud.download'),
+  move: t('cloud.move'),
+  delete: t('cloud.delete'),
+  clearSelection: t('cloud.clearSelection'),
+}))
 
 interface Props {
   visible?: boolean

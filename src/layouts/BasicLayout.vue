@@ -6,6 +6,7 @@ import { IconApps, IconMenuFold, IconMenuUnfold, IconRefresh, IconClose, IconClo
 import { useMenuStore } from '../stores/menu'
 import { useAuthStore } from '../stores/auth'
 import { useNavigationStore } from '../stores/navigation'
+import { useI18n } from 'vue-i18n'
 import type { TabItem } from '../stores/navigation'
 
 // 导入常用组件
@@ -31,12 +32,14 @@ import LiveRecordingPreview from '../pages/LiveRecordingPreview.vue'
 import LiveRoomList from '../pages/LiveRoomList.vue'
 import LiveRoomForm from '../pages/LiveRoomForm.vue'
 import LiveRoomDetail from '../pages/LiveRoomDetail.vue'
+import Profile from '../pages/Profile.vue'
 
 const router = useRouter()
 const route = useRoute()
 const menuStore = useMenuStore()
 const authStore = useAuthStore()
 const navigationStore = useNavigationStore()
+const { locale, t } = useI18n()
 
 // 标签页右键菜单当前操作的key
 const currentRightClickTabKey = ref<string>('')
@@ -48,28 +51,28 @@ const contextMenuPosition = ref({ x: 0, y: 0 })
 const mobileSidebarShow = ref(false)
 
 // 标签页右键菜单选项
-const tabContextMenuOptions = [
+const tabContextMenuOptions = computed(() => [
   {
     key: 'refresh',
-    title: '刷新',
+    title: t('layout.refresh'),
     icon: IconRefresh
   },
   {
     key: 'close',
-    title: '关闭',
+    title: t('layout.close'),
     icon: IconClose
   },
   {
     key: 'closeOther',
-    title: '关闭其他',
+    title: t('layout.closeOthers'),
     icon: IconCloseCircle
   },
   {
     key: 'closeAll',
-    title: '关闭所有',
+    title: t('layout.closeAll'),
     icon: IconCloseCircle
   }
-]
+])
 
 /**
  * 处理标签页右键点击
@@ -176,6 +179,7 @@ const componentRegistry: Record<string, any> = {
   LiveRoomList,
   LiveRoomForm,
   LiveRoomDetail,
+  Profile,
 }
 
 // 当前显示的组件（使用 shallowRef 提高性能）
@@ -193,7 +197,10 @@ const mapMenu = (items: any[]): NavItem[] => {
   return items
     .map((item) => ({
       key: item.path || item.url || item.id || item.name,
-      title: item.title || item.displayName || item.menuName || item.name || '未命名',
+      // 根据语言选择显示名称：英文使用 ename，中文使用 displayName/name
+      title: locale.value === 'en-US'
+        ? (item.ename || item.displayName || item.name || 'Untitled')
+        : (item.title || item.displayName || item.menuName || item.name || '未命名'),
       path: item.path || item.url,
       order: item.orderno ?? item.sortOrder ?? 0,
       children: item.children ? mapMenu(item.children) : undefined,
@@ -203,6 +210,9 @@ const mapMenu = (items: any[]): NavItem[] => {
 }
 
 const navItems = computed<NavItem[]>(() => {
+  // 添加 locale.value 作为依赖，确保语言切换时重新计算
+  locale.value
+
   const mapped =
     menuStore.navMenus.length ? mapMenu(menuStore.navMenus) : menuStore.menus.length ? mapMenu(menuStore.menus) : []
 
@@ -335,6 +345,10 @@ async function loadComponent(path: string) {
     case '/cloud':
       currentComponent.value = componentRegistry.Cloud
       navigationStore.navigateTo('Cloud', '云盘', {}, false)
+      break
+    case '/profile':
+      currentComponent.value = componentRegistry.Profile
+      navigationStore.navigateTo('Profile', '个人中心', {}, false)
       break
     case '/system-management':
       currentComponent.value = componentRegistry.SystemManagement
@@ -522,6 +536,13 @@ const goHome = async () => {
     // 默认跳转到直播系统的默认页面
     await loadComponent('/LiveGuide')
   }
+}
+
+/**
+ * 跳转到个人中心
+ */
+const goToProfile = async () => {
+  await loadComponent('/profile')
 }
 
 const toggleSidebar = () => {
@@ -768,8 +789,8 @@ watch(
           </div>
         </div>
         <div class="header-actions">
-          <a-button type="text" size="small">个人中心</a-button>
-          <a-button type="text" size="small" @click="handleLogout">退出</a-button>
+          <a-button type="text" size="small" @click="goToProfile">{{ t('layout.profile') }}</a-button>
+          <a-button type="text" size="small" @click="handleLogout">{{ t('layout.logout') }}</a-button>
         </div>
       </div>
     </header>
@@ -830,11 +851,11 @@ watch(
               <a-space size="small">
                 <a-button size="small" @click="handleCloseOtherTabs">
                   <template #icon><icon-close-circle /></template>
-                  关闭其他
+                  {{ t('layout.closeOthers') }}
                 </a-button>
                 <a-button size="small" @click="handleCloseAllTabs">
                   <template #icon><icon-close /></template>
-                  全部关闭
+                  {{ t('layout.closeAll') }}
                 </a-button>
               </a-space>
             </template>

@@ -7,7 +7,7 @@
     </a-button>
     <template #content>
       <a-doption
-        v-for="option in sortOptions"
+        v-for="option in displayOptions"
         :key="option.value"
         :value="option.value"
       >
@@ -21,7 +21,7 @@
       <a-divider margin="4px" />
       <a-doption value="toggle-order">
         <icon-swap />
-        切换排序方向
+        {{ texts.toggleSortOrder }}
         <span class="order-label">{{ sortOrderText }}</span>
       </a-doption>
     </template>
@@ -30,12 +30,25 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   IconSort,
   IconCheck,
   IconSwap,
 } from '@arco-design/web-vue/es/icon'
 import type { FileSortBy, SortOrder } from '@/modules/cloud/types'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  sortByPrefix: t('cloud.sortByPrefix'),
+  toggleSortOrder: t('cloud.toggleSortOrder'),
+  sortAsc: t('cloud.sortAsc'),
+  sortDesc: t('cloud.sortDesc'),
+  sortByName: t('cloud.sortByName'),
+  sortBySize: t('cloud.sortBySize'),
+  sortByDate: t('cloud.sortByDate'),
+}))
 
 interface SortOption {
   value: FileSortBy
@@ -54,24 +67,30 @@ interface Emits {
   (e: 'sortOrderToggle'): void
 }
 
+const defaultSortOptions = (): SortOption[] => [
+  { value: 'name', label: texts.value.sortByName, icon: '📝' },
+  { value: 'size', label: texts.value.sortBySize, icon: '📦' },
+  { value: 'date', label: texts.value.sortByDate, icon: '📅' },
+]
+
 const props = withDefaults(defineProps<Props>(), {
   sortBy: 'name',
   sortOrder: 'asc',
-  sortOptions: () => [
-    { value: 'name', label: '名称', icon: '📝' },
-    { value: 'size', label: '大小', icon: '📦' },
-    { value: 'date', label: '日期', icon: '📅' },
-  ],
+  sortOptions: undefined,
 })
 
 const emit = defineEmits<Emits>()
 
+const displayOptions = computed(() => {
+  return props.sortOptions || defaultSortOptions()
+})
+
 const currentOption = computed(() => {
-  return props.sortOptions.find((opt) => opt.value === props.sortBy) || props.sortOptions[0]
+  return displayOptions.value.find((opt) => opt.value === props.sortBy) || displayOptions.value[0]
 })
 
 const currentLabel = computed(() => {
-  return `排序：${currentOption.value.label}`
+  return `${texts.value.sortByPrefix}${currentOption.value.label}`
 })
 
 const sortOrderIcon = computed(() => {
@@ -79,7 +98,7 @@ const sortOrderIcon = computed(() => {
 })
 
 const sortOrderText = computed(() => {
-  return props.sortOrder === 'asc' ? '升序' : '降序'
+  return props.sortOrder === 'asc' ? texts.value.sortAsc : texts.value.sortDesc
 })
 
 function handleSelect(value: string | number | Record<string, any> | undefined) {

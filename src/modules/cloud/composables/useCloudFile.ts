@@ -136,12 +136,12 @@ export function useCloudFile() {
   /**
    * 重命名文件
    * @param fileId 文件ID
-   * @param newName 新名称
+   * @param params 重命名参数
    */
-  async function renameFile(fileId: number, newName: string) {
+  async function renameFile(fileId: number, params: { newName: string; eName?: string }) {
     renamingFile.value = true
     try {
-      await store.renameFile(fileId, newName)
+      await store.renameFile(fileId, params.newName, params.eName)
       return true
     } catch (e) {
       console.error('重命名文件失败:', e)

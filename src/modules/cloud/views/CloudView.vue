@@ -8,8 +8,8 @@
         <div v-if="dragUpload.isDragging.value" class="drag-overlay">
           <div class="drag-overlay-content">
             <icon-cloud-download :size="64" />
-            <div class="drag-overlay-text">释放文件以上传</div>
-            <div class="drag-overlay-hint">支持多个文件同时上传</div>
+            <div class="drag-overlay-text">{{ texts.dropToUpload }}</div>
+            <div class="drag-overlay-hint">{{ texts.multiFileUploadHint }}</div>
           </div>
         </div>
 
@@ -38,7 +38,7 @@
             </div>
             <a-button type="text" @click="handleOpenShareManager">
               <template #icon><icon-share-alt /></template>
-              我的分享
+              {{ texts.myShares }}
             </a-button>
           </div>
         </div>
@@ -94,25 +94,25 @@
           <div v-if="selection.selectedCount.value > 0" class="cloud-view__batch-actions">
             <div class="batch-actions__inner">
               <div class="batch-info">
-                已选中 <span class="batch-count">{{ selection.selectedCount.value }}</span> 项
+                {{ texts.itemsSelected }}<span class="batch-count">{{ selection.selectedCount.value }}</span>{{ texts.itemsUnit }}
                 <span class="batch-size" v-if="selection.selectedTotalSize.value > 0">
-                  共 {{ formatFileSize(selection.selectedTotalSize.value) }}
+                  {{ texts.totalSizeLabel }}{{ formatFileSize(selection.selectedTotalSize.value) }}
                 </span>
               </div>
               <div class="batch-buttons">
-                <a-button size="small" @click="handleSelectAll">全选</a-button>
-                <a-button size="small" @click="handleClearSelection">取消</a-button>
+                <a-button size="small" @click="handleSelectAll">{{ texts.selectAll }}</a-button>
+                <a-button size="small" @click="handleClearSelection">{{ texts.clearSelection }}</a-button>
                 <a-button size="small" @click="handleBatchDownload" :disabled="selection.getSelectedFiles().length === 0">
                   <template #icon><icon-download /></template>
-                  下载
+                  {{ texts.download }}
                 </a-button>
                 <a-button size="small" @click="handleShowMoveDialog">
                   <template #icon><icon-sort /></template>
-                  移动
+                  {{ texts.move }}
                 </a-button>
                 <a-button size="small" status="danger" @click="handleShowBatchDeleteDialog">
                   <template #icon><icon-delete /></template>
-                  删除
+                  {{ texts.delete }}
                 </a-button>
               </div>
             </div>
@@ -142,6 +142,7 @@
       v-model:visible="dialogs.rename"
       :loading="currentRenameType === 'file' ? file.renamingFile.value : folder.renamingFolder.value"
       :old-name="currentRenameName"
+      :old-e-name="currentRenameEName"
       :item-type="currentRenameType"
       @confirm="handleRename"
     />
@@ -216,10 +217,27 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'
 import { IconShareAlt, IconCloudDownload, IconDownload, IconSort, IconDelete } from '@arco-design/web-vue/es/icon'
 import type { TreeNodeData } from '@arco-design/web-vue'
 import { useNavigationStore } from '@/stores/navigation'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  dropToUpload: t('cloud.dropToUpload'),
+  multiFileUploadHint: t('cloud.multiFileUploadHint'),
+  myShares: t('cloud.myShares'),
+  itemsSelected: t('cloud.itemsSelected'),
+  itemsUnit: t('cloud.itemsUnit'),
+  totalSizeLabel: t('cloud.totalSizeLabel'),
+  selectAll: t('cloud.selectAll'),
+  clearSelection: t('cloud.clearSelection'),
+  download: t('cloud.download'),
+  move: t('cloud.move'),
+  delete: t('cloud.delete'),
+}))
 
 // 导入组件
 import {
@@ -316,6 +334,7 @@ const dialogs = reactive({
 const currentItem = ref<GridItem | null>(null)
 const currentRenameType = ref<'file' | 'folder'>('file')
 const currentRenameName = ref('')
+const currentRenameEName = ref('')
 const currentShareType = ref<'file' | 'folder'>('file')
 const currentShareName = ref('')
 const currentShare = ref<ShareListItem | null>(null)
@@ -419,8 +438,8 @@ function handleShowCreateFolderDialog() {
   dialogs.createFolder = true
 }
 
-async function handleCreateFolder(folderName: string) {
-  const success = await folder.createFolder(folderName, store.currentFolderId)
+async function handleCreateFolder(folderName: string, eName?: string) {
+  const success = await folder.createFolder(folderName, store.currentFolderId, eName)
   if (success) {
     dialogs.createFolder = false
   }
@@ -520,6 +539,7 @@ async function handleItemAction(payload: { action: string; item: GridItem }) {
     case 'rename':
       currentRenameType.value = item.type as 'file' | 'folder'
       currentRenameName.value = item.name
+      currentRenameEName.value = item.eName || ''
       dialogs.rename = true
       break
 
@@ -559,14 +579,14 @@ async function handleItemAction(payload: { action: string; item: GridItem }) {
   }
 }
 
-async function handleRename(newName: string) {
+async function handleRename(newName: string, eName?: string) {
   if (!currentItem.value) return
 
   let success = false
   if (currentRenameType.value === 'file' && currentItem.value.file) {
-    success = await file.renameFile(currentItem.value.id, newName)
+    success = await file.renameFile(currentItem.value.id, { newName, eName })
   } else if (currentRenameType.value === 'folder') {
-    success = await folder.renameFolder(currentItem.value.id, newName)
+    success = await folder.renameFolder(currentItem.value.id, { newName, eName })
   }
 
   if (success) {

@@ -3,15 +3,15 @@
     <!-- 顶部说明 -->
     <div class="page-notice">
       <div class="notice-item">
-        <strong>关于推流域名：</strong>
-        系统提供的推流域名仅供测试使用，<a href="#" target="_blank">使用上有诸多限制</a>，建议您尽快添加自有域名。
+        <strong>{{ texts.pushDomainNotice }}</strong>
+        {{ texts.pushDomainNoticeDesc }} <a href="#" target="_blank">{{ texts.usageLimits }}</a>
       </div>
       <div class="notice-item">
-        <strong>关于播放域名：</strong>
-        若需要在您自有域名下播放直播流，需要先添加播放域名，并完成域名CNAME配置。<a href="#" target="_blank">域名管理</a> 或 <a href="#" target="_blank">CNAME配置</a>
+        <strong>{{ texts.playDomainNotice }}</strong>
+        {{ texts.playDomainNoticeDesc }} <a href="#" target="_blank">{{ texts.domainManagement }}</a> {{ texts.or }} <a href="#" target="_blank">{{ texts.cnameConfig }}</a>
       </div>
       <div class="notice-item">
-        您当前已添加 <a href="#" target="_blank">域名归属</a> 中包含主播推流的域名。
+        {{ texts.domainOwnershipNotice }} <a href="#" target="_blank">{{ texts.domainOwnership }}</a>
       </div>
     </div>
 
@@ -20,7 +20,7 @@
       <div class="toolbar-right">
         <a-input-search
           v-model="searchKeyword"
-          placeholder="输入关键词搜索域名"
+          :placeholder="texts.searchPlaceholder"
           style="width: 260px"
           @search="handleSearch"
         />
@@ -28,7 +28,7 @@
           <template #icon>
             <icon-plus />
           </template>
-          添加域名
+          {{ texts.addDomain }}
         </a-button>
       </div>
     </div>
@@ -42,7 +42,7 @@
       row-key="name"
     >
       <template #columns>
-        <a-table-column title="域名" data-index="name" :width="200">
+        <a-table-column :title="texts.domainTitle" data-index="name" :width="200">
           <template #cell="{ record }">
             <div class="domain-cell">
               <a-link>{{ record.name }}</a-link>
@@ -51,7 +51,7 @@
           </template>
         </a-table-column>
 
-        <a-table-column title="CNAME" :width="300">
+        <a-table-column :title="texts.cname" :width="300">
           <template #cell="{ record }">
             <div class="cname-cell">
               <a-tooltip :content="getCnameStatusTooltip(record.cnameConfigured)">
@@ -70,53 +70,53 @@
           </template>
         </a-table-column>
 
-        <a-table-column title="类型" :width="80">
+        <a-table-column :title="texts.type" :width="80">
           <template #cell="{ record }">
             <a-tag :color="record.type === 0 ? 'blue' : 'green'">
-              {{ record.type === 0 ? '推流域名' : '播放域名' }}
+              {{ record.type === 0 ? texts.pushDomain : texts.playDomain }}
             </a-tag>
           </template>
         </a-table-column>
 
-        <a-table-column title="区域" data-index="region" :width="80">
+        <a-table-column :title="texts.region" data-index="region" :width="80">
           <template #cell="{ record }">
-            {{ record.region || '全球加速' }}
+            {{ record.region || texts.globalAcceleration }}
           </template>
         </a-table-column>
 
-        <a-table-column title="状态" :width="120">
+        <a-table-column :title="texts.status" :width="120">
           <template #cell="{ record }">
             <div class="status-cell">
               <span :class="['status-dot', record.status === 1 ? 'status-enabled' : 'status-disabled']"></span>
-              <span>{{ record.status === 1 ? '已启用' : '已禁用' }}</span>
+              <span>{{ record.status === 1 ? texts.enabled : texts.disabled }}</span>
             </div>
           </template>
         </a-table-column>
 
-        <a-table-column title="创建时间" :width="180">
+        <a-table-column :title="texts.createTime" :width="180">
           <template #cell="{ record }">
             {{ formatDateTime(record.createTime) }}
           </template>
         </a-table-column>
 
-        <a-table-column title="操作" :width="200" fixed="right">
+        <a-table-column :title="texts.actions" :width="200" fixed="right">
           <template #cell="{ record }">
             <a-space>
-              <a-link @click="handleManage(record)">管理</a-link>
+              <a-link @click="handleManage(record)">{{ texts.manage }}</a-link>
               <a-link
                 v-if="record.status === 1"
                 @click="handleForbid(record)"
               >
-                禁用
+                {{ texts.disable }}
               </a-link>
               <a-link
                 v-else
                 status="success"
                 @click="handleEnable(record)"
               >
-                启用
+                {{ texts.enable }}
               </a-link>
-              <a-link status="danger" @click="handleDelete(record)">删除</a-link>
+              <a-link status="danger" @click="handleDelete(record)">{{ texts.delete }}</a-link>
             </a-space>
           </template>
         </a-table-column>
@@ -126,14 +126,14 @@
     <!-- 添加域名对话框 - 步进式 -->
     <a-modal
       v-model:visible="addDialogVisible"
-      :title="currentStep === 1 ? '添加域名' : 'CNAME配置'"
+      :title="currentStep === 1 ? texts.addDomainTitle : texts.cnameConfigTitle"
       :width="700"
       :footer="false"
       @cancel="handleCancelAdd"
     >
       <a-steps :current="currentStep" style="margin-bottom: 24px">
-        <a-step title="基本配置" />
-        <a-step title="CNAME配置" />
+        <a-step :title="texts.basicConfig" />
+        <a-step :title="texts.cnameConfigTitle" />
       </a-steps>
 
       <!-- 步骤1：基本配置 -->
@@ -144,50 +144,50 @@
           :rules="addFormRules"
           layout="vertical"
         >
-          <a-form-item label="类型" field="domainType">
+          <a-form-item :label="texts.typeLabel" field="domainType">
             <a-radio-group v-model="addForm.domainType">
-              <a-radio :value="0">推流域名</a-radio>
-              <a-radio :value="1">播放域名</a-radio>
+              <a-radio :value="0">{{ texts.pushDomain }}</a-radio>
+              <a-radio :value="1">{{ texts.playDomain }}</a-radio>
             </a-radio-group>
             <div class="form-tip">
-              推流域名用于推送直播流，播放域名用于播放直播流
+              {{ texts.typeTip }}
             </div>
           </a-form-item>
 
-          <a-form-item label="加速区域" field="region">
-            <a-select v-model="addForm.region" placeholder="请选择加速区域">
-              <a-option value="global">全球加速</a-option>
-              <a-option value="cn">中国大陆</a-option>
-              <a-option value="overseas">海外及港澳台</a-option>
+          <a-form-item :label="texts.accelerationRegion" field="region">
+            <a-select v-model="addForm.region" :placeholder="texts.regionPlaceholder">
+              <a-option value="global">{{ texts.globalAcceleration }}</a-option>
+              <a-option value="cn">{{ texts.mainlandChina }}</a-option>
+              <a-option value="overseas">{{ texts.overseas }}</a-option>
             </a-select>
           </a-form-item>
 
-          <a-form-item label="域名" field="domainName">
+          <a-form-item :label="texts.domainName" field="domainName">
             <a-input
               v-model="addForm.domainName"
-              placeholder="请输入域名，如：push.example.com"
+              :placeholder="texts.domainNamePlaceholder"
             />
             <div class="form-tip">
-              域名需要已完成ICP备案，且未被其他账号添加
+              {{ texts.domainNameTip }}
             </div>
           </a-form-item>
 
-          <a-form-item label="标签（可选）">
+          <a-form-item :label="texts.tags">
             <a-input
               v-model="addForm.tags"
-              placeholder="请输入标签，多个标签用逗号分隔"
+              :placeholder="texts.tagsPlaceholder"
             />
             <div class="form-tip">
-              标签用于分类管理域名，便于后续查找和管理
+              {{ texts.tagsTip }}
             </div>
           </a-form-item>
         </a-form>
 
         <div style="text-align: right; margin-top: 24px">
           <a-space>
-            <a-button @click="handleCancelAdd">取消</a-button>
+            <a-button @click="handleCancelAdd">{{ texts.cancel }}</a-button>
             <a-button type="primary" :loading="submitting" @click="handleAddDomain">
-              添加域名并进入下一步
+              {{ texts.addAndNext }}
             </a-button>
           </a-space>
         </div>
@@ -196,13 +196,13 @@
       <!-- 步骤2：CNAME配置 -->
       <div v-if="currentStep === 2">
         <a-alert type="success" style="margin-bottom: 20px">
-          域名 {{ addedDomainName }} 已添加成功！请按照以下步骤完成 CNAME 配置。
+          {{ texts.domainAddedSuccess }}
         </a-alert>
 
         <!-- CNAME 配置状态 -->
         <div class="cname-status-card" style="margin-bottom: 20px">
           <div class="status-header">
-            <span class="status-label">CNAME 配置状态：</span>
+            <span class="status-label">{{ texts.cnameStatusLabel }}</span>
             <a-tag :color="cnameStatusColor" size="large">
               <template #icon>
                 <span :class="['status-dot', cnameStatusClass]"></span>
@@ -213,11 +213,11 @@
         </div>
 
         <div class="cname-config-section">
-          <h4>配置步骤：</h4>
+          <h4>{{ texts.configSteps }}：</h4>
           <ol class="config-steps">
-            <li>登录您的域名服务商（如阿里云、腾讯云、DNSPod等）</li>
-            <li>找到域名解析设置页面</li>
-            <li>添加以下 CNAME 记录：</li>
+            <li>{{ texts.step1 }}</li>
+            <li>{{ texts.step2 }}</li>
+            <li>{{ texts.step3 }}</li>
           </ol>
 
           <a-table
@@ -227,10 +227,10 @@
             style="margin: 16px 0"
           >
             <template #columns>
-              <a-table-column title="域名" data-index="domain" :width="200" />
-              <a-table-column title="主机记录" data-index="host" :width="120" />
-              <a-table-column title="记录类型" data-index="type" :width="100" />
-              <a-table-column title="记录值" data-index="value">
+              <a-table-column :title="texts.domainTitle" data-index="domain" :width="200" />
+              <a-table-column :title="texts.hostRecord" data-index="host" :width="120" />
+              <a-table-column :title="texts.recordType" data-index="type" :width="100" />
+              <a-table-column :title="texts.recordValue" data-index="value">
                 <template #cell="{ record }">
                   <div class="cname-cell">
                     <span>{{ record.value }}</span>
@@ -245,25 +245,25 @@
             <template #icon>
               <icon-info-circle />
             </template>
-            CNAME 配置生效时间通常为 5-10 分钟，最长可能需要 24 小时。配置完成后，您可以点击下方按钮查询配置状态。
+            {{ texts.cnameNotice }}
           </a-alert>
 
           <div class="config-links">
             <a href="https://cloud.tencent.com/document/product/267/19908" target="_blank">
-              如何配置 CNAME？
+              {{ texts.howToConfigCname }}
             </a>
             <span class="divider">|</span>
             <a href="#" @click.prevent="checkCnameStatus">
-              查询 CNAME 状态
+              {{ texts.checkCnameStatus }}
             </a>
           </div>
         </div>
 
         <div style="text-align: right; margin-top: 24px">
           <a-space>
-            <a-button @click="handleFinishAdd">稍后配置</a-button>
+            <a-button @click="handleFinishAdd">{{ texts.configureLater }}</a-button>
             <a-button type="primary" @click="handleFinishAdd">
-              完成
+              {{ texts.finish }}
             </a-button>
           </a-space>
         </div>
@@ -292,9 +292,105 @@ import {
   verifyDomainOwner
 } from '@/api/live'
 import { useNavigationStore } from '@/stores/navigation'
+import { useI18n } from 'vue-i18n'
 import { formatDateTime } from '@/utils/date'
 
+const { t } = useI18n()
 const navigationStore = useNavigationStore()
+
+const texts = computed(() => ({
+  pushDomainNotice: t('liveDomain.pushDomainNotice'),
+  pushDomainNoticeDesc: t('liveDomain.pushDomainNoticeDesc'),
+  usageLimits: t('liveDomain.usageLimits'),
+  playDomainNotice: t('liveDomain.playDomainNotice'),
+  playDomainNoticeDesc: t('liveDomain.playDomainNoticeDesc'),
+  domainManagement: t('liveDomain.domainManagement'),
+  cnameConfig: t('liveDomain.cnameConfig'),
+  domainOwnershipNotice: t('liveDomain.domainOwnershipNotice'),
+  domainOwnership: t('liveDomain.domainOwnership'),
+  searchPlaceholder: t('liveDomain.searchPlaceholder'),
+  addDomain: t('liveDomain.addDomain'),
+  domainTitle: t('liveDomain.domainTitle'),
+  cname: t('liveDomain.cname'),
+  type: t('liveDomain.type'),
+  region: t('liveDomain.region'),
+  status: t('liveDomain.status'),
+  createTime: t('liveDomain.createTime'),
+  actions: t('liveDomain.actions'),
+  manage: t('liveDomain.manage'),
+  disable: t('liveDomain.disable'),
+  enable: t('liveDomain.enable'),
+  delete: t('liveDomain.delete'),
+  pushDomain: t('liveDomain.pushDomain'),
+  playDomain: t('liveDomain.playDomain'),
+  globalAcceleration: t('liveDomain.globalAcceleration'),
+  enabled: t('liveDomain.enabled'),
+  disabled: t('liveDomain.disabled'),
+  cnameConfigured: t('liveDomain.cnameConfigured'),
+  cnameNotConfigured: t('liveDomain.cnameNotConfigured'),
+  addDomainTitle: t('liveDomain.addDomainTitle'),
+  cnameConfigTitle: t('liveDomain.cnameConfigTitle'),
+  basicConfig: t('liveDomain.basicConfig'),
+  typeLabel: t('liveDomain.typeLabel'),
+  typeTip: t('liveDomain.typeTip'),
+  accelerationRegion: t('liveDomain.accelerationRegion'),
+  regionPlaceholder: t('liveDomain.regionPlaceholder'),
+  mainlandChina: t('liveDomain.mainlandChina'),
+  overseas: t('liveDomain.overseas'),
+  domainName: t('liveDomain.domainName'),
+  domainNamePlaceholder: t('liveDomain.domainNamePlaceholder'),
+  domainNameTip: t('liveDomain.domainNameTip'),
+  tags: t('liveDomain.tags'),
+  tagsPlaceholder: t('liveDomain.tagsPlaceholder'),
+  tagsTip: t('liveDomain.tagsTip'),
+  cancel: t('liveDomain.cancel'),
+  addAndNext: t('liveDomain.addAndNext'),
+  domainAddedSuccess: t('liveDomain.domainAddedSuccess'),
+  cnameStatusLabel: t('liveDomain.cnameStatusLabel'),
+  configSteps: t('liveDomain.configSteps'),
+  step1: t('liveDomain.step1'),
+  step2: t('liveDomain.step2'),
+  step3: t('liveDomain.step3'),
+  hostRecord: t('liveDomain.hostRecord'),
+  recordType: t('liveDomain.recordType'),
+  recordValue: t('liveDomain.recordValue'),
+  cnameNotice: t('liveDomain.cnameNotice'),
+  howToConfigCname: t('liveDomain.howToConfigCname'),
+  checkCnameStatus: t('liveDomain.checkCnameStatus'),
+  configureLater: t('liveDomain.configureLater'),
+  finish: t('liveDomain.finish'),
+  cnameConfiguredStatus: t('liveDomain.cnameConfiguredStatus'),
+  cnameConfigFailedStatus: t('liveDomain.cnameConfigFailedStatus'),
+  cnameNotConfiguredStatus: t('liveDomain.cnameNotConfiguredStatus'),
+  loadDomainsError: t('liveDomain.loadDomainsError'),
+  pleaseInputDomain: t('liveDomain.pleaseInputDomain'),
+  pleaseInputValidDomain: t('liveDomain.pleaseInputValidDomain'),
+  pleaseSelectDomainType: t('liveDomain.pleaseSelectDomainType'),
+  pleaseSelectAccelerationRegion: t('liveDomain.pleaseSelectAccelerationRegion'),
+  addDomainSuccess: t('liveDomain.addDomainSuccess'),
+  addDomainError: t('liveDomain.addDomainError'),
+  domainInfoNotExist: t('liveDomain.domainInfoNotExist'),
+  cnameVerifySuccess: t('liveDomain.cnameVerifySuccess'),
+  cnameVerifyFailed: t('liveDomain.cnameVerifyFailed'),
+  checkCnameError: t('liveDomain.checkCnameError'),
+  domainDetailTitle: t('liveDomain.domainDetailTitle'),
+  enableDomainTitle: t('liveDomain.enableDomainTitle'),
+  enableDomainConfirm: t('liveDomain.enableDomainConfirm'),
+  confirm: t('liveDomain.confirm'),
+  enableDomainSuccess: t('liveDomain.enableDomainSuccess'),
+  enableDomainError: t('liveDomain.enableDomainError'),
+  disableDomainTitle: t('liveDomain.disableDomainTitle'),
+  disableDomainConfirm: t('liveDomain.disableDomainConfirm'),
+  disableDomainSuccess: t('liveDomain.disableDomainSuccess'),
+  disableDomainError: t('liveDomain.disableDomainError'),
+  deleteDomainTitle: t('liveDomain.deleteDomainTitle'),
+  deleteDomainConfirm: t('liveDomain.deleteDomainConfirm'),
+  deleteDomainSuccess: t('liveDomain.deleteDomainSuccess'),
+  deleteDomainError: t('liveDomain.deleteDomainError'),
+  copySuccess: t('liveDomain.copySuccess'),
+  copyError: t('liveDomain.copyError'),
+  copyManual: t('liveDomain.copyManual'),
+}))
 
 // 前端使用的域名信息接口（小写字段）
 interface DomainInfo {
@@ -338,21 +434,21 @@ const addForm = reactive({
 })
 
 // 表单验证规则
-const addFormRules: Record<string, FieldRule | FieldRule[]> = {
+const addFormRules = computed(() => ({
   domainName: [
-    { required: true, message: '请输入域名' },
+    { required: true, message: texts.value.pleaseInputDomain },
     {
       match: /^[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$/,
-      message: '请输入有效的域名格式'
+      message: texts.value.pleaseInputValidDomain
     }
   ],
   domainType: [
-    { required: true, message: '请选择域名类型' }
+    { required: true, message: texts.value.pleaseSelectDomainType }
   ],
   region: [
-    { required: true, message: '请选择加速区域' }
+    { required: true, message: texts.value.pleaseSelectAccelerationRegion }
   ]
-}
+}))
 
 // 过滤后的域名列表
 const filteredDomains = computed(() => {
@@ -389,11 +485,11 @@ const cnameRecords = computed(() => {
 const cnameStatusText = computed(() => {
   switch (cnameStatus.value) {
     case 1:
-      return '已配置'
+      return texts.value.cnameConfiguredStatus
     case 2:
-      return '配置失败'
+      return texts.value.cnameConfigFailedStatus
     default:
-      return '未配置'
+      return texts.value.cnameNotConfiguredStatus
   }
 })
 
@@ -439,7 +535,7 @@ const loadDomains = async () => {
         createTime: d.CreateTime,
         updateTime: d.UpdateTime,
         cname: d.TargetDomain || '', // 使用后端返回的 TargetDomain 字段
-        region: d.Region || '全球加速',
+        region: d.Region || texts.value.globalAcceleration,
         cnameConfigured: d.BCName || 0 // 使用后端返回的 BCName 字段
       }))
     } else {
@@ -447,7 +543,7 @@ const loadDomains = async () => {
     }
   } catch (error: any) {
     console.error('加载域名列表失败:', error)
-    Message.error(error.response?.data?.message || '加载域名列表失败')
+    Message.error(error.response?.data?.message || texts.value.loadDomainsError)
     domains.value = []
   } finally {
     loading.value = false
@@ -500,14 +596,14 @@ const handleAddDomain = async () => {
       domainName: addForm.domainName,
       domainType: addForm.domainType
     })
-    Message.success('添加域名成功')
+    Message.success(texts.value.addDomainSuccess)
     addedDomainName.value = addForm.domainName
     cnameStatus.value = 0 // 重置为未配置
     currentStep.value = 2
     loadDomains()
   } catch (error: any) {
     console.error('Add domain error:', error)
-    Message.error(error.response?.data?.message || '添加域名失败')
+    Message.error(error.response?.data?.message || texts.value.addDomainError)
   } finally {
     submitting.value = false
   }
@@ -524,7 +620,7 @@ const handleFinishAdd = () => {
 // 查询 CNAME 状态
 const checkCnameStatus = async () => {
   if (!addedDomainName.value) {
-    Message.warning('域名信息不存在')
+    Message.warning(texts.value.domainInfoNotExist)
     return
   }
 
@@ -536,41 +632,41 @@ const checkCnameStatus = async () => {
     cnameStatus.value = result.status
 
     if (result.status === 1) {
-      Message.success('CNAME 配置验证成功！')
+      Message.success(texts.value.cnameVerifySuccess)
     } else {
       // status === 0 (未验证) 或 status === 2 (验证失败) 都显示相同提示
-      Message.error('域名未正确配置成功，请检查DNS记录是否正确配置')
+      Message.error(texts.value.cnameVerifyFailed)
     }
   } catch (error: any) {
-    Message.error(error.response?.data?.message || '查询CNAME状态失败')
+    Message.error(error.response?.data?.message || texts.value.checkCnameError)
   }
 }
 
 // 获取 CNAME 状态提示文本
 const getCnameStatusTooltip = (status?: number) => {
-  return status === 1 ? 'CNAME 已配置' : 'CNAME 未配置'
+  return status === 1 ? texts.value.cnameConfigured : texts.value.cnameNotConfigured
 }
 
 // 管理域名
 const handleManage = (row: DomainInfo) => {
   // 使用 navigationStore 跳转到域名详情页
-  navigationStore.navigateTo('LiveDomainDetail', `域名详情 - ${row.name}`, { domainName: row.name })
+  navigationStore.navigateTo('LiveDomainDetail', `${texts.value.domainDetailTitle} - ${row.name}`, { domainName: row.name })
 }
 
 // 启用域名
 const handleEnable = async (row: DomainInfo) => {
   Modal.confirm({
-    title: '提示',
-    content: `确定要启用域名 ${row.name} 吗？`,
-    okText: '确定',
-    cancelText: '取消',
+    title: texts.value.enableDomainTitle,
+    content: `${texts.value.enableDomainConfirm} ${row.name}？`,
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     onOk: async () => {
       try {
         await enableDomain(row.name)
-        Message.success('启用域名成功')
+        Message.success(texts.value.enableDomainSuccess)
         loadDomains()
       } catch (error: any) {
-        Message.error(error.response?.data?.message || '启用域名失败')
+        Message.error(error.response?.data?.message || texts.value.enableDomainError)
       }
     }
   })
@@ -579,17 +675,17 @@ const handleEnable = async (row: DomainInfo) => {
 // 禁用域名
 const handleForbid = async (row: DomainInfo) => {
   Modal.confirm({
-    title: '提示',
-    content: `确定要禁用域名 ${row.name} 吗？`,
-    okText: '确定',
-    cancelText: '取消',
+    title: texts.value.disableDomainTitle,
+    content: `${texts.value.disableDomainConfirm} ${row.name}？`,
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     onOk: async () => {
       try {
         await forbidDomain(row.name)
-        Message.success('禁用域名成功')
+        Message.success(texts.value.disableDomainSuccess)
         loadDomains()
       } catch (error: any) {
-        Message.error(error.response?.data?.message || '禁用域名失败')
+        Message.error(error.response?.data?.message || texts.value.disableDomainError)
       }
     }
   })
@@ -598,20 +694,20 @@ const handleForbid = async (row: DomainInfo) => {
 // 删除域名
 const handleDelete = async (row: DomainInfo) => {
   Modal.confirm({
-    title: '警告',
-    content: `确定要删除域名 ${row.name} 吗？此操作不可恢复！`,
-    okText: '确定',
-    cancelText: '取消',
+    title: texts.value.deleteDomainTitle,
+    content: `${texts.value.deleteDomainConfirm} ${row.name}？`,
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     okButtonProps: {
       status: 'danger'
     },
     onOk: async () => {
       try {
         await deleteDomain(row.name)
-        Message.success('删除域名成功')
+        Message.success(texts.value.deleteDomainSuccess)
         loadDomains()
       } catch (error: any) {
-        Message.error(error.response?.data?.message || '删除域名失败')
+        Message.error(error.response?.data?.message || texts.value.deleteDomainError)
       }
     }
   })
@@ -624,9 +720,9 @@ const copyToClipboard = (text: string) => {
   // 优先使用 Clipboard API
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => {
-      Message.success('已复制到剪贴板')
+      Message.success(texts.value.copySuccess)
     }).catch(() => {
-      Message.error('复制失败')
+      Message.error(texts.value.copyError)
     })
   } else {
     // 降级方案：使用传统的 document.execCommand
@@ -641,12 +737,12 @@ const copyToClipboard = (text: string) => {
       document.body.removeChild(textarea)
 
       if (successful) {
-        Message.success('已复制到剪贴板')
+        Message.success(texts.value.copySuccess)
       } else {
-        Message.error('复制失败')
+        Message.error(texts.value.copyError)
       }
     } catch (err) {
-      Message.error('复制失败，请手动复制')
+      Message.error(texts.value.copyManual)
     }
   }
 }

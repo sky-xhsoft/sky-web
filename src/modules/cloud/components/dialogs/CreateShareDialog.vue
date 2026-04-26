@@ -1,14 +1,14 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    title="创建分享链接"
+    :title="texts.createShareTitle"
     :ok-loading="loading"
     width="500px"
     @ok="handleOk"
     @cancel="handleCancel"
   >
     <a-form :model="form" layout="vertical">
-      <a-form-item label="分享项">
+      <a-form-item :label="texts.shareItem">
         <div class="share-item">
           <span class="item-icon">{{ itemIcon }}</span>
           <span class="item-name">{{ itemName }}</span>
@@ -17,31 +17,31 @@
 
       <a-form-item
         field="expirationDays"
-        label="有效期"
-        :rules="[{ required: true, message: '请选择有效期' }]"
+        :label="texts.validityPeriod"
+        :rules="[{ required: true, message: texts.selectValidity }]"
       >
-        <a-select v-model="form.expirationDays" placeholder="请选择有效期">
-          <a-option :value="1">1天</a-option>
-          <a-option :value="7">7天</a-option>
-          <a-option :value="30">30天</a-option>
-          <a-option :value="0">永久</a-option>
+        <a-select v-model="form.expirationDays" :placeholder="texts.selectValidity">
+          <a-option :value="1">{{ texts.validity1Day }}</a-option>
+          <a-option :value="7">{{ texts.validity7Days }}</a-option>
+          <a-option :value="30">{{ texts.validity30Days }}</a-option>
+          <a-option :value="0">{{ texts.validityForever }}</a-option>
         </a-select>
       </a-form-item>
 
-      <a-form-item label="访问密码">
+      <a-form-item :label="texts.accessPassword">
         <a-input-password
           v-model="form.password"
-          placeholder="留空则不设置密码"
+          :placeholder="texts.passwordPlaceholder"
           :max-length="20"
           allow-clear
         >
           <template #suffix>
             <a-button size="mini" type="text" @click="generatePassword">
-              生成
+              {{ texts.generate }}
             </a-button>
           </template>
         </a-input-password>
-        <div class="hint">建议设置密码以保护分享内容</div>
+        <div class="hint">{{ texts.passwordHint }}</div>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -49,7 +49,25 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ShareCreateParams } from '@/modules/cloud/types'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  createShareTitle: t('cloud.createShareTitle'),
+  shareItem: t('cloud.shareItem'),
+  validityPeriod: t('cloud.validityPeriod'),
+  selectValidity: t('cloud.selectValidity'),
+  validity1Day: t('cloud.validity1Day'),
+  validity7Days: t('cloud.validity7Days'),
+  validity30Days: t('cloud.validity30Days'),
+  validityForever: t('cloud.validityForever'),
+  accessPassword: t('cloud.accessPassword'),
+  passwordPlaceholder: t('cloud.passwordPlaceholder'),
+  generate: t('cloud.generate'),
+  passwordHint: t('cloud.passwordHint'),
+}))
 
 interface Props {
   visible?: boolean

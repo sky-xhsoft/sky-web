@@ -5,80 +5,80 @@
         <template #icon>
           <icon-arrow-left />
         </template>
-        返回
+        {{ texts.detailBack }}
       </a-button>
       <a-space>
         <a-button @click="handlePullStreamTask">
           <template #icon>
             <icon-export />
           </template>
-          社媒分发
+          {{ texts.detailSocialDistribution }}
         </a-button>
         <a-button @click="handleHighlightClips">
           <template #icon>
             <icon-scissor />
           </template>
-          直播切片
+          {{ texts.detailHighlightClips }}
         </a-button>
         <a-button @click="handleRecordings">
           <template #icon>
             <icon-file />
           </template>
-          直播录制
+          {{ texts.detailRecordings }}
         </a-button>
         <a-button @click="handleEdit">
           <template #icon>
             <icon-edit />
           </template>
-          编辑
+          {{ texts.detailEdit }}
         </a-button>
         <a-button @click="handleShare">
           <template #icon>
             <icon-share-alt />
           </template>
-          分享
+          {{ texts.detailShare }}
         </a-button>
         <a-button @click="handleDelete">
           <template #icon>
             <icon-delete />
           </template>
-          删除
+          {{ texts.detailDelete }}
         </a-button>
       </a-space>
     </div>
 
     <div class="content">
       <a-tabs v-model:activeKey="activeKey" type="line" size="large">
-        <a-tab-pane key="basic" title="基本信息">
+        <a-tab-pane key="basic" :title="texts.detailTabBasic">
           <a-form layout="inline" size="small" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }">
             <a-row :gutter="8">
               <a-col :span="12">
-                <a-form-item label="直播间ID">
+                <a-form-item :label="texts.detailRoomId">
                   {{ roomInfo.id }}
                 </a-form-item>
               </a-col>
               <a-col :span="12">
-                <a-form-item label="直播间名称">
+                <a-form-item :label="texts.detailRoomName">
                   {{ roomInfo.roomName }}
                 </a-form-item>
               </a-col>
               <a-col :span="12">
-                <a-form-item label="播出形式">
+                <a-form-item :label="texts.detailBroadcastFormat">
                   {{ getBroadcastFormatText(roomInfo.broadcastFormat) }}
                 </a-form-item>
               </a-col>
               <a-col :span="12">
-                <a-form-item label="开始时间">
+                <a-form-item :label="texts.detailStartTime">
                   {{ formatDateTime(roomInfo.startTime) }}
                 </a-form-item>
               </a-col>
               <a-col :span="12">
-                <a-form-item label="状态">
+                <a-form-item :label="texts.detailStatus">
                   {{ getStatusText(roomInfo.status) }}
                 </a-form-item>
               </a-col>
             </a-row>
-            <a-form-item label="直播间封面">
+            <a-form-item :label="texts.detailCoverImage">
               <a-image
                 :src="roomInfo.coverImage || '/default-cover.png'"
                 width="200"
@@ -88,43 +88,43 @@
             </a-form-item>
             <a-divider style="margin: 20px 0;" />
             <div class="settings-container">
-              <div class="section-header">推流信息</div>
+              <div class="section-header">{{ texts.detailPushInfo }}</div>
                 <a-form layout="vertical" size="small">
-                  <a-form-item label="推流地址">
+                  <a-form-item :label="texts.detailPushAddress">
                     <div class="push-addresses">
                       <div class="address-item">
-                        <span class="address-label">RTMP 地址：</span>
+                        <span class="address-label">{{ texts.detailRtmpAddress }}：</span>
                         <a-space>
                           <span class="address-value">{{ getRtmpPushUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getRtmpPushUrl())">复制</a-button>
+                          <a-button size="mini" type="text" @click="copyToClipboard(getRtmpPushUrl())">{{ texts.detailCopy }}</a-button>
                         </a-space>
                       </div>
                       <div class="address-item">
-                        <span class="address-label">WebRTC 地址：</span>
+                        <span class="address-label">{{ texts.detailWebrtcAddress }}：</span>
                         <a-space>
                           <span class="address-value">{{ getWebrtcPushUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getWebrtcPushUrl())">复制</a-button>
+                          <a-button size="mini" type="text" @click="copyToClipboard(getWebrtcPushUrl())">{{ texts.detailCopy }}</a-button>
                         </a-space>
                       </div>
                       <div class="address-item">
-                        <span class="address-label">SRT 地址：</span>
+                        <span class="address-label">{{ texts.detailSrtAddress }}：</span>
                         <a-space>
                           <span class="address-value">{{ getSrtPushUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getSrtPushUrl())">复制</a-button>
+                          <a-button size="mini" type="text" @click="copyToClipboard(getSrtPushUrl())">{{ texts.detailCopy }}</a-button>
                         </a-space>
                       </div>
                       <div class="address-item">
-                        <span class="address-label">OBS服务器：</span>
+                        <span class="address-label">{{ texts.detailObsServer }}：</span>
                         <a-space>
                           <span class="address-value">{{ getObsServerUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getObsServerUrl())">复制</a-button>
+                          <a-button size="mini" type="text" @click="copyToClipboard(getObsServerUrl())">{{ texts.detailCopy }}</a-button>
                         </a-space>
                       </div>
                       <div class="address-item">
-                        <span class="address-label">OBS推流码：</span>
+                        <span class="address-label">{{ texts.detailObsStreamKey }}：</span>
                         <a-space>
                           <span class="address-value">{{ getObsStreamKey() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getObsStreamKey())">复制</a-button>
+                          <a-button size="mini" type="text" @click="copyToClipboard(getObsStreamKey())">{{ texts.detailCopy }}</a-button>
                         </a-space>
                       </div>
                       <div style="margin-top: 16px;">
@@ -132,35 +132,35 @@
                           <template #icon>
                             <icon-copy />
                           </template>
-                          一键复制所有地址
+                          {{ texts.detailCopyAllPush }}
                         </a-button>
                       </div>
                     </div>
                   </a-form-item>
                 </a-form>
-              <div class="section-header" style="margin-top: 20px;">拉流信息</div>
+              <div class="section-header" style="margin-top: 20px;">{{ texts.detailPullInfo }}</div>
                 <a-form layout="vertical" size="small">
-                  <a-form-item label="播放地址">
+                  <a-form-item :label="texts.detailPullAddress">
                     <div class="pull-addresses">
                       <div class="address-item">
-                        <span class="address-label">RTMP 地址：</span>
+                        <span class="address-label">{{ texts.detailRtmpAddress }}：</span>
                         <a-space>
                           <span class="address-value">{{ getRtmpPullUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getRtmpPullUrl())">复制</a-button>
+                          <a-button size="mini" type="text" @click="copyToClipboard(getRtmpPullUrl())">{{ texts.detailCopy }}</a-button>
                         </a-space>
                       </div>
                       <div class="address-item">
-                        <span class="address-label">HTTP-FLV 地址：</span>
+                        <span class="address-label">{{ texts.detailHttpFlvAddress }}：</span>
                         <a-space>
                           <span class="address-value">{{ getFlvPullUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getFlvPullUrl())">复制</a-button>
+                          <a-button size="mini" type="text" @click="copyToClipboard(getFlvPullUrl())">{{ texts.detailCopy }}</a-button>
                         </a-space>
                       </div>
                       <div class="address-item">
-                        <span class="address-label">HLS 地址：</span>
+                        <span class="address-label">{{ texts.detailHlsAddress }}：</span>
                         <a-space>
                           <span class="address-value">{{ getHlsPullUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getHlsPullUrl())">复制</a-button>
+                          <a-button size="mini" type="text" @click="copyToClipboard(getHlsPullUrl())">{{ texts.detailCopy }}</a-button>
                         </a-space>
                       </div>
                       <div style="margin-top: 16px;">
@@ -168,7 +168,7 @@
                           <template #icon>
                             <icon-copy />
                           </template>
-                          一键复制所有地址
+                          {{ texts.detailCopyAllPull }}
                         </a-button>
                       </div>
                     </div>
@@ -183,7 +183,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeMount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeMount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useNavigationStore } from '../stores/navigation'
@@ -193,9 +194,63 @@ import { generatePushURL, generatePlayURL } from '../api/live'
 import { IconExport, IconScissor, IconFile } from '@arco-design/web-vue/es/icon'
 import config from '../config/index'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const navigationStore = useNavigationStore()
+
+const texts = computed(() => ({
+  detailBack: t('liveRoom.detailBack'),
+  detailSocialDistribution: t('liveRoom.detailSocialDistribution'),
+  detailHighlightClips: t('liveRoom.detailHighlightClips'),
+  detailRecordings: t('liveRoom.detailRecordings'),
+  detailEdit: t('liveRoom.detailEdit'),
+  detailShare: t('liveRoom.detailShare'),
+  detailDelete: t('liveRoom.detailDelete'),
+  detailTabBasic: t('liveRoom.detailTabBasic'),
+  detailRoomId: t('liveRoom.detailRoomId'),
+  detailRoomName: t('liveRoom.detailRoomName'),
+  detailBroadcastFormat: t('liveRoom.detailBroadcastFormat'),
+  detailStartTime: t('liveRoom.detailStartTime'),
+  detailStatus: t('liveRoom.detailStatus'),
+  detailCoverImage: t('liveRoom.detailCoverImage'),
+  detailPushInfo: t('liveRoom.detailPushInfo'),
+  detailPullInfo: t('liveRoom.detailPullInfo'),
+  detailRtmpAddress: t('liveRoom.detailRtmpAddress'),
+  detailWebrtcAddress: t('liveRoom.detailWebrtcAddress'),
+  detailSrtAddress: t('liveRoom.detailSrtAddress'),
+  detailObsServer: t('liveRoom.detailObsServer'),
+  detailObsStreamKey: t('liveRoom.detailObsStreamKey'),
+  detailHttpFlvAddress: t('liveRoom.detailHttpFlvAddress'),
+  detailHlsAddress: t('liveRoom.detailHlsAddress'),
+  detailPushAddress: t('liveRoom.detailPushAddress'),
+  detailPullAddress: t('liveRoom.detailPullAddress'),
+  detailCopy: t('liveRoom.detailCopy'),
+  detailCopyAllPush: t('liveRoom.detailCopyAllPush'),
+  detailCopyAllPull: t('liveRoom.detailCopyAllPull'),
+  detailCopied: t('liveRoom.detailCopied'),
+  detailCopyFailed: t('liveRoom.detailCopyFailed'),
+  detailRoomListTitle: t('liveRoom.detailRoomListTitle'),
+  detailInDevelopment: t('liveRoom.detailInDevelopment'),
+  detailDeleteConfirmTitle: t('liveRoom.detailDeleteConfirmTitle'),
+  detailDeleteConfirmContent: t('liveRoom.detailDeleteConfirmContent'),
+  detailDeleteSuccess: t('liveRoom.detailDeleteSuccess'),
+  detailDeleteFailed: t('liveRoom.detailDeleteFailed'),
+  detailFetchFailed: t('liveRoom.detailFetchFailed'),
+  formatLive: t('liveRoom.formatLive'),
+  formatVod: t('liveRoom.formatVod'),
+  formatPseudo: t('liveRoom.formatPseudo'),
+  statusDraft: t('liveRoom.statusDraft'),
+  statusScheduled: t('liveRoom.statusScheduled'),
+  statusLive: t('liveRoom.statusLive'),
+  statusEnded: t('liveRoom.statusEnded'),
+  statusArchived: t('liveRoom.statusArchived'),
+  socialDistribution: t('liveRoom.socialDistribution'),
+  highlightClips: t('liveRoom.highlightClips'),
+  recordings: t('liveRoom.recordings'),
+  confirm: t('liveRoom.confirm'),
+  cancel: t('liveRoom.cancel'),
+}))
 
 const activeKey = ref('basic')
 const roomInfo = ref({})
@@ -315,7 +370,7 @@ const copyToClipboard = (text: string) => {
     // 在安全上下文（HTTPS）中使用新 API
     navigator.clipboard.writeText(text)
       .then(() => {
-        Message.success('已复制到剪贴板')
+        Message.success(texts.value.detailCopied)
       })
       .catch(() => {
         fallbackCopy(text)
@@ -337,9 +392,9 @@ const fallbackCopy = (text: string) => {
   textarea.select()
   try {
     document.execCommand('copy')
-    Message.success('已复制到剪贴板')
+    Message.success(texts.value.detailCopied)
   } catch (err) {
-    Message.error('复制失败')
+    Message.error(texts.value.detailCopyFailed)
   } finally {
     document.body.removeChild(textarea)
   }
@@ -348,11 +403,11 @@ const fallbackCopy = (text: string) => {
 // 一键复制所有推流地址
 const copyAllPushUrls = () => {
   const urls = [
-    'RTMP 地址：' + getRtmpPushUrl(),
-    'WebRTC 地址：' + getWebrtcPushUrl(),
-    'SRT 地址：' + getSrtPushUrl(),
-    'OBS服务器：' + getObsServerUrl(),
-    'OBS推流码：' + getObsStreamKey()
+    texts.value.detailRtmpAddress + '：' + getRtmpPushUrl(),
+    texts.value.detailWebrtcAddress + '：' + getWebrtcPushUrl(),
+    texts.value.detailSrtAddress + '：' + getSrtPushUrl(),
+    texts.value.detailObsServer + '：' + getObsServerUrl(),
+    texts.value.detailObsStreamKey + '：' + getObsStreamKey()
   ].filter(url => url && url.includes('：') && url.split('：')[1].trim())
 
   const text = urls.join('\n')
@@ -362,9 +417,9 @@ const copyAllPushUrls = () => {
 // 一键复制所有拉流地址
 const copyAllPullUrls = () => {
   const urls = [
-    'RTMP 地址：' + getRtmpPullUrl(),
-    'HTTP-FLV 地址：' + getFlvPullUrl(),
-    'HLS 地址：' + getHlsPullUrl()
+    texts.value.detailRtmpAddress + '：' + getRtmpPullUrl(),
+    texts.value.detailHttpFlvAddress + '：' + getFlvPullUrl(),
+    texts.value.detailHlsAddress + '：' + getHlsPullUrl()
   ].filter(url => url && url.includes('：') && url.split('：')[1].trim())
 
   const text = urls.join('\n')
@@ -386,19 +441,19 @@ const getHlsPullUrl = () => {
 
 const handleBack = () => {
   // 直接导航到直播间列表页面
-  navigationStore.navigateTo('LiveRoomList', '直播间管理', {}, false)
+  navigationStore.navigateTo('LiveRoomList', texts.value.detailRoomListTitle, {}, false)
 }
 
 const handlePullStreamTask = () => {
-  navigationStore.navigateTo('PullStreamTask', '社媒分发', { roomId: roomInfo.value.id }, false)
+  navigationStore.navigateTo('PullStreamTask', texts.value.socialDistribution, { roomId: roomInfo.value.id }, false)
 }
 
 const handleHighlightClips = () => {
-  navigationStore.navigateTo('LiveHighlightClips', '直播切片', { roomId: roomInfo.value.id }, false)
+  navigationStore.navigateTo('LiveHighlightClips', texts.value.highlightClips, { roomId: roomInfo.value.id }, false)
 }
 
 const handleRecordings = () => {
-  navigationStore.navigateTo('LiveRecordings', '直播录制', { roomId: roomInfo.value.id }, false)
+  navigationStore.navigateTo('LiveRecordings', texts.value.recordings, { roomId: roomInfo.value.id }, false)
 }
 
 const handleEdit = () => {
@@ -406,20 +461,22 @@ const handleEdit = () => {
 }
 
 const handleShare = () => {
-  Message.info('分享功能开发中')
+  Message.info(texts.value.detailInDevelopment)
 }
 
 const handleDelete = () => {
   Modal.confirm({
-    title: '确认删除',
-    content: `确定要删除直播间"${roomInfo.value.roomName}"吗？`,
+    title: texts.value.detailDeleteConfirmTitle,
+    content: texts.value.detailDeleteConfirmContent.replace('{name}', roomInfo.value.roomName),
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     onOk: async () => {
       try {
         await api.delete(`/live/rooms/${route.params.id}`)
-        Message.success('删除成功')
+        Message.success(texts.value.detailDeleteSuccess)
         router.push('/live/rooms')
       } catch (error: any) {
-        Message.error(error.message || '删除失败')
+        Message.error(error.message || texts.value.detailDeleteFailed)
       }
     }
   })
@@ -427,20 +484,20 @@ const handleDelete = () => {
 
 const getBroadcastFormatText = (broadcastFormat: string) => {
   const map: Record<string, string> = {
-    'live': '直播',
-    'vod': '点播/录播',
-    'pseudo': '伪直播'
+    'live': texts.value.formatLive,
+    'vod': texts.value.formatVod,
+    'pseudo': texts.value.formatPseudo
   }
   return map[broadcastFormat] || broadcastFormat
 }
 
 const getStatusText = (status: string) => {
   const map: Record<string, string> = {
-    'draft': '未开始',
-    'scheduled': '已排期',
-    'live': '直播中',
-    'ended': '已结束',
-    'archived': '已归档'
+    'draft': texts.value.statusDraft,
+    'scheduled': texts.value.statusScheduled,
+    'live': texts.value.statusLive,
+    'ended': texts.value.statusEnded,
+    'archived': texts.value.statusArchived
   }
   return map[status] || status
 }
@@ -458,7 +515,7 @@ const fetchRoomInfo = async () => {
     await generatePushUrls()
     await generatePullUrls()
   } catch (error: any) {
-    Message.error(error.message || '获取直播间信息失败')
+    Message.error(error.message || texts.value.detailFetchFailed)
   }
 }
 

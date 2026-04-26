@@ -12,8 +12,9 @@
       v-model:visible="props.dialogs.rename"
       :loading="props.currentRenameType === 'file' ? props.loading.renameFile : props.loading.renameFolder"
       :old-name="props.currentRenameName"
+      :old-e-name="props.currentRenameEName"
       :item-type="props.currentRenameType"
-      @confirm="$emit('rename', $event)"
+      @confirm="handleRenameConfirm"
     />
 
     <!-- 移动文件对话框 -->
@@ -142,6 +143,7 @@ interface Props {
   batchProgress: BatchProgress
   currentRenameType: 'file' | 'folder'
   currentRenameName: string
+  currentRenameEName: string
   currentShareType: 'file' | 'folder'
   currentShareName: string
   currentShare: ShareListItem | null
@@ -162,8 +164,8 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (e: 'create-folder', folderName: string): void
-  (e: 'rename', newName: string): void
+  (e: 'create-folder', folderName: string, eName?: string): void
+  (e: 'rename', params: { newName: string; eName?: string }): void
   (e: 'move', targetFolderId: number): void
   (e: 'create-share', params: any): void
   (e: 'edit-share', params: any): void
@@ -174,6 +176,10 @@ const emit = defineEmits<{
   (e: 'preview-next'): void
   (e: 'preview-download'): void
 }>()
+
+function handleRenameConfirm(newName: string, eName?: string) {
+  emit('rename', { newName, eName })
+}
 </script>
 
 <style scoped>

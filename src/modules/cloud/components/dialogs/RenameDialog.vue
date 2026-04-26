@@ -1,7 +1,7 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    :title="`重命名${itemType === 'folder' ? '文件夹' : '文件'}`"
+    :title="itemType === 'folder' ? texts.renameTitleFolder : texts.renameTitleFile"
     :ok-loading="loading"
     @ok="handleOk"
     @cancel="handleCancel"
@@ -9,50 +9,83 @@
     <a-form :model="form" @submit="handleSubmit">
       <a-form-item
         field="newName"
-        label="新名称"
+        :label="texts.newNameLabel"
         :rules="[
-          { required: true, message: '请输入新名称' },
-          { minLength: 1, message: '名称至少1个字符' },
-          { maxLength: 255, message: '名称最多255个字符' },
+          { required: true, message: texts.nameRequired },
+          { minLength: 1, message: texts.nameMinLength },
+          { maxLength: 255, message: texts.englishNameMaxLength },
           { validator: validateName },
         ]"
         :validate-trigger="['change', 'blur']"
       >
         <a-input
           v-model="form.newName"
-          placeholder="请输入新名称"
+          :placeholder="texts.newNamePlaceholder"
           :max-length="255"
           allow-clear
           @keyup.enter="handleSubmit"
         />
       </a-form-item>
+      <a-form-item
+        field="eName"
+        :label="texts.englishName"
+        :rules="[
+          { maxLength: 255, message: texts.englishNameMaxLength },
+        ]"
+        :validate-trigger="['change', 'blur']"
+      >
+        <a-input
+          v-model="form.eName"
+          :placeholder="texts.englishNamePlaceholder"
+          :max-length="255"
+          allow-clear
+        />
+      </a-form-item>
       <div class="hint">
-        原名称：<span class="old-name">{{ oldName }}</span>
+        {{ texts.originalName }}<span class="old-name">{{ oldName }}</span>
       </div>
     </a-form>
   </a-modal>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { validateFileName } from '@/modules/cloud/utils/validation'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  renameTitleFile: t('cloud.renameTitleFile'),
+  renameTitleFolder: t('cloud.renameTitleFolder'),
+  newNameLabel: t('cloud.newNameLabel'),
+  newNamePlaceholder: t('cloud.newNamePlaceholder'),
+  englishName: t('cloud.englishName'),
+  englishNamePlaceholder: t('cloud.englishNamePlaceholder'),
+  englishNameMaxLength: t('cloud.englishNameMaxLength'),
+  nameRequired: t('cloud.nameRequired'),
+  nameMinLength: t('cloud.nameMinLength'),
+  originalName: t('cloud.originalName'),
+}))
 
 interface Props {
   visible?: boolean
   loading?: boolean
   oldName?: string
+  oldEName?: string
   itemType?: 'file' | 'folder'
 }
 
 interface Emits {
   (e: 'update:visible', value: boolean): void
-  (e: 'confirm', newName: string): void
+  (e: 'confirm', newName: string, eName?: string): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
   loading: false,
   oldName: '',
+  oldEName: '',
   itemType: 'file',
 })
 
@@ -61,6 +94,7 @@ const emit = defineEmits<Emits>()
 const dialogVisible = ref(props.visible)
 const form = ref({
   newName: '',
+  eName: '',
 })
 
 watch(
@@ -70,6 +104,7 @@ watch(
     if (newValue) {
       // 预填充原名称
       form.value.newName = props.oldName
+      form.value.eName = props.oldEName
     }
   }
 )
@@ -95,10 +130,11 @@ function handleSubmit() {
 
 function handleOk() {
   const newName = form.value.newName.trim()
+  const eName = form.value.eName.trim()
   if (newName && newName !== props.oldName) {
     const result = validateFileName(newName)
     if (result.valid) {
-      emit('confirm', newName)
+      emit('confirm', newName, eName)
     }
   }
 }

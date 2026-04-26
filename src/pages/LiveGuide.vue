@@ -3,8 +3,8 @@
     <!-- 快速开始流程 -->
     <div class="flow-section">
       <div class="section-header">
-        <h2 class="section-title">🚀 快速开始</h2>
-        <p class="section-description">按照以下步骤快速开始使用直播服务</p>
+        <h2 class="section-title">🚀 {{ texts.quickStart }}</h2>
+        <p class="section-description">{{ texts.quickStartDesc }}</p>
       </div>
       <div class="flow-timeline">
         <div class="flow-item">
@@ -13,8 +13,8 @@
           </div>
           <div class="flow-content">
             <div class="flow-icon">🌐</div>
-            <h3 class="flow-title">配置域名</h3>
-            <p class="flow-description">添加推流和播放域名，配置 CNAME 解析</p>
+            <h3 class="flow-title">{{ texts.configureDomain }}</h3>
+            <p class="flow-description">{{ texts.configureDomainDesc }}</p>
           </div>
           <div class="flow-connector"></div>
         </div>
@@ -24,8 +24,8 @@
           </div>
           <div class="flow-content">
             <div class="flow-icon">📡</div>
-            <h3 class="flow-title">开始推流</h3>
-            <p class="flow-description">获取推流地址，使用 OBS 等工具推流</p>
+            <h3 class="flow-title">{{ texts.startPushing }}</h3>
+            <p class="flow-description">{{ texts.startPushingDesc }}</p>
           </div>
           <div class="flow-connector"></div>
         </div>
@@ -35,8 +35,8 @@
           </div>
           <div class="flow-content">
             <div class="flow-icon">📊</div>
-            <h3 class="flow-title">管理直播</h3>
-            <p class="flow-description">监控直播状态，管理直播流</p>
+            <h3 class="flow-title">{{ texts.manageLive }}</h3>
+            <p class="flow-description">{{ texts.manageLiveDesc }}</p>
           </div>
           <div class="flow-connector"></div>
         </div>
@@ -46,8 +46,8 @@
           </div>
           <div class="flow-content">
             <div class="flow-icon">💾</div>
-            <h3 class="flow-title">内容管理</h3>
-            <p class="flow-description">录制、切片和云盘存储管理</p>
+            <h3 class="flow-title">{{ texts.contentManagement }}</h3>
+            <p class="flow-description">{{ texts.contentManagementDesc }}</p>
           </div>
         </div>
       </div>
@@ -64,18 +64,18 @@
                 <div class="module-icon-wrapper" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                   <icon-link class="module-icon" />
                 </div>
-                <h3 class="module-name">直播域名</h3>
+                <h3 class="module-name">{{ texts.liveDomain }}</h3>
               </div>
-              <p class="module-description">管理推流和播放域名，配置 CNAME 解析</p>
+              <p class="module-description">{{ texts.liveDomainDesc }}</p>
               <ul class="feature-list">
-                <li>添加推流域名和播放域名</li>
-                <li>配置 CNAME 解析记录</li>
-                <li>查看域名状态和配置信息</li>
-                <li>启用、禁用或删除域名</li>
+                <li>{{ texts.liveDomainFeature1 }}</li>
+                <li>{{ texts.liveDomainFeature2 }}</li>
+                <li>{{ texts.liveDomainFeature3 }}</li>
+                <li>{{ texts.liveDomainFeature4 }}</li>
               </ul>
               <div class="module-footer">
                 <span class="module-action">
-                  进入管理
+                  {{ texts.enterManagement }}
                   <icon-right class="action-icon" />
                 </span>
               </div>
@@ -89,18 +89,18 @@
                 <div class="module-icon-wrapper" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                   <icon-play-circle class="module-icon" />
                 </div>
-                <h3 class="module-name">直播流管理</h3>
+                <h3 class="module-name">{{ texts.streamManagement }}</h3>
               </div>
-              <p class="module-description">实时监控和管理所有直播流</p>
+              <p class="module-description">{{ texts.streamManagementDesc }}</p>
               <ul class="feature-list">
-                <li>查看所有直播流状态和推流时长</li>
-                <li>获取推流地址和播放地址</li>
-                <li>禁用、恢复或断开直播流</li>
-                <li>查看直播流历史记录</li>
+                <li>{{ texts.streamManagementFeature1 }}</li>
+                <li>{{ texts.streamManagementFeature2 }}</li>
+                <li>{{ texts.streamManagementFeature3 }}</li>
+                <li>{{ texts.streamManagementFeature4 }}</li>
               </ul>
               <div class="module-footer">
                 <span class="module-action">
-                  进入管理
+                  {{ texts.enterManagement }}
                   <icon-right class="action-icon" />
                 </span>
               </div>
@@ -114,18 +114,18 @@
                 <div class="module-icon-wrapper" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
                   <icon-share-alt class="module-icon" />
                 </div>
-                <h3 class="module-name">社媒分发</h3>
+                <h3 class="module-name">{{ texts.socialDistribution }}</h3>
               </div>
-              <p class="module-description">同步分发到多个社交媒体平台</p>
+              <p class="module-description">{{ texts.socialDistributionDesc }}</p>
               <ul class="feature-list">
-                <li>同时推流到抖音、快手、B站等平台</li>
-                <li>配置各平台推流地址和密钥</li>
-                <li>实时监控各平台推流状态</li>
-                <li>启动、停止或编辑分发任务</li>
+                <li>{{ texts.socialDistributionFeature1 }}</li>
+                <li>{{ texts.socialDistributionFeature2 }}</li>
+                <li>{{ texts.socialDistributionFeature3 }}</li>
+                <li>{{ texts.socialDistributionFeature4 }}</li>
               </ul>
               <div class="module-footer">
                 <span class="module-action">
-                  进入管理
+                  {{ texts.enterManagement }}
                   <icon-right class="action-icon" />
                 </span>
               </div>
@@ -139,18 +139,18 @@
                 <div class="module-icon-wrapper" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
                   <icon-scissor class="module-icon" />
                 </div>
-                <h3 class="module-name">直播切片</h3>
+                <h3 class="module-name">{{ texts.highlightClips }}</h3>
               </div>
-              <p class="module-description">保存直播精彩片段</p>
+              <p class="module-description">{{ texts.highlightClipsDesc }}</p>
               <ul class="feature-list">
-                <li>直播过程中实时生成切片文件</li>
-                <li>标记和保存精彩时刻</li>
-                <li>查看、下载或删除切片文件</li>
-                <li>在线预览切片内容</li>
+                <li>{{ texts.highlightClipsFeature1 }}</li>
+                <li>{{ texts.highlightClipsFeature2 }}</li>
+                <li>{{ texts.highlightClipsFeature3 }}</li>
+                <li>{{ texts.highlightClipsFeature4 }}</li>
               </ul>
               <div class="module-footer">
                 <span class="module-action">
-                  进入管理
+                  {{ texts.enterManagement }}
                   <icon-right class="action-icon" />
                 </span>
               </div>
@@ -164,18 +164,18 @@
                 <div class="module-icon-wrapper" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
                   <icon-record class="module-icon" />
                 </div>
-                <h3 class="module-name">直播录制</h3>
+                <h3 class="module-name">{{ texts.liveRecording }}</h3>
               </div>
-              <p class="module-description">自动录制直播内容</p>
+              <p class="module-description">{{ texts.liveRecordingDesc }}</p>
               <ul class="feature-list">
-                <li>配置录制规则和存储位置</li>
-                <li>自动录制直播全程内容</li>
-                <li>查看录制文件列表和详情</li>
-                <li>下载、播放或删除录制文件</li>
+                <li>{{ texts.liveRecordingFeature1 }}</li>
+                <li>{{ texts.liveRecordingFeature2 }}</li>
+                <li>{{ texts.liveRecordingFeature3 }}</li>
+                <li>{{ texts.liveRecordingFeature4 }}</li>
               </ul>
               <div class="module-footer">
                 <span class="module-action">
-                  进入管理
+                  {{ texts.enterManagement }}
                   <icon-right class="action-icon" />
                 </span>
               </div>
@@ -189,6 +189,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import {
   IconLink,
   IconPlayCircle,
@@ -198,17 +199,67 @@ import {
   IconRight
 } from '@arco-design/web-vue/es/icon'
 import { useNavigationStore } from '@/stores/navigation'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const navigationStore = useNavigationStore()
 
+const texts = computed(() => ({
+  quickStart: t('liveGuide.quickStart'),
+  quickStartDesc: t('liveGuide.quickStartDesc'),
+  configureDomain: t('liveGuide.configureDomain'),
+  configureDomainDesc: t('liveGuide.configureDomainDesc'),
+  startPushing: t('liveGuide.startPushing'),
+  startPushingDesc: t('liveGuide.startPushingDesc'),
+  manageLive: t('liveGuide.manageLive'),
+  manageLiveDesc: t('liveGuide.manageLiveDesc'),
+  contentManagement: t('liveGuide.contentManagement'),
+  contentManagementDesc: t('liveGuide.contentManagementDesc'),
+  liveDomain: t('liveGuide.liveDomain'),
+  liveDomainDesc: t('liveGuide.liveDomainDesc'),
+  liveDomainFeature1: t('liveGuide.liveDomainFeature1'),
+  liveDomainFeature2: t('liveGuide.liveDomainFeature2'),
+  liveDomainFeature3: t('liveGuide.liveDomainFeature3'),
+  liveDomainFeature4: t('liveGuide.liveDomainFeature4'),
+  streamManagement: t('liveGuide.streamManagement'),
+  streamManagementDesc: t('liveGuide.streamManagementDesc'),
+  streamManagementFeature1: t('liveGuide.streamManagementFeature1'),
+  streamManagementFeature2: t('liveGuide.streamManagementFeature2'),
+  streamManagementFeature3: t('liveGuide.streamManagementFeature3'),
+  streamManagementFeature4: t('liveGuide.streamManagementFeature4'),
+  socialDistribution: t('liveGuide.socialDistribution'),
+  socialDistributionDesc: t('liveGuide.socialDistributionDesc'),
+  socialDistributionFeature1: t('liveGuide.socialDistributionFeature1'),
+  socialDistributionFeature2: t('liveGuide.socialDistributionFeature2'),
+  socialDistributionFeature3: t('liveGuide.socialDistributionFeature3'),
+  socialDistributionFeature4: t('liveGuide.socialDistributionFeature4'),
+  highlightClips: t('liveGuide.highlightClips'),
+  highlightClipsDesc: t('liveGuide.highlightClipsDesc'),
+  highlightClipsFeature1: t('liveGuide.highlightClipsFeature1'),
+  highlightClipsFeature2: t('liveGuide.highlightClipsFeature2'),
+  highlightClipsFeature3: t('liveGuide.highlightClipsFeature3'),
+  highlightClipsFeature4: t('liveGuide.highlightClipsFeature4'),
+  liveRecording: t('liveGuide.liveRecording'),
+  liveRecordingDesc: t('liveGuide.liveRecordingDesc'),
+  liveRecordingFeature1: t('liveGuide.liveRecordingFeature1'),
+  liveRecordingFeature2: t('liveGuide.liveRecordingFeature2'),
+  liveRecordingFeature3: t('liveGuide.liveRecordingFeature3'),
+  liveRecordingFeature4: t('liveGuide.liveRecordingFeature4'),
+  enterManagement: t('liveGuide.enterManagement'),
+  liveDomainTitle: t('liveGuide.liveDomainTitle'),
+  streamManagementTitle: t('liveGuide.streamManagementTitle'),
+  socialDistributionTitle: t('liveGuide.socialDistributionTitle'),
+  highlightClipsTitle: t('liveGuide.highlightClipsTitle'),
+  liveRecordingTitle: t('liveGuide.liveRecordingTitle'),
+}))
+
 const navigateTo = (path: string) => {
-  // 根据路径导航到对应页面
   const routeMap: Record<string, { component: string; title: string }> = {
-    '/live/domains': { component: 'LiveDomain', title: '直播域名管理' },
-    '/live/streams': { component: 'LiveStream', title: '直播流管理' },
-    '/live/distribution': { component: 'PullStreamTask', title: '社媒分发' },
-    '/live/highlight-clips': { component: 'LiveHighlightClips', title: '直播切片' },
-    '/live/recordings': { component: 'LiveRecordings', title: '直播录制' }
+    '/live/domains': { component: 'LiveDomain', title: texts.value.liveDomainTitle },
+    '/live/streams': { component: 'LiveStream', title: texts.value.streamManagementTitle },
+    '/live/distribution': { component: 'PullStreamTask', title: texts.value.socialDistributionTitle },
+    '/live/highlight-clips': { component: 'LiveHighlightClips', title: texts.value.highlightClipsTitle },
+    '/live/recordings': { component: 'LiveRecordings', title: texts.value.liveRecordingTitle }
   }
 
   const route = routeMap[path]

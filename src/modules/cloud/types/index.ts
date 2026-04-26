@@ -99,6 +99,7 @@ export type GridItem =
       type: 'folder'
       id: number
       name: string
+      eName?: string
       meta: string
       icon: string
       color: string
@@ -109,6 +110,7 @@ export type GridItem =
       type: 'file'
       id: number
       name: string
+      eName?: string
       meta: string
       icon: string
       color: string

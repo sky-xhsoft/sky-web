@@ -118,6 +118,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../pages/CloudShareManager.vue'),
         meta: { title: '我的分享', requiresAuth: true },
       },
+      // 个人中心页面
+      {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('../pages/Profile.vue'),
+        meta: { title: '个人中心', requiresAuth: true },
+      },
     ],
   },
 ]

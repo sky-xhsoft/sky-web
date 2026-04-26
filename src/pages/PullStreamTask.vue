@@ -2,22 +2,22 @@
   <div class="pull-stream-task-page">
     <!-- 页面标题 -->
     <div class="page-header">
-      <h2>社媒分发</h2>
+      <h2>{{ texts.pageTitle }}</h2>
     </div>
 
     <!-- 统计信息 -->
     <div class="stats-container">
       <a-card class="stat-card">
-        <div class="stat-label">当前任务/创建任务</div>
+        <div class="stat-label">{{ texts.currentTasks }}</div>
         <div class="stat-value">{{ currentTasks }} / {{ totalTasksLimit }}</div>
       </a-card>
       <a-card class="stat-card">
-        <div class="stat-label">有效路数</div>
+        <div class="stat-label">{{ texts.activeTasks }}</div>
         <div class="stat-value">{{ activeTasks }}</div>
       </a-card>
       <a-card class="stat-card">
-        <div class="stat-label">已过期任务</div>
-        <div class="stat-value">{{ expiredTasks }}<span class="stat-unit">条</span></div>
+        <div class="stat-label">{{ texts.expiredTasks }}</div>
+        <div class="stat-value">{{ expiredTasks }}<span class="stat-unit">{{ texts.taskUnit }}</span></div>
       </a-card>
     </div>
 
@@ -27,12 +27,12 @@
         <template #icon>
           <icon-plus/>
         </template>
-        创建分发任务
+        {{ texts.createTask }}
       </a-button>
       <div class="action-right">
         <a-input-search
             v-model="searchKeyword"
-            placeholder="请输入关键字进行搜索"
+            :placeholder="texts.searchPlaceholder"
             style="width: 300px"
             @search="handleSearch"
         />
@@ -40,7 +40,7 @@
           <template #icon>
             <icon-refresh/>
           </template>
-          刷新
+          {{ texts.refresh }}
         </a-button>
       </div>
     </div>
@@ -54,64 +54,64 @@
         @page-size-change="handlePageSizeChange"
     >
       <template #columns>
-        <a-table-column title="备注/编号" data-index="comment">
+        <a-table-column :title="texts.commentId" data-index="comment">
           <template #cell="{ record }">
             <div class="task-id">
-              <div>{{ record.comment || '无备注' }}</div>
+              <div>{{ record.comment || texts.noComment }}</div>
               <div class="task-id-sub">{{ record.taskId }}</div>
             </div>
           </template>
         </a-table-column>
-        <a-table-column title="源类型" data-index="sourceType">
+        <a-table-column :title="texts.sourceType" data-index="sourceType">
           <template #cell="{ record }">
             <a-tag :color="record.sourceType === 'PullLivePushLive' ? 'green' : 'blue'">
-              {{ record.sourceType === 'PullLivePushLive' ? '直播' : '点播' }}
+              {{ record.sourceType === 'PullLivePushLive' ? texts.live : texts.vod }}
             </a-tag>
           </template>
         </a-table-column>
-        <a-table-column title="分发区域" data-index="region">
+        <a-table-column :title="texts.distributionRegion" data-index="region">
           <template #cell="{ record }">
             {{ getRegionText(record.region) }}
           </template>
         </a-table-column>
-        <a-table-column title="源地址" data-index="sourceUrls">
+        <a-table-column :title="texts.sourceUrl" data-index="sourceUrls">
           <template #cell="{ record }">
             <div class="source-url">{{ record.sourceUrls && record.sourceUrls[0] }}</div>
           </template>
         </a-table-column>
-        <a-table-column title="任务状态" data-index="status">
+        <a-table-column :title="texts.taskStatus" data-index="status">
           <template #cell="{ record }">
             <a-tag :color="getStatusColor(record.status)">
               {{ getStatusText(record.status) }}
             </a-tag>
           </template>
         </a-table-column>
-        <a-table-column title="运行状态" data-index="runningStatus">
+        <a-table-column :title="texts.runningStatus" data-index="runningStatus">
           <template #cell="{ record }">
             <a-tag :color="getRunningStatusColor(record.runningStatus)">
               {{ getRunningStatusText(record.runningStatus) }}
             </a-tag>
           </template>
         </a-table-column>
-        <a-table-column title="任务开始时间" data-index="startTime">
+        <a-table-column :title="texts.taskStartTime" data-index="startTime">
           <template #cell="{ record }">
             {{ formatDateTime(record.startTime) }}
           </template>
         </a-table-column>
-        <a-table-column title="任务结束时间" data-index="endTime">
+        <a-table-column :title="texts.taskEndTime" data-index="endTime">
           <template #cell="{ record }">
             {{ formatDateTime(record.endTime) }}
           </template>
         </a-table-column>
-        <a-table-column title="操作" fixed="right">
+        <a-table-column :title="texts.actions" fixed="right">
           <template #cell="{ record }">
             <a-space>
-              <a-link @click="viewTaskStatus(record)">状态</a-link>
-              <a-link @click="goToEdit(record)">编辑</a-link>
-              <a-link v-if="record.status === 'enable'" @click="pauseTask(record)">禁用</a-link>
-              <a-link v-if="record.status === 'pause'" @click="enableTask(record)">启用</a-link>
-              <a-link @click="restartTask(record)">重启</a-link>
-              <a-link status="danger" @click="deleteTask(record)">删除</a-link>
+              <a-link @click="viewTaskStatus(record)">{{ texts.viewStatus }}</a-link>
+              <a-link @click="goToEdit(record)">{{ texts.edit }}</a-link>
+              <a-link v-if="record.status === 'enable'" @click="pauseTask(record)">{{ texts.disable }}</a-link>
+              <a-link v-if="record.status === 'pause'" @click="enableTask(record)">{{ texts.enable }}</a-link>
+              <a-link @click="restartTask(record)">{{ texts.restart }}</a-link>
+              <a-link status="danger" @click="deleteTask(record)">{{ texts.delete }}</a-link>
             </a-space>
           </template>
         </a-table-column>
@@ -121,7 +121,7 @@
     <!-- 任务状态对话框 -->
     <a-modal
         v-model:visible="showStatusDialog"
-        title="任务状态"
+        :title="texts.taskStatusDialogTitle"
         width="1200px"
         :footer="false"
     >
@@ -139,40 +139,40 @@
             <template #icon>
               <icon-refresh/>
             </template>
-            查询
+            {{ texts.query }}
           </a-button>
         </div>
 
         <div v-if="taskStatus.dataInfoList && taskStatus.dataInfoList.length > 0">
-          <h3 style="margin-bottom: 12px;">流数据统计</h3>
+          <h3 style="margin-bottom: 12px;">{{ texts.streamDataStats }}</h3>
 
           <!-- 四个独立的图表 -->
           <div class="chart-container-grid">
             <!-- 视频帧率 -->
             <div class="chart-item">
-              <div class="chart-title">视频帧率 (fps)</div>
+              <div class="chart-title">{{ texts.videoFps }}</div>
               <div ref="videoFpsChart" style="width: 100%; height: 250px;"></div>
             </div>
             <!-- 音频帧率 -->
             <div class="chart-item">
-              <div class="chart-title">音频帧率 (fps)</div>
+              <div class="chart-title">{{ texts.audioFps }}</div>
               <div ref="audioFpsChart" style="width: 100%; height: 250px;"></div>
             </div>
             <!-- 视频码率 -->
             <div class="chart-item">
-              <div class="chart-title">视频码率 (kbps)</div>
+              <div class="chart-title">{{ texts.videoBitrate }}</div>
               <div ref="videoRateChart" style="width: 100%; height: 250px;"></div>
             </div>
             <!-- 音频码率 -->
             <div class="chart-item">
-              <div class="chart-title">音频码率 (kbps)</div>
+              <div class="chart-title">{{ texts.audioBitrate }}</div>
               <div ref="audioRateChart" style="width: 100%; height: 250px;"></div>
             </div>
           </div>
         </div>
         <div v-else>
           <p style="text-align: center; color: var(--color-text-3); padding: 40px;">
-            暂无流数据统计信息
+            {{ texts.noStreamData }}
           </p>
         </div>
       </div>
@@ -187,6 +187,7 @@ import {IconPlus, IconRefresh} from '@arco-design/web-vue/es/icon'
 import {formatDateTime} from '../utils/date'
 import {useAuthStore} from '../stores/auth'
 import {useNavigationStore} from '../stores/navigation'
+import { useI18n } from 'vue-i18n'
 import {
   getPullStreamTasks,
   updatePullStreamTask,
@@ -201,8 +202,82 @@ import type {
 } from '../api/live'
 import * as echarts from 'echarts'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const navigationStore = useNavigationStore()
+
+const texts = computed(() => ({
+  pageTitle: t('pullStreamTask.pageTitle'),
+  currentTasks: t('pullStreamTask.currentTasks'),
+  activeTasks: t('pullStreamTask.activeTasks'),
+  expiredTasks: t('pullStreamTask.expiredTasks'),
+  taskUnit: t('pullStreamTask.taskUnit'),
+  createTask: t('pullStreamTask.createTask'),
+  searchPlaceholder: t('pullStreamTask.searchPlaceholder'),
+  refresh: t('pullStreamTask.refresh'),
+  commentId: t('pullStreamTask.commentId'),
+  noComment: t('pullStreamTask.noComment'),
+  sourceType: t('pullStreamTask.sourceType'),
+  live: t('pullStreamTask.live'),
+  vod: t('pullStreamTask.vod'),
+  distributionRegion: t('pullStreamTask.distributionRegion'),
+  sourceUrl: t('pullStreamTask.sourceUrl'),
+  taskStatus: t('pullStreamTask.taskStatus'),
+  runningStatus: t('pullStreamTask.runningStatus'),
+  taskStartTime: t('pullStreamTask.taskStartTime'),
+  taskEndTime: t('pullStreamTask.taskEndTime'),
+  actions: t('pullStreamTask.actions'),
+  viewStatus: t('pullStreamTask.viewStatus'),
+  edit: t('pullStreamTask.edit'),
+  disable: t('pullStreamTask.disable'),
+  enable: t('pullStreamTask.enable'),
+  restart: t('pullStreamTask.restart'),
+  delete: t('pullStreamTask.delete'),
+  taskStatusDialogTitle: t('pullStreamTask.taskStatusDialogTitle'),
+  query: t('pullStreamTask.query'),
+  streamDataStats: t('pullStreamTask.streamDataStats'),
+  videoFps: t('pullStreamTask.videoFps'),
+  audioFps: t('pullStreamTask.audioFps'),
+  videoBitrate: t('pullStreamTask.videoBitrate'),
+  audioBitrate: t('pullStreamTask.audioBitrate'),
+  noStreamData: t('pullStreamTask.noStreamData'),
+  getTaskStatusError: t('pullStreamTask.getTaskStatusError'),
+  loadTasksError: t('pullStreamTask.loadTasksError'),
+  deleteConfirmTitle: t('pullStreamTask.deleteConfirmTitle'),
+  deleteConfirmContent: t('pullStreamTask.deleteConfirmContent'),
+  confirm: t('pullStreamTask.confirm'),
+  cancel: t('pullStreamTask.cancel'),
+  deleteSuccess: t('pullStreamTask.deleteSuccess'),
+  deleteError: t('pullStreamTask.deleteError'),
+  restartSuccess: t('pullStreamTask.restartSuccess'),
+  restartError: t('pullStreamTask.restartError'),
+  enableSuccess: t('pullStreamTask.enableSuccess'),
+  enableError: t('pullStreamTask.enableError'),
+  pauseSuccess: t('pullStreamTask.pauseSuccess'),
+  pauseError: t('pullStreamTask.pauseError'),
+  statusEnabled: t('pullStreamTask.statusEnabled'),
+  statusPaused: t('pullStreamTask.statusPaused'),
+  statusFinished: t('pullStreamTask.statusFinished'),
+  statusError: t('pullStreamTask.statusError'),
+  runningActive: t('pullStreamTask.runningActive'),
+  runningInactive: t('pullStreamTask.runningInactive'),
+  createTaskTitle: t('pullStreamTask.createTaskTitle'),
+  editTaskTitle: t('pullStreamTask.editTaskTitle'),
+  pauseConfirmTitle: t('pullStreamTask.pauseConfirmTitle'),
+  pauseConfirmContent: t('pullStreamTask.pauseConfirmContent'),
+  regionBangkok: t('pullStreamTask.regionBangkok'),
+  regionBeijing: t('pullStreamTask.regionBeijing'),
+  regionChongqing: t('pullStreamTask.regionChongqing'),
+  regionGuangzhou: t('pullStreamTask.regionGuangzhou'),
+  regionHongkong: t('pullStreamTask.regionHongkong'),
+  regionSeoul: t('pullStreamTask.regionSeoul'),
+  regionShanghai: t('pullStreamTask.regionShanghai'),
+  regionSingapore: t('pullStreamTask.regionSingapore'),
+  regionTokyo: t('pullStreamTask.regionTokyo'),
+  regionFrankfurt: t('pullStreamTask.regionFrankfurt'),
+  regionAshburn: t('pullStreamTask.regionAshburn'),
+  regionSiliconValley: t('pullStreamTask.regionSiliconValley'),
+}))
 
 // 接收传递的参数
 const props = defineProps<{
@@ -293,7 +368,7 @@ const refreshStatusData = async () => {
     taskStatus.value = result
   } catch (error) {
     console.error('获取任务状态失败:', error)
-    Message.error('获取任务状态失败')
+    Message.error(texts.value.getTaskStatusError)
   }
 }
 
@@ -463,7 +538,7 @@ const initChart = () => {
     videoFpsChartInstance,
     times,
     videoFpsData,
-    '视频帧率',
+    texts.value.videoFps,
     'fps',
     '#5470c6',
     0,
@@ -475,7 +550,7 @@ const initChart = () => {
     audioFpsChartInstance,
     times,
     audioFpsData,
-    '音频帧率',
+    texts.value.audioFps,
     'fps',
     '#91cc75',
     0,
@@ -487,7 +562,7 @@ const initChart = () => {
     videoRateChartInstance,
     times,
     videoRateData,
-    '视频码率',
+    texts.value.videoBitrate,
     'kbps',
     '#fac858',
     0
@@ -498,7 +573,7 @@ const initChart = () => {
     audioRateChartInstance,
     times,
     audioRateData,
-    '音频码率',
+    texts.value.audioBitrate,
     'kbps',
     '#ee6666',
     0
@@ -574,7 +649,7 @@ const loadTaskList = async () => {
     pagination.total = taskList.value.length
   } catch (error) {
     console.error('加载任务列表失败:', error)
-    Message.error('加载任务列表失败')
+    Message.error(texts.value.loadTasksError)
   } finally {
     loading.value = false
   }
@@ -593,10 +668,10 @@ const getStatusColor = (status: string) => {
 
 const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
-    'enable': '启用',
-    'pause': '暂停',
-    'finished': '已完成',
-    'error': '错误'
+    'enable': texts.value.statusEnabled,
+    'pause': texts.value.statusPaused,
+    'finished': texts.value.statusFinished,
+    'error': texts.value.statusError
   }
   return statusMap[status] || status
 }
@@ -612,8 +687,8 @@ const getRunningStatusColor = (runningStatus: string) => {
 
 const getRunningStatusText = (runningStatus: string) => {
   const statusMap: Record<string, string> = {
-    'active': '活跃',
-    'inactive': '不活跃'
+    'active': texts.value.runningActive,
+    'inactive': texts.value.runningInactive
   }
   return statusMap[runningStatus] || runningStatus
 }
@@ -678,18 +753,18 @@ const stopRunningStatusTimer = () => {
 // 区域映射
 const getRegionText = (region: string) => {
   const regionMap: Record<string, string> = {
-    'ap-bangkok': '亚太东南（曼谷）',
-    'ap-beijing': '华北地区（北京）',
-    'ap-chongqing': '西南地区（重庆）',
-    'ap-guangzhou': '华南地区（广州）',
-    'ap-hongkong': '港澳台地区（中国香港）',
-    'ap-seoul': '亚太东北（首尔）',
-    'ap-shanghai': '华东地区（上海）',
-    'ap-singapore': '亚太东南（新加坡）',
-    'ap-tokyo': '亚太东北（东京）',
-    'eu-frankfurt': '欧洲地区（法兰克福）',
-    'na-ashburn': '美国东部（弗吉尼亚）',
-    'na-siliconvalley': '美国西部（硅谷）'
+    'ap-bangkok': texts.value.regionBangkok,
+    'ap-beijing': texts.value.regionBeijing,
+    'ap-chongqing': texts.value.regionChongqing,
+    'ap-guangzhou': texts.value.regionGuangzhou,
+    'ap-hongkong': texts.value.regionHongkong,
+    'ap-seoul': texts.value.regionSeoul,
+    'ap-shanghai': texts.value.regionShanghai,
+    'ap-singapore': texts.value.regionSingapore,
+    'ap-tokyo': texts.value.regionTokyo,
+    'eu-frankfurt': texts.value.regionFrankfurt,
+    'na-ashburn': texts.value.regionAshburn,
+    'na-siliconvalley': texts.value.regionSiliconValley
   }
   return regionMap[region] || region || '-'
 }
@@ -715,25 +790,27 @@ const handlePageSizeChange = (pageSize: number) => {
 
 // Navigation functions
 const goToCreate = () => {
-  navigationStore.navigateTo('PullStreamTaskForm', '创建分发任务', {})
+  navigationStore.navigateTo('PullStreamTaskForm', texts.value.createTaskTitle, {})
 }
 
 const goToEdit = (task: PullStreamTaskInfo) => {
-  navigationStore.navigateTo('PullStreamTaskForm', '编辑分发任务', {taskId: task.taskId})
+  navigationStore.navigateTo('PullStreamTaskForm', texts.value.editTaskTitle, {taskId: task.taskId})
 }
 
 const deleteTask = async (task: PullStreamTaskInfo) => {
   Modal.confirm({
-    title: '确认删除',
-    content: '确定要删除该分发任务吗？',
+    title: texts.value.deleteConfirmTitle,
+    content: texts.value.deleteConfirmContent,
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     onOk: async () => {
       try {
         await deletePullStreamTask(task.taskId, authStore.user?.username || 'admin')
-        Message.success('删除任务成功')
+        Message.success(texts.value.deleteSuccess)
         loadTaskList()
       } catch (error) {
         console.error('删除任务失败:', error)
-        Message.error('删除任务失败')
+        Message.error(texts.value.deleteError)
       }
     }
   })
@@ -742,29 +819,31 @@ const deleteTask = async (task: PullStreamTaskInfo) => {
 const restartTask = async (task: PullStreamTaskInfo) => {
   try {
     await restartPullStreamTask(task.taskId, authStore.user?.username || 'admin')
-    Message.success('重启任务成功')
+    Message.success(texts.value.restartSuccess)
     loadTaskList()
   } catch (error) {
     console.error('重启任务失败:', error)
-    Message.error('重启任务失败')
+    Message.error(texts.value.restartError)
   }
 }
 
 const pauseTask = async (task: PullStreamTaskInfo) => {
   Modal.confirm({
-    title: '确认禁用',
-    content: '确定要禁用该任务吗？禁用后任务将暂停分发。',
+    title: texts.value.pauseConfirmTitle,
+    content: texts.value.pauseConfirmContent,
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     onOk: async () => {
       try {
         await updatePullStreamTask(task.taskId, {
           operator: authStore.user?.username || 'admin',
           status: 'pause'
         })
-        Message.success('禁用任务成功')
+        Message.success(texts.value.pauseSuccess)
         loadTaskList()
       } catch (error) {
         console.error('禁用任务失败:', error)
-        Message.error('禁用任务失败')
+        Message.error(texts.value.pauseError)
       }
     }
   })
@@ -776,11 +855,11 @@ const enableTask = async (task: PullStreamTaskInfo) => {
       operator: authStore.user?.username || 'admin',
       status: 'enable'
     })
-    Message.success('启用任务成功')
+    Message.success(texts.value.enableSuccess)
     loadTaskList()
   } catch (error) {
     console.error('启用任务失败:', error)
-    Message.error('启用任务失败')
+    Message.error(texts.value.enableError)
   }
 }
 
@@ -800,7 +879,7 @@ const viewTaskStatus = async (task: PullStreamTaskInfo) => {
     showStatusDialog.value = true
   } catch (error) {
     console.error('获取任务状态失败:', error)
-    Message.error('获取任务状态失败')
+    Message.error(texts.value.getTaskStatusError)
   }
 }
 

@@ -2,13 +2,13 @@
   <div class="live-recordings-page">
     <!-- 页面标题和操作栏 -->
     <div class="page-header">
-      <h2>直播录制列表</h2>
+      <h2>{{ texts.pageTitle }}</h2>
       <div class="header-actions">
         <a-button type="primary" @click="handleRefresh">
           <template #icon>
             <icon-refresh />
           </template>
-          刷新
+          {{ texts.refresh }}
         </a-button>
       </div>
     </div>
@@ -16,14 +16,14 @@
     <!-- 统计卡片 -->
     <div class="stats-cards">
       <a-card class="stat-card">
-        <a-statistic title="总录制数（筛选后）" :value="stats.total">
+        <a-statistic :title="texts.totalRecordings" :value="stats.total">
           <template #prefix>
             <icon-file />
           </template>
         </a-statistic>
       </a-card>
       <a-card class="stat-card">
-        <a-statistic title="今日录制" :value="stats.today">
+        <a-statistic :title="texts.todayRecordings" :value="stats.today">
           <template #prefix>
             <icon-calendar />
           </template>
@@ -34,34 +34,34 @@
     <!-- 搜索筛选 -->
     <div class="search-bar">
       <a-form :model="searchForm" layout="inline">
-        <a-form-item label="直播间">
+        <a-form-item :label="texts.roomName">
           <a-input
             v-model="searchForm.roomName"
-            placeholder="请输入直播间名称"
+            :placeholder="texts.roomNamePlaceholder"
             style="width: 200px"
             allow-clear
           />
         </a-form-item>
-        <a-form-item label="域名">
+        <a-form-item :label="texts.domain">
           <a-input
             v-model="searchForm.domainName"
-            placeholder="请输入域名"
+            :placeholder="texts.domainPlaceholder"
             style="width: 200px"
             allow-clear
           />
         </a-form-item>
-        <a-form-item label="应用名称">
+        <a-form-item :label="texts.appName">
           <a-input
             v-model="searchForm.appName"
-            placeholder="请输入应用名称"
+            :placeholder="texts.appNamePlaceholder"
             style="width: 200px"
             allow-clear
           />
         </a-form-item>
-        <a-form-item label="文件格式">
+        <a-form-item :label="texts.fileFormat">
           <a-select
             v-model="searchForm.fileFormat"
-            placeholder="请选择格式"
+            :placeholder="texts.fileFormatPlaceholder"
             style="width: 120px"
             allow-clear
           >
@@ -71,7 +71,7 @@
             <a-option value="aac">AAC</a-option>
           </a-select>
         </a-form-item>
-        <a-form-item label="录制时间">
+        <a-form-item :label="texts.recordingTime">
           <a-range-picker
             v-model="searchForm.timeRange"
             show-time
@@ -85,13 +85,13 @@
               <template #icon>
                 <icon-search />
               </template>
-              查询
+              {{ texts.search }}
             </a-button>
             <a-button @click="handleReset">
               <template #icon>
                 <icon-refresh />
               </template>
-              重置
+              {{ texts.reset }}
             </a-button>
           </a-space>
         </a-form-item>
@@ -109,23 +109,23 @@
       @page-size-change="handlePageSizeChange"
     >
       <template #columns>
-        <a-table-column title="ID" data-index="id" :width="80" />
-        <a-table-column title="直播间" :width="150">
+        <a-table-column :title="texts.id" data-index="id" :width="80" />
+        <a-table-column :title="texts.roomName" :width="150">
           <template #cell="{ record }">
             {{ record.roomName || record.streamName || '-' }}
           </template>
         </a-table-column>
-        <a-table-column title="域名" :width="180">
+        <a-table-column :title="texts.domain" :width="180">
           <template #cell="{ record }">
             {{ record.domainName || '-' }}
           </template>
         </a-table-column>
-        <a-table-column title="应用名称" :width="120">
+        <a-table-column :title="texts.appName" :width="120">
           <template #cell="{ record }">
             {{ record.appName || '-' }}
           </template>
         </a-table-column>
-        <a-table-column title="文件格式" :width="100">
+        <a-table-column :title="texts.fileFormat" :width="100">
           <template #cell="{ record }">
             <a-tag v-if="record.fileFormat" :color="getFormatColor(record.fileFormat)">
               {{ record.fileFormat?.toUpperCase() }}
@@ -133,45 +133,45 @@
             <span v-else>-</span>
           </template>
         </a-table-column>
-        <a-table-column title="文件大小" :width="120">
+        <a-table-column :title="texts.fileSize" :width="120">
           <template #cell="{ record }">
             {{ formatFileSize(record.fileSize) }}
           </template>
         </a-table-column>
-        <a-table-column title="录制时长" :width="120">
+        <a-table-column :title="texts.duration" :width="120">
           <template #cell="{ record }">
             {{ formatDuration(record.duration) }}
           </template>
         </a-table-column>
-        <a-table-column title="录制时间" :width="180">
+        <a-table-column :title="texts.recordingTime" :width="180">
           <template #cell="{ record }">
             {{ formatDateTime(record.startTime) }}
           </template>
         </a-table-column>
-        <a-table-column title="生成时间" :width="180">
+        <a-table-column :title="texts.generateTime" :width="180">
           <template #cell="{ record }">
             {{ formatDateTime(record.eventTime) }}
           </template>
         </a-table-column>
-        <a-table-column title="操作" :width="180" fixed="right">
+        <a-table-column :title="texts.actions" :width="180" fixed="right">
           <template #cell="{ record }">
             <a-space>
-              <a-link @click="handlePreview(record)">预览</a-link>
-              <a-link @click="handleDownload(record)">下载</a-link>
-              <a-link status="danger" @click="handleDelete(record)">删除</a-link>
+              <a-link @click="handlePreview(record)">{{ texts.preview }}</a-link>
+              <a-link @click="handleDownload(record)">{{ texts.download }}</a-link>
+              <a-link status="danger" @click="handleDelete(record)">{{ texts.delete }}</a-link>
             </a-space>
           </template>
         </a-table-column>
       </template>
       <template #empty>
-        <a-empty description="暂无录制数据" />
+        <a-empty :description="texts.noData" />
       </template>
     </a-table>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useNavigationStore } from '@/stores/navigation'
 import { Message, Modal } from '@arco-design/web-vue'
 import {
@@ -181,7 +181,10 @@ import {
   IconCalendar,
 } from '@arco-design/web-vue/es/icon'
 import { queryCallbackEvents, deleteCallbackEvent } from '@/api/live'
+import { useI18n } from 'vue-i18n'
 import dayjs from 'dayjs'
+
+const { t } = useI18n()
 
 // 接收传递的参数
 const props = defineProps<{
@@ -189,6 +192,43 @@ const props = defineProps<{
 }>()
 
 const navigationStore = useNavigationStore()
+
+const texts = computed(() => ({
+  pageTitle: t('liveRecordings.pageTitle'),
+  refresh: t('liveRecordings.refresh'),
+  totalRecordings: t('liveRecordings.totalRecordings'),
+  todayRecordings: t('liveRecordings.todayRecordings'),
+  roomName: t('liveRecordings.roomName'),
+  roomNamePlaceholder: t('liveRecordings.roomNamePlaceholder'),
+  domain: t('liveRecordings.domain'),
+  domainPlaceholder: t('liveRecordings.domainPlaceholder'),
+  appName: t('liveRecordings.appName'),
+  appNamePlaceholder: t('liveRecordings.appNamePlaceholder'),
+  fileFormat: t('liveRecordings.fileFormat'),
+  fileFormatPlaceholder: t('liveRecordings.fileFormatPlaceholder'),
+  recordingTime: t('liveRecordings.recordingTime'),
+  search: t('liveRecordings.search'),
+  reset: t('liveRecordings.reset'),
+  id: t('liveRecordings.id'),
+  fileSize: t('liveRecordings.fileSize'),
+  duration: t('liveRecordings.duration'),
+  generateTime: t('liveRecordings.generateTime'),
+  actions: t('liveRecordings.actions'),
+  preview: t('liveRecordings.preview'),
+  download: t('liveRecordings.download'),
+  delete: t('liveRecordings.delete'),
+  noData: t('liveRecordings.noData'),
+  loadStatsError: t('liveRecordings.loadStatsError'),
+  loadDataError: t('liveRecordings.loadDataError'),
+  previewTitle: t('liveRecordings.previewTitle'),
+  deleteConfirmTitle: t('liveRecordings.deleteConfirmTitle'),
+  deleteConfirmContent: t('liveRecordings.deleteConfirmContent'),
+  deleteSuccess: t('liveRecordings.deleteSuccess'),
+  deleteError: t('liveRecordings.deleteError'),
+  hour: t('liveRecordings.hour'),
+  minute: t('liveRecordings.minute'),
+  second: t('liveRecordings.second'),
+}))
 
 // 搜索表单 - 默认查询最近7天数据
 const searchForm = reactive({
@@ -235,6 +275,7 @@ const loadStats = async () => {
     }
   } catch (error) {
     console.error('加载统计数据失败:', error)
+    Message.error(texts.value.loadStatsError)
   }
 }
 
@@ -324,7 +365,7 @@ const loadData = async () => {
     }
   } catch (error) {
     console.error('加载录制数据失败:', error)
-    Message.error('加载数据失败')
+    Message.error(texts.value.loadDataError)
   } finally {
     loading.value = false
   }
@@ -366,7 +407,7 @@ const handlePageSizeChange = (pageSize: number) => {
 
 // 预览
 const handlePreview = (record: any) => {
-  navigationStore.navigateTo('LiveRecordingPreview', '录制文件预览', { recordId: record.id, recordData: record })
+  navigationStore.navigateTo('LiveRecordingPreview', texts.value.previewTitle, { recordId: record.id, recordData: record })
 }
 
 // 下载
@@ -377,16 +418,16 @@ const handleDownload = (record: any) => {
 // 删除
 const handleDelete = (record: any) => {
   Modal.confirm({
-    title: '确认删除',
-    content: '确定要删除这条录制记录吗？此操作不可恢复。',
+    title: texts.value.deleteConfirmTitle,
+    content: texts.value.deleteConfirmContent,
     onOk: async () => {
       try {
         await deleteCallbackEvent(record.id)
-        Message.success('删除成功')
+        Message.success(texts.value.deleteSuccess)
         loadData()
       } catch (error) {
         console.error('删除录制记录失败:', error)
-        Message.error('删除失败')
+        Message.error(texts.value.deleteError)
       }
     }
   })
@@ -417,11 +458,11 @@ const formatDuration = (seconds: number) => {
   const secs = seconds % 60
 
   if (hours > 0) {
-    return `${hours}小时${minutes}分${secs}秒`
+    return `${hours}${texts.value.hour}${minutes}${texts.value.minute}${secs}${texts.value.second}`
   } else if (minutes > 0) {
-    return `${minutes}分${secs}秒`
+    return `${minutes}${texts.value.minute}${secs}${texts.value.second}`
   } else {
-    return `${secs}秒`
+    return `${secs}${texts.value.second}`
   }
 }
 

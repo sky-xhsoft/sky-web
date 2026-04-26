@@ -2,19 +2,19 @@
   <div class="highlight-clips-page">
     <!-- 页面标题和操作栏 -->
     <div class="page-header">
-      <h2>直播高光切片</h2>
+      <h2>{{ texts.pageTitle }}</h2>
       <div class="header-actions">
         <a-button v-if="selectedRows.length > 0" status="danger" size="small" @click="handleBatchDelete">
           <template #icon>
             <icon-delete />
           </template>
-          批量删除 ({{ selectedRows.length }})
+          {{ texts.batchDelete }} ({{ selectedRows.length }})
         </a-button>
         <a-button type="primary" size="small" @click="handleRefresh">
           <template #icon>
             <icon-refresh />
           </template>
-          刷新
+          {{ texts.refresh }}
         </a-button>
       </div>
     </div>
@@ -22,15 +22,15 @@
     <!-- 搜索筛选 -->
     <div class="search-bar">
       <a-form :model="searchForm" layout="inline" size="small">
-        <a-form-item label="流名称">
+        <a-form-item :label="texts.streamName">
           <a-input
             v-model="searchForm.streamName"
-            placeholder="请输入流名称"
+            :placeholder="texts.streamNamePlaceholder"
             style="width: 160px"
             allow-clear
           />
         </a-form-item>
-        <a-form-item label="时间范围">
+        <a-form-item :label="texts.timeRange">
           <a-range-picker
             v-model="searchForm.timeRange"
             show-time
@@ -44,13 +44,13 @@
               <template #icon>
                 <icon-search />
               </template>
-              查询
+              {{ texts.search }}
             </a-button>
             <a-button size="small" @click="handleReset">
               <template #icon>
                 <icon-refresh />
               </template>
-              重置
+              {{ texts.reset }}
             </a-button>
           </a-space>
         </a-form-item>
@@ -111,21 +111,22 @@
       </template>
       <template #actions="{ record }">
         <a-space size="mini">
-          <a-link @click="handlePreview(record)">预览</a-link>
-          <a-link @click="handleDownload(record)">下载</a-link>
-          <a-link status="danger" @click="handleDelete(record)">删除</a-link>
+          <a-link @click="handlePreview(record)">{{ texts.preview }}</a-link>
+          <a-link @click="handleDownload(record)">{{ texts.download }}</a-link>
+          <a-link status="danger" @click="handleDelete(record)">{{ texts.delete }}</a-link>
         </a-space>
       </template>
 
       <template #empty>
-        <a-empty description="暂无高光切片数据" />
+        <a-empty :description="texts.noData" />
       </template>
     </a-table>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useNavigationStore } from '@/stores/navigation'
 import { Message, Modal } from '@arco-design/web-vue'
 import {
@@ -135,6 +136,46 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import { queryCallbackEvents, deleteCallbackEvent, batchDeleteCallbackEvents } from '@/api/live'
 import dayjs from 'dayjs'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  pageTitle: t('liveHighlightClips.pageTitle'),
+  batchDelete: t('liveHighlightClips.batchDelete'),
+  refresh: t('liveHighlightClips.refresh'),
+  streamName: t('liveHighlightClips.streamName'),
+  streamNamePlaceholder: t('liveHighlightClips.streamNamePlaceholder'),
+  timeRange: t('liveHighlightClips.timeRange'),
+  search: t('liveHighlightClips.search'),
+  reset: t('liveHighlightClips.reset'),
+  colId: t('liveHighlightClips.colId'),
+  colTitle: t('liveHighlightClips.colTitle'),
+  colKeywords: t('liveHighlightClips.colKeywords'),
+  colRoom: t('liveHighlightClips.colRoom'),
+  colVideo: t('liveHighlightClips.colVideo'),
+  colStartTime: t('liveHighlightClips.colStartTime'),
+  colDuration: t('liveHighlightClips.colDuration'),
+  colActions: t('liveHighlightClips.colActions'),
+  preview: t('liveHighlightClips.preview'),
+  download: t('liveHighlightClips.download'),
+  delete: t('liveHighlightClips.delete'),
+  noData: t('liveHighlightClips.noData'),
+  loadDataError: t('liveHighlightClips.loadDataError'),
+  deleteConfirmTitle: t('liveHighlightClips.deleteConfirmTitle'),
+  deleteConfirmContent: t('liveHighlightClips.deleteConfirmContent'),
+  deleteSuccess: t('liveHighlightClips.deleteSuccess'),
+  deleteError: t('liveHighlightClips.deleteError'),
+  batchDeleteWarning: t('liveHighlightClips.batchDeleteWarning'),
+  batchDeleteConfirmTitle: t('liveHighlightClips.batchDeleteConfirmTitle'),
+  batchDeleteConfirmContent: t('liveHighlightClips.batchDeleteConfirmContent'),
+  batchDeleteSuccess: t('liveHighlightClips.batchDeleteSuccess'),
+  batchDeleteError: t('liveHighlightClips.batchDeleteError'),
+  previewTitle: t('liveHighlightClips.previewTitle'),
+  minutes: t('liveHighlightClips.minutes'),
+  seconds: t('liveHighlightClips.seconds'),
+  confirm: t('liveHighlightClips.confirm'),
+  cancel: t('liveHighlightClips.cancel'),
+}))
 
 // 接收传递的参数
 const props = defineProps<{
@@ -210,49 +251,49 @@ const handleSelectAll = (checked: boolean) => {
 }
 
 // 列配置
-const columns = [
+const columns = computed(() => [
   {
-    title: 'ID',
+    title: texts.value.colId,
     dataIndex: 'id',
     width: 100
   },
   {
-    title: '标题',
+    title: texts.value.colTitle,
     slotName: 'title',
     width: 150
   },
   {
-    title: '关键词',
+    title: texts.value.colKeywords,
     slotName: 'keywords',
     width: 150
   },
   {
-    title: '直播间',
+    title: texts.value.colRoom,
     dataIndex: 'roomName',
     width: 160
   },
   {
-    title: '视频',
+    title: texts.value.colVideo,
     slotName: 'video',
     width: 120
   },
   {
-    title: '开始时间',
+    title: texts.value.colStartTime,
     slotName: 'startTime',
     width: 160
   },
   {
-    title: '时长',
+    title: texts.value.colDuration,
     slotName: 'duration',
     width: 90
   },
   {
-    title: '操作',
+    title: texts.value.colActions,
     slotName: 'actions',
     width: 150,
     fixed: 'right'
   }
-]
+])
 
 // 加载数据
 const loadData = async () => {
@@ -311,7 +352,7 @@ const loadData = async () => {
     }
   } catch (error) {
     console.error('加载高光切片数据失败:', error)
-    Message.error('加载数据失败')
+    Message.error(texts.value.loadDataError)
   } finally {
     loading.value = false
   }
@@ -353,22 +394,24 @@ const handlePageSizeChange = (pageSize: number) => {
 
 // 预览
 const handlePreview = (record: any) => {
-  navigationStore.navigateTo('LiveHighlightClipPreview', '高光切片预览', { clipId: record.id, clipData: record })
+  navigationStore.navigateTo('LiveHighlightClipPreview', texts.value.previewTitle, { clipId: record.id, clipData: record })
 }
 
 // 单个删除
 const handleDelete = (record: TableDataItem) => {
   Modal.confirm({
-    title: '确认删除',
-    content: '确定要删除这条高光切片记录吗？此操作不可恢复。',
+    title: texts.value.deleteConfirmTitle,
+    content: texts.value.deleteConfirmContent,
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     onOk: async () => {
       try {
         await deleteCallbackEvent(record.id)
-        Message.success('删除成功')
+        Message.success(texts.value.deleteSuccess)
         loadData()
       } catch (error) {
         console.error('删除高光切片失败:', error)
-        Message.error('删除失败')
+        Message.error(texts.value.deleteError)
       }
     }
   })
@@ -377,23 +420,25 @@ const handleDelete = (record: TableDataItem) => {
 // 批量删除
 const handleBatchDelete = () => {
   if (selectedRows.value.length === 0) {
-    Message.warning('请选择要删除的记录')
+    Message.warning(texts.value.batchDeleteWarning)
     return
   }
 
   Modal.confirm({
-    title: '确认批量删除',
-    content: `确定要删除选中的 ${selectedRows.value.length} 条高光切片记录吗？此操作不可恢复。`,
+    title: texts.value.batchDeleteConfirmTitle,
+    content: texts.value.batchDeleteConfirmContent.replace('{count}', String(selectedRows.value.length)),
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     onOk: async () => {
       try {
         const ids = selectedRows.value.map(item => item.id)
         await batchDeleteCallbackEvents(ids)
-        Message.success('批量删除成功')
+        Message.success(texts.value.batchDeleteSuccess)
         loadData()
         selectedRows.value = []
       } catch (error) {
         console.error('批量删除高光切片失败:', error)
-        Message.error('批量删除失败')
+        Message.error(texts.value.batchDeleteError)
       }
     }
   })
@@ -418,7 +463,7 @@ const formatDuration = (startTime: number, endTime: number) => {
   const duration = Math.floor((endTime - startTime) / 1000)
   const minutes = Math.floor(duration / 60)
   const seconds = duration % 60
-  return `${minutes}分${seconds}秒`
+  return `${minutes}${texts.value.minutes}${seconds}${texts.value.seconds}`
 }
 
 onMounted(() => {

@@ -5,35 +5,35 @@
       <div class="header-left">
         <h3>
           <icon-share-alt />
-          我的分享
+          {{ texts.myShares }}
         </h3>
       </div>
       <div class="header-right">
         <a-space size="small">
           <a-input-search
             v-model="searchKeyword"
-            placeholder="搜索文件名称"
+            :placeholder="texts.searchFilename"
             style="width: 200px"
             clearable
             @search="handleSearch"
           />
-          <a-select v-model="filterStatus" placeholder="筛选状态" style="width: 120px">
+          <a-select v-model="filterStatus" :placeholder="texts.filterStatus" style="width: 120px">
             <a-option value="all">
               <template #icon><icon-apps /></template>
-              全部
+              {{ texts.statusAll }}
             </a-option>
             <a-option value="active">
               <template #icon><icon-check-circle /></template>
-              有效
+              {{ texts.statusActive }}
             </a-option>
             <a-option value="expired">
               <template #icon><icon-close-circle /></template>
-              已过期
+              {{ texts.statusExpired }}
             </a-option>
           </a-select>
           <a-button @click="handleRefresh" :loading="loading">
             <icon-refresh />
-            刷新
+            {{ texts.refresh }}
           </a-button>
         </a-space>
       </div>
@@ -47,7 +47,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ shares.length }}</div>
-          <div class="stat-label">总分享</div>
+          <div class="stat-label">{{ texts.totalShares }}</div>
         </div>
       </div>
       <div class="stat-card stat-card--active">
@@ -56,7 +56,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ activeShareCount }}</div>
-          <div class="stat-label">有效分享</div>
+          <div class="stat-label">{{ texts.activeShares }}</div>
         </div>
       </div>
       <div class="stat-card stat-card--expired">
@@ -65,7 +65,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ expiredShareCount }}</div>
-          <div class="stat-label">已过期</div>
+          <div class="stat-label">{{ texts.expiredShares }}</div>
         </div>
       </div>
     </div>
@@ -73,7 +73,7 @@
     <!-- 空状态 -->
     <a-empty
       v-if="filteredShares.length === 0 && shares.length === 0 && !loading"
-      description="暂无分享"
+      :description="texts.emptyShares"
       class="cloud-share-manager__empty"
     >
       <template #image>
@@ -84,14 +84,14 @@
     <!-- 搜索无结果 -->
     <a-empty
       v-else-if="filteredShares.length === 0 && searchKeyword && !loading"
-      description="未找到匹配的分享"
+      :description="texts.noSharesFound"
       class="cloud-share-manager__empty"
     />
 
     <!-- 加载状态 -->
     <div v-else-if="loading" class="cloud-share-manager__loading">
       <a-spin size="large" />
-      <span>加载中...</span>
+      <span>{{ texts.loading }}</span>
     </div>
 
     <!-- 分享列表 -->
@@ -110,33 +110,33 @@
         <!-- 文件信息 -->
         <div class="share-item__info">
           <div class="share-name">
-            {{ share.fileName || '未知文件' }}
+            {{ share.fileName || texts.unknownFile }}
           </div>
           <div class="share-meta">
             <span class="meta-item">
               <icon-link />
-              <span class="meta-label">分享码:</span>
+              <span class="meta-label">{{ texts.shareCode }}</span>
               <span class="meta-value code">{{ share.shareCode }}</span>
             </span>
             <span v-if="share.password" class="meta-item">
               <icon-lock />
-              <span class="meta-label">访问密码:</span>
+              <span class="meta-label">{{ texts.accessPassword }}</span>
               <span class="meta-value password">{{ share.password }}</span>
             </span>
             <span class="meta-item">
               <icon-clock-circle />
-              <span class="meta-label">创建时间:</span>
+              <span class="meta-label">{{ texts.createTime }}</span>
               <span class="meta-value">{{ formatDate(share.createTime) }}</span>
             </span>
           </div>
           <div class="share-quick-copy">
               <a-tag size="mini" @click.stop="handleCopyShareCode(share)" :bordered="false" color="arcoblue">
                 <icon-copy />
-                复制链接
+                {{ texts.copyLink }}
               </a-tag>
               <a-tag v-if="share.password" size="mini" @click.stop="handleCopyPassword(share)" :bordered="false" color="green">
                 <icon-lock />
-                复制密码
+                {{ texts.copyPassword }}
               </a-tag>
             </div>
         </div>
@@ -145,11 +145,11 @@
         <div class="share-item__status">
           <a-tag v-if="isExpired(share)" color="red" size="small">
             <icon-close-circle />
-            已过期
+            {{ texts.statusExpired }}
           </a-tag>
           <a-tag v-else :color="getDaysColor(getRemainingDays(share))" size="small">
             <icon-clock-circle />
-            剩余 {{ getRemainingDays(share) === 999 ? '永久' : getRemainingDays(share) + ' 天' }}
+            {{ getRemainingDaysText(share) }}
           </a-tag>
         </div>
 
@@ -164,17 +164,17 @@
         <div class="share-item__actions">
           <a-button size="small" type="text" @click="handleCopy(share)" :disabled="isExpired(share)">
             <icon-copy />
-            复制链接
+            {{ texts.copyLink }}
           </a-button>
           <a-dropdown trigger="click">
             <template #content>
               <a-doption @click="handleEdit(share)" :disabled="isExpired(share)">
                 <icon-edit />
-                编辑
+                {{ texts.edit }}
               </a-doption>
               <a-doption @click="handleViewStats(share)">
                 <icon-eye />
-                访问统计
+                {{ texts.viewStats }}
               </a-doption>
             </template>
             <a-button size="small" type="text">
@@ -197,6 +197,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Message, Modal } from '@arco-design/web-vue'
 import {
   IconRefresh,
@@ -218,6 +219,41 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import type { ShareListItem } from '@/modules/cloud/types'
 import { formatDate } from '@/modules/cloud/utils/format'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  myShares: t('cloud.myShares'),
+  searchFilename: t('cloud.searchFilename'),
+  filterStatus: t('cloud.filterStatus'),
+  statusAll: t('cloud.statusAll'),
+  statusActive: t('cloud.statusActive'),
+  statusExpired: t('cloud.statusExpired'),
+  refresh: t('cloud.refresh'),
+  totalShares: t('cloud.totalShares'),
+  activeShares: t('cloud.activeShares'),
+  expiredShares: t('cloud.expiredShares'),
+  emptyShares: t('cloud.emptyShares'),
+  noSharesFound: t('cloud.noSharesFound'),
+  loading: t('cloud.loading'),
+  unknownFile: t('cloud.unknownFile'),
+  shareCode: t('cloud.shareCode'),
+  accessPassword: t('cloud.accessPassword'),
+  createTime: t('cloud.createTime'),
+  copyLink: t('cloud.copyLink'),
+  copyPassword: t('cloud.copyPassword'),
+  remainingDays: t('cloud.remainingDays'),
+  remainingForever: t('cloud.remainingForever'),
+  edit: t('cloud.edit'),
+  viewStats: t('cloud.viewStats'),
+  copySuccess: t('cloud.copySuccess'),
+  copyFailed: t('cloud.copyFailed'),
+  deleteConfirm: t('cloud.deleteConfirm'),
+  deleteConfirmMessage: t('cloud.deleteConfirmMessage'),
+  deleteSuccess: t('cloud.deleteSuccess'),
+  delete: t('common.delete'),
+  cancel: t('common.cancel'),
+}))
 
 interface Props {
   shares?: ShareListItem[]
@@ -265,6 +301,12 @@ function getDaysColor(days: number): string {
   if (days <= 3) return 'orange'
   if (days <= 7) return 'gold'
   return 'green'
+}
+
+function getRemainingDaysText(share: ShareListItem): string {
+  const days = getRemainingDays(share)
+  if (days === 999) return texts.value.remainingForever
+  return texts.value.remainingDays.replace('{days}', String(days))
 }
 
 function getProgressPercent(share: ShareListItem): number {
@@ -332,12 +374,12 @@ function handleCopy(share: ShareListItem) {
 function handleCopyShareCode(share: ShareListItem) {
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(share.shareCode).then(() => {
-      Message.success('分享码已复制')
+      Message.success(texts.value.copySuccess)
     }).catch(() => {
-      fallbackCopy(share.shareCode, '分享码已复制')
+      fallbackCopy(share.shareCode, texts.value.copySuccess)
     })
   } else {
-    fallbackCopy(share.shareCode, '分享码已复制')
+    fallbackCopy(share.shareCode, texts.value.copySuccess)
   }
 }
 
@@ -346,12 +388,12 @@ function handleCopyPassword(share: ShareListItem) {
 
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(share.password).then(() => {
-      Message.success('访问密码已复制')
+      Message.success(texts.value.copySuccess)
     }).catch(() => {
-      fallbackCopy(share.password, '访问密码已复制')
+      fallbackCopy(share.password, texts.value.copySuccess)
     })
   } else {
-    fallbackCopy(share.password, '访问密码已复制')
+    fallbackCopy(share.password, texts.value.copySuccess)
   }
 }
 
@@ -367,7 +409,7 @@ function fallbackCopy(text: string, successMsg: string) {
     document.execCommand('copy')
     Message.success(successMsg)
   } catch (err) {
-    Message.error('复制失败，请手动复制')
+    Message.error(texts.value.copyFailed)
   } finally {
     document.body.removeChild(textarea)
   }
@@ -383,10 +425,10 @@ function handleViewStats(share: ShareListItem) {
 
 function handleDelete(share: ShareListItem) {
   Modal.confirm({
-    title: '确认删除',
-    content: `确定要删除分享"${share.fileName || '未知文件'}"吗？`,
-    okText: '删除',
-    cancelText: '取消',
+    title: texts.value.deleteConfirm,
+    content: texts.value.deleteConfirmMessage,
+    okText: texts.value.delete,
+    cancelText: texts.value.cancel,
     okButtonProps: {
       status: 'danger',
     },
@@ -399,10 +441,10 @@ function handleDelete(share: ShareListItem) {
 function handleBatchDelete() {
   if (selectedShares.value.length === 0) return
   Modal.confirm({
-    title: '批量删除',
-    content: `确定要删除选中的 ${selectedShares.value.length} 个分享吗？`,
-    okText: '删除',
-    cancelText: '取消',
+    title: texts.value.deleteConfirm,
+    content: texts.value.deleteConfirmMessage,
+    okText: texts.value.delete,
+    cancelText: texts.value.cancel,
     okButtonProps: {
       status: 'danger',
     },

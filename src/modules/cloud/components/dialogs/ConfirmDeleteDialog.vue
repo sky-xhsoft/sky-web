@@ -1,9 +1,9 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    title="确认删除"
+    :title="texts.confirmDeleteTitle"
     :ok-loading="loading"
-    ok-text="删除"
+    :ok-text="texts.delete"
     :ok-button-props="{ status: 'danger' }"
     @ok="handleOk"
     @cancel="handleCancel"
@@ -13,25 +13,23 @@
         <icon-exclamation-circle-fill />
       </div>
       <div class="warning-message">
-        <p v-if="count === 1">
-          确定要删除 <strong>{{ itemName }}</strong> 吗？
+        <p v-if="count === 1" v-html="texts.confirmDeleteSingle.replace('{name}', `<strong>${itemName}</strong>`)">
         </p>
-        <p v-else>
-          确定要删除选中的 <strong>{{ count }}</strong> 项吗？
+        <p v-else v-html="texts.confirmDeleteMultiple.replace('{count}', `<strong>${count}</strong>`)">
         </p>
-        <p class="danger-text">此操作不可恢复！</p>
+        <p class="danger-text">{{ texts.irreversibleWarning }}</p>
       </div>
 
       <!-- 详细信息 -->
       <div v-if="details" class="details">
         <a-descriptions :column="1" size="small" bordered>
-          <a-descriptions-item v-if="details.fileCount" label="文件">
-            {{ details.fileCount }} 个
+          <a-descriptions-item v-if="details.fileCount" :label="texts.labelFiles">
+            {{ details.fileCount }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="details.folderCount" label="文件夹">
-            {{ details.folderCount }} 个
+          <a-descriptions-item v-if="details.folderCount" :label="texts.labelFolders">
+            {{ details.folderCount }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="details.totalSize" label="总大小">
+          <a-descriptions-item v-if="details.totalSize" :label="texts.labelTotalSize">
             {{ formatSize(details.totalSize) }}
           </a-descriptions-item>
         </a-descriptions>
@@ -41,9 +39,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { IconExclamationCircleFill } from '@arco-design/web-vue/es/icon'
 import { formatSize } from '@/modules/cloud/utils/format'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  confirmDeleteTitle: t('cloud.confirmDeleteTitle'),
+  confirmDeleteSingle: t('cloud.confirmDeleteSingle'),
+  confirmDeleteMultiple: t('cloud.confirmDeleteMultiple'),
+  irreversibleWarning: t('cloud.irreversibleWarning'),
+  labelFiles: t('cloud.labelFiles'),
+  labelFolders: t('cloud.labelFolders'),
+  labelTotalSize: t('cloud.labelTotalSize'),
+  delete: t('common.delete'),
+}))
 
 interface DeleteDetails {
   fileCount?: number

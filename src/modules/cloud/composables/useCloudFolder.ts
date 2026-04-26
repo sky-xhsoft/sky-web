@@ -24,11 +24,12 @@ export function useCloudFolder() {
    * 创建文件夹
    * @param folderName 文件夹名称
    * @param parentId 父文件夹ID（可选，默认当前文件夹）
+   * @param eName 英文名称（可选）
    */
-  async function createFolder(folderName: string, parentId?: number) {
+  async function createFolder(folderName: string, parentId?: number, eName?: string) {
     creatingFolder.value = true
     try {
-      await store.createFolder(folderName, parentId)
+      await store.createFolder(folderName, parentId, eName)
       return true
     } catch (e) {
       console.error('创建文件夹失败:', e)
@@ -104,12 +105,12 @@ export function useCloudFolder() {
   /**
    * 重命名文件夹
    * @param folderId 文件夹ID
-   * @param newName 新名称
+   * @param params 重命名参数
    */
-  async function renameFolder(folderId: number, newName: string) {
+  async function renameFolder(folderId: number, params: { newName: string; eName?: string }) {
     renamingFolder.value = true
     try {
-      await store.renameFolder(folderId, newName)
+      await store.renameFolder(folderId, params.newName, params.eName)
       return true
     } catch (e) {
       console.error('重命名文件夹失败:', e)

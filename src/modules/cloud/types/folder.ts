@@ -20,6 +20,7 @@ export interface Folder {
 
   // CloudFolder fields
   name: string                // 后端json:"name"
+  eName?: string              // 后端json:"eName"
   parentId: number | null     // 后端json:"parentId"
   path: string                // 后端json:"path"
   ownerId: number             // 后端json:"ownerId"
@@ -58,6 +59,7 @@ export interface FolderTreeResponse {
 export interface FolderCreateParams {
   parentId: number
   folderName: string
+  eName?: string
 }
 
 /**
@@ -65,6 +67,7 @@ export interface FolderCreateParams {
  */
 export interface FolderRenameParams {
   newName: string
+  eName?: string
 }
 
 /**

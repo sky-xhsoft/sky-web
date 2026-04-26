@@ -10,6 +10,7 @@
 export interface FileItem {
   ID: number
   FileName: string
+  EName?: string
   FileSize: number
   FileType: string
   FileExt?: string
@@ -35,6 +36,7 @@ export interface FileListResponse {
 export interface FileUploadParams {
   file: File
   folderId?: number  // 默认为0（根目录）
+  eName?: string     // 英文名称
 }
 
 /**
@@ -42,6 +44,7 @@ export interface FileUploadParams {
  */
 export interface FileRenameParams {
   newName: string
+  eName?: string
 }
 
 /**

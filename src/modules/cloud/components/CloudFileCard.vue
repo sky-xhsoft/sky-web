@@ -27,6 +27,9 @@
       <div class="cloud-file-card__name" :title="item.name">
         {{ item.name }}
       </div>
+      <div v-if="item.eName" class="cloud-file-card__ename" :title="item.eName">
+        {{ item.eName }}
+      </div>
       <div class="cloud-file-card__meta">
         {{ item.meta }}
       </div>
@@ -196,7 +199,17 @@ function handleContextMenu(event: MouseEvent) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.cloud-file-card__ename {
+  font-size: 12px;
+  font-weight: 400;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 2px;
 }
 
 .cloud-file-card__meta {

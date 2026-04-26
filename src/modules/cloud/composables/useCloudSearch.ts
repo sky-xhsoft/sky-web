@@ -16,9 +16,10 @@ import { debounce, memoize } from '@/modules/cloud/utils/performance'
  */
 const FUSE_OPTIONS: Fuse.IFuseOptions<FileItem> = {
   keys: [
-    { name: 'FileName', weight: 0.7 },
-    { name: 'FileType', weight: 0.2 },
-    { name: 'Tags', weight: 0.1 },
+    { name: 'FileName', weight: 0.6 },
+    { name: 'EName', weight: 0.3 },
+    { name: 'FileType', weight: 0.08 },
+    { name: 'Tags', weight: 0.02 },
   ],
   threshold: 0.4,
   distance: 100,
@@ -73,7 +74,10 @@ export function useCloudSearch() {
 
     const lowerQuery = query.toLowerCase()
     return store.files.filter((file) => {
-      return file.FileName.toLowerCase().includes(lowerQuery)
+      return (
+      file.FileName.toLowerCase().includes(lowerQuery) ||
+      (file.EName && file.EName.toLowerCase().includes(lowerQuery))
+    )
     })
   }
 

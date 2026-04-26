@@ -2,7 +2,7 @@
   <div class="cloud-search-bar">
     <a-input-search
       v-model="searchValue"
-      :placeholder="placeholder"
+      :placeholder="placeholder || texts.searchPlaceholder"
       :loading="searching"
       allow-clear
       @search="handleSearch"
@@ -15,14 +15,22 @@
 
     <!-- 搜索统计 -->
     <div v-if="showStats && hasResults" class="cloud-search-bar__stats">
-      找到 <strong>{{ resultCount }}</strong> 个结果
+      {{ texts.foundResults.replace('{count}', String(resultCount)) }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { IconSearch } from '@arco-design/web-vue/es/icon'
+
+const { t } = useI18n()
+
+const texts = computed(() => ({
+  searchPlaceholder: t('cloud.searchPlaceholder'),
+  foundResults: t('cloud.foundResults'),
+}))
 
 interface Props {
   modelValue?: string
@@ -40,7 +48,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
-  placeholder: '搜索文件...',
+  placeholder: '',
   searching: false,
   resultCount: 0,
   showStats: true,

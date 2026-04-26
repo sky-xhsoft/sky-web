@@ -12,6 +12,7 @@ export interface CloudItem {
   ID: number
   itemType: 'file' | 'folder'
   name: string
+  eName?: string
   parentId: number | null
   path: string
   ownerId: number
@@ -61,6 +62,7 @@ export interface CloudItemListResponse {
 export interface CreateItemParams {
   itemType: 'file' | 'folder'
   name: string
+  eName?: string
   parentId?: number | null
 }
 
@@ -69,6 +71,7 @@ export interface CreateItemParams {
  */
 export interface RenameItemParams {
   newName: string
+  eName?: string
 }
 
 /**
@@ -133,6 +136,7 @@ export const CloudItemUtils = {
     return {
       ID: item.ID,
       FileName: item.name,
+      EName: item.eName,
       FileSize: item.fileSize || 0,
       FileType: item.fileType || '',
       FileExt: item.fileExt || '',
@@ -154,6 +158,7 @@ export const CloudItemUtils = {
       ID: item.ID,
       id: item.ID,
       name: item.name,
+      eName: item.eName,
       parentId: item.parentId,
       ownerId: item.ownerId,
       path: item.path,
@@ -180,6 +185,7 @@ export const CloudItemUtils = {
       ID: file.ID || file.id,
       itemType: 'file',
       name: file.FileName || file.fileName || file.name || '',
+      eName: file.EName || file.eName,
       parentId: file.FolderID ?? file.folderId ?? null,
       path: file.path || '',
       ownerId: file.UserID || file.ownerId || file.userId || 0,
@@ -216,6 +222,7 @@ export const CloudItemUtils = {
       ID: folder.ID || folder.id,
       itemType: 'folder',
       name: folder.name || '',
+      eName: folder.eName || folder.EName,
       parentId: folder.parentId ?? null,
       path: folder.path || '',
       ownerId: folder.ownerId || folder.ownerID || 0,

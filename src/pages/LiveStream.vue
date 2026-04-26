@@ -3,14 +3,14 @@
     <!-- 标签页和搜索 -->
     <div class="page-toolbar">
       <a-radio-group v-model="activeTab" type="button" @change="handleTabChange">
-        <a-radio value="online">在线流</a-radio>
-        <a-radio value="history">历史流</a-radio>
+        <a-radio value="online">{{ texts.onlineStreams }}</a-radio>
+        <a-radio value="history">{{ texts.historyStreams }}</a-radio>
       </a-radio-group>
 
       <div class="toolbar-right">
         <a-select
           v-model="searchDomain"
-          placeholder="请选择域名"
+          :placeholder="texts.selectDomain"
           allow-clear
           style="width: 200px"
           @change="handleSearch"
@@ -25,7 +25,7 @@
         </a-select>
         <a-input-search
           v-model="searchKeyword"
-          placeholder="输入 StreamName（流ID）搜索"
+          :placeholder="texts.searchPlaceholder"
           style="width: 260px"
           @search="handleSearch"
         />
@@ -42,35 +42,35 @@
       row-key="streamName"
     >
       <template #columns>
-        <a-table-column title="StreamName" data-index="streamName" :width="200" />
-        <a-table-column title="域名" data-index="domainName" :width="200" />
-        <a-table-column title="AppName" data-index="appName" :width="150" />
-        <a-table-column title="转码" :width="100">
+        <a-table-column :title="texts.streamName" data-index="streamName" :width="200" />
+        <a-table-column :title="texts.domain" data-index="domainName" :width="200" />
+        <a-table-column :title="texts.appName" data-index="appName" :width="150" />
+        <a-table-column :title="texts.transcoding" :width="100">
           <template #cell>
             <span>-</span>
           </template>
         </a-table-column>
-        <a-table-column title="起始时间" :width="180">
+        <a-table-column :title="texts.startTime" :width="180">
           <template #cell="{ record }">
             {{ formatDateTime(record.startTime) }}
           </template>
         </a-table-column>
-        <a-table-column title="开始推流时间" :width="180">
+        <a-table-column :title="texts.publishTime" :width="180">
           <template #cell="{ record }">
             {{ formatDateTime(record.publishTime) }}
           </template>
         </a-table-column>
-        <a-table-column title="操作" :width="200" fixed="right">
+        <a-table-column :title="texts.actions" :width="200" fixed="right">
           <template #cell="{ record }">
             <a-space>
-              <a-link @click="handlePreview(record)">预览</a-link>
-              <a-link status="danger" @click="handleDropStream(record)">断开</a-link>
+              <a-link @click="handlePreview(record)">{{ texts.preview }}</a-link>
+              <a-link status="danger" @click="handleDropStream(record)">{{ texts.disconnect }}</a-link>
             </a-space>
           </template>
         </a-table-column>
       </template>
       <template #empty>
-        <a-empty description="暂无数据" />
+        <a-empty :description="texts.noData" />
       </template>
     </a-table>
 
@@ -84,27 +84,27 @@
       row-key="streamName"
     >
       <template #columns>
-        <a-table-column title="StreamName" data-index="streamName" :width="200" />
-        <a-table-column title="域名" data-index="domainName" :width="200" />
-        <a-table-column title="AppName" data-index="appName" :width="150" />
-        <a-table-column title="开始时间" :width="180">
+        <a-table-column :title="texts.streamName" data-index="streamName" :width="200" />
+        <a-table-column :title="texts.domain" data-index="domainName" :width="200" />
+        <a-table-column :title="texts.appName" data-index="appName" :width="150" />
+        <a-table-column :title="texts.startTime" :width="180">
           <template #cell="{ record }">
             {{ formatDateTime(record.startTime) }}
           </template>
         </a-table-column>
-        <a-table-column title="结束时间" :width="180">
+        <a-table-column :title="texts.endTime" :width="180">
           <template #cell="{ record }">
             {{ formatDateTime(record.endTime) }}
           </template>
         </a-table-column>
-        <a-table-column title="时长(分钟)" :width="120">
+        <a-table-column :title="texts.duration" :width="120">
           <template #cell="{ record }">
             {{ calculateDuration(record.startTime, record.endTime) }}
           </template>
         </a-table-column>
       </template>
       <template #empty>
-        <a-empty description="暂无数据" />
+        <a-empty :description="texts.noData" />
       </template>
     </a-table>
   </div>
@@ -123,8 +123,42 @@ import {
 import { listDomains } from '@/api/live'
 import { formatDateTime } from '@/utils/date'
 import { useNavigationStore } from '@/stores/navigation'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const navigationStore = useNavigationStore()
+
+const texts = computed(() => ({
+  onlineStreams: t('liveStream.onlineStreams'),
+  historyStreams: t('liveStream.historyStreams'),
+  selectDomain: t('liveStream.selectDomain'),
+  searchPlaceholder: t('liveStream.searchPlaceholder'),
+  streamName: t('liveStream.streamName'),
+  domain: t('liveStream.domain'),
+  appName: t('liveStream.appName'),
+  transcoding: t('liveStream.transcoding'),
+  startTime: t('liveStream.startTime'),
+  publishTime: t('liveStream.publishTime'),
+  actions: t('liveStream.actions'),
+  preview: t('liveStream.preview'),
+  disconnect: t('liveStream.disconnect'),
+  endTime: t('liveStream.endTime'),
+  duration: t('liveStream.duration'),
+  noData: t('liveStream.noData'),
+  noDomainWarning: t('liveStream.noDomainWarning'),
+  noPlayDomainWarning: t('liveStream.noPlayDomainWarning'),
+  loadOnlineStreamsError: t('liveStream.loadOnlineStreamsError'),
+  loadHistoryStreamsError: t('liveStream.loadHistoryStreamsError'),
+  previewTitle: t('liveStream.previewTitle'),
+  previewError: t('liveStream.previewError'),
+  dropStreamConfirmTitle: t('liveStream.dropStreamConfirmTitle'),
+  dropStreamConfirmContent: t('liveStream.dropStreamConfirmContent'),
+  confirm: t('liveStream.confirm'),
+  cancel: t('liveStream.cancel'),
+  dropStreamSuccess: t('liveStream.dropStreamSuccess'),
+  dropStreamError: t('liveStream.dropStreamError'),
+  minutes: t('liveStream.minutes'),
+}))
 
 // 在线流信息接口
 interface OnlineStreamInfo {
@@ -227,7 +261,7 @@ const loadOnlineStreams = async () => {
     }
   } catch (error: any) {
     console.error('加载在线流列表失败:', error)
-    Message.error(error.response?.data?.message || '加载在线流列表失败')
+    Message.error(error.response?.data?.message || texts.value.loadOnlineStreamsError)
     onlineStreams.value = []
   } finally {
     loading.value = false
@@ -246,7 +280,7 @@ const loadHistoryStreams = async () => {
 
     // 如果还是没有域名，提示用户
     if (!domainName) {
-      Message.warning('没有可用的域名，请先添加域名')
+      Message.warning(texts.value.noDomainWarning)
       loading.value = false
       return
     }
@@ -283,7 +317,7 @@ const loadHistoryStreams = async () => {
     }
   } catch (error: any) {
     console.error('加载历史流列表失败:', error)
-    Message.error(error.response?.data?.message || '加载历史流列表失败')
+    Message.error(error.response?.data?.message || texts.value.loadHistoryStreamsError)
     historyStreams.value = []
   } finally {
     loading.value = false
@@ -321,29 +355,29 @@ const handlePreview = async (record: OnlineStreamInfo) => {
     const playDomain = domains.value.find(d => d.type === 1)
 
     if (!playDomain) {
-      Message.warning('未找到播放域名，请先添加播放域名')
+      Message.warning(texts.value.noPlayDomainWarning)
       return
     }
 
     // 使用 navigationStore 跳转到预览页面
-    navigationStore.navigateTo('LivePreview', '直播预览', {
+    navigationStore.navigateTo('LivePreview', texts.value.previewTitle, {
       streamName: record.streamName,
       appName: record.appName || 'live',
       playDomain: playDomain.name
     })
   } catch (error: any) {
     console.error('预览失败:', error)
-    Message.error('预览失败')
+    Message.error(texts.value.previewError)
   }
 }
 
 // 断开推流
 const handleDropStream = (record: OnlineStreamInfo) => {
   Modal.confirm({
-    title: '确认断开',
-    content: `确定要断开流 ${record.streamName} 吗？`,
-    okText: '确定',
-    cancelText: '取消',
+    title: texts.value.dropStreamConfirmTitle,
+    content: `${texts.value.dropStreamConfirmContent} ${record.streamName}？`,
+    okText: texts.value.confirm,
+    cancelText: texts.value.cancel,
     okButtonProps: {
       status: 'danger'
     },
@@ -354,10 +388,10 @@ const handleDropStream = (record: OnlineStreamInfo) => {
           domainName: record.domainName,
           appName: record.appName
         })
-        Message.success('断开推流成功')
+        Message.success(texts.value.dropStreamSuccess)
         loadOnlineStreams()
       } catch (error: any) {
-        Message.error(error.response?.data?.message || '断开推流失败')
+        Message.error(error.response?.data?.message || texts.value.dropStreamError)
       }
     }
   })
