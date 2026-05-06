@@ -10,14 +10,14 @@
   </div>
 
   <div class="share-page">
-    <div class="share-container">
-      <!-- 封面区域 -->
-      <div class="cover-section" id="coverSection">
-        <img class="cover-image" id="coverImage" alt="Cover">
+    <div class="share-container" :class="{ 'verified-layout': verified }">
+      <!-- 封面区域（仅在未验证时显示） -->
+      <div v-if="!verified && !notFound" class="cover-section has-cover">
+        <img class="cover-image" src="/afb9e692c32dbeb268027dc114bba931.png" alt="Cover">
         <div class="cover-gradient"></div>
       </div>
 
-      <div v-if="!notFound" class="content-section">
+      <div v-if="!notFound" class="content-section" :class="{ 'verified-mode': verified }">
         <!-- 密码验证表单 -->
         <div v-if="!verified" id="passwordPage">
           <div class="resource-card" v-if="shareInfo">
@@ -114,23 +114,31 @@
                 >
                   <!-- 图片预览 -->
                   <div v-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'image'" class="file-thumb">
-                    <img :src="getAccessUrl(item)" :alt="item.name" />
+                    <img
+                      :loading="'lazy'"
+                      :src="getAccessUrl(item)"
+                      :alt="item.name"
+                    />
                     <div class="file-card-overlay">
                       <icon-eye :size="32" />
                     </div>
                   </div>
-                  <!-- 视频预览 -->
+                  <!-- 视频预览（滚动到可见区域才加载封面） -->
                   <div v-else-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'video'" class="file-thumb video-preview">
                     <video
-                      :src="getAccessUrl(item)"
                       muted
-                      preload="metadata"
+                      preload="none"
+                      :data-lazy="getAccessUrl(item)"
                       @click.stop="handlePreviewFile(item)"
                     >
                     </video>
                     <div class="file-card-overlay" @click.stop="handlePreviewFile(item)">
-                      <icon-play-circle :size="36" color="white" />
+                      <icon-play-circle :size="40" color="white" />
                     </div>
+                  </div>
+                  <!-- 无访问URL的视频显示图标 -->
+                  <div v-else-if="item.type === 'file' && getFileType(item.name) === 'video'" class="file-thumb video-preview">
+                    <icon-video-camera :size="64" />
                   </div>
                   <!-- 其他类型显示图标 -->
                   <div v-else class="file-thumb">
@@ -256,7 +264,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import {
@@ -351,7 +359,9 @@ const previewType = ref<'image' | 'video' | 'audio' | 'pdf' | 'text' | 'unknown'
 const previewUrl = ref<string>('')
 
 const videoRef = ref<HTMLVideoElement | null>(null)
+let videoObserver: IntersectionObserver | null = null
 const audioRef = ref<HTMLAudioElement | null>(null)
+
 
 function getResourceName(): string {
   if (!shareInfo.value) return ''
@@ -377,6 +387,42 @@ function formatFileSize(bytes: number): string {
 function formatDate(date: string): string {
   const locale = currentLang.value === 'zh' ? 'zh-CN' : 'en-US'
   return new Date(date).toLocaleString(locale)
+}
+
+// 视频懒加载 - 滚动到可见区域才加载封面
+function initVideoLazyLoad() {
+  // 先清理之前的 observer
+  if (videoObserver) {
+    videoObserver.disconnect()
+  }
+
+  // 创建 IntersectionObserver
+  videoObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const video = entry.target as HTMLVideoElement
+          const lazySrc = video.getAttribute('data-lazy')
+          if (lazySrc) {
+            video.src = lazySrc
+            video.preload = 'metadata' // 只加载元数据（封面）
+            video.removeAttribute('data-lazy')
+            videoObserver?.unobserve(video)
+          }
+        }
+      })
+    },
+    {
+      rootMargin: '100px 0px', // 提前100px开始加载
+      threshold: 0.1
+    }
+  )
+
+  // 观察所有视频元素
+  const videos = document.querySelectorAll('video[data-lazy]')
+  videos.forEach((video) => {
+    videoObserver.observe(video)
+  })
 }
 
 async function loadShareInfo() {
@@ -442,9 +488,9 @@ async function handleDownload() {
 
   const file = shareInfo.value.file
   if (file) {
-    const storageType = file.storageType || file.StorageType
     const accessUrl = getAccessUrl(file)
-    if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
+    // 只要有完整的访问URL（http/https开头），就直接使用，不依赖 storageType 判断
+    if (accessUrl && (accessUrl.startsWith('http://') || accessUrl.startsWith('https://'))) {
       const link = document.createElement('a')
       link.href = accessUrl
       link.download = file.name || `file-${Date.now()}`
@@ -516,6 +562,10 @@ async function loadFolderContent(parentId?: number) {
     }
 
     folderFiles.value = items
+    // 初始化视频懒加载
+    nextTick(() => {
+      initVideoLazyLoad()
+    })
   } catch (e: any) {
     console.error('加载文件夹内容失败:', e)
     Message.error(e?.message || '加载文件夹内容失败')
@@ -557,11 +607,13 @@ function getFileType(fileName: string): 'image' | 'video' | 'audio' | 'pdf' | 't
 }
 
 function hasAccessUrl(item: any): boolean {
-  return !!(item.accessUrl || item.accessURL || item.AccessURL)
+  const url = item.accessUrl || item.accessURL || item.AccessURL || item.AccessUrl || ''
+  // 只有完整的 HTTP/HTTPS URL 才算有效访问链接
+  return url.startsWith('http://') || url.startsWith('https://')
 }
 
 function getAccessUrl(item: any): string {
-  return item.accessUrl || item.accessURL || item.AccessURL
+  return item.accessUrl || item.accessURL || item.AccessURL || item.AccessUrl || ''
 }
 
 function canPreview(fileName: string): boolean {
@@ -586,9 +638,9 @@ function handlePreviewFile(file: any) {
   previewFile.value = file
   previewType.value = getFileType(file.name)
 
-  const storageType = file.storageType || file.StorageType
   const accessUrl = getAccessUrl(file)
-  if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
+  // 只要有完整的访问URL（http/https开头），就直接使用，不依赖 storageType 判断
+  if (accessUrl && (accessUrl.startsWith('http://') || accessUrl.startsWith('https://'))) {
     previewUrl.value = accessUrl
   } else {
     previewUrl.value = getFilePreviewUrl(file.id)
@@ -634,9 +686,9 @@ function handleFileClick(file: any) {
 }
 
 function handleDownloadFile(file: any) {
-  const storageType = file.storageType || file.StorageType
   const accessUrl = getAccessUrl(file)
-  if (storageType === 'oss' && accessUrl && accessUrl.length > 0) {
+  // 只要有完整的访问URL（http/https开头），就直接使用，不依赖 storageType 判断
+  if (accessUrl && (accessUrl.startsWith('http://') || accessUrl.startsWith('https://'))) {
     const link = document.createElement('a')
     link.href = accessUrl
     link.download = file.name
@@ -660,51 +712,61 @@ function handleDownloadFile(file: any) {
 }
 
 onMounted(() => {
-  // 加载封面图片
-  const coverImage = document.getElementById('coverImage') as HTMLImageElement
-  const coverSection = document.getElementById('coverSection')
-  if (coverImage && coverSection) {
-    coverImage.src = '/afb9e692c32dbeb268027dc114bba931.png'
-    coverSection.classList.add('has-cover')
-  }
-
   if (!shareCode.value) {
     notFound.value = true
     return
   }
   loadShareInfo()
 })
+
+onUnmounted(() => {
+  if (videoObserver) {
+    videoObserver.disconnect()
+    videoObserver = null
+  }
+})
 </script>
 
 <style scoped>
+/* ========== 极简设计风格 - 参考图风格 ========== */
+
+:root {
+  --primary-color: #007bff;
+  --primary-hover: #0056b3;
+  --bg-page: #f8f9fa;
+  --bg-white: #ffffff;
+  --bg-card: #e9f5ff;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --border-color: #ced4da;
+  --border-focus: #007bff;
+}
+
 /* 语言切换开关 */
 .language-switcher {
   position: fixed !important;
-  top: 12px !important;
-  right: 12px !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: 1px solid #d1e8ff !important;
-  border-radius: 0 !important;
-  padding: 8px 12px !important;
-  z-index: 9998 !important;
-  backdrop-filter: blur(10px) !important;
-  box-shadow: 0 2px 8px rgba(0, 168, 255, 0.1) !important;
+  top: 8px !important;
+  right: 8px !important;
+  background: white !important;
+  border: 1px solid #e9ecef !important;
+  border-radius: 2px !important;
+  padding: 4px 8px !important;
+  z-index: 9999 !important;
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
 }
 
 .language-label {
-  font-size: 13px !important;
+  font-size: 12px !important;
   font-weight: 500 !important;
-  color: var(--text-secondary) !important;
-  white-space: nowrap !important;
+  color: #333 !important;
 }
 
 .language-switch {
   position: relative !important;
-  width: 44px !important;
-  height: 24px !important;
+  width: 36px !important;
+  height: 20px !important;
   cursor: pointer !important;
 }
 
@@ -714,83 +776,100 @@ onMounted(() => {
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  background: #d1e8ff !important;
-  border-radius: 12px !important;
-  transition: background 0.3s ease !important;
+  background: #e9ecef !important;
+  border-radius: 10px !important;
+  transition: background 0.2s ease !important;
 }
 
 .language-switch-slider.active {
-  background: linear-gradient(135deg, #00a8ff 0%, #0066cc 100%) !important;
+  background: #007bff !important;
 }
 
 .language-switch-thumb {
   position: absolute !important;
   top: 2px !important;
   left: 2px !important;
-  width: 20px !important;
-  height: 20px !important;
+  width: 16px !important;
+  height: 16px !important;
   background: white !important;
   border-radius: 50% !important;
-  transition: transform 0.3s ease !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition: transform 0.2s ease !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
 .language-switch-slider.active .language-switch-thumb {
-  transform: translateX(20px) !important;
-}
-
-:root {
-  --primary-color: #00a8ff;
-  --primary-dark: #0066cc;
-  --primary-gradient: linear-gradient(135deg, #00a8ff 0%, #0066cc 100%);
-  --accent-gradient: linear-gradient(135deg, #e8f4ff 0%, #b3d8ff 100%);
-  --bg-page: #f5f7fa;
-  --bg-white: #ffffff;
-  --bg-card: #f0f8ff;
-  --bg-hover: #e6f2ff;
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
-  --text-white: #ffffff;
-  --border-color: #d1e8ff;
-  --border-light: #e6f2ff;
-  --shadow-sm: 0 2px 8px rgba(0, 168, 255, 0.1);
-  --shadow-md: 0 4px 16px rgba(0, 168, 255, 0.15);
-  --shadow-lg: 0 8px 32px rgba(0, 168, 255, 0.2);
+  transform: translateX(16px) !important;
 }
 
 .share-page {
-  height: 100vh;
-  background: var(--accent-gradient);
+  min-height: 100vh;
+  background: var(--bg-page) !important;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   padding: 0;
-  overflow: hidden;
+  overflow-y: auto;
+}
+
+/* PC端密码页面 - 封面和内容同宽，加边框 */
+.share-page:not(:has(.verified-layout)) .share-container {
+  max-width: 800px;
+  width: 100%;
+  padding: 0 0 40px 0;
+  margin-top: 40px;
+  margin-bottom: 40px;
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+}
+
+.share-page:not(:has(.verified-layout)) .cover-section {
+  max-width: 800px;
+  width: 100%;
+}
+
+.share-page:not(:has(.verified-layout)) .content-section {
+  max-width: 800px;
+  width: 100%;
+  padding: 0 16px;
+}
+
+/* 已验证时保持一致背景 */
+.share-page:has(.verified-layout) {
+  background: var(--bg-page) !important;
 }
 
 .share-container {
   max-width: 800px;
   width: 100%;
-  background: var(--bg-white);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-  animation: fadeIn 0.5s ease-out;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* 已验证时容器加宽 */
+.share-container.verified-layout {
+  max-width: 1200px;
+  width: 100%;
+  padding: 40px;
+  align-items: stretch;
 }
 
-/* 封面区域 */
+/* 封面区域（仅密码页面显示） */
 .cover-section {
   width: 100%;
-  aspect-ratio: 16/9;
-  max-height: 500px;
-  background: var(--primary-gradient);
+  max-width: 100%;
+  height: auto;
+  background: transparent;
   position: relative;
   overflow: hidden;
+  margin: 0 0 16px 0;
+  border-radius: 0;
 }
 
 .cover-section.has-cover {
@@ -799,46 +878,64 @@ onMounted(() => {
 
 .cover-image {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
   display: block;
 }
 
 .cover-gradient {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
-}
-
-.cover-section.has-cover .cover-gradient {
-  background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.7) 100%);
+  display: none;
 }
 
 /* 内容区域 */
 .content-section {
-  padding: 40px;
-  height: 100%;
-  overflow: hidden;
+  padding: 0 16px;
+  width: 100%;
+  max-width: 800px;
+}
+
+/* 密码页面的内容左对齐 */
+.content-section:not(.verified-mode) {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: auto;
+}
+
+/* 已验证状态下（文件列表） */
+.content-section.verified-mode {
+  padding: 0;
+  max-width: 100%;
 }
 
 .resource-card {
   display: flex !important;
   align-items: center !important;
-  gap: 16px !important;
+  gap: 12px !important;
   padding: 20px !important;
-  background: #f0f8ff !important;
-  border-radius: 0 !important;
-  border: 1px solid #d1e8ff !important;
-  margin-bottom: 24px !important;
+  background: #f0f7ff !important;
+  border-radius: 4px !important;
+  border: 2px solid #b8d4f0 !important;
+  margin-bottom: 28px !important;
+  width: 100%;
+  max-width: 800px;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.08) !important;
+}
+
+/* 文件列表中的 resource-card */
+.content-section.verified-mode .resource-card {
+  max-width: 100%;
+  margin-bottom: 20px;
+  background: var(--bg-card) !important;
+  border-color: #d6eaff !important;
 }
 
 .resource-icon {
-  width: 64px !important;
-  height: 64px !important;
-  border-radius: 16px !important;
-  background: linear-gradient(135deg, rgba(0, 168, 255, 0.1) 0%, rgba(0, 102, 204, 0.1) 100%) !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 2px !important;
+  background: rgba(0, 123, 255, 0.1) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -846,8 +943,8 @@ onMounted(() => {
 }
 
 .resource-icon :deep(.arco-icon) {
-  width: 36px;
-  height: 36px;
+  width: 20px;
+  height: 20px;
   color: var(--primary-color);
 }
 
@@ -857,11 +954,13 @@ onMounted(() => {
 }
 
 .resource-name {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--text-primary);
-  margin-bottom: 6px;
-  word-break: break-all;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .resource-meta {
@@ -869,48 +968,67 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .form-section {
-  margin-bottom: 24px;
+  width: 100%;
+  max-width: 800px;
 }
 
 .form-label {
   display: block;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .password-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  align-items: stretch !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* 输入框容器 - 让它自适应剩余空间 */
+.password-input-wrapper :deep(.arco-input-group-wrapper),
+.password-input-wrapper :deep(.arco-input-wrapper),
+.password-input-wrapper :deep(.arco-input-group) {
+  flex: 1 !important;
+  min-width: 0 !important;
+  width: auto !important;
 }
 
 /* 覆盖 Arco Design 密码输入框样式 */
 .password-input-wrapper :deep(.arco-input-wrapper) {
-  flex: 1 !important;
+  width: 100% !important;
   padding: 0 !important;
-  border: 2px solid #d1e8ff !important;
+  border: 2px solid var(--border-color) !important;
   border-radius: 0 !important;
   transition: all 0.2s ease !important;
 }
 
 .password-input-wrapper :deep(.arco-input-wrapper.arco-input-focus) {
-  border-color: #00a8ff !important;
-  box-shadow: 0 0 0 4px rgba(0, 168, 255, 0.1) !important;
+  border-color: var(--border-focus) !important;
 }
 
 .password-input-wrapper :deep(.arco-input) {
-  padding: 16px 20px !important;
+  height: 50px !important;
+  line-height: 50px !important;
+  font-size: 16px !important;
+}
+
+.password-input-wrapper :deep(.arco-input) {
+  padding: 10px 12px !important;
   border: none !important;
-  border-radius: 14px !important;
-  font-size: 18px !important;
-  height: auto !important;
-  line-height: 1.5 !important;
+  border-radius: 2px !important;
+  font-size: 14px !important;
+  height: 40px !important;
+  line-height: 1.4 !important;
   box-shadow: none !important;
 }
 
@@ -919,69 +1037,82 @@ onMounted(() => {
   outline: none !important;
 }
 
-.submit-btn {
-  padding: 16px 40px !important;
-  background: linear-gradient(135deg, #00a8ff 0%, #0066cc 100%) !important;
-  color: white !important;
-  border: 1px solid #00a8ff !important;
+/* 强制按钮样式 - 全屏宽度 */
+.password-input-wrapper > .submit-btn,
+.submit-btn.arco-btn.arco-btn-primary {
+  width: 100% !important;
+  min-width: 100% !important;
+  padding: 0 28px !important;
+  background-color: #007bff !important;
+  background: #007bff !important;
+  color: #ffffff !important;
+  border: none !important;
   border-radius: 0 !important;
   font-size: 16px !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
   white-space: nowrap !important;
-  height: auto !important;
-  line-height: 1.5 !important;
+  height: 50px !important;
+  line-height: 50px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  z-index: 999 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.password-input-wrapper > .submit-btn:hover,
+.submit-btn.arco-btn.arco-btn-primary:hover {
+  background-color: #0056b3 !important;
+  background: #0056b3 !important;
 }
 
 .submit-btn:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 24px rgba(0, 102, 204, 0.4) !important;
+  background: var(--primary-hover) !important;
 }
 
 .error-text {
-  color: #ef4444;
-  font-size: 13px;
+  color: #dc3545;
+  font-size: 12px;
   margin-top: 8px;
+  text-align: left;
 }
 
 /* 分享内容展示 */
 #filesPage {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow: hidden;
+  width: 100%;
 }
 
 .action-section {
   display: flex;
-  justify-content: center;
-  margin-top: 24px;
-  flex-shrink: 0;
-}
-
-.resource-card {
+  justify-content: flex-start;
+  margin-top: 0;
+  margin-bottom: 24px;
   flex-shrink: 0;
 }
 
 .download-button {
-  padding: 16px 40px !important;
-  background: linear-gradient(135deg, #00a8ff 0%, #0066cc 100%) !important;
+  padding: 0 32px !important;
+  background: var(--primary-color) !important;
   color: white !important;
-  border: 1px solid #00a8ff !important;
-  border-radius: 0 !important;
-  font-size: 16px !important;
-  font-weight: 700 !important;
+  border: none !important;
+  border-radius: 2px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
   white-space: nowrap !important;
-  height: auto !important;
-  line-height: 1.5 !important;
+  height: 40px !important;
+  line-height: 40px !important;
 }
 
 .download-button:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 24px rgba(0, 102, 204, 0.4) !important;
+  background: var(--primary-hover) !important;
 }
 
 /* 文件夹内容 */
@@ -989,10 +1120,7 @@ onMounted(() => {
   margin-top: 0;
   border-top: none;
   padding-top: 0;
-  height: calc(100vh - 260px); /* 增加高度，确保最后一行完整显示 */
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
 }
 
 /* 面包屑导航 */
@@ -1000,11 +1128,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  background: #f0f8ff;
-  border-radius: 0;
-  border: 1px solid #d1e8ff;
-  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border-radius: 2px;
+  border: 1px solid #d6eaff;
+  margin-bottom: 20px;
   overflow-x: auto;
   flex-wrap: nowrap;
   flex-shrink: 0;
@@ -1020,12 +1148,12 @@ onMounted(() => {
   cursor: pointer;
   white-space: nowrap;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: 2px;
   transition: all 0.2s ease;
 }
 
 .breadcrumb :deep(.arco-breadcrumb-item:hover) {
-  background: var(--bg-hover);
+  background: rgba(0, 123, 255, 0.1);
   color: var(--primary-color);
 }
 
@@ -1042,79 +1170,26 @@ onMounted(() => {
 /* 文件网格 */
 .file-grid {
   display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 16px !important;
-  margin-top: 20px !important;
-  width: 100% !important;
-}
-
-/* PC 端响应式样式 */
-@media (min-width: 1024px) {
-  .file-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    margin-bottom: 40px !important; /* 解决显示不完整的问题 */
-  }
-
-  /* 调整文件夹内容高度，确保 PC 端显示完整 */
-  .folder-content {
-    height: calc(100vh - 240px) !important;
-  }
-}
-
-/* 平板端响应式样式 */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .file-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
-}
-
-/* 手机端响应式样式 */
-@media (max-width: 767px) {
-  .file-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    margin-bottom: 120px !important; /* 解决显示不完整的问题 */
-  }
-
-  /* 调整文件夹内容高度，避免溢出 */
-  .folder-content {
-    height: calc(100vh - 300px) !important;
-  }
-}
-
-/* 确保 a-spin 内部的文件网格也能正确显示 */
-:deep(.arco-spin) {
-  display: block !important;
-  width: 100% !important;
-}
-
-:deep(.arco-spin-container) {
-  display: block !important;
-  width: 100% !important;
-}
-
-.folder-content :deep(.arco-spin) .file-grid,
-:deep(.arco-spin) .file-grid,
-:deep(.arco-spin-container) .file-grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 16px !important;
-  margin-top: 20px !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 20px !important;
+  margin-top: 0 !important;
   width: 100% !important;
 }
 
 .file-card {
   background: #ffffff !important;
-  border: 1px solid #d1e8ff !important;
-  border-radius: 0 !important;
+  border: 2px solid #dee2e6 !important;
+  border-radius: 4px !important;
   overflow: hidden !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
 }
 
 .file-card:hover {
-  border-color: #00a8ff !important;
-  box-shadow: 0 4px 16px rgba(0, 168, 255, 0.15) !important;
-  transform: translateY(-4px) !important;
+  border-color: #007bff !important;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2) !important;
+  transform: translateY(-2px) !important;
 }
 
 .file-card.clickable {
@@ -1124,12 +1199,13 @@ onMounted(() => {
 .file-thumb {
   width: 100% !important;
   aspect-ratio: 16/9 !important;
-  background: #f0f8ff !important;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e3eef9 100%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   position: relative !important;
   overflow: hidden !important;
+  border-bottom: 1px solid #d0d7e0;
 }
 
 .file-thumb.video-preview {
@@ -1145,18 +1221,18 @@ onMounted(() => {
 }
 
 .file-card:hover .file-thumb img {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .file-card-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 1;
-  transition: opacity 0.3s ease;
+  opacity: 0;
+  transition: opacity 0.2s ease;
   color: white;
 }
 
@@ -1167,87 +1243,91 @@ onMounted(() => {
 .file-thumb :deep(.arco-icon) {
   width: 48px;
   height: 48px;
-  color: var(--primary-color);
+  color: #0056b3;
+  filter: drop-shadow(0 1px 2px rgba(0, 86, 179, 0.2));
 }
 
 .file-card-name {
-  padding: 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  word-break: break-all;
+  white-space: nowrap;
+  background: #ffffff;
 }
 
 .file-card-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
-  padding: 0 16px 16px;
+  padding: 0 12px 12px;
 }
 
 .file-card-actions :deep(.arco-btn) {
-  font-size: 12px !important;
-  height: 32px;
-  padding: 0 12px !important;
-  border-radius: 8px;
+  font-size: 11px !important;
+  height: 28px;
+  padding: 0 10px !important;
+  border-radius: 2px;
 }
 
 /* 错误状态 */
 .error-state {
   text-align: center;
   padding: 80px 40px;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 .error-state .error-icon {
-  width: 80px;
-  height: 80px;
-  background: rgba(239, 68, 68, 0.1);
+  width: 64px;
+  height: 64px;
+  background: rgba(220, 53, 69, 0.1);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 20px;
+  margin: 0 auto 16px;
 }
 
 .error-state .error-icon :deep(.arco-icon) {
-  width: 40px;
-  height: 40px;
-  color: #ef4444;
+  width: 32px;
+  height: 32px;
+  color: #dc3545;
 }
 
 .error-state h2 {
-  font-size: 24px;
+  font-size: 20px;
   color: var(--text-primary);
   margin-bottom: 12px;
+  font-weight: 600;
 }
 
 .error-state p {
   color: var(--text-secondary);
   font-size: 14px;
-  line-height: 1.8;
+  line-height: 1.6;
 }
 
 /* 空文件夹 */
 .empty-folder {
   text-align: center;
   padding: 80px 40px;
+  grid-column: 1 / -1;
 }
 
 .empty-folder :deep(.arco-icon) {
-  font-size: 80px;
-  color: #e5e7eb;
+  font-size: 64px;
+  color: #dee2e6;
 }
 
 .empty-folder p {
-  margin-top: 20px;
-  font-size: 16px;
-  color: #6b7280;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #6c757d;
 }
 
 /* 预览对话框 */
@@ -1273,9 +1353,9 @@ onMounted(() => {
 .preview-text {
   max-height: 70vh;
   overflow: auto;
-  background: #f9fafb;
+  background: #f8f9fa;
   padding: 20px;
-  border-radius: 12px;
+  border-radius: 2px;
 }
 
 .preview-text pre {
@@ -1288,111 +1368,96 @@ onMounted(() => {
 }
 
 /* ========== 响应式优化 ========== */
-@media (max-width: 768px) {
-  .share-page {
-    padding: 0;
-    background: var(--bg-white);
-  }
 
-  .share-container {
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .content-section {
-    padding: 20px 16px;
-  }
-
-  .resource-card {
-    padding: 14px !important;
-    gap: 12px !important;
-  }
-
-  .resource-icon {
-    width: 48px !important;
-    height: 48px !important;
-    border-radius: 12px !important;
-  }
-
-  .resource-icon :deep(.arco-icon) {
-    width: 28px;
-    height: 28px;
-  }
-
-  .resource-name {
-    font-size: 16px;
-  }
-
-  .file-detail {
-    padding: 14px;
-    gap: 12px;
-  }
-
-  .file-preview-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-  }
-
-  .file-preview-icon :deep(.arco-icon) {
-    width: 28px;
-    height: 28px;
-  }
-
-  .file-name {
-    font-size: 16px;
-  }
-
-  .password-input-wrapper {
-    flex-direction: column;
-  }
-
-  .password-input-wrapper :deep(.arco-input-wrapper) {
-    width: 100%;
-  }
-
-  .submit-btn {
-    width: 100%;
-  }
-
-  .download-button {
-    width: 100%;
-  }
-
-  .file-card {
-    border-radius: 12px;
-  }
-
-  .file-card-name {
-    font-size: 12px;
-    padding: 8px 10px;
-  }
-
-  .file-card-actions {
-    padding: 0 8px 8px;
-  }
-
-  .file-card-actions :deep(.arco-btn) {
-    font-size: 11px !important;
-    height: 28px;
-    padding: 0 8px !important;
+/* PC 端大屏幕 */
+@media (min-width: 1200px) {
+  .file-grid {
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 24px !important;
   }
 }
 
-@media (max-width: 480px) {
+/* 平板端 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .file-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 16px !important;
+  }
+
+  .share-container.verified-layout {
+    padding: 0 24px 24px;
+  }
+}
+
+/* 手机端 - 移动端全屏风格 */
+@media (max-width: 767px) {
   .share-page {
     padding: 0;
-    background: var(--bg-white);
+    background: #f8f9fa !important;
   }
 
   .share-container {
     max-width: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .share-container.verified-layout {
+    padding: 16px;
+  }
+
+  .cover-section {
+    max-width: 100%;
+    width: 100%;
+    margin: 0 0 16px 0;
     border-radius: 0;
-    box-shadow: none;
+  }
+
+  .cover-section .cover-image {
+    width: 100%;
+    border-radius: 0;
   }
 
   .content-section {
-    padding: 16px;
+    max-width: 100%;
+    padding: 0 16px;
+  }
+
+  .resource-card {
+    max-width: 100%;
+    padding: 16px !important;
+    margin-bottom: 20px;
+  }
+
+  .password-input-wrapper {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .password-input-wrapper :deep(.arco-input-wrapper) {
+    border-radius: 0 !important;
+    height: 50px !important;
+  }
+
+  .password-input-wrapper :deep(.arco-input) {
+    height: 50px !important;
+    line-height: 50px !important;
+    font-size: 16px !important;
+  }
+
+  .submit-btn {
+    width: 100% !important;
+    min-width: 100% !important;
+    height: 50px !important;
+    line-height: 50px !important;
+    border-radius: 0 !important;
+    font-size: 16px !important;
   }
 
   .file-grid {
@@ -1400,14 +1465,44 @@ onMounted(() => {
     gap: 12px !important;
   }
 
-  .file-card-icon :deep(.arco-icon) {
-    width: 40px;
-    height: 40px;
+  .file-card-name {
+    font-size: 12px;
+    padding: 10px;
   }
 
-  .file-card-name {
-    font-size: 13px;
-    padding: 12px;
+  .file-card-actions {
+    padding: 0 8px 8px;
+  }
+
+  .file-card-actions :deep(.arco-btn) {
+    font-size: 10px !important;
+    height: 26px;
+    padding: 0 8px !important;
+  }
+
+  .breadcrumb {
+    padding: 8px 10px;
+  }
+
+  .download-button {
+    width: 100%;
+  }
+
+  .form-label {
+    font-size: 14px !important;
+    margin-bottom: 12px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .file-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .language-switcher {
+    top: 4px !important;
+    right: 4px !important;
   }
 }
 

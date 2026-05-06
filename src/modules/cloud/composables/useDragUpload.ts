@@ -50,7 +50,7 @@ export interface DragUploadOptions {
  */
 const DEFAULT_OPTIONS: Required<DragUploadOptions> = {
   allowedTypes: [],
-  maxFileSize: 2 * 1024 * 1024 * 1024, // 2GB
+  maxFileSize: 20 * 1024 * 1024 * 1024, // 2GB
   maxFiles: 100,
   multiple: true,
   onUpload: async () => {},
