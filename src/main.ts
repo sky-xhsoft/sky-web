@@ -6,15 +6,13 @@ import ArcoVue from '@arco-design/web-vue'
 import ArcoVueIcon from '@arco-design/web-vue/es/icon'
 import '@arco-design/web-vue/dist/arco.css'
 import '@wangeditor/editor/dist/css/style.css'
-import i18n, { currentArcoLocale } from './locales'
+import i18n from './locales'
 import './style.css'
 
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)
-app.use(ArcoVue, {
-  locale: currentArcoLocale.value
-})
+app.use(ArcoVue)
 app.use(ArcoVueIcon)
 app.use(i18n)
 app.mount('#app')

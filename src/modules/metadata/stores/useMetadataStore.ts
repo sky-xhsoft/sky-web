@@ -5,6 +5,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as api from '../api/metadata'
+import { adaptColumn, adaptTable, adaptDictItem, adaptChildRef } from '../api/adapter'
 import type {
   Subsystem,
   TableCategory,
@@ -186,117 +187,19 @@ export const useMetadataStore = defineStore('metadata', () => {
       }
 
       // 映射字段名：兼容后端返回的小写驼峰格式
-      config.columns = config.columns.map(col => {
-        const mapped: any = { ...col }
-        // 如果后端返回小写字段名，映射到大写
-        if (!mapped.DB_NAME && (col as any).dbName) {
-          mapped.DB_NAME = (col as any).dbName
-        }
-        if (!mapped.DISPLAY_NAME && (col as any).displayName) {
-          mapped.DISPLAY_NAME = (col as any).displayName
-        }
-        if (!mapped.IS_VISIBLE && (col as any).isVisible) {
-          mapped.IS_VISIBLE = (col as any).isVisible
-        }
-        if (!mapped.IS_ACTIVE && (col as any).isActive) {
-          mapped.IS_ACTIVE = (col as any).isActive
-        }
-        if (!mapped.ORDERNO && (col as any).orderno !== undefined) {
-          mapped.ORDERNO = (col as any).orderno
-        }
-        if (!mapped.GRID_WIDTH && (col as any).displayCols) {
-          mapped.GRID_WIDTH = (col as any).displayCols
-        }
-        if (!mapped.MASK && (col as any).mask) {
-          mapped.MASK = (col as any).mask
-        }
-        if (!mapped.NULL_ABLE && (col as any).nullAble) {
-          mapped.NULL_ABLE = (col as any).nullAble
-        }
-        if (!mapped.CONTROL_TYPE && (col as any).controlType) {
-          mapped.CONTROL_TYPE = (col as any).controlType
-        }
-        return mapped
-      })
+      config.columns = config.columns.map(adaptColumn)
 
       // 处理子表配置的字段名映射
       if (config.childTables) {
         config.childTables = config.childTables.map((childTable: any) => {
-          // 处理子表的 ref 属性（关联关系配置）
-          const mappedRef: any = { ...childTable.ref }
-          if (!mappedRef.EDIT_TYPE && (childTable.ref as any).editType) {
-            mappedRef.EDIT_TYPE = (childTable.ref as any).editType
-          }
-          if (!mappedRef.FILTER && (childTable.ref as any).filter) {
-            mappedRef.FILTER = (childTable.ref as any).filter
-          }
-          if (!mappedRef.ASSOCTYPE && (childTable.ref as any).assocType) {
-            mappedRef.ASSOCTYPE = (childTable.ref as any).assocType
-          }
-
-          // 处理子表的 table 属性（表配置）
-          const mappedTable: any = { ...childTable.table }
-          if (!mappedTable.ID && (childTable.table as any).id) {
-            mappedTable.ID = (childTable.table as any).id
-          }
-          if (!mappedTable.NAME && (childTable.table as any).name) {
-            mappedTable.NAME = (childTable.table as any).name
-          }
-          if (!mappedTable.DISPLAY_NAME && (childTable.table as any).displayName) {
-            mappedTable.DISPLAY_NAME = (childTable.table as any).displayName
-          }
-          if (!mappedTable.IS_ACTIVE && (childTable.table as any).isActive) {
-            mappedTable.IS_ACTIVE = (childTable.table as any).isActive
-          }
-
-          // 处理子表的 columns 属性（字段配置）
-          const mappedColumns = childTable.columns.map((col: any) => {
-            const mappedCol: any = { ...col }
-            if (!mappedCol.DB_NAME && (col as any).dbName) {
-              mappedCol.DB_NAME = (col as any).dbName
-            }
-            if (!mappedCol.DISPLAY_NAME && (col as any).displayName) {
-              mappedCol.DISPLAY_NAME = (col as any).displayName
-            }
-            if (!mappedCol.IS_VISIBLE && (col as any).isVisible) {
-              mappedCol.IS_VISIBLE = (col as any).isVisible
-            }
-            if (!mappedCol.IS_ACTIVE && (col as any).isActive) {
-              mappedCol.IS_ACTIVE = (col as any).isActive
-            }
-            if (!mappedCol.ORDERNO && (col as any).orderno !== undefined) {
-              mappedCol.ORDERNO = (col as any).orderno
-            }
-            if (!mappedCol.GRID_WIDTH && (col as any).displayCols) {
-              mappedCol.GRID_WIDTH = (col as any).displayCols
-            }
-            if (!mappedCol.MASK && (col as any).mask) {
-              mappedCol.MASK = (col as any).mask
-            }
-            if (!mappedCol.NULL_ABLE && (col as any).nullAble) {
-              mappedCol.NULL_ABLE = (col as any).nullAble
-            }
-            if (!mappedCol.CONTROL_TYPE && (col as any).controlType) {
-              mappedCol.CONTROL_TYPE = (col as any).controlType
-            }
-            return mappedCol
-          })
+          const mappedRef = adaptChildRef(childTable.ref)
+          const mappedTable = adaptTable(childTable.table)
+          const mappedColumns = childTable.columns.map(adaptColumn)
 
           // 处理子表的 dictData 属性（字典数据）
           const mappedDictData: any = {}
           for (const key in childTable.dictData) {
-            const mappedKey = Number(key)
-            const items = childTable.dictData[key]
-            mappedDictData[mappedKey] = items.map((item: any) => {
-              const mappedItem: any = { ...item }
-              if (!mappedItem.VALUE && (item as any).value) {
-                mappedItem.VALUE = (item as any).value
-              }
-              if (!mappedItem.DISPLAY_NAME && (item as any).displayName) {
-                mappedItem.DISPLAY_NAME = (item as any).displayName
-              }
-              return mappedItem
-            })
+            mappedDictData[Number(key)] = childTable.dictData[key].map(adaptDictItem)
           }
 
           return {
