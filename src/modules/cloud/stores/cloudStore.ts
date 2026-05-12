@@ -548,6 +548,7 @@ export const useCloudStore = defineStore('cloud', () => {
     } else {
       selectedFileIds.value.add(fileId)
     }
+    selectedFileIds.value = new Set(selectedFileIds.value)
   }
 
   /**
@@ -559,29 +560,36 @@ export const useCloudStore = defineStore('cloud', () => {
     } else {
       selectedFolderIds.value.add(folderId)
     }
+    selectedFolderIds.value = new Set(selectedFolderIds.value)
   }
 
   /**
    * 全选文件
    */
   function selectAllFiles() {
-    files.value.forEach((file) => selectedFileIds.value.add(file.ID))
+    const newSet = new Set<number>()
+    files.value.forEach((file) => newSet.add(file.ID))
+    selectedFileIds.value = newSet
   }
 
   /**
    * 全选所有项（文件夹+文件）
    */
   function selectAll() {
-    currentFolderChildren.value.forEach((folder) => selectedFolderIds.value.add(folder.ID || folder.id))
-    files.value.forEach((file) => selectedFileIds.value.add(file.ID))
+    const newFolderSet = new Set<number>()
+    const newFileSet = new Set<number>()
+    currentFolderChildren.value.forEach((folder) => newFolderSet.add(folder.ID || folder.id))
+    files.value.forEach((file) => newFileSet.add(file.ID))
+    selectedFolderIds.value = newFolderSet
+    selectedFileIds.value = newFileSet
   }
 
   /**
    * 清空选择
    */
   function clearSelection() {
-    selectedFileIds.value.clear()
-    selectedFolderIds.value.clear()
+    selectedFileIds.value = new Set()
+    selectedFolderIds.value = new Set()
   }
 
   /**
