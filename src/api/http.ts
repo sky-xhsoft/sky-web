@@ -37,6 +37,36 @@ api.interceptors.request.use((config) => {
 
 let refreshing: Promise<string | null> | null = null
 
+async function getNewToken(): Promise<string | null> {
+  if (refreshing) return refreshing
+
+  const refreshToken = getRefreshToken()
+  if (!refreshToken) return null
+
+  refreshing = refreshAccessToken(refreshToken)
+    .then((data) => {
+      if (!data) return null
+      const { user, deviceId } = getStoredUser()
+      const ensuredDeviceId = deviceId || getDeviceId() || ''
+      saveAuth({
+        token: data.token,
+        refreshToken,
+        user,
+        deviceId: ensuredDeviceId,
+        company: null,
+        companyConf: null,
+        loginType: null,
+      })
+      return data.token
+    })
+    .catch(() => null)
+    .finally(() => {
+      refreshing = null
+    })
+
+  return refreshing
+}
+
 api.interceptors.response.use(
   (response) => {
     const payload = response?.data
@@ -57,36 +87,7 @@ api.interceptors.response.use(
         return Promise.reject(error)
       }
 
-      const refreshToken = getRefreshToken()
-      if (!refreshToken) {
-        redirectToLogin()
-        return Promise.reject(error)
-      }
-
-      if (!refreshing) {
-        refreshing = refreshAccessToken(refreshToken)
-          .then((data) => {
-            if (!data) return null
-            const { user, deviceId } = getStoredUser()
-            const ensuredDeviceId = deviceId || getDeviceId() || ''
-            saveAuth({
-              token: data.token,
-              refreshToken,
-              user,
-              deviceId: ensuredDeviceId,
-              company: null,
-              companyConf: null,
-              loginType: null,
-            })
-            return data.token
-          })
-          .catch(() => null)
-          .finally(() => {
-            refreshing = null
-          })
-      }
-
-      const newToken = await refreshing
+      const newToken = await getNewToken()
       if (newToken && config.headers) {
         ;(config as any).__isRetryRequest = true
         config.headers.Authorization = `Bearer ${newToken}`
