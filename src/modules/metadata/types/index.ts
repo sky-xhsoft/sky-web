@@ -38,112 +38,131 @@ export interface TableCategory {
 
 /**
  * 表单配置
+ * 与后端 entity.SysTable 对齐
  */
 export interface SysTable {
+  // === 来自后端实体 ===
   ID: number
-  CATEGORY_ID: number        // 所属类别
-  NAME: string              // 表单唯一标识
-  DISPLAY_NAME: string      // 显示名称
-  TABLE_NAME?: string       // 实际数据库表名
-  DESCRIPTION?: string      // 描述
+  NAME: string                    // 表单唯一标识（物理表名）
+  DISPLAY_NAME: string            // 显示名称
+  ENAME?: string                  // 英文名称
+  REAL_TABLE_ID?: number          // 虚拟表映射到的实体表ID
+  FILTER?: string                 // 表级数据过滤SQL
+  AK_COLUMN_ID?: number           // 输入主键列ID
+  DK_COLUMN_ID?: number           // 显示主键列ID
+  MASK?: string                   // 操作权限掩码 (A:新增 M:修改 D:删除 Q:查询 S:提交 U:反提交 V:作废 I:导入 E:导出)
+  SYS_TABLECATEGORY_ID?: number   // 表分类ID
+  URL?: string                    // 菜单跳转URL
+  RPC_NAME?: string               // RPC服务名称
+  IS_MENU?: 'Y' | 'N'             // 是否作为菜单项
+  ICO_IMG?: string                // 菜单图标URL
+  IS_DROPDOWN?: 'Y' | 'N'         // FK字段是否下拉显示
+  SYS_OBJUICONF_ID?: number       // 界面配置ID
+  SYS_DIRECTORY_ID?: number       // 安全目录ID
+  SYS_PARENT_TABLE_ID?: number    // 父表ID（主从表）
+  ROWCNT?: number                 // 统计行数
+  IS_BIG?: 'Y' | 'N'              // 大表标识（跳过列表COUNT）
+  PROPS?: string                  // 扩展属性JSON
+  DESCRIPTION?: string            // 备注
+  ORDERNO?: number                // 排序号
 
-  // 主键配置
-  PK?: string               // 主键字段名
-  AK?: string               // 输入主键(Alternate Key)
-  DK?: string               // 显示主键(Display Key)
-
-  // 界面展示
-  MASK?: string             // 权限掩码 (A:新增 M:修改 D:删除 Q:查询 S:提交 U:反提交 V:作废)
-  ALLOW_BROWSE?: 'Y' | 'N'  // 允许翻阅
-  BROWSE_AFTER_ADD?: 'Y' | 'N'   // 新增后翻阅
-  BROWSE_AFTER_DELETE?: 'Y' | 'N' // 删除后翻阅
-
-  // 扩展属性
-  FILTER_CONDITION?: string  // 过滤条件 SQL
-  SYS_OBJUICONF_ID?: number  // 界面配置 ID
-  PROPS?: string            // 扩展属性 JSON
-
-  ORDERNO?: number
+  // === 标准审计字段 ===
   IS_ACTIVE: 'Y' | 'N'
   CREATE_BY?: string
   CREATE_TIME?: string
   UPDATE_BY?: string
   UPDATE_TIME?: string
+
+  // === 前端扩展字段 (向后兼容) ===
+  /** @deprecated 使用 MASK 控制浏览行为 */
+  ALLOW_BROWSE?: 'Y' | 'N'
+  BROWSE_AFTER_ADD?: 'Y' | 'N'
+  BROWSE_AFTER_DELETE?: 'Y' | 'N'
+  TABLE_NAME?: string
+  CATEGORY_ID?: number
+  FILTER_CONDITION?: string
+  PK?: string
+  AK?: string
+  DK?: string
 }
 
 /**
  * 字段配置
+ * 与后端 entity.SysColumn 对齐（JSON camelCase）
  */
 export interface SysColumn {
+  // === 来自后端实体 ===
   ID: number
-  TABLE_ID: number           // 所属表单
-  DB_NAME: string           // 数据库字段名
-  DISPLAY_NAME: string      // 显示名称
+  SYS_TABLE_ID: number        // 所属表单
+  DB_NAME: string             // 数据库字段名
+  DISPLAY_NAME: string        // 显示名称
+  FULL_NAME?: string          // 完整字段名
+  ENAME?: string              // 英文名称
+  COL_TYPE?: string           // 数据库列类型 (varchar/int/decimal/...)
+  COL_LENGTH?: number         // 数据库列长度
+  COL_PRECISION?: number      // 小数位数
+  IS_DK?: 'Y' | 'N'           // 是否为显示主键
+  IS_AK?: 'Y' | 'N'           // 是否为输入主键
+  NULL_ABLE?: 'Y' | 'N'       // 是否可空
+  IS_UPPERCASE?: 'Y' | 'N'    // 是否自动转大写
+  IS_QUERY?: 'Y' | 'N'        // 是否作为查询条件
+  ORDERNO?: number            // 字段排序号
+  MASK?: string               // 字段级操作掩码
+  MODIFI_ABLE?: 'Y' | 'N'     // 是否可修改
+  SET_VALUE_TYPE?: string     // 赋值策略 (pk/docno/fk/byPage/select/createBy/sysdate/operator/password/ignore)
+  REF_TABLE_ID?: number       // FK 关联目标表ID
+  REF_COLUMN_ID?: number      // FK 关联目标列ID
+  REF_ON_DELETE?: string      // FK 删除策略 (restrict/cascade/setNull/noAction)
+  SEQ?: string                // 单据编号规则
+  SYS_DICT_ID?: string        // 关联数据字典ID
+  DEFAULT_VALUE?: string      // 默认值
+  REG_EXPRESSION?: string     // 校验正则
+  ERR_MSG?: string            // 错误提示
+  FILTER?: string             // 字段级过滤SQL
+  DISPLAY_TYPE?: string       // 显示控件类型 (text/textarea/select/date/...)
+  DISPLAY_COLS?: number       // 显示列数
+  DISPLAY_ROWS?: number       // 显示行数
+  PROPS?: string              // 扩展属性JSON
+  IS_SHOW_TITLE?: string      // 是否显示标题
+  SUBMETHOD?: string          // 子方法
+  HR_COLUMN_ID?: number       // HR折叠关联字段ID
+  SHOW_COLUMN_ID?: number     // 显示控制字段ID
+  SHOW_COLUMN_VALUE?: string  // 显示控制字段值
+  DESCRIPTION?: string        // 备注
+  SGRADE?: number             // 字段访问级别
 
-  // 字段类型
-  DATA_TYPE: 'text' | 'int' | 'decimal' | 'date' | 'datetime' | 'char' | 'varchar'
-  LENGTH?: number           // 字段长度
-  DECIMAL_PLACES?: number   // 小数位数
+  // === 运行时扩展 (非数据库字段) ===
+  refTableIsDropdown?: string  // FK关联表是否下拉方式
+  refTableName?: string        // FK关联表名
+  fkDisplayValue?: string      // FK显示值
 
-  // 控件类型
-  CONTROL_TYPE: 'text' | 'textarea' | 'number' | 'select' | 'radio' |
-                'checkbox' | 'date' | 'datetime' | 'file' | 'image' |
-                'foreign_key' | 'password' | 'email' | 'url'
-
-  // 字典关联
-  DICT_TABLE_ID?: number    // 字典表ID
-  DICT_VALUE_FIELD?: string // 字典值字段
-  DICT_DISPLAY_FIELD?: string // 字典显示字段
-  SYS_DICT_ID?: string      // 字典ID（用于 select 类型）
-
-  // 外键关联
-  SET_VALUE_TYPE?: string       // 赋值方式（fk: 外键关联, select: 下拉选择）
-  REF_TABLE_ID?: number         // 关联表ID（数据库字段：REF_TABLE_ID）
-  REF_COLUMN_ID?: number        // 关联显示字段ID（数据库字段：REF_COLUMN_ID）
-  REF_ON_DELETE?: 'noAction' | 'cascade' | 'setNull'  // 删除动作（数据库字段：REF_ON_DELETE）
-  FK_TABLE_ID?: number          // 外键表ID（旧字段，向后兼容）
-  FK_VALUE_FIELD?: string       // 外键值字段（旧字段，向后兼容）
-  FK_DISPLAY_FIELD?: string     // 外键显示字段（旧字段，向后兼容）
-
-  // 显示类型
-  DISPLAY_TYPE?: string         // 显示类型（blank,button,hr,check,file,image,select,text,textarea,date,datetime,clob,xml,json）
-
-  // 验证规则
-  NULL_ABLE?: 'Y' | 'N'     // 是否可空
-  DEFAULT_VALUE?: string    // 默认值
-  REG_EXPRESSION?: string   // 正则表达式
-  ERROR_MSG?: string        // 错误提示
-
-  // 显示控制
-  IS_VISIBLE?: 'Y' | 'N'    // 是否可见
-  CONTROL_CONFIG?: string   // 控件配置（JSON）
-  ACTION_ID?: number        // 操作ID
-  IS_UPPERCASE?: 'Y' | 'N'  // 是否自动转大写
-  MASK?: string             // 字段掩码
-  IS_DK?: 'Y' | 'N'         // 是否为显示主键
-  COL_TYPE?: string         // 字段类型
-  COL_LENGTH?: number       // 字段长度
-  MODIFI_ABLE?: 'Y' | 'N'   // 是否可修改
-  IS_READONLY?: 'Y' | 'N'   // 是否只读
-  IS_EDITABLE_IN_GRID?: 'Y' | 'N' // 表格中可编辑
-  IS_QUERY?: 'Y' | 'N'      // 是否作为查询条件
-  SHOW_COLUMN_ID?: number   // 显示控制字段ID
-  SHOW_COLUMN_VALUE?: string // 显示控制字段值
-
-  // 界面布局
-  GRID_WIDTH?: number       // 表格列宽度
-  FORM_COLSPAN?: number     // 表单列跨度
-  DISPLAY_COLS?: number     // 显示列数（控件宽度，默认 1）
-  DISPLAY_ROWS?: number     // 显示行数（控件高度，默认 1）
-  PLACEHOLDER?: string      // 占位符
-  HELP_TEXT?: string        // 帮助文本
-
-  ORDERNO?: number
-  IS_ACTIVE: 'Y' | 'N'
+  // === 标准审计字段 ===
+  IS_ACTIVE?: 'Y' | 'N'
   CREATE_BY?: string
   CREATE_TIME?: string
   UPDATE_BY?: string
   UPDATE_TIME?: string
+
+  // === 前端扩展字段 (向后兼容，部分已废弃) ===
+  /** @deprecated 使用 DISPLAY_TYPE 替代 */
+  CONTROL_TYPE?: string
+  /** @deprecated 使用 MASK 获取字段读写权限 */
+  IS_VISIBLE?: 'Y' | 'N'
+  IS_READONLY?: 'Y' | 'N'
+  IS_EDITABLE_IN_GRID?: 'Y' | 'N'
+  GRID_WIDTH?: number
+  FORM_COLSPAN?: number
+  PLACEHOLDER?: string
+  HELP_TEXT?: string
+  CONTROL_CONFIG?: string
+  ACTION_ID?: number
+  // 旧FK字段 (向后兼容)
+  FK_TABLE_ID?: number
+  FK_VALUE_FIELD?: string
+  FK_DISPLAY_FIELD?: string
+  DICT_TABLE_ID?: number
+  DICT_VALUE_FIELD?: string
+  DICT_DISPLAY_FIELD?: string
 }
 
 /**
