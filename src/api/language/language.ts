@@ -64,39 +64,24 @@ export interface UpdateTranslationRequest {
 
 // 获取语言列表
 export async function listLanguages(): Promise<Language[]> {
-  try {
-    const res = await api.get('/api/v1/languages')
-    return res.data
-  } catch (e) {
-    console.error('获取语言列表失败:', e)
-    return []
-  }
+  const res = await api.get('/api/v1/languages')
+  return res.data
 }
 
 // 获取翻译列表
 export async function listTranslations(
   params?: ListTranslationsRequest
 ): Promise<ListTranslationsResponse> {
-  try {
-    const res = await api.get('/api/v1/languages/translations', { params })
-    return res.data
-  } catch (e) {
-    console.error('获取翻译列表失败:', e)
-    return { items: [], total: 0, page: 1, pageSize: 20 }
-  }
+  const res = await api.get('/api/v1/languages/translations', { params })
+  return res.data
 }
 
 // 获取单个翻译
 export async function getTranslation(key: string, language?: string): Promise<Translation | null> {
-  try {
-    const res = await api.get(`/api/v1/languages/translations/${key}`, {
-      params: { language },
-    })
-    return res.data
-  } catch (e) {
-    console.error('获取翻译失败:', e)
-    return null
-  }
+  const res = await api.get(`/api/v1/languages/translations/${key}`, {
+    params: { language },
+  })
+  return res.data
 }
 
 // 添加翻译
