@@ -3,15 +3,15 @@
     <!-- 顶部说明 -->
     <div class="page-notice">
       <div class="notice-item">
-        <strong>关于推流域名：</strong>
+        <strong>{{ t('liveDomain.pageNotice.pushDomain') }}</strong>
         系统提供的推流域名仅供测试使用，<a href="#" target="_blank">使用上有诸多限制</a>，建议您尽快添加自有域名。
       </div>
       <div class="notice-item">
-        <strong>关于播放域名：</strong>
+        <strong>{{ t('liveDomain.pageNotice.playDomain') }}</strong>
         若需要在您自有域名下播放直播流，需要先添加播放域名，并完成域名CNAME配置。<a href="#" target="_blank">域名管理</a> 或 <a href="#" target="_blank">CNAME配置</a>
       </div>
       <div class="notice-item">
-        您当前已添加 <a href="#" target="_blank">域名归属</a> 中包含主播推流的域名。
+        {{ t('liveDomain.pageNotice.domainOwner') }}
       </div>
     </div>
 
@@ -20,7 +20,7 @@
       <div class="toolbar-right">
         <a-input-search
           v-model="searchKeyword"
-          placeholder="输入关键词搜索域名"
+          :placeholder="t('liveDomain.searchPlaceholder')"
           style="width: 260px"
           @search="handleSearch"
         />
@@ -28,7 +28,7 @@
           <template #icon>
             <icon-plus />
           </template>
-          添加域名
+          {{ t('liveDomain.addDomain') }}
         </a-button>
       </div>
     </div>
@@ -42,7 +42,7 @@
       row-key="name"
     >
       <template #columns>
-        <a-table-column title="域名" data-index="name" :width="200">
+        <a-table-column :title="t('liveDomain.domainTable.domain')" data-index="name" :width="200">
           <template #cell="{ record }">
             <div class="domain-cell">
               <a-link>{{ record.name }}</a-link>
@@ -51,7 +51,7 @@
           </template>
         </a-table-column>
 
-        <a-table-column title="CNAME" :width="300">
+        <a-table-column :title="t('liveDomain.domainTable.cname')" :width="300">
           <template #cell="{ record }">
             <div class="cname-cell">
               <a-tooltip :content="getCnameStatusTooltip(record.cnameConfigured)">
@@ -70,53 +70,53 @@
           </template>
         </a-table-column>
 
-        <a-table-column title="类型" :width="80">
+        <a-table-column :title="t('liveDomain.domainTable.type')" :width="80">
           <template #cell="{ record }">
             <a-tag :color="record.type === 0 ? 'blue' : 'green'">
-              {{ record.type === 0 ? '推流域名' : '播放域名' }}
+              {{ record.type === 0 ? t('liveDomain.domainTable.pushDomain') : t('liveDomain.domainTable.playDomain') }}
             </a-tag>
           </template>
         </a-table-column>
 
-        <a-table-column title="区域" data-index="region" :width="80">
+        <a-table-column :title="t('liveDomain.domainTable.region')" data-index="region" :width="80">
           <template #cell="{ record }">
-            {{ record.region || '全球加速' }}
+            {{ record.region || t('liveDomain.domainTable.globalAcceleration') }}
           </template>
         </a-table-column>
 
-        <a-table-column title="状态" :width="120">
+        <a-table-column :title="t('liveDomain.domainTable.status')" :width="120">
           <template #cell="{ record }">
             <div class="status-cell">
               <span :class="['status-dot', record.status === 1 ? 'status-enabled' : 'status-disabled']"></span>
-              <span>{{ record.status === 1 ? '已启用' : '已禁用' }}</span>
+              <span>{{ record.status === 1 ? t('liveDomain.domainTable.enabled') : t('liveDomain.domainTable.disabled') }}</span>
             </div>
           </template>
         </a-table-column>
 
-        <a-table-column title="创建时间" :width="180">
+        <a-table-column :title="t('liveDomain.domainTable.createTime')" :width="180">
           <template #cell="{ record }">
             {{ formatDateTime(record.createTime) }}
           </template>
         </a-table-column>
 
-        <a-table-column title="操作" :width="200" fixed="right">
+        <a-table-column :title="t('liveDomain.domainTable.operations')" :width="200" fixed="right">
           <template #cell="{ record }">
             <a-space>
-              <a-link @click="handleManage(record)">管理</a-link>
+              <a-link @click="handleManage(record)">{{ t('liveDomain.domainTable.manage') }}</a-link>
               <a-link
                 v-if="record.status === 1"
                 @click="handleForbid(record)"
               >
-                禁用
+                {{ t('liveDomain.domainTable.forbid') }}
               </a-link>
               <a-link
                 v-else
                 status="success"
                 @click="handleEnable(record)"
               >
-                启用
+                {{ t('liveDomain.domainTable.enable') }}
               </a-link>
-              <a-link status="danger" @click="handleDelete(record)">删除</a-link>
+              <a-link status="danger" @click="handleDelete(record)">{{ t('liveDomain.domainTable.delete') }}</a-link>
             </a-space>
           </template>
         </a-table-column>
@@ -126,14 +126,14 @@
     <!-- 添加域名对话框 - 步进式 -->
     <a-modal
       v-model:visible="addDialogVisible"
-      :title="currentStep === 1 ? '添加域名' : 'CNAME配置'"
+      :title="currentStep === 1 ? t('liveDomain.addStepTitle.step1') : t('liveDomain.addStepTitle.step2')"
       :width="700"
       :footer="false"
       @cancel="handleCancelAdd"
     >
       <a-steps :current="currentStep" style="margin-bottom: 24px">
-        <a-step title="基本配置" />
-        <a-step title="CNAME配置" />
+        <a-step :title="t('liveDomain.addDialog.basicConfig')" />
+        <a-step :title="t('liveDomain.addDialog.cnameConfig')" />
       </a-steps>
 
       <!-- 步骤1：基本配置 -->
@@ -144,50 +144,50 @@
           :rules="addFormRules"
           layout="vertical"
         >
-          <a-form-item label="类型" field="domainType">
+          <a-form-item :label="t('liveDomain.addDialog.domainType')" field="domainType">
             <a-radio-group v-model="addForm.domainType">
-              <a-radio :value="0">推流域名</a-radio>
-              <a-radio :value="1">播放域名</a-radio>
+              <a-radio :value="0">{{ t('liveDomain.domainTable.pushDomain') }}</a-radio>
+              <a-radio :value="1">{{ t('liveDomain.domainTable.playDomain') }}</a-radio>
             </a-radio-group>
             <div class="form-tip">
-              推流域名用于推送直播流，播放域名用于播放直播流
+              {{ t('liveDomain.addDialog.domainTypeTip') }}
             </div>
           </a-form-item>
 
-          <a-form-item label="加速区域" field="region">
+          <a-form-item :label="t('liveDomain.addDialog.accelerationRegion')" field="region">
             <a-select v-model="addForm.region" placeholder="请选择加速区域">
-              <a-option value="global">全球加速</a-option>
-              <a-option value="cn">中国大陆</a-option>
-              <a-option value="overseas">海外及港澳台</a-option>
+              <a-option :value="'global'">{{ t('liveDomain.addDialog.region.global') }}</a-option>
+              <a-option :value="'cn'">{{ t('liveDomain.addDialog.region.cn') }}</a-option>
+              <a-option :value="'overseas'">{{ t('liveDomain.addDialog.region.overseas') }}</a-option>
             </a-select>
           </a-form-item>
 
-          <a-form-item label="域名" field="domainName">
+          <a-form-item :label="t('liveDomain.addDialog.domainName')" field="domainName">
             <a-input
               v-model="addForm.domainName"
               placeholder="请输入域名，如：push.example.com"
             />
             <div class="form-tip">
-              域名需要已完成ICP备案，且未被其他账号添加
+              {{ t('liveDomain.addDialog.domainNameTip') }}
             </div>
           </a-form-item>
 
-          <a-form-item label="标签（可选）">
+          <a-form-item :label="t('liveDomain.addDialog.title')" field="tags">
             <a-input
               v-model="addForm.tags"
               placeholder="请输入标签，多个标签用逗号分隔"
             />
             <div class="form-tip">
-              标签用于分类管理域名，便于后续查找和管理
+              {{ t('liveDomain.addDialog.tagsTip') }}
             </div>
           </a-form-item>
         </a-form>
 
         <div style="text-align: right; margin-top: 24px">
           <a-space>
-            <a-button @click="handleCancelAdd">取消</a-button>
+            <a-button @click="handleCancelAdd">{{ t('liveDomain.confirm.cancel') }}</a-button>
             <a-button type="primary" :loading="submitting" @click="handleAddDomain">
-              添加域名并进入下一步
+              {{ t('liveDomain.addDialog.nextStep') }}
             </a-button>
           </a-space>
         </div>
@@ -196,13 +196,13 @@
       <!-- 步骤2：CNAME配置 -->
       <div v-if="currentStep === 2">
         <a-alert type="success" style="margin-bottom: 20px">
-          域名 {{ addedDomainName }} 已添加成功！请按照以下步骤完成 CNAME 配置。
+          {{ t('liveDomain.cname.configSuccess') }}
         </a-alert>
 
         <!-- CNAME 配置状态 -->
         <div class="cname-status-card" style="margin-bottom: 20px">
           <div class="status-header">
-            <span class="status-label">CNAME 配置状态：</span>
+            <span class="status-label">{{ t('liveDomain.cname.status.label') }}</span>
             <a-tag :color="cnameStatusColor" size="large">
               <template #icon>
                 <span :class="['status-dot', cnameStatusClass]"></span>
@@ -213,11 +213,11 @@
         </div>
 
         <div class="cname-config-section">
-          <h4>配置步骤：</h4>
+          <h4>{{ t('liveDomain.cname.configSteps') }}</h4>
           <ol class="config-steps">
-            <li>登录您的域名服务商（如阿里云、腾讯云、DNSPod等）</li>
-            <li>找到域名解析设置页面</li>
-            <li>添加以下 CNAME 记录：</li>
+            <li>{{ t('liveDomain.configSteps.loginToDomainProvider') }}</li>
+            <li>{{ t('liveDomain.configSteps.findDnsSettings') }}</li>
+            <li>{{ t('liveDomain.configSteps.addRecord') }}</li>
           </ol>
 
           <a-table
@@ -227,10 +227,10 @@
             style="margin: 16px 0"
           >
             <template #columns>
-              <a-table-column title="域名" data-index="domain" :width="200" />
-              <a-table-column title="主机记录" data-index="host" :width="120" />
-              <a-table-column title="记录类型" data-index="type" :width="100" />
-              <a-table-column title="记录值" data-index="value">
+              <a-table-column :title="t('liveDomain.cname.record.domain')" data-index="domain" :width="200" />
+              <a-table-column :title="t('liveDomain.cname.record.host')" data-index="host" :width="120" />
+              <a-table-column :title="t('liveDomain.cname.record.type')" data-index="type" :width="100" />
+              <a-table-column :title="t('liveDomain.cname.record.value')" data-index="value">
                 <template #cell="{ record }">
                   <div class="cname-cell">
                     <span>{{ record.value }}</span>
@@ -245,25 +245,25 @@
             <template #icon>
               <icon-info-circle />
             </template>
-            CNAME 配置生效时间通常为 5-10 分钟，最长可能需要 24 小时。配置完成后，您可以点击下方按钮查询配置状态。
+            {{ t('liveDomain.cname.statusCheckTip') }}
           </a-alert>
 
           <div class="config-links">
             <a href="https://cloud.tencent.com/document/product/267/19908" target="_blank">
-              如何配置 CNAME？
+              {{ t('liveDomain.configLinks.howToConfig') }}
             </a>
             <span class="divider">|</span>
             <a href="#" @click.prevent="checkCnameStatus">
-              查询 CNAME 状态
+              {{ t('liveDomain.configLinks.checkCname') }}
             </a>
           </div>
         </div>
 
         <div style="text-align: right; margin-top: 24px">
           <a-space>
-            <a-button @click="handleFinishAdd">稍后配置</a-button>
+            <a-button @click="handleFinishAdd">{{ t('liveDomain.addDialog.laterConfig') }}</a-button>
             <a-button type="primary" @click="handleFinishAdd">
-              完成
+              {{ t('liveDomain.confirm.complete') }}
             </a-button>
           </a-space>
         </div>
@@ -293,7 +293,9 @@ import {
 } from '@/api/live'
 import { useNavigationStore } from '@/stores/navigation'
 import { formatDateTime } from '@/utils/date'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const navigationStore = useNavigationStore()
 
 // 前端使用的域名信息接口（小写字段）
@@ -389,11 +391,11 @@ const cnameRecords = computed(() => {
 const cnameStatusText = computed(() => {
   switch (cnameStatus.value) {
     case 1:
-      return '已配置'
+      return t('liveDomain.cname.status.configured')
     case 2:
-      return '配置失败'
+      return t('liveDomain.cname.status.failed')
     default:
-      return '未配置'
+      return t('liveDomain.cname.status.unconfigured')
   }
 })
 
@@ -481,7 +483,6 @@ const handleCancelAdd = () => {
 
 // 添加域名（步骤1）
 const handleAddDomain = async () => {
-
   if (!addFormRef.value) {
     return
   }
@@ -500,7 +501,7 @@ const handleAddDomain = async () => {
       domainName: addForm.domainName,
       domainType: addForm.domainType
     })
-    Message.success('添加域名成功')
+    Message.success(t('liveDomain.messages.addSuccess'))
     addedDomainName.value = addForm.domainName
     cnameStatus.value = 0 // 重置为未配置
     currentStep.value = 2
@@ -524,7 +525,7 @@ const handleFinishAdd = () => {
 // 查询 CNAME 状态
 const checkCnameStatus = async () => {
   if (!addedDomainName.value) {
-    Message.warning('域名信息不存在')
+    Message.warning(t('liveDomain.messages.domainNotExists'))
     return
   }
 
@@ -536,10 +537,10 @@ const checkCnameStatus = async () => {
     cnameStatus.value = result.status
 
     if (result.status === 1) {
-      Message.success('CNAME 配置验证成功！')
+      Message.success(t('liveDomain.messages.cnameCheckSuccess'))
     } else {
       // status === 0 (未验证) 或 status === 2 (验证失败) 都显示相同提示
-      Message.error('域名未正确配置成功，请检查DNS记录是否正确配置')
+      Message.error(t('liveDomain.messages.cnameCheckFailed'))
     }
   } catch (error: any) {
     Message.error(error.response?.data?.message || '查询CNAME状态失败')
@@ -560,14 +561,14 @@ const handleManage = (row: DomainInfo) => {
 // 启用域名
 const handleEnable = async (row: DomainInfo) => {
   Modal.confirm({
-    title: '提示',
+    title: t('liveDomain.confirm.tip'),
     content: `确定要启用域名 ${row.name} 吗？`,
-    okText: '确定',
-    cancelText: '取消',
+    okText: t('liveDomain.confirm.confirm'),
+    cancelText: t('liveDomain.confirm.cancel'),
     onOk: async () => {
       try {
         await enableDomain(row.name)
-        Message.success('启用域名成功')
+        Message.success(t('liveDomain.messages.enableSuccess'))
         loadDomains()
       } catch (error: any) {
         Message.error(error.response?.data?.message || '启用域名失败')
@@ -579,14 +580,14 @@ const handleEnable = async (row: DomainInfo) => {
 // 禁用域名
 const handleForbid = async (row: DomainInfo) => {
   Modal.confirm({
-    title: '提示',
+    title: t('liveDomain.confirm.tip'),
     content: `确定要禁用域名 ${row.name} 吗？`,
-    okText: '确定',
-    cancelText: '取消',
+    okText: t('liveDomain.confirm.confirm'),
+    cancelText: t('liveDomain.confirm.cancel'),
     onOk: async () => {
       try {
         await forbidDomain(row.name)
-        Message.success('禁用域名成功')
+        Message.success(t('liveDomain.messages.forbidSuccess'))
         loadDomains()
       } catch (error: any) {
         Message.error(error.response?.data?.message || '禁用域名失败')
@@ -598,17 +599,17 @@ const handleForbid = async (row: DomainInfo) => {
 // 删除域名
 const handleDelete = async (row: DomainInfo) => {
   Modal.confirm({
-    title: '警告',
+    title: t('liveDomain.confirm.warning'),
     content: `确定要删除域名 ${row.name} 吗？此操作不可恢复！`,
-    okText: '确定',
-    cancelText: '取消',
+    okText: t('liveDomain.confirm.confirm'),
+    cancelText: t('liveDomain.confirm.cancel'),
     okButtonProps: {
       status: 'danger'
     },
     onOk: async () => {
       try {
         await deleteDomain(row.name)
-        Message.success('删除域名成功')
+        Message.success(t('liveDomain.messages.deleteSuccess'))
         loadDomains()
       } catch (error: any) {
         Message.error(error.response?.data?.message || '删除域名失败')
@@ -624,9 +625,9 @@ const copyToClipboard = (text: string) => {
   // 优先使用 Clipboard API
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => {
-      Message.success('已复制到剪贴板')
+      Message.success(t('liveDomain.messages.copySuccess'))
     }).catch(() => {
-      Message.error('复制失败')
+      Message.error(t('liveDomain.messages.copyFailed'))
     })
   } else {
     // 降级方案：使用传统的 document.execCommand
@@ -641,9 +642,9 @@ const copyToClipboard = (text: string) => {
       document.body.removeChild(textarea)
 
       if (successful) {
-        Message.success('已复制到剪贴板')
+        Message.success(t('liveDomain.messages.copySuccess'))
       } else {
-        Message.error('复制失败')
+        Message.error(t('liveDomain.messages.copyFailed'))
       }
     } catch (err) {
       Message.error('复制失败，请手动复制')

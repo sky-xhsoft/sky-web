@@ -1,7 +1,7 @@
 <template>
   <div class="cloud-toolbar">
     <div class="cloud-toolbar__left">
-      <!-- 上传按钮 -->
+      <!-- Upload button -->
       <a-upload
         :custom-request="handleUpload"
         :show-file-list="false"
@@ -10,32 +10,32 @@
         <template #upload-button>
           <a-button type="primary">
             <icon-upload />
-            上传文件
+            {{ t('cloud.upload') }}
           </a-button>
         </template>
       </a-upload>
 
-      <!-- 新建文件夹 -->
+      <!-- New folder -->
       <a-button @click="handleCreateFolder">
         <icon-folder-add />
-        新建文件夹
+        {{ t('cloud.createFolder') }}
       </a-button>
 
-      <!-- 刷新 -->
+      <!-- Refresh -->
       <a-button @click="handleRefresh" :loading="refreshing">
         <icon-refresh />
-        刷新
+        {{ t('cloud.refresh') }}
       </a-button>
     </div>
 
     <div class="cloud-toolbar__right">
-      <!-- 搜索栏插槽 -->
+      <!-- Search slot -->
       <slot name="search"></slot>
 
-      <!-- 排序下拉插槽 -->
+      <!-- Sort slot -->
       <slot name="sort"></slot>
 
-      <!-- 视图切换 -->
+      <!-- View toggle -->
       <a-radio-group
         :model-value="viewMode"
         type="button"
@@ -44,11 +44,11 @@
       >
         <a-radio value="grid">
           <icon-apps />
-          网格
+          {{ t('cloud.gridView') }}
         </a-radio>
         <a-radio value="list">
           <icon-list />
-          列表
+          {{ t('cloud.listView') }}
         </a-radio>
       </a-radio-group>
     </div>
@@ -64,6 +64,9 @@ import {
   IconList,
 } from '@arco-design/web-vue/es/icon'
 import type { RequestOption } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   viewMode?: 'grid' | 'list'
@@ -155,7 +158,7 @@ function handleViewModeChange(value: string | number | boolean) {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* 响应式调整 */
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .cloud-toolbar {
     padding: 16px;

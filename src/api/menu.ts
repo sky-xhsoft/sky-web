@@ -4,6 +4,7 @@ export type MenuTreeNode = {
   id: number
   name: string
   displayName?: string
+  EName?: string
   orderno?: number
   type?: string
   url?: string

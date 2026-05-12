@@ -4,12 +4,12 @@
     <div class="cloud-view__content">
       <!-- 主区域 -->
       <main ref="dropZoneRef" class="cloud-view__main" :class="{ 'drag-over': dragUpload.isDragging.value }">
-        <!-- 拖拽上传提示覆盖层 -->
+        <!-- Drag and drop upload overlay -->
         <div v-if="dragUpload.isDragging.value" class="drag-overlay">
           <div class="drag-overlay-content">
             <icon-cloud-download :size="64" />
-            <div class="drag-overlay-text">释放文件以上传</div>
-            <div class="drag-overlay-hint">支持多个文件同时上传</div>
+            <div class="drag-overlay-text">{{ t('cloud.dropFiles') }}</div>
+            <div class="drag-overlay-hint">{{ t('cloud.dropFilesHint') }}</div>
           </div>
         </div>
 
@@ -38,7 +38,7 @@
             </div>
             <a-button type="text" @click="handleOpenShareManager">
               <template #icon><icon-share-alt /></template>
-              我的分享
+              {{ t('cloud.myShares') }}
             </a-button>
           </div>
         </div>
@@ -94,25 +94,25 @@
           <div v-if="selection.selectedCount.value > 0" class="cloud-view__batch-actions">
             <div class="batch-actions__inner">
               <div class="batch-info">
-                已选中 <span class="batch-count">{{ selection.selectedCount.value }}</span> 项
+                {{ t('cloud.selectedItems', { count: selection.selectedCount.value }) }}
                 <span class="batch-size" v-if="selection.selectedTotalSize.value > 0">
-                  共 {{ formatFileSize(selection.selectedTotalSize.value) }}
+                  {{ t('cloud.totalSize', { size: formatFileSize(selection.selectedTotalSize.value) }) }}
                 </span>
               </div>
               <div class="batch-buttons">
-                <a-button size="small" @click="handleSelectAll">全选</a-button>
-                <a-button size="small" @click="handleClearSelection">取消</a-button>
+                <a-button size="small" @click="handleSelectAll">{{ t('cloud.selectAll') }}</a-button>
+                <a-button size="small" @click="handleClearSelection">{{ t('cloud.deselectAll') }}</a-button>
                 <a-button size="small" @click="handleBatchDownload" :disabled="selection.getSelectedFiles().length === 0">
                   <template #icon><icon-download /></template>
-                  下载
+                  {{ t('cloud.download') }}
                 </a-button>
                 <a-button size="small" @click="handleShowMoveDialog">
                   <template #icon><icon-sort /></template>
-                  移动
+                  {{ t('cloud.move') }}
                 </a-button>
                 <a-button size="small" status="danger" @click="handleShowBatchDeleteDialog">
                   <template #icon><icon-delete /></template>
-                  删除
+                  {{ t('cloud.delete') }}
                 </a-button>
               </div>
             </div>
@@ -220,6 +220,9 @@ import { Message } from '@arco-design/web-vue'
 import { IconShareAlt, IconCloudDownload, IconDownload, IconSort, IconDelete } from '@arco-design/web-vue/es/icon'
 import type { TreeNodeData } from '@arco-design/web-vue'
 import { useNavigationStore } from '@/stores/navigation'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 导入组件
 import {
@@ -343,7 +346,7 @@ const folderTreeData = computed<TreeNodeData[]>(() => {
   return [
     {
       key: 0,
-      title: '根目录',
+      title: t('cloud.rootDirectory'),
       children: convertToTreeData(store.folderTree),
     },
   ]
@@ -388,7 +391,7 @@ async function handleRefresh() {
   refreshing.value = true
   try {
     await store.refreshAll()
-    Message.success('刷新成功')
+    Message.success(t('cloud.refreshSuccess'))
   } catch (e) {
     // 错误已在store中处理
   } finally {
@@ -396,21 +399,21 @@ async function handleRefresh() {
   }
 }
 
-// ==================== 工具栏操作 ====================
+// ==================== Toolbar actions ====================
 async function handleUpload(files: File[]) {
   if (files.length === 0) return
 
-  // 20GB = 20 * 1024 * 1024 * 1024 字节
+  // 20GB = 20 * 1024 * 1024 * 1024 bytes
   const MAX_FILE_SIZE = 20 * 1024 * 1024 * 1024
 
   for (const fileItem of files) {
-    // 检查文件大小
+    // Check file size
     if (fileItem.size > MAX_FILE_SIZE) {
-      Message.error(`文件 ${fileItem.name} 超过 20GB 限制，无法上传`)
+      Message.error(t('cloud.fileTooLarge', { name: fileItem.name }))
       continue
     }
 
-    // 大文件自动使用断点续传，小文件使用普通上传
+    // Use resumable upload for large files, normal upload for small files
     await upload.uploadWithResumable(fileItem, store.currentFolderId)
   }
 }
@@ -466,7 +469,7 @@ async function handleItemDoubleClick(item: GridItem) {
       currentItem.value = item
       dialogs.preview = true
     } else {
-      Message.warning('暂不支持预览此类型文件')
+      Message.warning(t('cloud.previewNotSupported'))
     }
   }
 }
@@ -507,7 +510,7 @@ async function handleItemAction(payload: { action: string; item: GridItem }) {
       if (item.type === 'file' && item.file && preview.canPreview(item.file)) {
         dialogs.preview = true
       } else {
-        Message.warning('暂不支持预览此类型文件')
+        Message.warning(t('cloud.previewNotSupported'))
       }
       break
 
@@ -684,7 +687,7 @@ function handleClearCompletedUploads() {
 
 // ==================== 分享管理 ====================
 function handleOpenShareManager() {
-  navigationStore.navigateTo('CloudShareManager', '我的分享', {}, false)
+  navigationStore.navigateTo('CloudShareManager', t('cloud.myShares'), {}, false)
 }
 
 async function handleRefreshShares() {

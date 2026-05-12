@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 import {
   IconVideoCamera,
   IconCloud,
@@ -18,6 +20,7 @@ import {
 } from '@arco-design/web-vue/es/icon'
 
 const router = useRouter()
+const { t } = useI18n()
 let selectedPlatform = ''
 
 const goToLogin = (p:string) => {
@@ -50,14 +53,17 @@ const selectPlatform = (platform: string) => {
               <icon-storage class="nav-logo-icon" />
             </div>
             <div class="nav-brand-text">
-              <h1 class="nav-title">AI Live</h1>
-              <p class="nav-subtitle">AI视频平台</p>
+              <h1 class="nav-title">{{ t('welcome.brandTitle') }}</h1>
+              <p class="nav-subtitle">{{ t('welcome.brandSubtitle') }}</p>
             </div>
           </div>
           <div class="nav-links">
-            <a href="#features" class="nav-link">功能介绍</a>
-            <a href="#platforms" class="nav-link">产品平台</a>
-            <a href="#stats" class="nav-link">数据统计</a>
+            <a href="#features" class="nav-link">{{ t('welcome.navLinks.features') }}</a>
+            <a href="#platforms" class="nav-link">{{ t('welcome.navLinks.platforms') }}</a>
+            <a href="#stats" class="nav-link">{{ t('welcome.navLinks.stats') }}</a>
+          </div>
+          <div class="nav-actions">
+            <LanguageSwitcher />
           </div>
         </div>
       </div>
@@ -71,24 +77,21 @@ const selectPlatform = (platform: string) => {
           <div class="hero-left">
             <div class="hero-badge">
               <span class="hero-badge-dot"></span>
-              <span class="hero-badge-text">全新版本已上线</span>
+              <span class="hero-badge-text">{{ t('welcome.heroBadge') }}</span>
             </div>
             <h2 class="hero-title">
-              专业的
-              <span class="hero-title-gradient">云数据平台</span>
+              {{ t('welcome.heroTitle') }}
+              <span class="hero-title-gradient">{{ t('welcome.heroTitleGradient') }}</span>
             </h2>
-            <p class="hero-description">
-              提供直播管理、云盘存储、社媒分发等一站式解决方案。
-              让您的内容创作和管理更加高效便捷。
-            </p>
+            <p class="hero-description">{{ t('welcome.heroDescription') }}</p>
             <div class="hero-buttons">
               <button @click="goToLogin('live')" class="btn btn-primary btn-lg">
-                <span>立即开始</span>
+                <span>{{ t('welcome.heroButtons.start') }}</span>
                 <icon-arrow-right class="btn-icon" />
               </button>
               <button class="btn btn-secondary btn-lg">
                 <icon-play-circle class="btn-icon" />
-                <span>观看演示</span>
+                <span>{{ t('welcome.heroButtons.demo') }}</span>
               </button>
             </div>
           </div>
@@ -146,8 +149,8 @@ const selectPlatform = (platform: string) => {
       <!-- 产品平台选择 -->
       <section id="platforms" class="platforms-section">
         <div class="platforms-header">
-          <h3 class="section-title">选择您的平台</h3>
-          <p class="section-description">根据您的需求选择合适的产品平台，也可以选择综合中心使用全部功能</p>
+          <h3 class="section-title">{{ t('welcome.platforms.title') }}</h3>
+          <p class="section-description">{{ t('welcome.platforms.subtitle') }}</p>
         </div>
         <div class="platforms-grid">
           <div
@@ -157,20 +160,20 @@ const selectPlatform = (platform: string) => {
             <div class="platform-icon red-gradient">
               <IconVideoCamera class="icon-xl" />
             </div>
-            <h4 class="platform-title">直播中心</h4>
-            <p class="platform-description">专注于直播流管理、域名配置和直播内容生产</p>
+            <h4 class="platform-title">{{ t('welcome.platforms.liveCenter.title') }}</h4>
+            <p class="platform-description">{{ t('welcome.platforms.liveCenter.description') }}</p>
             <ul class="platform-features">
               <li class="platform-feature">
                 <icon-check class="check-icon" />
-                直播间管理
+                {{ t('welcome.platforms.liveCenter.features.0') }}
               </li>
               <li class="platform-feature">
                 <icon-check class="check-icon" />
-                域名配置
+                {{ t('welcome.platforms.liveCenter.features.1') }}
               </li>
               <li class="platform-feature">
                 <icon-check class="check-icon" />
-                直播录制与切片
+                {{ t('welcome.platforms.liveCenter.features.2') }}
               </li>
             </ul>
             <button
@@ -178,7 +181,7 @@ const selectPlatform = (platform: string) => {
               class="platform-btn"
               :class="{ primary: selectedPlatform === 'live' }"
             >
-              进入直播中心
+              {{ t('welcome.platforms.liveCenter.button') }}
             </button>
           </div>
 
@@ -189,20 +192,20 @@ const selectPlatform = (platform: string) => {
             <div class="platform-icon green-blue-gradient">
               <IconCloud class="icon-xl" />
             </div>
-            <h4 class="platform-title">云盘中心</h4>
-            <p class="platform-description">专注于文件存储、管理和分享的云存储解决方案</p>
+            <h4 class="platform-title">{{ t('welcome.platforms.cloudCenter.title') }}</h4>
+            <p class="platform-description">{{ t('welcome.platforms.cloudCenter.description') }}</p>
             <ul class="platform-features">
               <li class="platform-feature">
                 <icon-check class="check-icon" />
-                文件上传下载
+                {{ t('welcome.platforms.cloudCenter.features.0') }}
               </li>
               <li class="platform-feature">
                 <icon-check class="check-icon" />
-                文件夹管理
+                {{ t('welcome.platforms.cloudCenter.features.1') }}
               </li>
               <li class="platform-feature">
                 <icon-check class="check-icon" />
-                文件分享
+                {{ t('welcome.platforms.cloudCenter.features.2') }}
               </li>
             </ul>
             <button
@@ -210,7 +213,7 @@ const selectPlatform = (platform: string) => {
               class="platform-btn"
               :class="{ primary: selectedPlatform === 'cloud' }"
             >
-              进入云盘中心
+              {{ t('welcome.platforms.cloudCenter.button') }}
             </button>
           </div>
 
@@ -221,20 +224,20 @@ const selectPlatform = (platform: string) => {
             <div class="platform-icon purple-pink-gradient">
               <IconApps class="icon-xl" />
             </div>
-            <h4 class="platform-title">综合中心</h4>
-            <p class="platform-description">使用全部功能，包括直播、云盘、社媒分发等所有模块</p>
+            <h4 class="platform-title">{{ t('welcome.platforms.allCenter.title') }}</h4>
+            <p class="platform-description">{{ t('welcome.platforms.allCenter.description') }}</p>
             <ul class="platform-features">
               <li class="platform-feature">
                 <icon-check class="check-icon" />
-                全部直播功能
+                {{ t('welcome.platforms.allCenter.features.0') }}
               </li>
               <li class="platform-feature">
                 <icon-check class="check-icon" />
-                全部云盘功能
+                {{ t('welcome.platforms.allCenter.features.1') }}
               </li>
               <li class="platform-feature">
                 <icon-check class="check-icon" />
-                社媒分发
+                {{ t('welcome.platforms.allCenter.features.2') }}
               </li>
             </ul>
             <button
@@ -242,7 +245,7 @@ const selectPlatform = (platform: string) => {
               class="platform-btn"
               :class="{ primary: selectedPlatform === 'all' }"
             >
-              进入综合中心
+              {{ t('welcome.platforms.allCenter.button') }}
             </button>
           </div>
         </div>
@@ -251,51 +254,51 @@ const selectPlatform = (platform: string) => {
       <!-- 功能特性 -->
       <section id="features" class="features-section">
         <div class="features-header">
-          <h3 class="section-title">强大的功能特性</h3>
-          <p class="section-description">我们提供全方位的解决方案，满足您的各种需求</p>
+          <h3 class="section-title">{{ t('welcome.features.title') }}</h3>
+          <p class="section-description">{{ t('welcome.features.subtitle') }}</p>
         </div>
         <div class="features-grid">
           <div class="feature-card">
             <div class="feature-icon blue-gradient">
               <icon-dashboard class="icon-lg" />
             </div>
-            <h4 class="feature-title">域名管理</h4>
-            <p class="feature-description">灵活的推流和播放域名配置，支持 CNAME 解析和状态监控</p>
+            <h4 class="feature-title">{{ t('welcome.features.domainManagement.title') }}</h4>
+            <p class="feature-description">{{ t('welcome.features.domainManagement.description') }}</p>
           </div>
           <div class="feature-card">
             <div class="feature-icon pink-gradient">
               <icon-play-circle class="icon-lg" />
             </div>
-            <h4 class="feature-title">直播流管理</h4>
-            <p class="feature-description">实时监控所有直播流状态，支持推流地址生成和流控制</p>
+            <h4 class="feature-title">{{ t('welcome.features.liveStreamManagement.title') }}</h4>
+            <p class="feature-description">{{ t('welcome.features.liveStreamManagement.description') }}</p>
           </div>
           <div class="feature-card">
             <div class="feature-icon cyan-gradient">
               <icon-share-alt class="icon-lg" />
             </div>
-            <h4 class="feature-title">社媒分发</h4>
-            <p class="feature-description">一键同步推流到抖音、快手、B站等多个主流社交媒体平台</p>
+            <h4 class="feature-title">{{ t('welcome.features.socialDistribution.title') }}</h4>
+            <p class="feature-description">{{ t('welcome.features.socialDistribution.description') }}</p>
           </div>
           <div class="feature-card">
             <div class="feature-icon orange-gradient">
               <icon-scissor class="icon-lg" />
             </div>
-            <h4 class="feature-title">直播切片</h4>
-            <p class="feature-description">实时生成直播精彩片段，支持标记和导出剪辑内容</p>
+            <h4 class="feature-title">{{ t('welcome.features.liveClips.title') }}</h4>
+            <p class="feature-description">{{ t('welcome.features.liveClips.description') }}</p>
           </div>
           <div class="feature-card">
             <div class="feature-icon green-gradient">
               <icon-record class="icon-lg" />
             </div>
-            <h4 class="feature-title">直播录制</h4>
-            <p class="feature-description">自动录制直播全程，支持录制规则配置和文件管理</p>
+            <h4 class="feature-title">{{ t('welcome.features.liveRecording.title') }}</h4>
+            <p class="feature-description">{{ t('welcome.features.liveRecording.description') }}</p>
           </div>
           <div class="feature-card">
             <div class="feature-icon purple-indigo-gradient">
               <IconCloud class="icon-lg" />
             </div>
-            <h4 class="feature-title">云盘存储</h4>
-            <p class="feature-description">安全可靠的云存储服务，支持文件管理、分享和协作</p>
+            <h4 class="feature-title">{{ t('welcome.features.cloudStorage.title') }}</h4>
+            <p class="feature-description">{{ t('welcome.features.cloudStorage.description') }}</p>
           </div>
         </div>
       </section>
@@ -313,19 +316,19 @@ const selectPlatform = (platform: string) => {
           <div class="stats-content">
             <div class="stat-item">
               <div class="stat-number">10K+</div>
-              <div class="stat-label">活跃用户</div>
+              <div class="stat-label">{{ t('welcome.stats.users') }}</div>
             </div>
             <div class="stat-item">
               <div class="stat-number">50K+</div>
-              <div class="stat-label">直播场次</div>
+              <div class="stat-label">{{ t('welcome.stats.sessions') }}</div>
             </div>
             <div class="stat-item">
               <div class="stat-number">100TB+</div>
-              <div class="stat-label">存储数据</div>
+              <div class="stat-label">{{ t('welcome.stats.storage') }}</div>
             </div>
             <div class="stat-item">
               <div class="stat-number">99.9%</div>
-              <div class="stat-label">服务可用性</div>
+              <div class="stat-label">{{ t('welcome.stats.availability') }}</div>
             </div>
           </div>
         </div>
@@ -333,16 +336,14 @@ const selectPlatform = (platform: string) => {
 
       <!-- CTA 区域 -->
       <section class="cta-section">
-        <h3 class="cta-title">准备开始使用了吗？</h3>
-        <p class="cta-description">
-          立即登录，体验专业的云数据平台服务，让您的内容管理更加高效
-        </p>
+        <h3 class="cta-title">{{ t('welcome.cta.title') }}</h3>
+        <p class="cta-description">{{ t('welcome.cta.description') }}</p>
         <div class="cta-buttons">
           <button @click="goToLogin('live')" class="btn btn-primary btn-lg">
-            <span>立即登录</span>
+            <span>{{ t('welcome.cta.loginButton') }}</span>
             <icon-arrow-right class="btn-icon" />
           </button>
-          <button class="btn btn-secondary btn-lg">联系我们</button>
+          <button class="btn btn-secondary btn-lg">{{ t('welcome.cta.contactButton') }}</button>
         </div>
       </section>
     </main>
@@ -357,42 +358,42 @@ const selectPlatform = (platform: string) => {
                 <icon-storage class="nav-logo-icon" />
               </div>
               <div>
-                <h5 class="footer-brand-title">AI Live</h5>
-                <p class="footer-brand-subtitle">AI视频平台</p>
+                <h5 class="footer-brand-title">{{ t('welcome.brandTitle') }}</h5>
+                <p class="footer-brand-subtitle">{{ t('welcome.brandSubtitle') }}</p>
               </div>
             </div>
-            <p class="footer-text">专业的云数据平台，提供直播管理、云盘存储等一站式解决方案</p>
+            <p class="footer-text">{{ t('welcome.footer.brandText') }}</p>
           </div>
           <div class="footer-column">
-            <h6 class="footer-column-title">产品</h6>
+            <h6 class="footer-column-title">{{ t('welcome.footer.productTitle') }}</h6>
             <ul class="footer-links">
-              <li><a href="#">直播中心</a></li>
-              <li><a href="#">云盘中心</a></li>
-              <li><a href="#">社媒分发</a></li>
-              <li><a href="#">API 文档</a></li>
+              <li><a href="#">{{ t('welcome.footer.productLinks.0') }}</a></li>
+              <li><a href="#">{{ t('welcome.footer.productLinks.1') }}</a></li>
+              <li><a href="#">{{ t('welcome.footer.productLinks.2') }}</a></li>
+              <li><a href="#">{{ t('welcome.footer.productLinks.3') }}</a></li>
             </ul>
           </div>
           <div class="footer-column">
-            <h6 class="footer-column-title">公司</h6>
+            <h6 class="footer-column-title">{{ t('welcome.footer.companyTitle') }}</h6>
             <ul class="footer-links">
-              <li><a href="#">关于我们</a></li>
-              <li><a href="#">新闻动态</a></li>
-              <li><a href="#">加入我们</a></li>
-              <li><a href="#">联系方式</a></li>
+              <li><a href="#">{{ t('welcome.footer.companyLinks.0') }}</a></li>
+              <li><a href="#">{{ t('welcome.footer.companyLinks.1') }}</a></li>
+              <li><a href="#">{{ t('welcome.footer.companyLinks.2') }}</a></li>
+              <li><a href="#">{{ t('welcome.footer.companyLinks.3') }}</a></li>
             </ul>
           </div>
           <div class="footer-column">
-            <h6 class="footer-column-title">支持</h6>
+            <h6 class="footer-column-title">{{ t('welcome.footer.supportTitle') }}</h6>
             <ul class="footer-links">
-              <li><a href="#">帮助中心</a></li>
-              <li><a href="#">使用教程</a></li>
-              <li><a href="#">服务状态</a></li>
-              <li><a href="#">提交工单</a></li>
+              <li><a href="#">{{ t('welcome.footer.supportLinks.0') }}</a></li>
+              <li><a href="#">{{ t('welcome.footer.supportLinks.1') }}</a></li>
+              <li><a href="#">{{ t('welcome.footer.supportLinks.2') }}</a></li>
+              <li><a href="#">{{ t('welcome.footer.supportLinks.3') }}</a></li>
             </ul>
           </div>
         </div>
         <div class="footer-bottom">
-          <p class="footer-copyright">© 2024 AI Live AI视频平台. All rights reserved.</p>
+          <p class="footer-copyright">{{ t('welcome.footer.copyright') }}</p>
           <div class="footer-social">
             <a href="#" class="social-btn">
               <icon-github class="social-icon" />
@@ -506,6 +507,12 @@ const selectPlatform = (platform: string) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .nav-brand {

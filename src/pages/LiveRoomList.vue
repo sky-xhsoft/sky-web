@@ -7,7 +7,7 @@
           <template #icon>
             <icon-plus />
           </template>
-          创建直播
+          {{ t('liveRoomList.createLiveRoom') }}
         </a-button>
       </a-space>
       <a-space size="medium">
@@ -15,13 +15,13 @@
           <template #icon>
             <icon-refresh />
           </template>
-          刷新
+          {{ t('liveRoomList.refresh') }}
         </a-button>
         <a-button v-if="selectedRows.length > 0" type="primary" status="danger" @click="handleBatchDelete">
           <template #icon>
             <icon-delete />
           </template>
-          批量删除 ({{ selectedRows.length }})
+          {{ t('liveRoomList.batchDelete') }} ({{ selectedRows.length }})
         </a-button>
       </a-space>
     </div>
@@ -31,31 +31,31 @@
       <a-space size="medium">
         <a-dropdown trigger="click">
           <a-button>
-            所有筛选
+            {{ t('liveRoomList.allFilters') }}
             <icon-down />
           </a-button>
           <template #content>
-            <a-doption>直播类型</a-doption>
-            <a-doption>直播形式</a-doption>
-            <a-doption>直播状态</a-doption>
-            <a-doption>观看方式</a-doption>
+            <a-doption>{{ t('liveRoomList.filters.roomType') }}</a-doption>
+            <a-doption>{{ t('liveRoomList.filters.broadcastFormat') }}</a-doption>
+            <a-doption>{{ t('liveRoomList.filters.liveStatus') }}</a-doption>
+            <a-doption>{{ t('liveRoomList.filters.viewingMethod') }}</a-doption>
           </template>
         </a-dropdown>
 
         <a-select
           v-model="searchForm.filterType"
-          placeholder="直播名称"
+          :placeholder="t('liveRoomList.filterBy')"
           style="width: 150px"
           @change="handleSearch"
         >
-          <a-option value="roomName">直播名称</a-option>
-          <a-option value="id">直播ID</a-option>
-          <a-option value="streamName">流名称</a-option>
+          <a-option value="roomName">{{ t('liveRoomList.liveName') }}</a-option>
+          <a-option value="id">{{ t('liveRoomList.liveId') }}</a-option>
+          <a-option value="streamName">{{ t('liveRoomList.streamName') }}</a-option>
         </a-select>
 
         <a-input
           v-model="searchForm.keyword"
-          placeholder="请输入直播名称"
+          :placeholder="t('liveRoomList.searchPlaceholder')"
           style="width: 300px"
           allow-clear
         >
@@ -64,7 +64,7 @@
           </template>
         </a-input>
 
-        <a-button type="primary" @click="handleSearch">搜索</a-button>
+        <a-button type="primary" @click="handleSearch">{{ t('liveRoomList.search') }}</a-button>
       </a-space>
     </div>
 
@@ -92,7 +92,7 @@
           <div class="room-details">
             <div class="room-name">{{ record.roomName }}</div>
             <div class="room-meta">
-              <a-tag>{{ record.viewingMethodText }}</a-tag>
+              <a-tag>{{ getViewingMethodText(record.viewingMethod) }}</a-tag>
             </div>
           </div>
         </div>
@@ -118,11 +118,11 @@
 
       <template #actions="{ record }">
         <a-space>
-          <a-link @click="handleManage(record)">管理</a-link>
-          <a-link v-if="record.status === 'live'" @click="handlePreview(record)">预览</a-link>
-          <a-link @click="handlePullStreamTask(record)">社媒分发</a-link>
-          <a-link @click="handleHighlightClips(record)">直播切片</a-link>
-          <a-link @click="handleRecordings(record)">直播录制</a-link>
+          <a-link @click="handleManage(record)">{{ t('liveRoomList.manage') }}</a-link>
+          <a-link v-if="record.status === 'live'" @click="handlePreview(record)">{{ t('liveRoomList.preview') }}</a-link>
+          <a-link @click="handlePullStreamTask(record)">{{ t('liveRoomList.socialDistribution') }}</a-link>
+          <a-link @click="handleHighlightClips(record)">{{ t('liveRoomList.highlightClips') }}</a-link>
+          <a-link @click="handleRecordings(record)">{{ t('liveRoomList.liveRecordings') }}</a-link>
           <a-dropdown trigger="click">
             <a-link>
               <icon-more />
@@ -130,11 +130,11 @@
             <template #content>
               <a-doption @click="handleEdit(record)">
                 <icon-edit />
-                编辑
+                {{ t('liveRoomList.edit') }}
               </a-doption>
               <a-doption v-if="record.status !== 'live'" @click="handleRecycle(record)">
                 <icon-delete />
-                删除
+                {{ t('liveRoomList.delete') }}
               </a-doption>
             </template>
           </a-dropdown>
@@ -152,6 +152,9 @@ import api from '../api/http'
 import { listDomains } from '../api/live'
 import dayjs from 'dayjs'
 import { IconRefresh, IconDelete } from '@arco-design/web-vue/es/icon'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const navigationStore = useNavigationStore()
 const loading = ref(false)
@@ -218,32 +221,32 @@ const handleSelectAll = (checked: boolean) => {
 
 const columns = [
   {
-    title: 'id',
+    title: t('liveRoomList.id'),
     dataIndex: 'id',
     width: 50
   },
   {
-    title: '直播间',
+    title: t('liveRoomList.liveRoom'),
     slotName: 'roomInfo',
     width: 180
   },
   {
-    title: '直播形式',
+    title: t('liveRoomList.broadcastFormat'),
     slotName: 'broadcastFormat',
     width: 80
   },
   {
-    title: '直播状态',
+    title: t('liveRoomList.liveStatus'),
     slotName: 'status',
     width: 80
   },
   {
-    title: '开始',
+    title: t('liveRoomList.startTime'),
     slotName: 'startTime',
     width: 180
   },
   {
-    title: '操作',
+    title: t('liveRoomList.operations'),
     slotName: 'actions',
     width: 280,
     fixed: 'right'
@@ -252,33 +255,42 @@ const columns = [
 
 const getRoomTypeText = (type: string) => {
   const map: Record<string, string> = {
-    video: '视频直播',
-    image: '图片直播',
-    vr: 'VR直播',
-    audio: '语音直播',
-    graphic: '图文直播'
+    video: t('liveRoomList.roomTypes.video'),
+    image: t('liveRoomList.roomTypes.image'),
+    vr: t('liveRoomList.roomTypes.vr'),
+    audio: t('liveRoomList.roomTypes.audio'),
+    graphic: t('liveRoomList.roomTypes.graphic')
   }
   return map[type] || type
 }
 
 const getBroadcastFormatText = (format: string) => {
   const map: Record<string, string> = {
-    live: '直播',
-    vod: '点播/录播',
-    pseudo: '伪直播'
+    live: t('liveRoomList.broadcastFormats.live'),
+    vod: t('liveRoomList.broadcastFormats.vod'),
+    pseudo: t('liveRoomList.broadcastFormats.pseudo')
   }
   return map[format] || format
 }
 
 const getStatusText = (status: string) => {
   const map: Record<string, string> = {
-    draft: '未开始',
-    scheduled: '已排期',
-    live: '直播中',
-    ended: '已结束',
-    archived: '已归档'
+    draft: t('liveRoomList.statuses.draft'),
+    scheduled: t('liveRoomList.statuses.scheduled'),
+    live: t('liveRoomList.statuses.live'),
+    ended: t('liveRoomList.statuses.ended'),
+    archived: t('liveRoomList.statuses.archived')
   }
   return map[status] || status
+}
+
+const getViewingMethodText = (method: string) => {
+  const map: Record<string, string> = {
+    public: t('liveRoomList.viewingMethods.public'),
+    password: t('liveRoomList.viewingMethods.password'),
+    pay: t('liveRoomList.viewingMethods.pay')
+  }
+  return map[method] || method
 }
 
 const getStatusColor = (status: string) => {
@@ -324,9 +336,7 @@ const convertToFrontendFormat = (data: any) => {
     streamName: data.STREAM_NAME || '',
     pushUrl: data.PUSH_URL || '',
     playUrl: data.PLAY_URL || '',
-    channel: data.CHANNEL || '--',
-    viewingMethodText: data.VIEWING_METHOD || '公开',
-    statusText: data.STATUS || '草稿'
+    channel: data.CHANNEL || '--'
   }
 }
 
@@ -367,7 +377,7 @@ const fetchData = async () => {
 }
 
 const handleCreate = () => {
-  navigationStore.navigateTo('LiveRoomForm', '创建直播间', {}, true)
+  navigationStore.navigateTo('LiveRoomForm', t('liveRoomList.createLiveRoom'), {}, true)
 }
 
 const handleRefresh = () => {
@@ -391,11 +401,11 @@ const handlePageSizeChange = (pageSize: number) => {
 }
 
 const handleEdit = (record: any) => {
-  navigationStore.navigateTo('LiveRoomForm', '编辑直播间', { roomId: record.id }, true)
+  navigationStore.navigateTo('LiveRoomForm', t('liveRoomList.edit'), { roomId: record.id }, true)
 }
 
 const handleManage = (record: any) => {
-  navigationStore.navigateTo('LiveRoomDetail', '直播间详情', { id: record.id }, false)
+  navigationStore.navigateTo('LiveRoomDetail', t('liveRoomList.liveRoom') + ' ' + t('layout.roomDetail'), { id: record.id }, false)
 }
 
 const handleBatchDelete = () => {
@@ -404,8 +414,8 @@ const handleBatchDelete = () => {
   }
 
   Modal.confirm({
-    title: '确认批量删除',
-    content: `确定要将选中的 ${selectedRows.value.length} 个直播间移至回收站吗？`,
+    title: t('liveRoomList.batchDeleteConfirm.title'),
+    content: t('liveRoomList.batchDeleteConfirm.content', { count: selectedRows.value.length }),
     onOk: async () => {
       try {
         for (const record of selectedRows.value) {
@@ -418,7 +428,7 @@ const handleBatchDelete = () => {
             IS_ACTIVE: 'N'
           })
         }
-        Message.success(`已成功删除 ${selectedRows.value.length} 个直播间`)
+        Message.success(t('liveRoomList.batchDeleteConfirm.success', { count: selectedRows.value.length }))
         // 清空选中的行
         selectedRows.value = []
         fetchData()
@@ -431,23 +441,23 @@ const handleBatchDelete = () => {
 
 const handleRecycle = (record: any) => {
   Modal.confirm({
-    title: '确认回收',
-    content: `确定要将直播间"${record.roomName}"移至回收站吗？`,
+    title: t('liveRoomList.recycleConfirm.title'),
+    content: t('liveRoomList.recycleConfirm.content', { name: record.roomName }),
     onOk: async () => {
       try {
         const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
         if (!getResponse.data?.data) {
-          Message.error('获取数据失败')
+          Message.error(t('liveRoomList.messages.fetchData'))
           return
         }
         await api.put(`/data/LIVE_ROOM/${record.id}`, {
           ...getResponse.data.data,
           IS_ACTIVE: 'N'
         })
-        Message.success('已移至回收站')
+        Message.success(t('liveRoomList.recycleConfirm.success'))
         fetchData()
       } catch (error: any) {
-        Message.error(error.message || '回收失败')
+        Message.error(error.message || t('liveRoomList.recycleConfirm.failed'))
       }
     }
   })
@@ -455,95 +465,95 @@ const handleRecycle = (record: any) => {
 
 // 其他处理函数（保持不变）
 const handleShare = (record: any) => {
-  Message.info('分享功能开发中')
+  Message.info(t('liveRoomList.messages.share'))
 }
 
 const handleRecommend = (record: any) => {
-  Message.info('推荐功能开发中')
+  Message.info(t('liveRoomList.messages.recommend'))
 }
 
 const handleTag = (record: any) => {
-  Message.info('打标签功能开发中')
+  Message.info(t('liveRoomList.messages.tag'))
 }
 
 const handleDataAnalysis = (record: any) => {
-  Message.info('数据分析功能开发中')
+  Message.info(t('liveRoomList.messages.dataAnalysis'))
 }
 
 const handleOperationRecommend = (record: any) => {
-  Message.info('推荐运营功能开发中')
+  Message.info(t('liveRoomList.messages.operationRecommend'))
 }
 
 const handleScreenInteraction = (record: any) => {
-  Message.info('大屏互动功能开发中')
+  Message.info(t('liveRoomList.messages.screenInteraction'))
 }
 
 const handleDownloadPlayback = (record: any) => {
-  Message.info('下载回放视频功能开发中')
+  Message.info(t('liveRoomList.messages.downloadPlayback'))
 }
 
 const handleRefreshPassword = (record: any) => {
   Modal.confirm({
-    title: '刷新密码',
-    content: '确定要刷新该直播间的观看密码吗？',
+    title: t('liveRoomList.messages.refreshPassword.title'),
+    content: t('liveRoomList.messages.refreshPassword.content'),
     onOk: async () => {
       try {
         const newPassword = Math.random().toString(36).slice(-8)
         const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
         if (!getResponse.data?.data) {
-          Message.error('获取数据失败')
+          Message.error(t('liveRoomList.messages.fetchData'))
           return
         }
         await api.put(`/data/LIVE_ROOM/${record.id}`, {
           ...getResponse.data.data,
           VIEWING_PASSWORD: newPassword
         })
-        Message.success(`密码已刷新为: ${newPassword}`)
+        Message.success(t('liveRoomList.messages.refreshPassword.success', { password: newPassword }))
         fetchData()
       } catch (error: any) {
-        Message.error(error.message || '刷新密码失败')
+        Message.error(error.message || t('liveRoomList.messages.refreshPassword.failed'))
       }
     }
   })
 }
 
 const handleSetChannel = (record: any) => {
-  Message.info('设置直播频道功能开发中')
+  Message.info(t('liveRoomList.messages.setChannel'))
 }
 
 const handleAdminMonitor = (record: any) => {
-  Message.info('管理员监听功能开发中')
+  Message.info(t('liveRoomList.messages.adminMonitor'))
 }
 
 const handlePullStreamTask = (record: any) => {
-  navigationStore.navigateTo('PullStreamTask', '社媒分发', { roomId: record.id }, false)
+  navigationStore.navigateTo('PullStreamTask', t('liveRoomList.socialDistribution'), { roomId: record.id }, false)
 }
 
 const handleHighlightClips = (record: any) => {
-  navigationStore.navigateTo('LiveHighlightClips', '高光切片', { roomId: record.id }, false)
+  navigationStore.navigateTo('LiveHighlightClips', t('liveRoomList.highlightClips'), { roomId: record.id }, false)
 }
 
 const handleRecordings = (record: any) => {
-  navigationStore.navigateTo('LiveRecordings', '录制列表', { roomId: record.id }, false)
+  navigationStore.navigateTo('LiveRecordings', t('liveRoomList.liveRecordings'), { roomId: record.id }, false)
 }
 
 const handlePreview = async (record: any) => {
   try {
     const playDomain = domains.value.find(d => d.type === 1)
     if (!playDomain) {
-      Message.warning('未找到播放域名，请先添加播放域名')
+      Message.warning(t('liveRoomList.messages.preview.noPlayDomain'))
       return
     }
     const streamName = record.streamName || String(record.id)
     const appName = 'live'
-    navigationStore.navigateTo('LivePreview', '直播预览', {
+    navigationStore.navigateTo('LivePreview', t('liveRoomList.preview'), {
       streamName,
       appName,
       playDomain: playDomain.name
     })
   } catch (error: any) {
     console.error('预览失败:', error)
-    Message.error('预览失败')
+    Message.error(t('liveRoomList.messages.preview.failed'))
   }
 }
 
@@ -551,21 +561,21 @@ const handleCopy = async (record: any) => {
   try {
     const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
     if (!getResponse.data?.data) {
-      Message.error('获取数据失败')
+      Message.error(t('liveRoomList.messages.fetchData'))
       return
     }
     const originalData = getResponse.data.data
     const copyData = {
       ...originalData,
       ID: undefined,
-      ROOM_NAME: `${originalData.ROOM_NAME} - 副本`
+      ROOM_NAME: `${originalData.ROOM_NAME} - ${t('common.copy')}`
     }
     await api.post('/data/LIVE_ROOM', copyData)
-    Message.success('复制成功')
+    Message.success(t('liveRoomList.messages.copySuccess'))
     fetchData()
   } catch (error: any) {
     console.error('复制失败:', error)
-    Message.error(error.message || '复制失败')
+    Message.error(error.message || t('liveRoomList.messages.copyFailed'))
   }
 }
 
@@ -573,7 +583,7 @@ const handleStartLive = async (record: any) => {
   try {
     const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
     if (!getResponse.data?.data) {
-      Message.error('获取数据失败')
+      Message.error(t('liveRoomList.messages.fetchData'))
       return
     }
     const originalData = getResponse.data.data
@@ -582,16 +592,16 @@ const handleStartLive = async (record: any) => {
       STATUS: 'live',
       START_TIME: dayjs().format('YYYY-MM-DD HH:mm:ss')
     })
-    Message.success('直播已开始')
+    Message.success(t('liveRoomList.messages.liveStarted'))
     fetchData()
   } catch (error: any) {
     console.error('操作失败:', error)
-    Message.error(error.message || '操作失败')
+    Message.error(error.message || t('liveRoomList.messages.operationFailed'))
   }
 }
 
 const handleBackToSite = () => {
-  Message.info('回收站功能开发中')
+  Message.info(t('liveRoomList.messages.recycle'))
 }
 
 onMounted(() => {

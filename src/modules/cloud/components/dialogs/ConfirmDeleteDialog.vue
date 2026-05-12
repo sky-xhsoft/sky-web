@@ -1,9 +1,9 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    title="确认删除"
+    :title="t('cloud.deleteConfirmTitle')"
     :ok-loading="loading"
-    ok-text="删除"
+    :ok-text="t('cloud.delete')"
     :ok-button-props="{ status: 'danger' }"
     @ok="handleOk"
     @cancel="handleCancel"
@@ -14,24 +14,24 @@
       </div>
       <div class="warning-message">
         <p v-if="count === 1">
-          确定要删除 <strong>{{ itemName }}</strong> 吗？
+          {{ t('cloud.deleteConfirmMsg', { name: itemName }) }}
         </p>
         <p v-else>
-          确定要删除选中的 <strong>{{ count }}</strong> 项吗？
+          {{ t('cloud.deleteConfirmBatch', { count: count }) }}
         </p>
-        <p class="danger-text">此操作不可恢复！</p>
+        <p class="danger-text">{{ t('cloud.deleteIrreversible') }}</p>
       </div>
 
       <!-- 详细信息 -->
       <div v-if="details" class="details">
         <a-descriptions :column="1" size="small" bordered>
-          <a-descriptions-item v-if="details.fileCount" label="文件">
-            {{ details.fileCount }} 个
+          <a-descriptions-item v-if="details.fileCount" :label="t('cloud.files')">
+            {{ details.fileCount }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="details.folderCount" label="文件夹">
-            {{ details.folderCount }} 个
+          <a-descriptions-item v-if="details.folderCount" :label="t('cloud.folders')">
+            {{ details.folderCount }}
           </a-descriptions-item>
-          <a-descriptions-item v-if="details.totalSize" label="总大小">
+          <a-descriptions-item v-if="details.totalSize" :label="t('cloud.totalSize')">
             {{ formatSize(details.totalSize) }}
           </a-descriptions-item>
         </a-descriptions>
@@ -44,6 +44,7 @@
 import { ref, watch } from 'vue'
 import { IconExclamationCircleFill } from '@arco-design/web-vue/es/icon'
 import { formatSize } from '@/modules/cloud/utils/format'
+import { useI18n } from 'vue-i18n'
 
 interface DeleteDetails {
   fileCount?: number
@@ -74,6 +75,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const dialogVisible = ref(props.visible)
+const { t } = useI18n()
 
 watch(
   () => props.visible,

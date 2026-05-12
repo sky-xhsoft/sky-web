@@ -1,4 +1,4 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import { fetchUserMenuTree, type MenuTreeNode } from '../api/menu'
 import type { Router, RouteRecordRaw } from 'vue-router'
 import TableView from '../pages/TableView.vue'
@@ -11,9 +11,18 @@ type MenuState = {
   loading: boolean
   routesAdded: boolean
   sidebarCollapsed: boolean
+  localeVersion: number
 }
 
-const buildRoutesFromMenus = (menus: MenuTreeNode[]): RouteRecordRaw[] => {
+// 根据当前语言获取显示名称
+const getDisplayName = (node: MenuTreeNode, locale: string): string => {
+  if (locale === 'en-US' && node.EName) {
+    return node.EName
+  }
+  return node.displayName || node.name
+}
+
+const buildRoutesFromMenus = (menus: MenuTreeNode[], locale: string = 'zh-CN'): RouteRecordRaw[] => {
   const routes: RouteRecordRaw[] = []
   const walk = (nodes?: MenuTreeNode[]) => {
     nodes?.forEach((node) => {
@@ -33,7 +42,7 @@ const buildRoutesFromMenus = (menus: MenuTreeNode[]): RouteRecordRaw[] => {
           path: routePath,
           name: `table-${node.name}`,
           component: TableView,
-          meta: { title: node.displayName || node.name, requiresAuth: true },
+          meta: { title: getDisplayName(node, locale), requiresAuth: true },
         })
       }
     })
@@ -42,7 +51,7 @@ const buildRoutesFromMenus = (menus: MenuTreeNode[]): RouteRecordRaw[] => {
   return routes
 }
 
-const mapMenusToNav = (menus: MenuTreeNode[]): AppRouteLike[] => {
+const mapMenusToNav = (menus: MenuTreeNode[], locale: string = 'zh-CN'): AppRouteLike[] => {
   const walk = (nodes?: MenuTreeNode[]): AppRouteLike[] => {
     return (nodes || [])
       .map((node) => {
@@ -51,7 +60,7 @@ const mapMenusToNav = (menus: MenuTreeNode[]): AppRouteLike[] => {
         const path = node.type === 'table' || isLeaf ? (node.url || `/tables/${node.name}`) : undefined
         return {
           ...node,
-          title: node.displayName || node.name,
+          title: getDisplayName(node, locale),
           path,
           children: node.children ? walk(node.children) : undefined,
         }
@@ -67,9 +76,14 @@ export const useMenuStore = defineStore('menu', {
     loading: false,
     routesAdded: false,
     sidebarCollapsed: false,
+    localeVersion: 0,
   }),
   getters: {
-    navMenus: (state) => mapMenusToNav(state.menus),
+    navMenus: (state) => {
+      // 使用 localeVersion 触发响应式依赖
+      const locale = localStorage.getItem('language') || 'zh-CN'
+      return mapMenusToNav(state.menus, locale)
+    },
   },
   actions: {
     async loadMenus() {
@@ -86,10 +100,15 @@ export const useMenuStore = defineStore('menu', {
       }
     },
     ensureRoutes(router: Router) {
-      const routes = buildRoutesFromMenus(this.menus)
-      routes.forEach((r) => {
-        if (!router.hasRoute(r.name as string)) {
-          router.addRoute('root', r)
+      const locale = localStorage.getItem('language') || 'zh-CN'
+      const routes = buildRoutesFromMenus(this.menus, locale)
+      routes.forEach((route) => {
+        if (router.hasRoute(route.name as string)) {
+          // 删除现有路由，然后重新添加以确保 meta 信息更新
+          router.removeRoute(route.name as string)
+          router.addRoute('root', route)
+        } else {
+          router.addRoute('root', route)
         }
       })
       this.routesAdded = true
@@ -100,6 +119,15 @@ export const useMenuStore = defineStore('menu', {
     },
     toggleSidebar() {
       this.sidebarCollapsed = !this.sidebarCollapsed
+    },
+    // 更新菜单显示语言
+    updateMenuLanguage(locale: string, router: Router) {
+      // 增加版本号，强制重新计算响应式数据
+      this.localeVersion += 1
+      // 重置路由添加标志
+      this.routesAdded = false
+      // 确保路由标题也更新
+      this.ensureRoutes(router)
     },
   },
 })

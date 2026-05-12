@@ -1,7 +1,7 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    title="分享创建成功"
+    :title="t('cloud.shareSuccessTitle')"
     :footer="false"
     width="500px"
     @cancel="handleClose"
@@ -13,17 +13,17 @@
 
       <div class="share-info">
         <div class="info-item">
-          <div class="info-label">分享链接</div>
+          <div class="info-label">{{ t('cloud.shareLinkTitle') }}</div>
           <div class="info-value link">{{ shareLink }}</div>
         </div>
 
         <div class="info-item" v-if="password">
-          <div class="info-label">访问密码</div>
+          <div class="info-label">{{ t('cloud.accessPasswordTitle') }}</div>
           <div class="info-value password">{{ password }}</div>
         </div>
 
         <div class="info-item" v-if="expireTime">
-          <div class="info-label">有效期至</div>
+          <div class="info-label">{{ t('cloud.expireTimeLabel') }}</div>
           <div class="info-value">{{ formatExpireTime(expireTime) }}</div>
         </div>
       </div>
@@ -33,19 +33,19 @@
           <template #icon>
             <icon-copy />
           </template>
-          复制链接和密码
+          {{ t('cloud.copyLinkAndPassword') }}
         </a-button>
         <a-button long @click="handleOpen" style="margin-top: 12px">
           <template #icon>
             <icon-link />
           </template>
-          在新标签页打开
+          {{ t('cloud.openInNewTab') }}
         </a-button>
       </div>
 
       <div class="tips">
         <icon-info-circle />
-        <span>请妥善保管分享链接和密码，分享后无法查看密码</span>
+        <span>{{ t('cloud.shareSafetyTip') }}</span>
       </div>
     </div>
   </a-modal>
@@ -54,12 +54,15 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
 import {
   IconCheckCircleFill,
   IconCopy,
   IconLink,
   IconInfoCircle,
 } from '@arco-design/web-vue/es/icon'
+
+const { t } = useI18n()
 
 interface Props {
   visible?: boolean
@@ -101,50 +104,56 @@ const shareLink = computed(() => {
 })
 
 function formatExpireTime(time: string): string {
-  if (!time) return '永久有效'
-  return new Date(time).toLocaleString('zh-CN')
+  if (!time) return t('cloud.foreverValid')
+  return new Date(time).toLocaleString(
+    t('language.zhCN') === '简体中文' ? 'zh-CN' : 'en-US'
+  )
 }
 
 async function handleCopy() {
   try {
-    let text = `分享链接：${shareLink.value}`
+    let text = `${t('cloud.shareLinkTitle')}：${shareLink.value}`
     if (props.password) {
-      text += `\n访问密码：${props.password}`
+      text += `\n${t('cloud.accessPasswordTitle')}：${props.password}`
     }
     if (props.expireTime) {
-      text += `\n有效期至：${formatExpireTime(props.expireTime)}`
+      text += `\n${t('cloud.expireTimeLabel')}：${formatExpireTime(props.expireTime)}`
     }
 
     if (navigator.clipboard && window.isSecureContext) {
       try {
         await navigator.clipboard.writeText(text)
-        Message.success('已复制到剪贴板')
+        Message.success(t('cloud.copiedToClipboard'))
       } catch (e) {
         console.error('复制失败:', e)
-        fallbackCopy(text, '已复制到剪贴板')
+        fallbackCopy(text, t('cloud.copiedToClipboard'))
       }
     } else {
-      fallbackCopy(text, '已复制到剪贴板')
+      fallbackCopy(text, t('cloud.copiedToClipboard'))
     }
+  } catch (error) {
+    console.error('复制操作失败:', error)
+    Message.error(t('cloud.copyFailed'))
   }
+}
 
-  function fallbackCopy(text: string, successMsg: string) {
-    const textarea = document.createElement('textarea')
-    textarea.value = text
-    textarea.style.position = 'fixed'
-    textarea.style.left = '-9999px'
-    textarea.style.top = '-9999px'
-    document.body.appendChild(textarea)
-    textarea.select()
-    try {
-      document.execCommand('copy')
-      Message.success(successMsg)
-    } catch (err) {
-      console.error('复制失败:', err)
-      Message.error('复制失败，请手动复制')
-    } finally {
-      document.body.removeChild(textarea)
-    }
+function fallbackCopy(text: string, successMsg: string) {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  textarea.style.top = '-9999px'
+  document.body.appendChild(textarea)
+  textarea.select()
+  try {
+    document.execCommand('copy')
+    Message.success(successMsg)
+  } catch (err) {
+    console.error('复制失败:', err)
+    Message.error(t('cloud.copyFailed'))
+  } finally {
+    document.body.removeChild(textarea)
+  }
 }
 
 function handleOpen() {

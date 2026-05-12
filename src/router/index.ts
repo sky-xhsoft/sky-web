@@ -10,6 +10,7 @@ import PushDomain from '../pages/PushDomain.vue'
 import PlayDomain from '../pages/PlayDomain.vue'
 import LiveRoomList from '../pages/LiveRoomList.vue'
 import LiveRoomForm from '../pages/LiveRoomForm.vue'
+import UserProfile from '../pages/UserProfile.vue'
 import { useAuthStore } from '../stores/auth'
 import { useMenuStore } from '../stores/menu'
 
@@ -117,6 +118,13 @@ const routes: RouteRecordRaw[] = [
         name: 'cloud-shares',
         component: () => import('../pages/CloudShareManager.vue'),
         meta: { title: '我的分享', requiresAuth: true },
+      },
+      // 个人中心页面
+      {
+        path: 'user/profile',
+        name: 'user-profile',
+        component: UserProfile,
+        meta: { title: '个人中心', requiresAuth: true },
       },
     ],
   },

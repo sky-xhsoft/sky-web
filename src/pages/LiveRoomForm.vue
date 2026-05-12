@@ -3,15 +3,15 @@
     <!-- 左上角按钮 -->
     <div class="form-header">
       <a-space>
-        <a-button @click="handleCancel">返回</a-button>
+        <a-button @click="handleCancel">{{ t('liveRoomForm.return') }}</a-button>
         <a-button type="primary" @click="handleSubmit" :loading="submitting">
-          {{ isEditMode ? '修改' : '立即创建' }}
+          {{ isEditMode ? t('liveRoomForm.edit') : t('liveRoomForm.submit') }}
         </a-button>
       </a-space>
     </div>
 
     <a-alert type="info" show-icon style="margin-bottom: 16px">
-      请您遵守国家相关规定，禁止发布含有违法、违规、低俗、暴力、色情、虚假宣传等内容的直播。AI Live将会对直播内容进行监管，如发现违规行为将会对直播内容进行下架、封禁等操作
+      {{ t('liveRoomForm.compliance') }}
     </a-alert>
 
     <a-form :model="formData" :rules="rules" ref="formRef" layout="vertical" size="small">
@@ -19,29 +19,29 @@
         <!-- 左列 -->
         <a-col :span="12">
           <!-- 直播形式 -->
-          <a-form-item label="直播形式" field="broadcastFormat" required>
+          <a-form-item :label="t('liveRoomForm.broadcastFormat')" field="broadcastFormat" required>
             <a-radio-group v-model="formData.broadcastFormat">
-              <a-radio value="live">直播</a-radio>
-              <a-radio value="vod">点播/录播</a-radio>
-              <a-radio value="pseudo">伪直播</a-radio>
+              <a-radio value="live">{{ t('liveRoomForm.broadcastFormatOptions.live') }}</a-radio>
+              <a-radio value="vod">{{ t('liveRoomForm.broadcastFormatOptions.vod') }}</a-radio>
+              <a-radio value="pseudo">{{ t('liveRoomForm.broadcastFormatOptions.pseudo') }}</a-radio>
             </a-radio-group>
             <div class="form-tip" v-if="formData.broadcastFormat === 'live'">
-              实时直播形式，根据实际画面进行传播，无法快进或回放
+              {{ t('liveRoomForm.broadcastFormatTips.live') }}
             </div>
           </a-form-item>
 
           <!-- 直播名称 -->
-          <a-form-item label="直播名称" field="roomName" required>
+          <a-form-item :label="t('liveRoomForm.roomName')" field="roomName" required>
             <a-input
               v-model="formData.roomName"
-              placeholder="请输入直播名称，100字内"
+              :placeholder="t('liveRoomForm.roomNamePlaceholder')"
               :max-length="100"
               show-word-limit
             />
           </a-form-item>
 
           <!-- 开始时间 -->
-          <a-form-item label="开始时间" field="startTime" required>
+          <a-form-item :label="t('liveRoomForm.startTime')" field="startTime" required>
             <a-date-picker
               v-model="formData.startTime"
               show-time
@@ -51,7 +51,7 @@
           </a-form-item>
 
           <!-- 直播封面 -->
-          <a-form-item label="直播封面" field="coverImage">
+          <a-form-item :label="t('liveRoomForm.coverImage')" field="coverImage">
             <div class="cover-upload-wrapper">
               <a-upload
                 v-if="!formData.coverImage"
@@ -63,7 +63,7 @@
                 <template #upload-button>
                   <div class="upload-area">
                     <icon-plus />
-                    <div>选择图片</div>
+                    <div>{{ t('liveRoomForm.upload') }}</div>
                   </div>
                 </template>
               </a-upload>
@@ -79,7 +79,7 @@
                     <template #icon>
                       <icon-delete />
                     </template>
-                    删除
+                    {{ t('liveRoomForm.delete') }}
                   </a-button>
                   <a-upload
                     :custom-request="handleUpload"
@@ -91,14 +91,14 @@
                         <template #icon>
                           <icon-swap />
                         </template>
-                        更换
+                        {{ t('liveRoomForm.replace') }}
                       </a-button>
                     </template>
                   </a-upload>
                 </div>
               </div>
             </div>
-            <div class="form-tip">推荐图片尺寸为：1000*562 支持JPG、PNG格式</div>
+            <div class="form-tip">{{ t('liveRoomForm.coverImageTips') }}</div>
           </a-form-item>
         </a-col>
       </a-row>
@@ -112,6 +112,9 @@ import { Message } from '@arco-design/web-vue'
 import { useNavigationStore } from '../stores/navigation'
 import api from '../api/http'
 import dayjs from 'dayjs'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 接收 props（从 BasicLayout 传递）
 const props = defineProps<{
@@ -133,12 +136,12 @@ const formData = reactive({
 })
 
 const rules = {
-  broadcastFormat: [{ required: true, message: '请选择直播形式' }],
+  broadcastFormat: [{ required: true, message: t('liveRoomForm.validation.required') + ' ' + t('liveRoomForm.broadcastFormat') }],
   roomName: [
-    { required: true, message: '请输入直播名称' },
-    { max: 100, message: '直播名称不能超过100字' }
+    { required: true, message: t('liveRoomForm.validation.roomName') },
+    { max: 100, message: t('liveRoomForm.roomNameMaxLength') }
   ],
-  startTime: [{ required: true, message: '请选择开始时间' }]
+  startTime: [{ required: true, message: t('liveRoomForm.validation.startTime') }]
 }
 
 // 加载直播间数据（编辑模式）
@@ -168,7 +171,7 @@ const loadRoomData = async () => {
 
 const handleRemoveCover = () => {
   formData.coverImage = ''
-  Message.success('已删除封面')
+  Message.success(t('liveRoomForm.deleteCoverSuccess'))
 }
 
 const handleUpload = async (option: any) => {
@@ -197,14 +200,14 @@ const handleUpload = async (option: any) => {
       formData.coverImage = imageUrl
 
       onSuccess()
-      Message.success('上传成功')
+      Message.success(t('liveRoomForm.uploadSuccess'))
     } else {
       throw new Error(response.data?.message || '上传失败')
     }
   } catch (error: any) {
     console.error('上传失败:', error)
     onError(error)
-    Message.error(error.message || '上传失败')
+    Message.error(error.message || t('liveRoomForm.uploadError'))
   }
 }
 
@@ -235,17 +238,17 @@ const handleSubmit = async () => {
     if (isEditMode.value) {
       // 使用标准的更新接口
       await api.put(`/data/LIVE_ROOM/${props.roomId}`, requestData)
-      Message.success('更新成功')
+      Message.success(t('liveRoomForm.editSuccess'))
     } else {
       // 使用标准的创建接口
       await api.post('/data/LIVE_ROOM', requestData)
-      Message.success('创建成功')
+      Message.success(t('liveRoomForm.submitSuccess'))
     }
 
     navigationStore.goBack()
   } catch (error: any) {
     console.error('操作失败:', error)
-    Message.error(error.message || (isEditMode.value ? '更新失败' : '创建失败'))
+    Message.error(error.message || (isEditMode.value ? t('liveRoomForm.editError') : t('liveRoomForm.submitError')))
   } finally {
     submitting.value = false
   }

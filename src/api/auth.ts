@@ -74,3 +74,15 @@ export async function logout(deviceId: string) {
   const headers = token ? { Authorization: `Bearer ${token}` } : undefined
   await authClient.post('/auth/logout', { deviceId }, { headers })
 }
+
+export type ChangePasswordRequest = {
+  oldPassword: string
+  newPassword: string
+}
+
+export async function changePassword(payload: ChangePasswordRequest) {
+  const token = getAccessToken()
+  const headers = token ? { Authorization: `Bearer ${token}` } : undefined
+  const { data } = await authClient.post<ApiResponse<void>>('/auth/change-password', payload, { headers })
+  return data
+}

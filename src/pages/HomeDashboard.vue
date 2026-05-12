@@ -4,12 +4,12 @@
     <!-- 欢迎区域 -->
     <div class="welcome-section">
       <div class="welcome-left">
-        <h1 class="welcome-title">欢迎回来，管理员</h1>
-        <p class="welcome-subtitle">{{ currentDate }} · 祝您今天工作愉快！</p>
+        <h1 class="welcome-title">{{ t('dashboard.welcomeBack') }}</h1>
+        <p class="welcome-subtitle">{{ currentDate }} · {{ t('dashboard.haveANiceDay') }}</p>
       </div>
       <div class="welcome-right">
         <a-button type="primary" size="large" @click="goToCreateLive">
-          <icon-plus /> 新建直播间
+          <icon-plus /> {{ t('dashboard.createLiveRoom') }}
         </a-button>
       </div>
     </div>
@@ -19,10 +19,10 @@
       <a-card class="stat-card" hoverable>
         <div class="stat-content">
           <div class="stat-info">
-            <p class="stat-label">活跃直播间</p>
+            <p class="stat-label">{{ t('dashboard.liveRooms') }}</p>
             <h3 class="stat-value">{{ stats.liveRooms }}</h3>
             <p class="stat-trend up">
-              <icon-arrow-up /> 较昨日 +12%
+              <icon-arrow-up /> {{ t('dashboard.comparedYesterday') }} +12%
             </p>
           </div>
           <div class="stat-icon live-icon">
@@ -34,10 +34,10 @@
       <a-card class="stat-card" hoverable>
         <div class="stat-content">
           <div class="stat-info">
-            <p class="stat-label">云盘使用量</p>
+            <p class="stat-label">{{ t('dashboard.cloudStorage') }}</p>
             <h3 class="stat-value">{{ stats.cloudStorage }}</h3>
             <p class="stat-trend up">
-              <icon-arrow-up /> 较上周 +8.2%
+              <icon-arrow-up /> {{ t('dashboard.comparedLastWeek') }} +8.2%
             </p>
           </div>
           <div class="stat-icon cloud-icon">
@@ -49,10 +49,10 @@
       <a-card class="stat-card" hoverable>
         <div class="stat-content">
           <div class="stat-info">
-            <p class="stat-label">今日观看人次</p>
+            <p class="stat-label">{{ t('dashboard.viewCount') }}</p>
             <h3 class="stat-value">{{ stats.viewCount }}</h3>
             <p class="stat-trend up">
-              <icon-arrow-up /> 较昨日 +23%
+              <icon-arrow-up /> {{ t('dashboard.comparedYesterday') }} +23%
             </p>
           </div>
           <div class="stat-icon user-icon">
@@ -64,10 +64,10 @@
       <a-card class="stat-card" hoverable>
         <div class="stat-content">
           <div class="stat-info">
-            <p class="stat-label">待处理任务</p>
+            <p class="stat-label">{{ t('dashboard.pendingTasks') }}</p>
             <h3 class="stat-value">{{ stats.pendingTasks }}</h3>
             <p class="stat-trend down">
-              <icon-arrow-down /> 较昨日 -3项
+              <icon-arrow-down /> {{ t('dashboard.comparedYesterday') }} -3{{ t('dashboard.items') }}
             </p>
           </div>
           <div class="stat-icon task-icon">
@@ -79,7 +79,7 @@
 
     <!-- 快捷功能入口 -->
     <div class="section">
-      <h2 class="section-title">常用功能</h2>
+      <h2 class="section-title">{{ t('dashboard.commonFunctions') }}</h2>
       <div class="shortcuts-grid">
         <a-card
           v-for="shortcut in shortcuts"
@@ -104,7 +104,7 @@
     <!-- 最近操作和公告 -->
     <div class="section row-section">
       <div class="recent-operations">
-        <h2 class="section-title">最近操作</h2>
+        <h2 class="section-title">{{ t('dashboard.recentOperations') }}</h2>
         <a-list :data="recentOperations" :bordered="false">
           <template #item="{ item }">
             <a-list-item>
@@ -112,7 +112,7 @@
                 <template #avatar>
                   <icon-info-circle :style="{ color: item.color, fontSize: '20px' }" />
                 </template>
-                <template #title>{{ item.title }}</template>
+                <template #title>{{ t(item.titleKey) + item.titleParam }}</template>
                 <template #description>
                   <span class="operation-time">{{ item.time }}</span>
                 </template>
@@ -123,17 +123,17 @@
       </div>
 
       <div class="system-notices">
-        <h2 class="section-title">系统公告</h2>
+        <h2 class="section-title">{{ t('dashboard.systemNotices') }}</h2>
         <a-list :data="notices" :bordered="false">
           <template #item="{ item }">
             <a-list-item>
               <a-list-item-meta>
                 <template #title>
-                  <span class="notice-title">{{ item.title }}</span>
-                  <a-tag v-if="item.important" color="red">重要</a-tag>
+                  <span class="notice-title">{{ t(item.titleKey) }}</span>
+                  <a-tag v-if="item.important" color="red">{{ t('dashboard.important') }}</a-tag>
                 </template>
                 <template #description>
-                  <span class="notice-content">{{ item.content }}</span>
+                  <span class="notice-content">{{ t(item.contentKey) }}</span>
                   <span class="notice-time">{{ item.time }}</span>
                 </template>
               </a-list-item-meta>
@@ -149,6 +149,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
 import {
   IconPlus,
   IconCamera,
@@ -167,6 +168,7 @@ import { useNavigationStore } from '../stores/navigation'
 
 const router = useRouter()
 const navigationStore = useNavigationStore()
+const { t, locale } = useI18n()
 
 // 当前日期
 const currentDate = ref('')
@@ -182,48 +184,48 @@ const stats = ref({
 const shortcuts = [
   {
     key: 'live-room',
-    title: '直播间管理',
-    description: '查看和管理所有直播间',
+    title: t('dashboard.liveRoomManagement'),
+    description: t('dashboard.liveRoomManagementDesc'),
     icon: IconCamera,
     color: '#165dff',
     path: '/live/rooms'
   },
   {
     key: 'cloud',
-    title: '云盘管理',
-    description: '管理云端存储的文件',
+    title: t('dashboard.cloudStorageManagement'),
+    description: t('dashboard.cloudStorageManagementDesc'),
     icon: IconCloud,
     color: '#00b42a',
     path: '/cloud'
   },
   {
     key: 'live-domain',
-    title: '域名管理',
-    description: '配置直播推流和播放域名',
+    title: t('dashboard.domainManagement'),
+    description: t('dashboard.domainManagementDesc'),
     icon: IconLink,
     color: '#722ed1',
     path: '/live/domains'
   },
   {
     key: 'pull-stream',
-    title: '社媒分发',
-    description: '管理跨平台直播分发任务',
+    title: t('dashboard.socialDistribution'),
+    description: t('dashboard.socialDistributionDesc'),
     icon: IconPlayCircle,
     color: '#ff7d00',
     path: '/live/pull-stream'
   },
   {
     key: 'system',
-    title: '系统设置',
-    description: '配置系统参数和用户权限',
+    title: t('dashboard.systemSettings'),
+    description: t('dashboard.systemSettingsDesc'),
     icon: IconSettings,
     color: '#f53f3f',
     path: '/system-management'
   },
   {
     key: 'guide',
-    title: '使用指南',
-    description: '查看平台功能使用教程',
+    title: t('dashboard.userGuide'),
+    description: t('dashboard.userGuideDesc'),
     icon: IconFile,
     color: '#86909c',
     path: '/LiveGuide'
@@ -233,27 +235,32 @@ const shortcuts = [
 // 最近操作
 const recentOperations = ref([
   {
-    title: '创建了直播间「新品发布会」',
+    titleKey: 'dashboard.createdLiveRoom',
+    titleParam: '「新品发布会」',
     time: '10分钟前',
     color: '#00b42a'
   },
   {
-    title: '上传了视频文件「产品演示.mp4」',
+    titleKey: 'dashboard.uploadedVideoFile',
+    titleParam: '「产品演示.mp4」',
     time: '1小时前',
     color: '#165dff'
   },
   {
-    title: '修改了域名配置',
+    titleKey: 'dashboard.modifiedDomainConfig',
+    titleParam: '',
     time: '3小时前',
     color: '#722ed1'
   },
   {
-    title: '创建了新的分发任务',
+    titleKey: 'dashboard.createdDistributionTask',
+    titleParam: '',
     time: '昨天 18:30',
     color: '#ff7d00'
   },
   {
-    title: '更新了系统权限配置',
+    titleKey: 'dashboard.updatedSystemPermissions',
+    titleParam: '',
     time: '昨天 15:20',
     color: '#f53f3f'
   }
@@ -262,20 +269,20 @@ const recentOperations = ref([
 // 系统公告
 const notices = ref([
   {
-    title: '系统升级维护通知',
-    content: '本周日00:00-06:00系统将进行升级维护，期间服务可能短暂中断，请提前做好准备。',
+    titleKey: 'dashboard.systemMaintenanceNotice',
+    contentKey: 'dashboard.systemMaintenanceNoticeDesc',
     time: '2026-03-10',
     important: true
   },
   {
-    title: '新功能上线：多平台同步直播',
-    content: '现在支持同时推流到抖音、快手、视频号等10+平台，快来体验吧！',
+    titleKey: 'dashboard.newFeatureLiveSync',
+    contentKey: 'dashboard.newFeatureLiveSyncDesc',
     time: '2026-03-08',
     important: false
   },
   {
-    title: '存储容量扩容优惠',
-    content: '云盘存储容量现在买一送一，更多优惠请联系客户经理。',
+    titleKey: 'dashboard.storageCapacityOffer',
+    contentKey: 'dashboard.storageCapacityOfferDesc',
     time: '2026-03-05',
     important: false
   }
@@ -284,23 +291,32 @@ const notices = ref([
 // 格式化当前日期
 const formatCurrentDate = () => {
   const now = new Date()
-  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
   const year = now.getFullYear()
   const month = now.getMonth() + 1
   const day = now.getDate()
-  const weekday = weekdays[now.getDay()]
-  currentDate.value = `${year}年${month}月${day}日 ${weekday}`
+  const weekday = t(`dashboard.weekdays.${now.getDay()}`)
+
+  // 根据语言设置不同的日期格式
+  if (locale.value === 'en-US') {
+    // 英文格式: March 15, 2023 Thursday
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                      'July', 'August', 'September', 'October', 'November', 'December']
+    currentDate.value = `${monthNames[month - 1]} ${day}, ${year} ${weekday}`
+  } else {
+    // 中文格式: 2023年3月15日 星期四
+    currentDate.value = `${year}${t('dashboard.date.year')}${month}${t('dashboard.date.month')}${day}${t('dashboard.date.day')} ${weekday}`
+  }
 }
 
 // 跳转到新建直播间
 const goToCreateLive = () => {
-  navigationStore.navigateTo('LiveRoomForm', '创建直播间', {})
+  navigationStore.navigateTo('LiveRoomForm', t('layout.createRoom'), {})
 }
 
 // 快捷入口点击
 const handleShortcutClick = (shortcut: any) => {
   // 这里可以根据path跳转
-  Message.info(`跳转到${shortcut.title}`)
+  Message.info(`${t('dashboard.jumpingTo')}${shortcut.title}`)
   // 实际项目中调用对应的导航方法
   // navigationStore.navigateTo(...)
 }

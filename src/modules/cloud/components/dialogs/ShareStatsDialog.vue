@@ -1,7 +1,7 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    title="访问统计"
+    :title="t('cloud.shareStatsTitle')"
     :footer="false"
     width="700px"
     @cancel="handleCancel"
@@ -12,7 +12,7 @@
         <div class="share-item">
           <div class="item-icon">📄</div>
           <div class="item-info">
-            <div class="item-name">{{ share?.fileName || '未知文件' }}</div>
+            <div class="item-name">{{ share?.fileName || t('cloud.unknownFile') }}</div>
             <div class="item-meta">
               <span class="meta-item">
                 <icon-link />
@@ -30,11 +30,11 @@
         <div class="stats-summary">
           <div class="stat-item">
             <div class="stat-value">{{ accessCount }}</div>
-            <div class="stat-label">访问次数</div>
+            <div class="stat-label">{{ t('cloud.viewCount') }}</div>
           </div>
           <div class="stat-item">
             <div class="stat-value">{{ downloadCount }}</div>
-            <div class="stat-label">下载次数</div>
+            <div class="stat-label">{{ t('cloud.downloadCount') }}</div>
           </div>
         </div>
       </div>
@@ -42,7 +42,7 @@
       <!-- 提示信息 -->
       <div class="stats-note">
         <icon-info-circle />
-        <span>统计数据来自分享创建以来的累计访问和下载次数</span>
+        <span>{{ t('cloud.statsNote') }}</span>
       </div>
     </div>
   </a-modal>
@@ -50,8 +50,11 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { IconLink, IconLock, IconInfoCircle } from '@arco-design/web-vue/es/icon'
 import type { ShareListItem } from '@/modules/cloud/types'
+
+const { t } = useI18n()
 
 interface Props {
   visible?: boolean

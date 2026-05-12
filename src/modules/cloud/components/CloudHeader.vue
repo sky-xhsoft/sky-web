@@ -3,7 +3,7 @@
     <div class="cloud-header__left">
       <h1 class="cloud-header__title">
         <span class="cloud-header__icon">☁️</span>
-        {{ title }}
+        {{ title || t('cloud.myCloud') }}
       </h1>
     </div>
     <div class="cloud-header__right">
@@ -13,12 +13,16 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 interface Props {
   title?: string
 }
 
 withDefaults(defineProps<Props>(), {
-  title: '我的云盘',
+  title: undefined,
 })
 </script>
 

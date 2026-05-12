@@ -1,7 +1,7 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    title="创建文件夹"
+    :title="t('cloud.createFolderTitle')"
     :ok-loading="loading"
     @ok="handleOk"
     @cancel="handleCancel"
@@ -9,18 +9,18 @@
     <a-form :model="form" @submit="handleSubmit">
       <a-form-item
         field="folderName"
-        label="文件夹名称"
+        :label="t('cloud.folderName')"
         :rules="[
-          { required: true, message: '请输入文件夹名称' },
-          { minLength: 1, message: '名称至少1个字符' },
-          { maxLength: 100, message: '名称最多100个字符' },
+          { required: true, message: t('cloud.folderNamePlaceholder') },
+          { minLength: 1, message: t('cloud.folderNamePlaceholder') },
+          { maxLength: 100, message: t('cloud.folderNameMaxLength') },
           { validator: validateFolderName },
         ]"
         :validate-trigger="['change', 'blur']"
       >
         <a-input
           v-model="form.folderName"
-          placeholder="请输入文件夹名称"
+          :placeholder="t('cloud.folderNamePlaceholder')"
           :max-length="100"
           allow-clear
           @keyup.enter="handleSubmit"
@@ -33,6 +33,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { validateFileName } from '@/modules/cloud/utils/validation'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   visible?: boolean
@@ -61,7 +64,7 @@ watch(
   (newValue) => {
     dialogVisible.value = newValue
     if (newValue) {
-      // 重置表单
+      // Reset form
       form.value.folderName = ''
     }
   }
@@ -102,5 +105,5 @@ function handleCancel() {
 </script>
 
 <style scoped>
-/* 样式由Arco Design提供 */
+/* Styles provided by Arco Design */
 </style>

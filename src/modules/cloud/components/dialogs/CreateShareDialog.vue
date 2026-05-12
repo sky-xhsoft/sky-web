@@ -1,14 +1,14 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    title="创建分享链接"
+    :title="t('cloud.createShareTitle')"
     :ok-loading="loading"
     width="500px"
     @ok="handleOk"
     @cancel="handleCancel"
   >
     <a-form :model="form" layout="vertical">
-      <a-form-item label="分享项">
+      <a-form-item :label="t('cloud.shareItem')">
         <div class="share-item">
           <span class="item-icon">{{ itemIcon }}</span>
           <span class="item-name">{{ itemName }}</span>
@@ -17,31 +17,31 @@
 
       <a-form-item
         field="expirationDays"
-        label="有效期"
-        :rules="[{ required: true, message: '请选择有效期' }]"
+        :label="t('cloud.expiration')"
+        :rules="[{ required: true, message: t('cloud.expirationRequired') }]"
       >
-        <a-select v-model="form.expirationDays" placeholder="请选择有效期">
-          <a-option :value="1">1天</a-option>
-          <a-option :value="7">7天</a-option>
-          <a-option :value="30">30天</a-option>
-          <a-option :value="0">永久</a-option>
+        <a-select v-model="form.expirationDays" :placeholder="t('cloud.selectExpiration')">
+          <a-option :value="1">{{ t('cloud.expiration1Day') }}</a-option>
+          <a-option :value="7">{{ t('cloud.expiration7Days') }}</a-option>
+          <a-option :value="30">{{ t('cloud.expiration30Days') }}</a-option>
+          <a-option :value="0">{{ t('cloud.expirationForever') }}</a-option>
         </a-select>
       </a-form-item>
 
-      <a-form-item label="访问密码">
+      <a-form-item :label="t('cloud.accessPassword')">
         <a-input-password
           v-model="form.password"
-          placeholder="留空则不设置密码"
+          :placeholder="t('cloud.passwordPlaceholder')"
           :max-length="20"
           allow-clear
         >
           <template #suffix>
             <a-button size="mini" type="text" @click="generatePassword">
-              生成
+              {{ t('cloud.generate') }}
             </a-button>
           </template>
         </a-input-password>
-        <div class="hint">建议设置密码以保护分享内容</div>
+        <div class="hint">{{ t('cloud.passwordHint') }}</div>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -50,6 +50,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import type { ShareCreateParams } from '@/modules/cloud/types'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   visible?: boolean
@@ -77,6 +78,8 @@ const form = ref({
   expirationDays: 7,
   password: '',
 })
+
+const { t } = useI18n()
 
 watch(
   () => props.visible,

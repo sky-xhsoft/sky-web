@@ -1,7 +1,7 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    title="编辑分享"
+    :title="t('cloud.editShareTitle')"
     :ok-loading="loading"
     width="600px"
     @ok="handleOk"
@@ -10,22 +10,22 @@
   >
     <a-form :model="form" layout="vertical" ref="formRef">
       <!-- 分享基本信息 -->
-      <a-form-item label="分享信息">
+      <a-form-item :label="t('cloud.shareInfoLabel')">
         <div class="share-info">
           <div class="info-row">
-            <span class="info-label">链接:</span>
+            <span class="info-label">{{ t('cloud.shareLinkLabel') }}</span>
             <span class="info-value copyable" @click="handleCopyLink">{{ shareLink }}</span>
             <a-button size="mini" type="text" @click="handleCopyLink">
               <icon-copy />
-              复制
+              {{ t('cloud.copy') }}
             </a-button>
           </div>
           <div class="info-row" v-if="props.share?.password">
-            <span class="info-label">访问密码:</span>
+            <span class="info-label">{{ t('cloud.accessPassword') }}:</span>
             <span class="info-value copyable" @click="handleCopyPassword">{{ props.share.password }}</span>
             <a-button size="mini" type="text" @click="handleCopyPassword">
               <icon-copy />
-              复制
+              {{ t('cloud.copy') }}
             </a-button>
           </div>
         </div>
@@ -34,28 +34,28 @@
       <!-- 有效期设置 -->
       <a-form-item
         field="expirationDays"
-        label="新有效期"
-        :rules="[{ required: true, message: '请选择有效期' }]"
+        :label="t('cloud.newExpiration')"
+        :rules="[{ required: true, message: t('cloud.expirationRequired') }]"
       >
-        <a-select v-model="form.expirationDays" placeholder="请选择有效期">
-          <a-option :value="1">1天</a-option>
-          <a-option :value="7">7天</a-option>
-          <a-option :value="30">30天</a-option>
-          <a-option :value="0">永久</a-option>
+        <a-select v-model="form.expirationDays" :placeholder="t('cloud.selectExpiration')">
+          <a-option :value="1">{{ t('cloud.expiration1Day') }}</a-option>
+          <a-option :value="7">{{ t('cloud.expiration7Days') }}</a-option>
+          <a-option :value="30">{{ t('cloud.expiration30Days') }}</a-option>
+          <a-option :value="0">{{ t('cloud.expirationForever') }}</a-option>
         </a-select>
         <div class="hint" v-if="form.expirationDays === 0">
-          永久分享将长期有效，请谨慎设置
+          {{ t('cloud.expirationForeverWarning') }}
         </div>
         <div class="hint" v-else>
-          分享将在 {{ form.expirationDays }} 天后过期（从现在开始计算）
+          {{ t('cloud.expireDaysHint', { days: form.expirationDays }) }}
         </div>
       </a-form-item>
 
       <!-- 访问密码 -->
-      <a-form-item label="访问密码">
+      <a-form-item :label="t('cloud.accessPassword')">
         <a-input-password
           v-model="form.password"
-          placeholder="留空则不设置密码"
+          :placeholder="t('cloud.passwordPlaceholder')"
           :max-length="20"
           allow-clear
           show-password-toggle
@@ -67,33 +67,33 @@
           <template #suffix>
             <a-button size="mini" type="text" @click="generatePassword" :disabled="generating">
               <icon-refresh v-if="generating" />
-              {{ generating ? '生成中...' : '生成' }}
+              {{ generating ? t('cloud.loading') : t('cloud.generate') }}
             </a-button>
           </template>
         </a-input-password>
         <div class="hint">
-          <icon-info-circle /> 修改密码后，旧密码将立即失效
+          <icon-info-circle /> {{ t('cloud.passwordChangeWarning') }}
         </div>
       </a-form-item>
 
       <!-- 分享详情信息 -->
-      <a-form-item label="分享详情">
+      <a-form-item :label="t('cloud.shareInfoLabel')">
         <div class="share-details">
           <div class="detail-row">
-            <span class="detail-label">创建时间:</span>
+            <span class="detail-label">{{ t('cloud.createTime') }}:</span>
             <span class="detail-value">{{ formatDate(createTime) }}</span>
           </div>
           <div class="detail-row" v-if="expirationTime">
-            <span class="detail-label">过期时间:</span>
+            <span class="detail-label">{{ t('cloud.expireTime') }}</span>
             <span class="detail-value" :class="{ 'text-warning': isExpiringSoon }">
               {{ formatDate(expirationTime) }}
-              <span v-if="isExpiringSoon" class="expiration-warning">(即将过期)</span>
+              <span v-if="isExpiringSoon" class="expiration-warning">{{ t('cloud.expiringSoon') }}</span>
             </span>
           </div>
           <div class="detail-row" v-if="form.expirationDays > 0">
-            <span class="detail-label">剩余天数:</span>
+            <span class="detail-label">{{ t('cloud.remainingDays') }}</span>
             <span class="detail-value" :class="{ 'text-danger': remainingDays <= 1, 'text-warning': remainingDays <= 3 }">
-              {{ remainingDays }} 天
+              {{ remainingDays }} {{ t('cloud.days') }}
             </span>
           </div>
         </div>
@@ -105,9 +105,12 @@
 <script setup lang="ts">
 import { ref, watch, computed, h } from 'vue'
 import { Message } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
 import { IconCopy, IconLock, IconUnlock, IconRefresh, IconInfoCircle } from '@arco-design/web-vue/es/icon'
 import type { ShareListItem } from '@/modules/cloud/types'
 import { formatDate } from '@/modules/cloud/utils/format'
+
+const { t } = useI18n()
 
 interface Props {
   visible?: boolean
@@ -202,7 +205,7 @@ function generatePassword() {
   setTimeout(() => {
     form.value.password = generateRandomPassword()
     generating.value = false
-    Message.success('密码已生成')
+    Message.success(t('cloud.passwordGenerated'))
   }, 300)
 }
 
@@ -211,12 +214,12 @@ function handleCopyLink() {
 
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(shareLink.value).then(() => {
-      Message.success('链接已复制')
+      Message.success(t('cloud.shareLinkCopied'))
     }).catch(() => {
-      fallbackCopy(shareLink.value, '链接已复制')
+      fallbackCopy(shareLink.value, t('cloud.shareLinkCopied'))
     })
   } else {
-    fallbackCopy(shareLink.value, '链接已复制')
+    fallbackCopy(shareLink.value, t('cloud.shareLinkCopied'))
   }
 }
 
@@ -225,12 +228,12 @@ function handleCopyPassword() {
 
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(props.share.password).then(() => {
-      Message.success('访问密码已复制')
+      Message.success(t('cloud.accessPasswordCopied'))
     }).catch(() => {
-      fallbackCopy(props.share.password, '访问密码已复制')
+      fallbackCopy(props.share.password, t('cloud.accessPasswordCopied'))
     })
   } else {
-    fallbackCopy(props.share.password, '访问密码已复制')
+    fallbackCopy(props.share.password, t('cloud.accessPasswordCopied'))
   }
 }
 
@@ -246,7 +249,7 @@ function fallbackCopy(text: string, successMsg: string) {
     document.execCommand('copy')
     Message.success(successMsg)
   } catch (err) {
-    Message.error('复制失败，请手动复制')
+    Message.error(t('cloud.copyFailed'))
   } finally {
     document.body.removeChild(textarea)
   }
@@ -277,7 +280,7 @@ function handleCancel() {
 function renderFooterExtra() {
   return h('div', { class: 'footer-extra' }, [
     h(IconInfoCircle, { style: 'margin-right: 4px;' }),
-    '修改后分享链接保持不变'
+    t('cloud.linkModifyNote')
   ])
 }
 </script>

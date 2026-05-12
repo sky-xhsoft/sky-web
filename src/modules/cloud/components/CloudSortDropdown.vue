@@ -21,7 +21,7 @@
       <a-divider margin="4px" />
       <a-doption value="toggle-order">
         <icon-swap />
-        切换排序方向
+        {{ t('cloud.toggleSortOrder') }}
         <span class="order-label">{{ sortOrderText }}</span>
       </a-doption>
     </template>
@@ -29,12 +29,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   IconSort,
   IconCheck,
   IconSwap,
 } from '@arco-design/web-vue/es/icon'
+import { useI18n } from 'vue-i18n'
 import type { FileSortBy, SortOrder } from '@/modules/cloud/types'
 
 interface SortOption {
@@ -54,24 +55,34 @@ interface Emits {
   (e: 'sortOrderToggle'): void
 }
 
+const { t } = useI18n()
+
+const internalSortOptions = computed<SortOption[]>(() => [
+  { value: 'name', label: t('cloud.sortByName'), icon: '📝' },
+  { value: 'size', label: t('cloud.sortBySize'), icon: '📦' },
+  { value: 'date', label: t('cloud.sortByDate'), icon: '📅' },
+])
+
 const props = withDefaults(defineProps<Props>(), {
   sortBy: 'name',
   sortOrder: 'asc',
-  sortOptions: () => [
-    { value: 'name', label: '名称', icon: '📝' },
-    { value: 'size', label: '大小', icon: '📦' },
-    { value: 'date', label: '日期', icon: '📅' },
-  ],
 })
 
 const emit = defineEmits<Emits>()
 
+const sortOptions = computed<SortOption[]>(() => {
+  if (props.sortOptions?.length) {
+    return props.sortOptions
+  }
+  return internalSortOptions.value
+})
+
 const currentOption = computed(() => {
-  return props.sortOptions.find((opt) => opt.value === props.sortBy) || props.sortOptions[0]
+  return sortOptions.value.find((opt) => opt.value === props.sortBy) || sortOptions.value[0]
 })
 
 const currentLabel = computed(() => {
-  return `排序：${currentOption.value.label}`
+  return `${t('cloud.sortBy')}${currentOption.value.label}`
 })
 
 const sortOrderIcon = computed(() => {
@@ -79,7 +90,7 @@ const sortOrderIcon = computed(() => {
 })
 
 const sortOrderText = computed(() => {
-  return props.sortOrder === 'asc' ? '升序' : '降序'
+  return props.sortOrder === 'asc' ? t('cloud.ascending') : t('cloud.descending')
 })
 
 function handleSelect(value: string | number | Record<string, any> | undefined) {

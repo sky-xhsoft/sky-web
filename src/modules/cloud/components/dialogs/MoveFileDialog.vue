@@ -1,7 +1,7 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    title="移动到"
+    :title="t('cloud.moveTitle')"
     :ok-loading="loading"
     width="600px"
     @ok="handleOk"
@@ -9,14 +9,14 @@
   >
     <div class="move-file-dialog">
       <div class="current-selection">
-        已选择：<strong>{{ selectedItemsText }}</strong>
+        {{ t('cloud.selected') }}：<strong>{{ selectedItemsText }}</strong>
       </div>
 
       <a-divider />
 
       <div class="folder-tree-container">
         <div class="folder-tree-header">
-          <span>选择目标文件夹：</span>
+          <span>{{ t('cloud.selectDestination') }}：</span>
         </div>
         <a-tree
           :data="folderTreeData"
@@ -31,7 +31,7 @@
       </div>
 
       <div class="target-info" v-if="targetFolder !== null">
-        目标位置：<strong>{{ targetFolderPath }}</strong>
+        {{ t('cloud.targetLocation') }}：<strong>{{ targetFolderPath }}</strong>
       </div>
     </div>
   </a-modal>
@@ -42,6 +42,9 @@ import { ref, watch, computed } from 'vue'
 import { fetchFolders } from '@/modules/cloud/api'
 import type { Folder } from '@/modules/cloud/types'
 import type { TreeNodeData } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   visible?: boolean
@@ -92,12 +95,12 @@ watch(dialogVisible, (newValue) => {
 })
 
 const selectedItemsText = computed(() => {
-  return `${props.selectedCount} 项`
+  return `${props.selectedCount} ${t('cloud.items')}`
 })
 
 const targetFolderPath = computed(() => {
   if (targetFolder.value === null) return ''
-  return folderPathMap.value.get(targetFolder.value) || '/根目录'
+  return folderPathMap.value.get(targetFolder.value) || `/${t('cloud.rootDirectory')}`
 })
 
 // 加载根目录的子文件夹
@@ -106,9 +109,9 @@ async function loadRootFolders() {
     const folders = await fetchFolders(0)
     folderTreeData.value = [{
       key: 0,
-      title: '根目录',
+      title: t('cloud.rootDirectory'),
       isLeaf: false,
-      children: folders.map(folder => convertFolderToTreeNode(folder, '/根目录')),
+      children: folders.map(folder => convertFolderToTreeNode(folder, `/${t('cloud.rootDirectory')}`)),
     }]
   } catch (error) {
     console.error('加载根目录失败:', error)

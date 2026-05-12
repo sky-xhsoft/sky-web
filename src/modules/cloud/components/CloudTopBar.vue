@@ -9,7 +9,7 @@
     <div class="cloud-top-bar__actions">
       <a-button @click="$emit('open-share-manager')" size="small">
         <icon-share-alt />
-        我的分享
+        {{ t('cloud.myShares') }}
       </a-button>
     </div>
   </div>
@@ -18,6 +18,7 @@
 <script setup lang="ts">
 import { IconShareAlt } from '@arco-design/web-vue/es/icon'
 import CloudBreadcrumb from './CloudBreadcrumb.vue'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   items: Array<{ id: number; name: string }>
@@ -30,6 +31,8 @@ const emit = defineEmits<{
   (e: 'navigate', item: { id: number; name: string }): void
   (e: 'open-share-manager'): void
 }>()
+
+const { t } = useI18n()
 </script>
 
 <style scoped>

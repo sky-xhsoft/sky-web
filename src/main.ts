@@ -6,16 +6,27 @@ import ArcoVue from '@arco-design/web-vue'
 import ArcoVueIcon from '@arco-design/web-vue/es/icon'
 import '@arco-design/web-vue/dist/arco.css'
 import '@wangeditor/editor/dist/css/style.css'
-import i18n from './locales'
+import i18n, { currentArcoLocale } from './locales'
 import './style.css'
 
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)
-app.use(ArcoVue)
+app.use(ArcoVue, {
+  locale: currentArcoLocale.value
+})
 app.use(ArcoVueIcon)
 app.use(i18n)
 app.mount('#app')
+
+// 监听路由参数变化，自动切换语言
+router.afterEach((to) => {
+  const lang = to.query.lang
+  if (lang && typeof lang === 'string') {
+    i18n.global.locale.value = lang
+    localStorage.setItem('language', lang)
+  }
+})
 
 // 修改 Message 容器位置
 setTimeout(() => {

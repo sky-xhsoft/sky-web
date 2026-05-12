@@ -288,6 +288,13 @@ export const useNavigationStore = defineStore('navigation', () => {
   }
 
   /**
+   * 替换所有标签页 - 用于语言切换时更新标签标题
+   */
+  function replaceTabs(newTabs: TabItem[]): void {
+    tabs.value = newTabs
+  }
+
+  /**
    * 导航到指定组件
    * @param pushToHistory 是否将当前页面推入历史栈（默认true）
    */
@@ -396,6 +403,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     updateCurrentTabTitle,
     initializeDefaultTab,
     onBack,
-    triggerBackCallbacks
+    triggerBackCallbacks,
+    replaceTabs
   }
 })

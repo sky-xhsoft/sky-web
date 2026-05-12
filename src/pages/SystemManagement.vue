@@ -3,7 +3,9 @@ import { ref, computed, onMounted } from 'vue'
 import { IconApps, IconRight, IconSettings, IconUser, IconSafe, IconDesktop } from '@arco-design/web-vue/es/icon'
 import { useMenuStore } from '../stores/menu'
 import { useNavigationStore } from '../stores/navigation'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const menuStore = useMenuStore()
 const navigationStore = useNavigationStore()
 
@@ -14,23 +16,23 @@ const systemArchitecture = ref({
   features: [
     {
       icon: '🏗️',
-      title: '元数据驱动',
-      description: '通过元数据配置实现动态表单、字段、权限等功能，无需修改代码即可扩展业务'
+      titleKey: 'systemManagement.metadataDriven',
+      descriptionKey: 'systemManagement.metadataDrivenDesc'
     },
     {
       icon: '🔐',
-      title: '权限管理',
-      description: '基于用户-权限组-权限的三层权限体系，实现细粒度的访问控制'
+      titleKey: 'systemManagement.permissionManagement',
+      descriptionKey: 'systemManagement.permissionManagementDesc'
     },
     {
       icon: '📊',
-      title: '数据字典',
-      description: '统一管理系统中的枚举值、下拉选项等配置数据，保证数据一致性'
+      titleKey: 'systemManagement.dataDictionary',
+      descriptionKey: 'systemManagement.dataDictionaryDesc'
     },
     {
       icon: '🔄',
-      title: '多租户支持',
-      description: '支持多公司、多子系统的数据隔离与管理，满足企业级应用需求'
+      titleKey: 'systemManagement.multiTenant',
+      descriptionKey: 'systemManagement.multiTenantDesc'
     }
   ]
 })
@@ -86,20 +88,7 @@ const moduleCategories = computed(() => {
 
 // 获取模块描述
 const getModuleDescription = (name: string, displayName: string) => {
-  const descriptions: Record<string, string> = {
-    'SYS_COMPANY': '管理公司基本信息、组织架构等',
-    'SYS_SUBSYSTEM': '管理系统模块划分、功能分组',
-    'SYS_TABLE_CATEGORY': '管理数据表的分类和组织结构',
-    'SYS_TABLE': '配置系统中的数据表结构和属性',
-    'SYS_COLUMN': '定义表字段的类型、验证规则等',
-    'SYS_DICT': '管理系统枚举值、下拉选项等字典数据',
-    'SYS_SEQ': '配置业务单号、流水号的生成规则',
-    'SYS_USER': '管理系统用户账号、基本信息',
-    'SYS_GROUPS': '配置权限组、角色定义',
-    'SYS_USER_GROUPS': '分配用户所属的权限组',
-    'SYS_GROUP_PREM': '配置权限组的具体权限明细'
-  }
-  return descriptions[name] || `管理${displayName}相关数据`
+  return t(`systemManagement.moduleDescriptions.${name}`) || `管理${displayName}相关数据`
 }
 
 // 处理模块点击
@@ -127,29 +116,29 @@ const handleModuleClick = async (module: any) => {
 const usageFlow = ref([
   {
     step: 1,
-    title: '配置元数据',
-    description: '首先配置公司、子系统、表结构等基础元数据',
+    titleKey: 'systemManagement.configureMetadata',
+    descriptionKey: 'systemManagement.configureMetadataDesc',
     icon: '📊',
     color: '#165dff'
   },
   {
     step: 2,
-    title: '设置权限',
-    description: '创建用户账号、配置权限组和权限明细',
+    titleKey: 'systemManagement.setPermissions',
+    descriptionKey: 'systemManagement.setPermissionsDesc',
     icon: '🔐',
     color: '#00b42a'
   },
   {
     step: 3,
-    title: '配置字典',
-    description: '维护数据字典、序号规则等业务配置',
+    titleKey: 'systemManagement.configureDictionary',
+    descriptionKey: 'systemManagement.configureDictionaryDesc',
     icon: '📝',
     color: '#f7ba1e'
   },
   {
     step: 4,
-    title: '业务使用',
-    description: '基于配置的元数据开展具体业务操作',
+    titleKey: 'systemManagement.businessUse',
+    descriptionKey: 'systemManagement.businessUseDesc',
     icon: '🚀',
     color: '#722ed1'
   }
@@ -161,20 +150,20 @@ const usageFlow = ref([
     <!-- 系统架构特性 -->
     <div class="architecture-section">
       <div class="section-header">
-        <h2 class="section-title">🏗️ 系统架构特性</h2>
-        <p class="section-description">了解系统的核心设计理念和技术特点</p>
+        <h2 class="section-title">🏗️ {{ t('systemManagement.systemArchitecture') }}</h2>
+        <p class="section-description">{{ t('systemManagement.systemArchitectureDesc') }}</p>
       </div>
       <div class="features-grid">
         <a-card
           v-for="feature in systemArchitecture.features"
-          :key="feature.title"
+          :key="feature.titleKey"
           class="feature-card"
           :bordered="false"
         >
           <div class="feature-content">
             <div class="feature-icon">{{ feature.icon }}</div>
-            <h3 class="feature-title">{{ feature.title }}</h3>
-            <p class="feature-description">{{ feature.description }}</p>
+            <h3 class="feature-title">{{ t(feature.titleKey) }}</h3>
+            <p class="feature-description">{{ t(feature.descriptionKey) }}</p>
           </div>
         </a-card>
       </div>
@@ -183,8 +172,8 @@ const usageFlow = ref([
     <!-- 使用流程 -->
     <div class="flow-section">
       <div class="section-header">
-        <h2 class="section-title">🔄 系统配置流程</h2>
-        <p class="section-description">按照以下步骤完成系统初始化配置</p>
+        <h2 class="section-title">🔄 {{ t('systemManagement.systemConfigFlow') }}</h2>
+        <p class="section-description">{{ t('systemManagement.systemConfigFlowDesc') }}</p>
       </div>
       <div class="flow-timeline">
         <div v-for="(item, index) in usageFlow" :key="item.step" class="flow-item">
@@ -193,8 +182,8 @@ const usageFlow = ref([
           </div>
           <div class="flow-content">
             <div class="flow-icon">{{ item.icon }}</div>
-            <h3 class="flow-title">{{ item.title }}</h3>
-            <p class="flow-description">{{ item.description }}</p>
+            <h3 class="flow-title">{{ t(item.titleKey) }}</h3>
+            <p class="flow-description">{{ t(item.descriptionKey) }}</p>
           </div>
           <div v-if="index < usageFlow.length - 1" class="flow-connector"></div>
         </div>

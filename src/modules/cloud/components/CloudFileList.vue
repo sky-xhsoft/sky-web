@@ -3,7 +3,7 @@
     <!-- 空状态 -->
     <a-empty
       v-if="items.length === 0 && !loading"
-      :description="emptyText"
+      :description="emptyText || t('cloud.folderEmpty')"
       class="cloud-file-list__empty"
     >
       <template #image>
@@ -14,7 +14,7 @@
     <!-- 加载状态 -->
     <div v-if="loading" class="cloud-file-list__loading">
       <a-spin size="large" />
-      <div class="loading-text">加载中...</div>
+      <div class="loading-text">{{ t('cloud.loading') }}</div>
     </div>
 
     <!-- 表格视图 -->
@@ -46,7 +46,7 @@
       <!-- 类型列 -->
       <template #type="{ record }">
         <a-tag v-if="record.type === 'folder'" color="orange">
-          文件夹
+          {{ t('cloud.folder') }}
         </a-tag>
         <span v-else class="file-ext">
           {{ record.file?.FileExt || '-' }}
@@ -74,7 +74,7 @@
             size="mini"
             type="text"
             @click.stop="handleAction('preview', record)"
-            title="预览"
+            :title="t('cloud.preview')"
           >
             <icon-eye />
           </a-button>
@@ -83,7 +83,7 @@
             size="mini"
             type="text"
             @click.stop="handleAction('download', record)"
-            title="下载"
+            :title="t('cloud.download')"
           >
             <icon-download />
           </a-button>
@@ -91,7 +91,7 @@
             size="mini"
             type="text"
             @click.stop="handleAction('rename', record)"
-            title="重命名"
+            :title="t('cloud.rename')"
           >
             <icon-edit />
           </a-button>
@@ -102,15 +102,15 @@
             <template #content>
               <a-doption value="move">
                 <icon-export />
-                移动
+                {{ t('cloud.move') }}
               </a-doption>
               <a-doption value="share">
                 <icon-share-alt />
-                分享
+                {{ t('cloud.share') }}
               </a-doption>
               <a-doption value="delete" class="danger-option">
                 <icon-delete />
-                删除
+                {{ t('cloud.deleteItem') }}
               </a-doption>
             </template>
           </a-dropdown>
@@ -135,6 +135,9 @@ import {
 import type { GridItem } from '@/modules/cloud/types'
 import type { TableRowSelection } from '@arco-design/web-vue'
 import { formatSize, formatDate } from '@/modules/cloud/utils/format'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   items: GridItem[]
@@ -154,14 +157,14 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   selectable: false,
-  emptyText: '此文件夹为空',
+  emptyText: undefined,
 })
 
 const emit = defineEmits<Emits>()
 
 const columns = [
   {
-    title: '名称',
+    title: t('cloud.fileName'),
     dataIndex: 'name',
     slotName: 'name',
     ellipsis: true,
@@ -169,25 +172,25 @@ const columns = [
     // 不设置固定宽度，让名称列自适应填充剩余空间
   },
   {
-    title: '类型',
+    title: t('cloud.fileType'),
     dataIndex: 'type',
     slotName: 'type',
     width: 100,
   },
   {
-    title: '大小',
+    title: t('cloud.fileSize'),
     dataIndex: 'size',
     slotName: 'size',
     width: 100,
   },
   {
-    title: '修改时间',
+    title: t('cloud.modified'),
     dataIndex: 'time',
     slotName: 'time',
     width: 160,
   },
   {
-    title: '操作',
+    title: t('cloud.actions'),
     slotName: 'actions',
     width: 150,
     align: 'center' as const,

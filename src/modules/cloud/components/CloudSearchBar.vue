@@ -2,7 +2,7 @@
   <div class="cloud-search-bar">
     <a-input-search
       v-model="searchValue"
-      :placeholder="placeholder"
+      :placeholder="computedPlaceholder"
       :loading="searching"
       allow-clear
       @search="handleSearch"
@@ -13,16 +13,19 @@
       </template>
     </a-input-search>
 
-    <!-- 搜索统计 -->
+    <!-- Search stats -->
     <div v-if="showStats && hasResults" class="cloud-search-bar__stats">
-      找到 <strong>{{ resultCount }}</strong> 个结果
+      {{ t('cloud.searchResults', { count: resultCount }) }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { IconSearch } from '@arco-design/web-vue/es/icon'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   modelValue?: string
@@ -40,13 +43,15 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
-  placeholder: '搜索文件...',
+  placeholder: '',
   searching: false,
   resultCount: 0,
   showStats: true,
 })
 
 const emit = defineEmits<Emits>()
+
+const computedPlaceholder = computed(() => props.placeholder || t('cloud.searchPlaceholder'))
 
 const searchValue = ref(props.modelValue)
 
@@ -73,7 +78,6 @@ function handleClear() {
 </script>
 
 <script lang="ts">
-import { computed } from 'vue'
 export default {
   name: 'CloudSearchBar',
 }
@@ -139,7 +143,7 @@ export default {
   font-weight: 600;
 }
 
-/* 响应式调整 */
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .cloud-search-bar {
     width: 100%;

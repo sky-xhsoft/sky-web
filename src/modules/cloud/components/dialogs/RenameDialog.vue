@@ -1,7 +1,7 @@
 <template>
   <a-modal
     v-model:visible="dialogVisible"
-    :title="`重命名${itemType === 'folder' ? '文件夹' : '文件'}`"
+    :title="t('cloud.renameTitle', { type: itemType === 'folder' ? t('cloud.folder') : t('cloud.file') })"
     :ok-loading="loading"
     @ok="handleOk"
     @cancel="handleCancel"
@@ -9,25 +9,25 @@
     <a-form :model="form" @submit="handleSubmit">
       <a-form-item
         field="newName"
-        label="新名称"
+        :label="t('cloud.newName')"
         :rules="[
-          { required: true, message: '请输入新名称' },
-          { minLength: 1, message: '名称至少1个字符' },
-          { maxLength: 255, message: '名称最多255个字符' },
+          { required: true, message: t('cloud.enterNewName') },
+          { minLength: 1, message: t('cloud.nameMinLength') },
+          { maxLength: 255, message: t('cloud.nameMaxLength') },
           { validator: validateName },
         ]"
         :validate-trigger="['change', 'blur']"
       >
         <a-input
           v-model="form.newName"
-          placeholder="请输入新名称"
+          :placeholder="t('cloud.enterNewName')"
           :max-length="255"
           allow-clear
           @keyup.enter="handleSubmit"
         />
       </a-form-item>
       <div class="hint">
-        原名称：<span class="old-name">{{ oldName }}</span>
+        {{ t('cloud.originalName') }}：<span class="old-name">{{ oldName }}</span>
       </div>
     </a-form>
   </a-modal>
@@ -36,6 +36,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { validateFileName } from '@/modules/cloud/utils/validation'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   visible?: boolean
@@ -57,6 +58,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const dialogVisible = ref(props.visible)
 const form = ref({

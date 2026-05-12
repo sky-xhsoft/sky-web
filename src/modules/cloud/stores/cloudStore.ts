@@ -36,6 +36,7 @@ import {
 } from '@/modules/cloud/api'
 import { getFileIconConfig } from '@/modules/cloud/composables/useFileIcon'
 import { formatSize, formatDate } from '@/modules/cloud/utils/format'
+import i18n from '@/locales'
 
 export const useCloudStore = defineStore('cloud', () => {
   // ==================== 状态 ====================
@@ -84,7 +85,7 @@ export const useCloudStore = defineStore('cloud', () => {
   const pathStack = ref<number[]>([])
 
   // 面包屑路径
-  const breadcrumbPath = ref<{ id: number; name: string }[]>([{ id: 0, name: '我的云盘' }])
+  const breadcrumbPath = ref<{ id: number; name: string }[]>([{ id: 0, name: i18n.global.t('cloud.myCloud') }])
 
   // ==================== Getters ====================
 
@@ -370,7 +371,7 @@ export const useCloudStore = defineStore('cloud', () => {
     
     // 如果要回到根目录
     if (folderId === 0) {
-      breadcrumbPath.value = [{ id: 0, name: '我的云盘' }]
+      breadcrumbPath.value = [{ id: 0, name: i18n.global.t('cloud.myCloud') }]
       currentFolderId.value = 0
       await loadFiles(0)
       return
@@ -417,7 +418,7 @@ export const useCloudStore = defineStore('cloud', () => {
    * 返回根目录
    */
   async function goRoot() {
-    breadcrumbPath.value = [{ id: 0, name: '我的云盘' }]
+    breadcrumbPath.value = [{ id: 0, name: i18n.global.t('cloud.myCloud') }]
     pathStack.value = []
     currentFolderId.value = 0
     await loadFiles(0)

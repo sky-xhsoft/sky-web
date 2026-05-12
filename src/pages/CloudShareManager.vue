@@ -3,11 +3,11 @@
     <div class="page-header">
       <h2>
         <icon-share-alt />
-        我的分享
+        {{ t('cloud.myShares') }}
       </h2>
       <a-button @click="handleBack">
         <icon-arrow-left />
-        返回云盘
+        {{ t('cloud.myCloudReturn') }}
       </a-button>
     </div>
     <div class="page-content">
@@ -16,35 +16,35 @@
         <div class="header-left">
           <h3>
             <icon-share-alt />
-            我的分享
+            {{ t('cloud.myShares') }}
           </h3>
         </div>
         <div class="header-right">
           <a-space size="small">
             <a-input-search
               v-model="searchKeyword"
-              placeholder="搜索文件名称"
+              :placeholder="t('cloud.searchFileName')"
               style="width: 200px"
               clearable
               @search="handleSearch"
             />
-            <a-select v-model="filterStatus" placeholder="筛选状态" style="width: 120px">
+            <a-select v-model="filterStatus" :placeholder="t('cloud.filterStatus')" style="width: 120px">
               <a-option value="all">
                 <template #icon><icon-apps /></template>
-                全部
+                {{ t('cloud.shareStatusAll') }}
               </a-option>
               <a-option value="active">
                 <template #icon><icon-check-circle /></template>
-                有效
+                {{ t('cloud.shareStatusActive') }}
               </a-option>
               <a-option value="expired">
                 <template #icon><icon-close-circle /></template>
-                已过期
+                {{ t('cloud.shareStatusExpired') }}
               </a-option>
             </a-select>
             <a-button @click="handleRefresh" :loading="loading">
               <icon-refresh />
-              刷新
+              {{ t('cloud.refresh') }}
             </a-button>
           </a-space>
         </div>
@@ -58,7 +58,7 @@
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ shares.length }}</div>
-            <div class="stat-label">总分享</div>
+            <div class="stat-label">{{ t('cloud.shareTotal') }}</div>
           </div>
         </div>
         <div class="stat-card stat-card--active">
@@ -67,7 +67,7 @@
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ activeShareCount }}</div>
-            <div class="stat-label">有效分享</div>
+            <div class="stat-label">{{ t('cloud.shareActive') }}</div>
           </div>
         </div>
         <div class="stat-card stat-card--expired">
@@ -76,7 +76,7 @@
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ expiredShareCount }}</div>
-            <div class="stat-label">已过期</div>
+            <div class="stat-label">{{ t('cloud.shareExpired') }}</div>
           </div>
         </div>
       </div>
@@ -84,7 +84,7 @@
       <!-- 空状态 -->
       <a-empty
         v-if="filteredShares.length === 0 && shares.length === 0 && !loading"
-        description="暂无分享"
+        :description="t('cloud.shareEmpty')"
         class="cloud-share-manager__empty"
       >
         <template #image>
@@ -95,14 +95,14 @@
       <!-- 搜索无结果 -->
       <a-empty
         v-else-if="filteredShares.length === 0 && searchKeyword && !loading"
-        description="未找到匹配的分享"
+        :description="t('cloud.shareSearchEmpty')"
         class="cloud-share-manager__empty"
       />
 
       <!-- 加载状态 -->
       <div v-else-if="loading" class="cloud-share-manager__loading">
         <a-spin size="large" />
-        <span>加载中...</span>
+        <span>{{ t('cloud.loading') }}</span>
       </div>
 
       <!-- 分享列表 -->
@@ -121,22 +121,22 @@
           <!-- 文件信息 -->
           <div class="share-item__info">
             <div class="share-name">
-              {{ share.fileName || '未知文件' }}
+              {{ share.fileName || t('cloud.unknownFile') }}
             </div>
             <div class="share-meta">
               <span class="meta-item">
                 <icon-link />
-                <span class="meta-label">分享码:</span>
+                <span class="meta-label">{{ t('cloud.shareCode') }}:</span>
                 <span class="meta-value code">{{ share.shareCode }}</span>
               </span>
               <span v-if="share.password" class="meta-item">
                 <icon-lock />
-                <span class="meta-label">访问密码:</span>
+                <span class="meta-label">{{ t('cloud.accessPassword') }}:</span>
                 <span class="meta-value password">{{ share.password }}</span>
               </span>
               <span class="meta-item">
                 <icon-clock-circle />
-                <span class="meta-label">创建时间:</span>
+                <span class="meta-label">{{ t('cloud.createTime') }}:</span>
                 <span class="meta-value">{{ formatDate(share.createTime) }}</span>
               </span>
             </div>
@@ -146,11 +146,11 @@
           <div class="share-item__status">
             <a-tag v-if="isExpired(share)" color="red" size="small">
               <icon-close-circle />
-              已过期
+              {{ t('cloud.shareExpiredLabel') }}
             </a-tag>
             <a-tag v-else :color="getDaysColor(getRemainingDays(share))" size="small">
               <icon-clock-circle />
-              剩余 {{ getRemainingDays(share) === 999 ? '永久' : getRemainingDays(share) + ' 天' }}
+              剩余 {{ getRemainingDays(share) === 999 ? t('cloud.shareForever') : getRemainingDays(share) + ' ' + t('cloud.days') }}
             </a-tag>
           </div>
 
@@ -165,17 +165,17 @@
           <div class="share-item__actions">
             <a-button size="small" type="text" @click="handleCopy(share)" :disabled="isExpired(share)">
               <icon-copy />
-              复制链接
+              {{ t('cloud.copyLink') }}
             </a-button>
             <a-dropdown trigger="click">
               <template #content>
                 <a-doption @click="handleEdit(share)" :disabled="isExpired(share)">
                   <icon-edit />
-                  编辑
+                  {{ t('cloud.editShare') }}
                 </a-doption>
                 <a-doption @click="handleViewStats(share)">
                   <icon-eye />
-                  访问统计
+                  {{ t('cloud.viewStats') }}
                 </a-doption>
               </template>
               <a-button size="small" type="text">
@@ -212,6 +212,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useNavigationStore } from '@/stores/navigation'
 import { Message, Modal } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
 import {
   IconShareAlt,
   IconArrowLeft,
@@ -237,6 +238,7 @@ import useCloudShare from '@/modules/cloud/composables/useCloudShare'
 import type { ShareListItem } from '@/modules/cloud/types'
 import { formatDate } from '@/modules/cloud/utils/format'
 
+const { t } = useI18n()
 const navigationStore = useNavigationStore()
 const store = useCloudStore()
 const share = useCloudShare()
@@ -356,18 +358,18 @@ function handleCopy(shareItem: ShareListItem) {
 
 function handleCopyShareCode(shareItem: ShareListItem) {
   navigator.clipboard.writeText(shareItem.shareCode).then(() => {
-    Message.success('分享码已复制')
+    Message.success(t('cloud.shareCodeCopied'))
   }).catch(() => {
-    Message.error('复制失败，请手动复制')
+    Message.error(t('cloud.copyFailed'))
   })
 }
 
 function handleCopyPassword(shareItem: ShareListItem) {
   if (!shareItem.password) return
   navigator.clipboard.writeText(shareItem.password).then(() => {
-    Message.success('访问密码已复制')
+    Message.success(t('cloud.accessPasswordCopied'))
   }).catch(() => {
-    Message.error('复制失败，请手动复制')
+    Message.error(t('cloud.copyFailed'))
   })
 }
 
@@ -383,10 +385,10 @@ function handleViewStats(shareItem: ShareListItem) {
 
 function handleDelete(shareItem: ShareListItem) {
   Modal.confirm({
-    title: '确认删除',
-    content: `确定要删除分享"${shareItem.fileName || '未知文件'}"吗？`,
-    okText: '删除',
-    cancelText: '取消',
+    title: t('cloud.deleteConfirmTitle'),
+    content: t('cloud.deleteConfirmShare', { fileName: shareItem.fileName || t('cloud.unknownFile') }),
+    okText: t('cloud.delete'),
+    cancelText: t('cloud.cancel'),
     okButtonProps: {
       status: 'danger',
     },

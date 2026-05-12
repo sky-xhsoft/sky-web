@@ -2,11 +2,13 @@
 import { computed, onMounted, ref, watch, shallowRef, nextTick, h, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Menu, Message, Tabs, Dropdown } from '@arco-design/web-vue'
+import { useI18n } from 'vue-i18n'
 import { IconApps, IconMenuFold, IconMenuUnfold, IconRefresh, IconClose, IconCloseCircle } from '@arco-design/web-vue/es/icon'
 import { useMenuStore } from '../stores/menu'
 import { useAuthStore } from '../stores/auth'
 import { useNavigationStore } from '../stores/navigation'
 import type { TabItem } from '../stores/navigation'
+import { changeLanguage } from '../locales'
 
 // 导入常用组件
 import HomeDashboard from '../pages/HomeDashboard.vue'
@@ -31,12 +33,14 @@ import LiveRecordingPreview from '../pages/LiveRecordingPreview.vue'
 import LiveRoomList from '../pages/LiveRoomList.vue'
 import LiveRoomForm from '../pages/LiveRoomForm.vue'
 import LiveRoomDetail from '../pages/LiveRoomDetail.vue'
+import UserProfile from '../pages/UserProfile.vue'
 
 const router = useRouter()
 const route = useRoute()
 const menuStore = useMenuStore()
 const authStore = useAuthStore()
 const navigationStore = useNavigationStore()
+const { t } = useI18n()
 
 // 标签页右键菜单当前操作的key
 const currentRightClickTabKey = ref<string>('')
@@ -47,29 +51,29 @@ const contextMenuPosition = ref({ x: 0, y: 0 })
 // 移动端侧边栏显示控制
 const mobileSidebarShow = ref(false)
 
-// 标签页右键菜单选项
-const tabContextMenuOptions = [
+// 标签页右键菜单选项 - 使用 computed 确保语言切换时更新
+const tabContextMenuOptions = computed(() => [
   {
     key: 'refresh',
-    title: '刷新',
+    title: t('layout.refresh'),
     icon: IconRefresh
   },
   {
     key: 'close',
-    title: '关闭',
+    title: t('layout.close'),
     icon: IconClose
   },
   {
     key: 'closeOther',
-    title: '关闭其他',
+    title: t('layout.closeOther'),
     icon: IconCloseCircle
   },
   {
     key: 'closeAll',
-    title: '关闭所有',
+    title: t('layout.closeAll'),
     icon: IconCloseCircle
   }
-]
+])
 
 /**
  * 处理标签页右键点击
@@ -176,6 +180,7 @@ const componentRegistry: Record<string, any> = {
   LiveRoomList,
   LiveRoomForm,
   LiveRoomDetail,
+  UserProfile,
 }
 
 // 当前显示的组件（使用 shallowRef 提高性能）
@@ -193,7 +198,7 @@ const mapMenu = (items: any[]): NavItem[] => {
   return items
     .map((item) => ({
       key: item.path || item.url || item.id || item.name,
-      title: item.title || item.displayName || item.menuName || item.name || '未命名',
+      title: item.title, // 直接使用菜单的 title，已经根据语言翻译过了
       path: item.path || item.url,
       order: item.orderno ?? item.sortOrder ?? 0,
       children: item.children ? mapMenu(item.children) : undefined,
@@ -307,7 +312,7 @@ async function loadComponent(path: string) {
       } else {
         // 元数据路径格式不正确，显示空白页
         console.warn(`元数据路径格式不正确: ${path}`)
-        Message.error('页面路径不正确')
+        Message.error(t('error.pagePathError'))
         currentComponent.value = {
           render: () => h('div', { class: 'empty-page' }, '')
         }
@@ -322,88 +327,93 @@ async function loadComponent(path: string) {
       const loginType = authStore.loginType
       if (loginType === 'live') {
         currentComponent.value = componentRegistry.LiveGuide
-        navigationStore.navigateTo('LiveGuide', '视频直播功能说明', {}, false)
+        navigationStore.navigateTo('LiveGuide', t('layout.liveGuide'), {}, false)
       } else if (loginType === 'cloud') {
         currentComponent.value = componentRegistry.Cloud
-        navigationStore.navigateTo('Cloud', '云盘', {}, false)
+        navigationStore.navigateTo('Cloud', t('layout.cloud'), {}, false)
       } else {
         // 默认跳转到直播系统的默认页面
         currentComponent.value = componentRegistry.LiveGuide
-        navigationStore.navigateTo('LiveGuide', '视频直播功能说明', {}, false)
+        navigationStore.navigateTo('LiveGuide', t('layout.liveGuide'), {}, false)
       }
       break
     case '/cloud':
       currentComponent.value = componentRegistry.Cloud
-      navigationStore.navigateTo('Cloud', '云盘', {}, false)
+      navigationStore.navigateTo('Cloud', t('layout.cloud'), {}, false)
       break
     case '/system-management':
       currentComponent.value = componentRegistry.SystemManagement
-      navigationStore.navigateTo('SystemManagement', '系统管理', {}, false)
+      navigationStore.navigateTo('SystemManagement', t('layout.systemManagement'), {}, false)
       break
     case '/LiveGuide':
       currentComponent.value = componentRegistry.LiveGuide
-      navigationStore.navigateTo('LiveGuide', '视频直播功能说明', {}, false)
+      navigationStore.navigateTo('LiveGuide', t('layout.liveGuide'), {}, false)
       break
     case '/live/domains':
       currentComponent.value = componentRegistry.LiveDomain
-      navigationStore.navigateTo('LiveDomain', '直播域名管理', {}, false)
+      navigationStore.navigateTo('LiveDomain', t('layout.liveDomain'), {}, false)
       break
     case '/live/push-domains':
       currentComponent.value = componentRegistry.PushDomain
-      navigationStore.navigateTo('PushDomain', '推流域名管理', {}, false)
+      navigationStore.navigateTo('PushDomain', t('layout.pushDomains'), {}, false)
       break
     case '/live/play-domains':
       currentComponent.value = componentRegistry.PlayDomain
-      navigationStore.navigateTo('PlayDomain', '播放域名管理', {}, false)
+      navigationStore.navigateTo('PlayDomain', t('layout.playDomains'), {}, false)
       break
     case '/live/domains/detail':
       currentComponent.value = componentRegistry.LiveDomainDetail
       // 从查询参数中获取域名
       const domainName = new URLSearchParams(window.location.search).get('domain') || ''
-      navigationStore.navigateTo('LiveDomainDetail', `域名详情 - ${domainName}`, { domainName }, false)
+      navigationStore.navigateTo('LiveDomainDetail', `${t('layout.domainDetail')} - ${domainName}`, { domainName }, false)
       break
     case '/live/streams':
       currentComponent.value = componentRegistry.LiveStream
-      navigationStore.navigateTo('LiveStream', '直播流管理', {}, false)
+      navigationStore.navigateTo('LiveStream', t('layout.liveStreams'), {}, false)
       break
     case '/live/pull-stream':
+    case '/live/distribution':
       currentComponent.value = componentRegistry.PullStreamTask
-      navigationStore.navigateTo('PullStreamTask', '社媒分发', {}, false)
+      navigationStore.navigateTo('PullStreamTask', t('layout.pullStream'), {}, false)
       break
     case '/live/pull-stream/create':
       currentComponent.value = componentRegistry.PullStreamTaskForm
-      navigationStore.navigateTo('PullStreamTaskForm', '创建分发任务', {}, false)
+      navigationStore.navigateTo('PullStreamTaskForm', t('layout.createTask'), {}, false)
       break
     case '/live/pull-stream/edit':
       currentComponent.value = componentRegistry.PullStreamTaskForm
       const taskId = new URLSearchParams(window.location.search).get('id') || ''
-      navigationStore.navigateTo('PullStreamTaskForm', '编辑分发任务', { taskId }, false)
+      navigationStore.navigateTo('PullStreamTaskForm', t('layout.editTask'), { taskId }, false)
       break
     case '/live/highlight-clips':
       currentComponent.value = componentRegistry.LiveHighlightClips
-      navigationStore.navigateTo('LiveHighlightClips', '高光切片', {}, false)
+      navigationStore.navigateTo('LiveHighlightClips', t('layout.highlightClips'), {}, false)
       break
     case '/live/recordings':
       currentComponent.value = componentRegistry.LiveRecordings
-      navigationStore.navigateTo('LiveRecordings', '录制列表', {}, false)
+      navigationStore.navigateTo('LiveRecordings', t('layout.recordings'), {}, false)
       break
     case '/live/rooms':
       currentComponent.value = componentRegistry.LiveRoomList
-      navigationStore.navigateTo('LiveRoomList', '直播间管理', {}, false)
+      navigationStore.navigateTo('LiveRoomList', t('layout.rooms'), {}, false)
       break
     case '/live/rooms/create':
       currentComponent.value = componentRegistry.LiveRoomForm
-      navigationStore.navigateTo('LiveRoomForm', '创建直播间', {}, false)
+      navigationStore.navigateTo('LiveRoomForm', t('layout.createRoom'), {}, false)
       break
     case '/live/rooms/edit':
       currentComponent.value = componentRegistry.LiveRoomForm
       const roomId = new URLSearchParams(window.location.search).get('id') || ''
-      navigationStore.navigateTo('LiveRoomForm', '编辑直播间', { roomId }, false)
+      navigationStore.navigateTo('LiveRoomForm', t('layout.editRoom'), { roomId }, false)
       break
     case '/live/rooms/detail':
       currentComponent.value = componentRegistry.LiveRoomDetail
       const detailRoomId = new URLSearchParams(window.location.search).get('id') || ''
-      navigationStore.navigateTo('LiveRoomDetail', '直播间详情', { id: detailRoomId }, false)
+      navigationStore.navigateTo('LiveRoomDetail', t('layout.roomDetail'), { id: detailRoomId }, false)
+      break
+    case '/user/profile':
+      currentComponent.value = componentRegistry.UserProfile
+      navigationStore.navigateTo('UserProfile', t('layout.userProfile'), {}, false)
       break
     default:
       // 动态表单路由 /tables/xxx
@@ -435,7 +445,7 @@ async function loadComponent(path: string) {
   } catch (e) {
     // 组件加载失败或超时，显示空白页
     console.error(`页面加载失败: ${path}`, e)
-    Message.error('页面加载失败，请稍后重试')
+    Message.error(t('error.pageLoadError'))
     currentComponent.value = {
       render: () => h('div', { class: 'empty-page' }, '')
     }
@@ -540,6 +550,13 @@ const toggleMobileSidebar = () => {
 }
 
 /**
+ * 打开个人中心
+ */
+const handleProfile = async () => {
+  await loadComponent('/user/profile')
+}
+
+/**
  * 关闭其他标签页
  */
 const handleCloseOtherTabs = () => {
@@ -600,15 +617,15 @@ onMounted(async () => {
       navigationStore.closeAllTabs()
       if (loginType === 'live') {
         // 初始化固定标签页
-        navigationStore.initializeDefaultTab('LiveGuide', '视频直播功能说明', {})
+        navigationStore.initializeDefaultTab('LiveGuide', t('layout.liveGuide'), {})
         currentComponent.value = componentRegistry.LiveGuide
       } else if (loginType === 'cloud') {
         // 初始化固定标签页
-        navigationStore.initializeDefaultTab('Cloud', '云盘', {})
+        navigationStore.initializeDefaultTab('Cloud', t('layout.cloud'), {})
         currentComponent.value = componentRegistry.Cloud
       } else {
         // 默认跳转到直播系统的默认页面
-        navigationStore.initializeDefaultTab('LiveGuide', '视频直播功能说明', {})
+        navigationStore.initializeDefaultTab('LiveGuide', t('layout.liveGuide'), {})
         currentComponent.value = componentRegistry.LiveGuide
       }
     } else {
@@ -703,12 +720,12 @@ watch(
       if (navigationStore.tabs.length === 0 || !isTabMatchingType) {
         navigationStore.closeAllTabs()
         if (loginType === 'live') {
-          navigationStore.initializeDefaultTab('LiveGuide', '视频直播功能说明', {})
+          navigationStore.initializeDefaultTab('LiveGuide', t('layout.liveGuide'), {})
         } else if (loginType === 'cloud') {
-          navigationStore.initializeDefaultTab('Cloud', '云盘', {})
+          navigationStore.initializeDefaultTab('Cloud', t('layout.cloud'), {})
         } else {
           // 默认跳转到直播系统的默认页面
-          navigationStore.initializeDefaultTab('LiveGuide', '视频直播功能说明', {})
+          navigationStore.initializeDefaultTab('LiveGuide', t('layout.liveGuide'), {})
         }
       }
     }
@@ -739,6 +756,106 @@ watch(
   },
   { immediate: true }
 )
+
+// 监听菜单语言版本变化，确保语言切换时菜单也更新
+watch(
+  () => menuStore.localeVersion,
+  () => {
+    // 语言切换时，重新设置默认展开的菜单
+    if (sidebarItems.value.length) {
+      openKeys.value = defaultOpenKeys.value
+    }
+    // 更新所有已打开标签页的标题
+    updateTabTitles()
+  }
+)
+
+// 更新标签页标题的辅助函数
+const updateTabTitles = () => {
+  const tabs = navigationStore.tabs
+  const updatedTabs = tabs.map((tab) => {
+    let newTitle = tab.title
+    // 根据组件名称更新标签页标题
+    switch (tab.componentName) {
+      case 'LiveGuide':
+        newTitle = t('layout.liveGuide')
+        break
+      case 'Cloud':
+        newTitle = t('layout.cloud')
+        break
+      case 'SystemManagement':
+        newTitle = t('layout.systemManagement')
+        break
+      case 'LiveDomain':
+        newTitle = t('layout.liveDomain')
+        break
+      case 'PushDomain':
+        newTitle = t('layout.pushDomains')
+        break
+      case 'PlayDomain':
+        newTitle = t('layout.playDomains')
+        break
+      case 'LiveStream':
+        newTitle = t('layout.liveStreams')
+        break
+      case 'PullStreamTask':
+        newTitle = t('layout.pullStream')
+        break
+      case 'PullStreamTaskForm':
+        if (tab.params?.taskId) {
+          newTitle = t('layout.editTask')
+        } else {
+          newTitle = t('layout.createTask')
+        }
+        break
+      case 'LiveHighlightClips':
+        newTitle = t('layout.highlightClips')
+        break
+      case 'LiveRecordings':
+        newTitle = t('layout.recordings')
+        break
+      case 'LiveRoomList':
+        newTitle = t('layout.rooms')
+        break
+      case 'LiveRoomForm':
+        if (tab.params?.id) {
+          newTitle = t('layout.editRoom')
+        } else {
+          newTitle = t('layout.createRoom')
+        }
+        break
+      case 'UserProfile':
+        newTitle = t('layout.userProfile')
+        break
+      case 'MetadataListView':
+      case 'TableView':
+        // 对于元数据和表格视图，从菜单中查找更新后的标题
+        const path = tab.params?.tablePath || (tab.params?.tableId ? `/metadata/list/${tab.params.tableId}` : null)
+        if (path) {
+          const findMenuTitle = (items: any[]): string | null => {
+            for (const item of items) {
+              if (item.path === path) {
+                return item.title
+              }
+              if (item.children?.length) {
+                const childTitle = findMenuTitle(item.children)
+                if (childTitle) return childTitle
+              }
+            }
+            return null
+          }
+          const foundTitle = findMenuTitle(navItems.value)
+          if (foundTitle) {
+            newTitle = foundTitle
+          }
+        }
+        break
+    }
+    return { ...tab, title: newTitle }
+  })
+  // 替换标签页列表
+  navigationStore.replaceTabs(updatedTabs)
+}
 </script>
 
 <template>
@@ -750,7 +867,7 @@ watch(
             <div class="logo-mark">AI</div>
             <div class="brand-text">
               <div class="brand-title">AI Live</div>
-              <div class="brand-subtitle">数据中心</div>
+              <div class="brand-subtitle">{{ t('layout.dataCenter') }}</div>
             </div>
           </div>
           <div class="root-menu-bar">
@@ -768,8 +885,8 @@ watch(
           </div>
         </div>
         <div class="header-actions">
-          <a-button type="text" size="small">个人中心</a-button>
-          <a-button type="text" size="small" @click="handleLogout">退出</a-button>
+          <a-button type="text" size="small" @click="handleProfile">{{ t('layout.userProfile') }}</a-button>
+          <a-button type="text" size="small" @click="handleLogout">{{ t('layout.logout') }}</a-button>
         </div>
       </div>
     </header>
@@ -830,11 +947,11 @@ watch(
               <a-space size="small">
                 <a-button size="small" @click="handleCloseOtherTabs">
                   <template #icon><icon-close-circle /></template>
-                  关闭其他
+                  {{ t('layout.closeOther') }}
                 </a-button>
                 <a-button size="small" @click="handleCloseAllTabs">
                   <template #icon><icon-close /></template>
-                  全部关闭
+                  {{ t('layout.closeAll') }}
                 </a-button>
               </a-space>
             </template>

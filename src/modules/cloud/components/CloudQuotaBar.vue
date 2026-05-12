@@ -5,7 +5,7 @@
         <icon-storage :size="24" />
       </div>
       <div class="cloud-quota-bar__title-section">
-        <h3 class="cloud-quota-bar__title">存储空间</h3>
+        <h3 class="cloud-quota-bar__title">{{ t('cloud.storageQuota') }}</h3>
         <span class="cloud-quota-bar__text">
           {{ formatSize((quota.usedSpace || quota.UsedSpace || 0)) }} / {{ formatSize((quota.totalQuota || quota.TotalQuota || 0)) }}
         </span>
@@ -26,7 +26,7 @@
         </div>
         <div class="stat-info">
           <div class="stat-value">{{ quota.fileCount || 0 }}</div>
-          <div class="stat-label">文件</div>
+          <div class="stat-label">{{ t('cloud.files') }}</div>
         </div>
       </div>
 
@@ -36,7 +36,7 @@
         </div>
         <div class="stat-info">
           <div class="stat-value">{{ quota.folderCount || 0 }}</div>
-          <div class="stat-label">文件夹</div>
+          <div class="stat-label">{{ t('cloud.folders') }}</div>
         </div>
       </div>
 
@@ -46,7 +46,7 @@
         </div>
         <div class="stat-info">
           <div class="stat-value" :class="percentClass">{{ displayPercent }}%</div>
-          <div class="stat-label">使用率</div>
+          <div class="stat-label">{{ t('cloud.usageRate') }}</div>
         </div>
       </div>
     </div>
@@ -58,6 +58,9 @@ import { computed } from 'vue'
 import { IconStorage, IconFile, IconFolder, IconDashboard } from '@arco-design/web-vue/es/icon'
 import type { QuotaInfo } from '@/modules/cloud/types'
 import { formatSize } from '@/modules/cloud/utils/format'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   quota: QuotaInfo | null

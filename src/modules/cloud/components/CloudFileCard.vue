@@ -41,27 +41,27 @@
         <template #content>
           <a-doption value="preview" v-if="item.type === 'file'">
             <icon-eye />
-            预览
+            {{ t('cloud.preview') }}
           </a-doption>
           <a-doption value="download" v-if="item.type === 'file'">
             <icon-download />
-            下载
+            {{ t('cloud.download') }}
           </a-doption>
           <a-doption value="rename">
             <icon-edit />
-            重命名
+            {{ t('cloud.rename') }}
           </a-doption>
           <a-doption value="move">
             <icon-export />
-            移动
+            {{ t('cloud.move') }}
           </a-doption>
           <a-doption value="share">
             <icon-share-alt />
-            分享
+            {{ t('cloud.share') }}
           </a-doption>
           <a-doption value="delete" class="danger-option">
             <icon-delete />
-            删除
+            {{ t('cloud.deleteItem') }}
           </a-doption>
         </template>
       </a-dropdown>
@@ -80,6 +80,9 @@ import {
   IconDelete,
 } from '@arco-design/web-vue/es/icon'
 import type { GridItem } from '@/modules/cloud/types'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   item: GridItem

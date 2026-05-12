@@ -37,11 +37,11 @@
           </div>
 
           <div class="form-section">
-            <label class="form-label">{{ currentLang === 'zh' ? '访问密码' : 'Access Password' }}</label>
+            <label class="form-label">{{ t('share.password.label') }}</label>
             <div class="password-input-wrapper">
               <a-input-password
                   v-model="form.password"
-                  :placeholder="currentLang === 'zh' ? '请输入访问密码' : 'Enter access password'"
+                  :placeholder="t('share.password.placeholder')"
                   allow-clear
                   @press-enter="handleVerify"
                   class="password-input"
@@ -49,10 +49,10 @@
               >
               </a-input-password>
               <a-button type="primary" :loading="loading" @click="handleVerify" class="submit-btn">
-                {{ currentLang === 'zh' ? '访问' : 'Access' }}
+                {{ t('share.password.accessBtn') }}
               </a-button>
             </div>
-            <div class="error-text" v-if="error" style="display: block;">{{ currentLang === 'zh' ? '密码错误，请重试' : 'Wrong password, please try again' }}</div>
+            <div class="error-text" v-if="error" style="display: block;">{{ t('share.password.error') }}</div>
           </div>
         </div>
 
@@ -83,7 +83,7 @@
               <template #icon>
                 <icon-download />
               </template>
-              {{ currentLang === 'zh' ? '下载文件' : 'Download File' }}
+              {{ t('share.actions.download') }}
             </a-button>
           </div>
 
@@ -160,7 +160,7 @@
                       <template #icon>
                         <icon-eye />
                       </template>
-                      {{ currentLang === 'zh' ? '预览' : 'Preview' }}
+                      {{ t('share.actions.preview') }}
                     </a-button>
                     <a-button
                         type="outline"
@@ -170,13 +170,13 @@
                       <template #icon>
                         <icon-download />
                       </template>
-                      {{ currentLang === 'zh' ? '下载' : 'Download' }}
+                      {{ t('share.actions.downloadItem') }}
                     </a-button>
                   </div>
                 </div>
                 <div v-if="folderFiles.length === 0" class="empty-folder">
                   <icon-folder :size="80" style="color: #e5e7eb;" />
-                  <p>{{ currentLang === 'zh' ? '此文件夹为空' : 'This folder is empty' }}</p>
+                  <p>{{ t('share.empty') }}</p>
                 </div>
               </div>
             </div>
@@ -189,8 +189,8 @@
           <div class="error-icon">
             <icon-exclamation-circle :size="80" />
           </div>
-          <h2>{{ currentLang === 'zh' ? '分享不存在或已失效' : 'Share does not exist or has expired' }}</h2>
-          <p>{{ currentLang === 'zh' ? '请检查分享链接是否正确，或联系 Chery International 重新分享' : 'Please check the share link or contact Chery International to re-share' }}</p>
+          <h2>{{ t('share.notFound.title') }}</h2>
+          <p>{{ t('share.notFound.desc') }}</p>
         </div>
       </div>
     </div>
@@ -217,7 +217,7 @@
               :src="previewUrl"
               style="width: 100%; max-height: 70vh;"
           >
-            {{ currentLang === 'zh' ? '您的浏览器不支持视频播放' : 'Your browser does not support video playback' }}
+            {{ t('share.browserNotSupportVideo') }}
           </video>
         </div>
 
@@ -229,7 +229,7 @@
               :src="previewUrl"
               style="width: 100%;"
           >
-            {{ currentLang === 'zh' ? '您的浏览器不支持音频播放' : 'Your browser does not support audio playback' }}
+            {{ t('share.browserNotSupportAudio') }}
           </audio>
         </div>
 
@@ -240,13 +240,13 @@
 
         <!-- 文本预览 -->
         <div v-else-if="previewType === 'text'" class="preview-text">
-          <pre>{{ previewFile?.content || (currentLang === 'zh' ? '加载中...' : 'Loading...') }}</pre>
+          <pre>{{ previewFile?.content || t('share.loading') }}</pre>
         </div>
       </div>
 
       <template #footer>
         <a-space>
-          <a-button @click="closePreview">{{ currentLang === 'zh' ? '关闭' : 'Close' }}</a-button>
+          <a-button @click="closePreview">{{ t('share.close') }}</a-button>
           <a-button
               v-if="previewFile"
               type="primary"
@@ -255,7 +255,7 @@
             <template #icon>
               <icon-download />
             </template>
-            {{ currentLang === 'zh' ? '下载' : 'Download' }}
+            {{ t('share.actions.downloadItem') }}
           </a-button>
         </a-space>
       </template>
@@ -264,8 +264,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'
 import {
   IconFile,
@@ -287,53 +288,15 @@ import {
 import { getShareInfo, accessShare, downloadShareFile, getShareFolderContent } from '@/modules/cloud/api/share'
 import type { ShareInfo } from '@/modules/cloud/types'
 
+const { t, locale } = useI18n()
 const route = useRoute()
 const shareCode = ref(route.params.code as string)
 
 // 语言切换
-const currentLang = ref('en')
-
-const translations = {
-  'zh': {
-    'password.label': '访问密码',
-    'password.placeholder': '请输入访问密码',
-    'password.submit': '访问',
-    'password.error': '密码错误，请重试',
-    'breadcrumb.root': '根目录',
-    'file.photos': '活动照片',
-    'file.recorder': 'recorder_2024-10-20-10-42-35.mp4',
-    'file.opening': 'opening_ceremony.mp4',
-    'file.agenda': '活动议程.pdf',
-    'file现场': '现场照片.jpg',
-    'file.notes': '会议记录.docx',
-    'error.title': '分享不存在或已失效',
-    'error.message': '请检查分享链接是否正确，或联系 Chery International 重新分享',
-    'folder.type': '文件夹'
-  },
-  'en': {
-    'password.label': 'Access Password',
-    'password.placeholder': 'Enter access password',
-    'password.submit': 'Access',
-    'password.error': 'Wrong password, please try again',
-    'breadcrumb.root': 'Root',
-    'file.photos': 'Event Photos',
-    'file.recorder': 'recorder_2024-10-20-10-42-35.mp4',
-    'file.opening': 'opening_ceremony.mp4',
-    'file.agenda': 'Event Agenda.pdf',
-    'file现场': 'On-site Photos.jpg',
-    'file.notes': 'Meeting Notes.docx',
-    'error.title': 'Share does not exist or has expired',
-    'error.message': 'Please check the share link or contact Chery International to re-share',
-    'folder.type': 'Folder'
-  }
-}
-
-function switchLanguage(lang: string) {
-  currentLang.value = lang
-}
+const currentLang = computed(() => locale.value === 'zh-CN' ? 'zh' : 'en')
 
 function toggleLanguage() {
-  currentLang.value = currentLang.value === 'zh' ? 'en' : 'zh'
+  locale.value = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
 }
 
 const loading = ref(false)
@@ -385,8 +348,7 @@ function formatFileSize(bytes: number): string {
 }
 
 function formatDate(date: string): string {
-  const locale = currentLang.value === 'zh' ? 'zh-CN' : 'en-US'
-  return new Date(date).toLocaleString(locale)
+  return new Date(date).toLocaleString(locale.value)
 }
 
 // 视频懒加载 - 滚动到可见区域才加载封面
@@ -448,7 +410,7 @@ async function loadShareInfo() {
     if (e?.response?.status === 404 || errorMessage.includes('分享不存在') || errorMessage.includes('已失效') || errorMessage.includes('30001')) {
       notFound.value = true
     } else {
-      Message.error(currentLang === 'zh' ? '获取分享信息失败' : 'Failed to get share information')
+      Message.error(t('share.getShareInfoFailed'))
     }
   } finally {
     loading.value = false
@@ -457,7 +419,7 @@ async function loadShareInfo() {
 
 async function handleVerify() {
   if (!form.value.password.trim()) {
-    error.value = '请输入访问密码'
+    error.value = t('share.error.passwordRequired')
     return
   }
 
@@ -467,17 +429,17 @@ async function handleVerify() {
     const info = await accessShare(shareCode.value, form.value.password)
     shareInfo.value = info
     verified.value = true
-    Message.success(currentLang.value === 'zh' ? '验证成功' : 'Verification successful')
+    Message.success(t('share.verifyingSuccess'))
 
     if (info.resourceType === 'folder') {
       showFolderContent.value = true
-      folderPath.value = [{ id: undefined, name: info.folder?.name || (currentLang.value === 'zh' ? '根目录' : 'Root') }]
+      folderPath.value = [{ id: undefined, name: info.folder?.name || t('share.resource.folder') }]
       currentFolderId.value = undefined
       await loadFolderContent()
     }
   } catch (e: any) {
     console.error('访问分享失败:', e)
-    error.value = e?.message || (currentLang.value === 'zh' ? '密码错误，请重试' : 'Wrong password, please try again')
+    error.value = e?.message || t('share.password.error')
   } finally {
     loading.value = false
   }
@@ -499,7 +461,7 @@ async function handleDownload() {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-      Message.success('开始下载')
+      Message.success(t('share.actions.startDownload'))
       return
     }
   }
@@ -568,7 +530,7 @@ async function loadFolderContent(parentId?: number) {
     })
   } catch (e: any) {
     console.error('加载文件夹内容失败:', e)
-    Message.error(e?.message || '加载文件夹内容失败')
+    Message.error(e?.message || t('share.getShareInfoFailed'))
   } finally {
     loadingFiles.value = false
   }
@@ -631,7 +593,7 @@ function getFileDownloadUrl(fileId: number): string {
 
 function handlePreviewFile(file: any) {
   if (!canPreview(file.name)) {
-    Message.warning('该文件类型不支持预览')
+    Message.warning(t('share.previewNotSupport'))
     return
   }
 
