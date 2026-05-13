@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
+import { IconCheckCircleFill } from '@arco-design/web-vue/es/icon'
 import { useNavigationStore } from '@/stores/navigation'
 import { useDynamicTableStore } from '../../stores/useDynamicTableStore'
 import { useMetadataStore } from '../../stores/useMetadataStore'
@@ -55,6 +56,23 @@ onMounted(async () => {
 })
 
 const enabledCount = computed(() => fieldEdits.value.filter(f => f.enabled).length)
+const totalFields = computed(() => fieldEdits.value.length)
+const searchKeyword = ref('')
+
+const filteredFieldEdits = computed(() => {
+  if (!searchKeyword.value) return fieldEdits.value
+  const kw = searchKeyword.value.toLowerCase()
+  return fieldEdits.value.filter(f =>
+    f.column.DISPLAY_NAME?.toLowerCase().includes(kw) ||
+    f.column.DB_NAME?.toLowerCase().includes(kw)
+  )
+})
+
+function toggleAll() {
+  const allOn = enabledCount.value === totalFields.value
+  fieldEdits.value.forEach(f => f.enabled = !allOn)
+}
+
 const recordCount = computed(() => {
   if (props.mode === 'selected') return props.selectedIds?.length || 0
   return tableStore.pagination?.total || 0
@@ -113,6 +131,22 @@ async function handleSave() {
     </div>
 
     <div v-else class="edit-grid">
+      <div class="grid-toolbar">
+        <a-input-search
+          v-model="searchKeyword"
+          placeholder="搜索字段名或DB_NAME..."
+          size="small"
+          style="width: 260px"
+          allow-clear
+        />
+        <a-space size="small">
+          <a-button size="small" @click="toggleAll">
+            {{ enabledCount === totalFields ? '全部取消' : '全选字段' }}
+          </a-button>
+          <span class="field-summary">{{ enabledCount }} / {{ totalFields }} 个字段</span>
+        </a-space>
+      </div>
+
       <div class="grid-header">
         <div class="col-check">选择</div>
         <div class="col-name">字段名</div>
@@ -122,7 +156,7 @@ async function handleSave() {
       </div>
 
       <div
-        v-for="edit in fieldEdits"
+        v-for="edit in filteredFieldEdits"
         :key="edit.column.DB_NAME"
         class="grid-row"
         :class="{ active: edit.enabled }"
@@ -206,6 +240,22 @@ async function handleSave() {
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.grid-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: #fafbfc;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+.field-summary {
+  font-size: 13px;
+  color: #6b7280;
 }
 
 .grid-header {
@@ -220,6 +270,7 @@ async function handleSave() {
   position: sticky;
   top: 0;
   z-index: 1;
+  flex-shrink: 0;
 }
 
 .grid-row {
@@ -229,6 +280,7 @@ async function handleSave() {
   align-items: center;
   border-bottom: 1px solid #f3f4f6;
   transition: background 0.15s;
+  flex-shrink: 0;
 }
 .grid-row:hover { background: #fafbfc; }
 .grid-row.active { background: #eff6ff; }
