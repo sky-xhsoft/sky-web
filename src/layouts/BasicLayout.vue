@@ -3,13 +3,14 @@ import { computed, onMounted, ref, watch, shallowRef, nextTick, h, onBeforeUnmou
 import { useRouter, useRoute } from 'vue-router'
 import { Menu, Message, Tabs, Dropdown } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'
-import { IconApps, IconMenuFold, IconMenuUnfold, IconRefresh, IconClose, IconCloseCircle } from '@arco-design/web-vue/es/icon'
+import { IconMenuFold, IconMenuUnfold, IconRefresh, IconClose, IconCloseCircle } from '@arco-design/web-vue/es/icon'
 import { useMenuStore } from '../stores/menu'
 import { useAuthStore } from '../stores/auth'
 import { useNavigationStore } from '../stores/navigation'
 import { getTabTitle } from './composables/tabTitleMap'
 import { findMenuTitle } from './composables/menuUtils'
 import LayoutTabContextMenu from './components/LayoutTabContextMenu.vue'
+import LayoutSidebar from './components/LayoutSidebar.vue'
 import type { TabItem } from '../stores/navigation'
 import { changeLanguage } from '../locales'
 
@@ -773,40 +774,16 @@ const updateTabTitles = () => {
       </div>
     </header>
     <div class="main-layout">
-      <aside class="side-nav" :class="{ collapsed: menuStore.sidebarCollapsed, 'mobile-show': mobileSidebarShow }">
-        <a-menu
-          v-model:openKeys="openKeys"
-          v-model:selectedKeys="selectedKeys"
-          @menuItemClick="onMenuClick"
-          :accordion="true"
-          :collapsed="menuStore.sidebarCollapsed"
-          :popup-max-height="400"
-        >
-          <template v-for="item in sidebarItems" :key="item.key">
-            <a-sub-menu v-if="item.children?.length" :key="item.key">
-              <template #icon>
-                <IconApps />
-              </template>
-              <template #title>{{ item.title }}</template>
-              <a-menu-item v-for="child in item.children" :key="child.key">
-                {{ child.title }}
-              </a-menu-item>
-            </a-sub-menu>
-            <a-menu-item v-else :key="item.key">
-              <template #icon>
-                <IconApps />
-              </template>
-              {{ item.title }}
-            </a-menu-item>
-          </template>
-        </a-menu>
-      </aside>
-      <!-- 移动端遮罩层 -->
-      <div
-        class="mobile-overlay"
-        :class="{ show: mobileSidebarShow }"
-        @click="toggleMobileSidebar"
-      ></div>
+      <LayoutSidebar
+        :items="sidebarItems"
+        :open-keys="openKeys"
+        :selected-keys="selectedKeys"
+        :mobile-show="mobileSidebarShow"
+        @update:open-keys="openKeys = $event"
+        @update:selected-keys="selectedKeys = $event"
+        @click="onMenuClick"
+        @toggle-mobile="toggleMobileSidebar"
+      />
       <div class="content-wrapper">
         <!-- 标签页栏 - 现在放在右侧内容区域顶部 -->
         <div class="tabs-bar">
