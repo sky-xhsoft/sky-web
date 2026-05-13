@@ -516,7 +516,7 @@
     :columns="batchEditColumns"
     :mode="batchEditMode"
     :selected-count="selectedRowKeys.length"
-    :total-count="tableStore.pagination?.total"
+    :total-count="pagination?.total"
     @confirm="onBatchEditConfirm"
   />
 </template>
@@ -1249,7 +1249,7 @@ async function onBatchEditConfirm(fields: Record<string, any>) {
       const ids = selectedRowKeys.value.map(Number)
       await batchUpdateRecords(tableName.value, ids, fields)
     } else {
-      const ids = tableStore.records.map((r: any) => Number(r.ID))
+      const ids = records.value.map((r: any) => Number(r.ID))
       await batchUpdateRecords(tableName.value, ids, fields)
     }
     Message.success('批量修改成功')
