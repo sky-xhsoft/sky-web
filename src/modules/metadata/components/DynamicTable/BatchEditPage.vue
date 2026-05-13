@@ -73,6 +73,16 @@ function toggleAll() {
   fieldEdits.value.forEach(f => f.enabled = !allOn)
 }
 
+function isTextType(col: SysColumn) {
+  const t = col.DISPLAY_TYPE || ''
+  return !t || t === 'text' || t === 'number'
+}
+
+function isNumberType(col: SysColumn) {
+  const t = col.DISPLAY_TYPE || ''
+  return t === 'number' || col.COL_TYPE === 'int' || col.COL_TYPE === 'bigint' || col.COL_TYPE === 'decimal'
+}
+
 const recordCount = computed(() => {
   if (props.mode === 'selected') return props.selectedIds?.length || 0
   return tableStore.pagination?.total || 0
@@ -174,13 +184,60 @@ async function handleSave() {
           <a-tag size="small">{{ edit.column.DISPLAY_TYPE || edit.column.COL_TYPE || '-' }}</a-tag>
         </div>
         <div class="col-value">
-          <a-input
-            v-if="edit.enabled"
-            v-model="edit.value"
-            :placeholder="`输入新的${edit.column.DISPLAY_NAME}`"
-            size="small"
-            allow-clear
-          />
+          <template v-if="edit.enabled">
+            <a-input
+              v-if="isTextType(edit.column)"
+              v-model="edit.value"
+              :placeholder="`输入新的${edit.column.DISPLAY_NAME}`"
+              size="small"
+              allow-clear
+            />
+            <a-input-number
+              v-else-if="isNumberType(edit.column)"
+              v-model="edit.value"
+              :placeholder="`输入新的${edit.column.DISPLAY_NAME}`"
+              size="small"
+              style="width: 100%"
+            />
+            <a-select
+              v-else-if="edit.column.DISPLAY_TYPE === 'select'"
+              v-model="edit.value"
+              :placeholder="`选择${edit.column.DISPLAY_NAME}`"
+              size="small"
+              allow-clear
+            >
+              <a-option v-if="edit.column.DB_NAME === 'IS_ACTIVE'" value="Y">是</a-option>
+              <a-option v-if="edit.column.DB_NAME === 'IS_ACTIVE'" value="N">否</a-option>
+            </a-select>
+            <a-date-picker
+              v-else-if="edit.column.DISPLAY_TYPE === 'datetime'"
+              v-model="edit.value"
+              :placeholder="`选择${edit.column.DISPLAY_NAME}`"
+              size="small"
+              show-time
+              style="width: 100%"
+            />
+            <a-date-picker
+              v-else-if="edit.column.DISPLAY_TYPE === 'date'"
+              v-model="edit.value"
+              :placeholder="`选择${edit.column.DISPLAY_NAME}`"
+              size="small"
+              style="width: 100%"
+            />
+            <a-textarea
+              v-else-if="edit.column.DISPLAY_TYPE === 'textarea'"
+              v-model="edit.value"
+              :placeholder="`输入新的${edit.column.DISPLAY_NAME}`"
+              :auto-size="{ minRows: 2, maxRows: 4 }"
+            />
+            <a-input
+              v-else
+              v-model="edit.value"
+              :placeholder="`输入新的${edit.column.DISPLAY_NAME}`"
+              size="small"
+              allow-clear
+            />
+          </template>
           <span v-else class="disabled-hint">—</span>
         </div>
       </div>
