@@ -659,16 +659,33 @@ async function handleBatchDelete() {
  * 导出
  */
 function handleExport() {
-  Message.info('导出功能开发中...')
-  // TODO: 实现导出功能
+  const tn = props.childTable?.table?.NAME || props.childTable?.table?.name
+  if (!tn) { Message.warning('无法获取表名'); return }
+  metadataApi.exportRecords(tn).then(blob => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `${tn}.xlsx`
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    Message.success('导出成功')
+  }).catch(e => Message.error(e?.message || '导出失败'))
 }
 
-/**
- * 导入
- */
 function handleImport() {
-  Message.info('导入功能开发中...')
-  // TODO: 实现导入功能
+  const tn = props.childTable?.table?.NAME || props.childTable?.table?.name
+  if (!tn) { Message.warning('无法获取表名'); return }
+  const input = document.createElement('input')
+  input.type = 'file'; input.accept = '.xlsx,.xls'
+  input.onchange = async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (!file) return
+    try {
+      const r = await metadataApi.importRecords(tn, file)
+      Message.success(`导入 ${r.imported} 条`)
+      await loadRecords()
+    } catch (e: any) { Message.error(e?.message || '导入失败') }
+  }
+  input.click()
 }
 
 /**
