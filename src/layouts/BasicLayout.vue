@@ -38,6 +38,7 @@ import LiveRoomList from '../pages/LiveRoomList.vue'
 import LiveRoomForm from '../pages/LiveRoomForm.vue'
 import LiveRoomDetail from '../pages/LiveRoomDetail.vue'
 import UserProfile from '../pages/UserProfile.vue'
+import BatchEditPage from '../modules/metadata/components/DynamicTable/BatchEditPage.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -161,6 +162,7 @@ const componentRegistry: Record<string, Component> = {
   LiveRoomForm,
   LiveRoomDetail,
   UserProfile,
+  BatchEditPage,
 }
 
 // 当前显示的组件（使用 shallowRef 提高性能）

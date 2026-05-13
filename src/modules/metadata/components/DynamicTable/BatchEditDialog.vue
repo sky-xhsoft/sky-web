@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import type { SysColumn } from '@/modules/metadata/types'
 
@@ -9,6 +9,7 @@ interface Props {
   mode: 'selected' | 'all'
   selectedCount: number
   totalCount?: number
+  filterInfo?: string
 }
 
 interface Emits {
@@ -48,12 +49,11 @@ function initFields() {
   }))
 }
 
-import { watch } from 'vue'
 watch(() => props.visible, (v) => {
   if (v) initFields()
 })
 
-function handleConfirm() {
+function handleSubmit() {
   const enabled = fieldEdits.value.filter((f) => f.enabled)
   if (enabled.length === 0) {
     Message.warning('请至少选择一个要修改的字段')
@@ -70,6 +70,14 @@ function handleConfirm() {
   }
 
   emit('confirm', fields)
+}
+
+function handleClose() {
+  emit('update:visible', false)
+}
+
+function handleHelp() {
+  Message.info('帮助功能待实现')
 }
 
 function getDefaultValue(col: SysColumn): any {
@@ -93,64 +101,100 @@ const title = computed(() => {
   <a-modal
     :visible="visible"
     :title="title"
-    width="520px"
-    :ok-loading="loading"
-    @ok="handleConfirm"
-    @cancel="emit('update:visible', false)"
-    ok-text="确认修改"
-    cancel-text="取消"
+    width="700px"
+    :footer="false"
+    :closable="false"
   >
-    <div class="batch-edit-body">
-      <div class="hint">
-        <icon-info-circle style="color: #3b82f6; margin-right: 4px;" />
-        选择要修改的字段并输入新值，将应用到{{ mode === 'selected' ? '选中的' : '当前筛选结果的全部' }}记录
+    <div class="batch-edit-container">
+      <!-- 头部按钮区 -->
+      <div class="header-actions">
+        <div class="header-left">
+          <!-- 左侧空，用于平衡布局 -->
+        </div>
+        <div class="header-right">
+          <span class="filter-info" v-if="filterInfo">
+            <icon-filter />
+            {{ filterInfo }}
+          </span>
+          <a-space>
+            <a-button type="primary" @click="handleSubmit" :loading="loading">
+              提交(G)
+            </a-button>
+            <a-button @click="handleHelp">
+              <icon-question-circle />
+              帮助
+            </a-button>
+            <a-button @click="handleClose">
+              <icon-close />
+              关闭
+            </a-button>
+          </a-space>
+        </div>
       </div>
 
-      <div class="field-list">
-        <div
-          v-for="edit in fieldEdits"
-          :key="edit.column.DB_NAME"
-          class="field-item"
-        >
-          <div class="field-header">
-            <a-checkbox v-model="edit.enabled">
-              {{ edit.column.DISPLAY_NAME }}
-            </a-checkbox>
-            <span class="field-dbname">{{ edit.column.DB_NAME }}</span>
-          </div>
-          <div v-if="edit.enabled" class="field-input">
-            <a-input
-              v-if="edit.column.DISPLAY_TYPE === 'text' || edit.column.DISPLAY_TYPE === 'textarea'"
-              v-model="edit.value"
-              :placeholder="`请输入新的${edit.column.DISPLAY_NAME}`"
-            />
-            <a-input-number
-              v-else-if="edit.column.DISPLAY_TYPE === 'number'"
-              v-model="edit.value"
-              :placeholder="`请输入新的${edit.column.DISPLAY_NAME}`"
-              style="width: 100%"
-            />
-            <a-select
-              v-else-if="edit.column.DISPLAY_TYPE === 'select'"
-              v-model="edit.value"
-              :placeholder="`请选择${edit.column.DISPLAY_NAME}`"
-              allow-clear
-            >
-              <a-option v-if="edit.column.DB_NAME === 'IS_ACTIVE'" value="Y" label="是" />
-              <a-option v-if="edit.column.DB_NAME === 'IS_ACTIVE'" value="N" label="否" />
-            </a-select>
-            <a-date-picker
-              v-else-if="edit.column.DISPLAY_TYPE === 'date' || edit.column.DISPLAY_TYPE === 'datetime'"
-              v-model="edit.value"
-              :placeholder="`请选择${edit.column.DISPLAY_NAME}`"
-              style="width: 100%"
-              :show-time="edit.column.DISPLAY_TYPE === 'datetime'"
-            />
-            <a-input
-              v-else
-              v-model="edit.value"
-              :placeholder="`请输入新的${edit.column.DISPLAY_NAME}`"
-            />
+      <!-- 表单区域 -->
+      <div class="form-area">
+        <div class="form-grid">
+          <div
+            v-for="(edit, index) in fieldEdits"
+            :key="edit.column.DB_NAME"
+            class="form-row"
+          >
+            <div class="field-label">
+              <a-checkbox v-model="edit.enabled">
+                {{ edit.column.DISPLAY_NAME }}
+                <span v-if="edit.column.IS_REQUIRED === 'Y'" class="required">*</span>
+              </a-checkbox>
+            </div>
+            <div class="field-input">
+              <template v-if="edit.enabled">
+                <a-input
+                  v-if="edit.column.DISPLAY_TYPE === 'text' || edit.column.DISPLAY_TYPE === 'textarea'"
+                  v-model="edit.value"
+                  :placeholder="`请输入新的${edit.column.DISPLAY_NAME}`"
+                />
+                <a-input-number
+                  v-else-if="edit.column.DISPLAY_TYPE === 'number'"
+                  v-model="edit.value"
+                  :placeholder="`请输入新的${edit.column.DISPLAY_NAME}`"
+                  style="width: 100%"
+                />
+                <a-select
+                  v-else-if="edit.column.DISPLAY_TYPE === 'select'"
+                  v-model="edit.value"
+                  :placeholder="`请选择${edit.column.DISPLAY_NAME}`"
+                  allow-clear
+                >
+                  <a-option v-if="edit.column.DB_NAME === 'IS_ACTIVE'" value="Y">是</a-option>
+                  <a-option v-if="edit.column.DB_NAME === 'IS_ACTIVE'" value="N">否</a-option>
+                  <a-option
+                    v-for="opt in edit.column.DICT_OPTIONS"
+                    :key="opt.value"
+                    :value="opt.value"
+                  >{{ opt.label }}</a-option>
+                </a-select>
+                <a-date-picker
+                  v-else-if="edit.column.DISPLAY_TYPE === 'date' || edit.column.DISPLAY_TYPE === 'datetime'"
+                  v-model="edit.value"
+                  :placeholder="`请选择${edit.column.DISPLAY_NAME}`"
+                  style="width: 100%"
+                  :show-time="edit.column.DISPLAY_TYPE === 'datetime'"
+                />
+                <a-input
+                  v-else
+                  v-model="edit.value"
+                  :placeholder="`请输入新的${edit.column.DISPLAY_NAME}`"
+                />
+              </template>
+              <template v-else>
+                <div class="input-placeholder">请先勾选此字段</div>
+              </template>
+            </div>
+            <!-- 奇数行显示在左边，偶数行显示在右边 -->
+            <div
+              v-if="index % 2 === 0 && index + 1 < fieldEdits.length"
+              class="field-label spacer"
+            ></div>
           </div>
         </div>
       </div>
@@ -159,44 +203,115 @@ const title = computed(() => {
 </template>
 
 <style scoped>
-.batch-edit-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.batch-edit-container {
+  border: 1px solid #66c2f0;
+  border-radius: 0;
+  padding: 0;
 }
-.hint {
+
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: linear-gradient(90deg, #e8f4fc 0%, #ffffff 100%);
+  border-bottom: 1px solid #66c2f0;
+}
+
+.header-right {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  gap: 16px;
+}
+
+.filter-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
-  color: #1e40af;
+  color: #cc0000;
 }
-.field-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 400px;
-  overflow-y: auto;
+
+.form-area {
+  padding: 24px 32px;
+  min-height: 200px;
 }
-.field-item {
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 10px 12px;
+
+.form-grid {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr;
+  gap: 12px 24px;
+  align-items: center;
 }
-.field-header {
+
+.form-row {
+  display: contents;
+}
+
+.field-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #333;
 }
-.field-dbname {
-  font-size: 11px;
-  color: #9ca3af;
-  font-family: monospace;
+
+.field-label .required {
+  color: #cc0000;
+  margin-left: 2px;
 }
+
+.field-label.spacer {
+  visibility: hidden;
+}
+
 .field-input {
-  margin-top: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.input-placeholder {
+  width: 100%;
+  height: 32px;
+  border-bottom: 1px solid #999;
+}
+
+:deep(.arco-input) {
+  border: none;
+  border-bottom: 1px solid #999;
+  border-radius: 0;
+  padding: 2px 4px;
+}
+
+:deep(.arco-input:hover) {
+  border-color: #66c2f0;
+}
+
+:deep(.arco-input:focus) {
+  border-color: #66c2f0;
+  box-shadow: none;
+}
+
+:deep(.arco-input-number) {
+  width: 100%;
+}
+
+:deep(.arco-input-number-input-wrapper) {
+  border: none;
+  border-bottom: 1px solid #999;
+  border-radius: 0;
+}
+
+:deep(.arco-select-view) {
+  border: none;
+  border-bottom: 1px solid #999;
+  border-radius: 0;
+}
+
+:deep(.arco-picker) {
+  border: none;
+  border-bottom: 1px solid #999;
+  border-radius: 0;
+  width: 100%;
 }
 </style>
