@@ -239,16 +239,6 @@ watch(() => menuStore.sidebarCollapsed, (collapsed) => {
       openKeys.value = [...defaultOpenKeys.value]
     })
   }
-
-  // 更新内容容器的margin
-  const contentWrapper = document.querySelector('.content-wrapper')
-  if (contentWrapper) {
-    if (collapsed) {
-      contentWrapper.classList.add('collapsed')
-    } else {
-      contentWrapper.classList.remove('collapsed')
-    }
-  }
 })
 
 /**
@@ -586,12 +576,6 @@ onMounted(async () => {
         currentComponent.value = componentRegistry.Cloud
       }
     }
-  }
-
-  // 初始化内容容器的折叠状态
-  const contentWrapper = document.querySelector('.content-wrapper')
-  if (contentWrapper && menuStore.sidebarCollapsed) {
-    contentWrapper.classList.add('collapsed')
   }
 })
 
@@ -1051,14 +1035,8 @@ const updateTabTitles = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: 230px;
-  transition: margin-left 0.2s ease;
   height: 100%;
   min-width: 0;
-}
-
-.content-wrapper.collapsed {
-  margin-left: 48px;
 }
 
 .app-content {
@@ -1179,10 +1157,6 @@ const updateTabTitles = () => {
   .content-wrapper {
     margin-left: 0 !important;
     width: 100% !important;
-  }
-
-  .content-wrapper.collapsed {
-    margin-left: 0 !important;
   }
 
   .tabs-bar {
