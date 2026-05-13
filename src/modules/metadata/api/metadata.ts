@@ -298,6 +298,17 @@ export async function deleteRecord(tableName: string, id: number): Promise<void>
 }
 
 /**
+ * 批量修改记录
+ */
+export async function batchUpdateRecords(
+  tableName: string,
+  ids: number[],
+  data: Record<string, any>
+): Promise<void> {
+  await api.put(`/data/${tableName}/batch-update`, { ids, data })
+}
+
+/**
  * 批量删除记录
  */
 export async function batchDeleteRecords(tableName: string, ids: number[]): Promise<void> {

@@ -510,6 +510,15 @@
       </div>
     </div>
   </div>
+
+  <BatchEditDialog
+    v-model:visible="showBatchEditDialog"
+    :columns="batchEditColumns"
+    :mode="batchEditMode"
+    :selected-count="selectedRowKeys.length"
+    :total-count="tableStore.pagination?.total"
+    @confirm="onBatchEditConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -539,6 +548,8 @@ import { useDynamicTableStore } from '../../stores'
 import { formatDate as formatDateUtil, formatDateTime as formatDateTimeUtil } from '@/utils/format'
 import ForeignKeyCell from './ForeignKeyCell.vue'
 import ForeignKeyField from '../FieldRenderers/ForeignKeyField.vue'
+import BatchEditDialog from './BatchEditDialog.vue'
+import { batchUpdateRecords } from '../../api/metadata'
 import type { TableColumnData } from '@arco-design/web-vue'
 import type { FormData, SysColumn } from '../../types'
 
@@ -629,6 +640,11 @@ const columnSorters = ref<Record<string, { direction: 'ascend' | 'descend', prio
 // 查询相关状态
 const queryForm = ref<Record<string, any>>({})
 const showAdvancedQuery = ref(false)
+
+// 批量修改对话框
+const showBatchEditDialog = ref(false)
+const batchEditMode = ref<'selected' | 'all'>('selected')
+const batchEditColumns = ref<SysColumn[]>([])
 
 // ==================== 计算属性 ====================
 
@@ -1210,16 +1226,38 @@ function handleBatchEdit() {
     Message.warning('请先选择要修改的记录')
     return
   }
-  Message.info('修改选中行功能开发中')
-  // TODO: 实现批量修改选中行逻辑
+  batchEditMode.value = 'selected'
+  batchEditColumns.value = tableColumns.value.map((c: any) => c._raw || c).filter(Boolean) as SysColumn[]
+  showBatchEditDialog.value = true
 }
 
 /**
  * 修改结果集
  */
 function handleBatchEditAll() {
-  Message.info('修改结果集功能开发中')
-  // TODO: 实现批量修改结果集逻辑
+  batchEditMode.value = 'all'
+  batchEditColumns.value = tableColumns.value.map((c: any) => c._raw || c).filter(Boolean) as SysColumn[]
+  showBatchEditDialog.value = true
+}
+
+/**
+ * 批量修改确认
+ */
+async function onBatchEditConfirm(fields: Record<string, any>) {
+  try {
+    if (batchEditMode.value === 'selected') {
+      const ids = selectedRowKeys.value.map(Number)
+      await batchUpdateRecords(tableName.value, ids, fields)
+    } else {
+      const ids = tableStore.records.map((r: any) => Number(r.ID))
+      await batchUpdateRecords(tableName.value, ids, fields)
+    }
+    Message.success('批量修改成功')
+    showBatchEditDialog.value = false
+    await loadData()
+  } catch (e: any) {
+    Message.error(e?.message || '批量修改失败')
+  }
 }
 
 /**
