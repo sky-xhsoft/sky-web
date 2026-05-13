@@ -396,3 +396,32 @@ export async function saveRecordWithDetails(params: {
   }>>('/data/save-with-details', params)
   return data.data
 }
+
+// ==================== 导入导出 ====================
+
+/**
+ * 导出数据（支持过滤条件）
+ */
+export async function exportRecords(tableName: string, filters?: Record<string, any>): Promise<Blob> {
+  const params: Record<string, any> = {}
+  if (filters && Object.keys(filters).length > 0) {
+    params.filters = filters
+  }
+  const { data } = await api.get(`/data/${tableName}/export`, {
+    params,
+    responseType: 'blob',
+  })
+  return data as Blob
+}
+
+/**
+ * 导入数据
+ */
+export async function importRecords(tableName: string, file: File): Promise<{ imported: number }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const { data } = await api.post<ApiResponse<{ imported: number }>>(`/data/${tableName}/import`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data.data
+}

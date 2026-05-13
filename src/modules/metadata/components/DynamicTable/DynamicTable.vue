@@ -610,7 +610,9 @@ const {
   handlePageSizeChange,
   handleSelectionChange: onSelectionChange,
   handleDelete: onDelete,
-  handleBatchDelete: onBatchDelete
+  handleBatchDelete: onBatchDelete,
+  handleExport: onExport,
+  handleImport: onImport,
 } = useDynamicList(props.tableId)
 
 // ==================== 状态 ====================
@@ -1167,16 +1169,21 @@ function handleBatchDelete() {
  * 导入
  */
 function handleImport() {
-  Message.info('导入功能开发中')
-  // TODO: 实现导入逻辑
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.xlsx,.xls'
+  input.onchange = async (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (file) await onImport(file)
+  }
+  input.click()
 }
 
 /**
- * 导出
+ * 导出（带过滤条件）
  */
 function handleExport() {
-  Message.info('导出功能开发中')
-  // TODO: 实现导出逻辑
+  onExport()
 }
 
 /**

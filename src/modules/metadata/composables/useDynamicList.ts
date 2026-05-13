@@ -7,6 +7,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useMetadataStore } from '../stores/useMetadataStore'
 import { useDynamicTableStore } from '../stores/useDynamicTableStore'
+import { exportRecords, importRecords } from '../api/metadata'
 import type {
   TableConfig,
   SysColumn,
@@ -340,11 +341,49 @@ export function useDynamicList(tableId: number) {
   }
 
   /**
-   * 导出数据
+   * 导出数据（带过滤条件）
    */
   async function handleExport() {
-    Message.info('导出功能开发中')
-    // TODO: 实现导出逻辑
+    const tableName = tableConfig.value?.table?.NAME
+    if (!tableName) {
+      Message.warning('无法获取表名')
+      return
+    }
+
+    try {
+      const filters = tableStore.getFilters?.(tableName) || {}
+      const blob = await exportRecords(tableName, filters)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${tableName}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      Message.success('导出成功')
+    } catch (e: any) {
+      Message.error(e?.message || '导出失败')
+    }
+  }
+
+  /**
+   * 导入数据
+   */
+  async function handleImport(file: File) {
+    const tableName = tableConfig.value?.table?.NAME
+    if (!tableName) {
+      Message.warning('无法获取表名')
+      return
+    }
+
+    try {
+      const result = await importRecords(tableName, file)
+      Message.success(`导入完成，成功 ${result.imported} 条`)
+      await loadData()
+    } catch (e: any) {
+      Message.error(e?.message || '导入失败')
+    }
   }
 
   /**
@@ -460,6 +499,7 @@ export function useDynamicList(tableId: number) {
     handleDelete,
     handleBatchDelete,
     handleExport,
+    handleImport,
     getFieldDisplayValue
   }
 }
