@@ -9,6 +9,7 @@ import { useAuthStore } from '../stores/auth'
 import { useNavigationStore } from '../stores/navigation'
 import { getTabTitle } from './composables/tabTitleMap'
 import { findMenuTitle } from './composables/menuUtils'
+import LayoutTabContextMenu from './components/LayoutTabContextMenu.vue'
 import type { TabItem } from '../stores/navigation'
 import { changeLanguage } from '../locales'
 
@@ -52,30 +53,6 @@ const contextMenuVisible = ref(false)
 const contextMenuPosition = ref({ x: 0, y: 0 })
 // 移动端侧边栏显示控制
 const mobileSidebarShow = ref(false)
-
-// 标签页右键菜单选项 - 使用 computed 确保语言切换时更新
-const tabContextMenuOptions = computed(() => [
-  {
-    key: 'refresh',
-    title: t('layout.refresh'),
-    icon: IconRefresh
-  },
-  {
-    key: 'close',
-    title: t('layout.close'),
-    icon: IconClose
-  },
-  {
-    key: 'closeOther',
-    title: t('layout.closeOther'),
-    icon: IconCloseCircle
-  },
-  {
-    key: 'closeAll',
-    title: t('layout.closeAll'),
-    icon: IconCloseCircle
-  }
-])
 
 /**
  * 处理标签页右键点击
@@ -876,29 +853,13 @@ const updateTabTitles = () => {
             </a-tab-pane>
           </a-tabs>
 
-          <!-- 右键菜单 -->
-          <div
-            v-if="contextMenuVisible"
-            class="tab-context-menu"
-            :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
-            @click.stop
-            @contextmenu.stop
-          >
-            <a-menu
-              @menu-item-click="onTabContextMenuClick"
-              :selected-keys="[]"
-            >
-              <a-menu-item
-                v-for="item in tabContextMenuOptions"
-                :key="item.key"
-              >
-                <template #icon>
-                  <component :is="item.icon" />
-                </template>
-                {{ item.title }}
-              </a-menu-item>
-            </a-menu>
-          </div>
+          <LayoutTabContextMenu
+            :visible="contextMenuVisible"
+            :x="contextMenuPosition.x"
+            :y="contextMenuPosition.y"
+            @close="contextMenuVisible = false"
+            @action="onTabContextMenuClick"
+          />
         </div>
         <main class="app-content">
           <!-- 使用动态组件，传递 navigationStore 中的参数 -->
