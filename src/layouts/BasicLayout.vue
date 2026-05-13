@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { computed, onMounted, ref, watch, shallowRef, nextTick, h, onBeforeUnmount } from 'vue'
+import { computed, onMounted, ref, watch, shallowRef, nextTick, h, onBeforeUnmount, type Component } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Menu, Message, Tabs, Dropdown } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'
@@ -8,6 +8,7 @@ import { useMenuStore } from '../stores/menu'
 import { useAuthStore } from '../stores/auth'
 import { useNavigationStore } from '../stores/navigation'
 import { getTabTitle } from './composables/tabTitleMap'
+import { findMenuTitle } from './composables/menuUtils'
 import type { TabItem } from '../stores/navigation'
 import { changeLanguage } from '../locales'
 
@@ -158,7 +159,7 @@ const onTabContextMenuClick = (key: string) => {
 }
 
 // 组件映射表
-const componentRegistry: Record<string, any> = {
+const componentRegistry: Record<string, Component> = {
   HomeDashboard,
   Dashboard,
   Cloud,
@@ -288,23 +289,8 @@ async function loadComponent(path: string) {
         const tableId = match[1]
         // 从菜单中获取对应的标题
         let title = '数据列表'
-        // 遍历菜单查找匹配的路径
-        const findMenuTitle = (items: any[]): string | null => {
-          for (const item of items) {
-            if (item.path === path) {
-              return item.title
-            }
-            if (item.children?.length) {
-              const childTitle = findMenuTitle(item.children)
-              if (childTitle) return childTitle
-            }
-          }
-          return null
-        }
-        const foundTitle = findMenuTitle(navItems.value)
-        if (foundTitle) {
-          title = foundTitle
-        }
+        const foundTitle = findMenuTitle(navItems.value, path)
+        if (foundTitle) title = foundTitle
 
         const MetadataListView = (await import('../modules/metadata/views/MetadataListView.vue')).default
         currentComponent.value = MetadataListView
@@ -423,23 +409,8 @@ async function loadComponent(path: string) {
         currentComponent.value = TableView
         // 从菜单中获取对应的标题
         let title = '表单'
-        // 遍历菜单查找匹配的路径
-        const findMenuTitle = (items: any[]): string | null => {
-          for (const item of items) {
-            if (item.path === path) {
-              return item.title
-            }
-            if (item.children?.length) {
-              const childTitle = findMenuTitle(item.children)
-              if (childTitle) return childTitle
-            }
-          }
-          return null
-        }
-        const foundTitle = findMenuTitle(navItems.value)
-        if (foundTitle) {
-          title = foundTitle
-        }
+        const foundTitle = findMenuTitle(navItems.value, path)
+        if (foundTitle) title = foundTitle
         navigationStore.navigateTo('TableView', title, { tablePath: path }, false)
       }
     }
@@ -782,17 +753,7 @@ const updateTabTitles = () => {
     } else if (tab.componentName === 'MetadataListView' || tab.componentName === 'TableView') {
       const path = tab.params?.tablePath || (tab.params?.tableId ? `/metadata/list/${tab.params.tableId}` : null)
       if (path) {
-        const findMenuTitle = (items: any[]): string | null => {
-          for (const item of items) {
-            if (item.path === path) return item.title
-            if (item.children?.length) {
-              const childTitle = findMenuTitle(item.children)
-              if (childTitle) return childTitle
-            }
-          }
-          return null
-        }
-        const foundTitle = findMenuTitle(navItems.value)
+        const foundTitle = findMenuTitle(navItems.value, path)
         if (foundTitle) newTitle = foundTitle
       }
     }
