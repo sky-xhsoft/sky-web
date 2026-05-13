@@ -550,6 +550,7 @@ import ForeignKeyCell from './ForeignKeyCell.vue'
 import ForeignKeyField from '../FieldRenderers/ForeignKeyField.vue'
 import BatchEditDialog from './BatchEditDialog.vue'
 import { batchUpdateRecords } from '../../api/metadata'
+import { submitRecord, unsubmitRecord } from '../../api/metadata'
 import type { TableColumnData } from '@arco-design/web-vue'
 import type { FormData, SysColumn } from '../../types'
 
@@ -1268,8 +1269,18 @@ function handleSubmit() {
     Message.warning('请先选择要提交的记录')
     return
   }
-  Message.info('提交功能开发中')
-  // TODO: 实现提交逻辑
+  Modal.confirm({
+    title: '确认提交',
+    content: `确定要提交选中的 ${selectedCount.value} 条记录吗？`,
+    onOk: async () => {
+      let ok = 0
+      for (const id of selectedRowKeys.value) {
+        try { await submitRecord(tableName.value, Number(id)); ok++ } catch { /* skip */ }
+      }
+      Message.success(`提交完成：成功 ${ok} 条`)
+      await loadData()
+    }
+  })
 }
 
 /**
@@ -1280,8 +1291,18 @@ function handleUnsubmit() {
     Message.warning('请先选择要反提交的记录')
     return
   }
-  Message.info('反提交功能开发中')
-  // TODO: 实现反提交逻辑
+  Modal.confirm({
+    title: '确认反提交',
+    content: `确定要反提交选中的 ${selectedCount.value} 条记录吗？`,
+    onOk: async () => {
+      let ok = 0
+      for (const id of selectedRowKeys.value) {
+        try { await unsubmitRecord(tableName.value, Number(id)); ok++ } catch { /* skip */ }
+      }
+      Message.success(`反提交完成：成功 ${ok} 条`)
+      await loadData()
+    }
+  })
 }
 
 /**
