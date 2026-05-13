@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
+import { useNavigationStore } from '@/stores/navigation'
 import { useDynamicTableStore } from '../../stores/useDynamicTableStore'
 import { useMetadataStore } from '../../stores/useMetadataStore'
 import { batchUpdateRecords } from '../../api/metadata'
 import type { SysColumn } from '../../types'
+
+const navigationStore = useNavigationStore()
 
 interface Props {
   tableId: number
@@ -150,7 +153,7 @@ async function handleSave() {
     </div>
 
     <div v-if="!done" class="page-footer">
-      <a-button @click="$router.back()">取消</a-button>
+      <a-button @click="navigationStore.removeTab(navigationStore.activeTabKey)">取消</a-button>
       <a-space>
         <a-button v-if="enabledCount > 0" @click="fieldEdits.forEach(f => f.enabled = false)">全部取消</a-button>
         <a-button type="primary" :loading="saving" @click="handleSave" :disabled="enabledCount === 0">
