@@ -29,6 +29,7 @@ import type {
   GetUploadedChunksResponse,
   CompleteUploadResponse,
 } from '@/modules/cloud/types'
+import { normalizeFolder, normalizeFile } from '@/modules/cloud/utils/normalizers'
 
 // ==================== 文件夹操作 ====================
 
@@ -44,30 +45,7 @@ export async function fetchFolders(parentId?: number): Promise<Folder[]> {
     return []
   }
 
-  // 转换字段名，将后端的小写字段转换为前端期望的格式
-  const convertFolder = (folder: any): Folder => ({
-    ID: folder.ID || folder.id || 0,
-    id: folder.id || folder.ID || 0,
-    name: folder.name || '',
-    parentId: folder.parentId ?? null,
-    ownerId: folder.ownerId || folder.ownerID || 0,
-    path: folder.path || '',
-    isPublic: folder.isPublic || 'N',
-    description: folder.description || '',
-    fileCount: folder.fileCount || 0,
-    totalSize: folder.totalSize || 0,
-    sysCompanyId: folder.sysCompanyId || 0,
-    createBy: folder.createBy || '',
-    createTime: folder.createTime || '',
-    updateBy: folder.updateBy || '',
-    updateTime: folder.updateTime || '',
-    isActive: folder.isActive || 'Y',
-    shareCode: folder.shareCode || null,
-    shareExpire: folder.shareExpire || null,
-    Children: folder.Children ? folder.Children.map(convertFolder) : undefined
-  })
-
-  return result.map(convertFolder)
+  return result.map(normalizeFolder)
 }
 
 /**
@@ -81,30 +59,7 @@ export async function fetchFolderTree(): Promise<Folder[]> {
     return []
   }
 
-  // 递归转换字段名，将后端的小写字段转换为前端期望的格式
-  const convertFolder = (folder: any): Folder => ({
-    ID: folder.ID || folder.id || 0,
-    id: folder.id || folder.ID || 0,
-    name: folder.name || '',
-    parentId: folder.parentId ?? null,
-    ownerId: folder.ownerId || folder.ownerID || 0,
-    path: folder.path || '',
-    isPublic: folder.isPublic || 'N',
-    description: folder.description || '',
-    fileCount: folder.fileCount || 0,
-    totalSize: folder.totalSize || 0,
-    sysCompanyId: folder.sysCompanyId || 0,
-    createBy: folder.createBy || '',
-    createTime: folder.createTime || '',
-    updateBy: folder.updateBy || '',
-    updateTime: folder.updateTime || '',
-    isActive: folder.isActive || 'Y',
-    shareCode: folder.shareCode || null,
-    shareExpire: folder.shareExpire || null,
-    Children: folder.Children ? folder.Children.map(convertFolder) : undefined
-  })
-
-  return result.map(convertFolder)
+  return result.map(normalizeFolder)
 }
 
 /**

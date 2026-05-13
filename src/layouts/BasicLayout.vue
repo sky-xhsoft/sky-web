@@ -7,6 +7,7 @@ import { IconApps, IconMenuFold, IconMenuUnfold, IconRefresh, IconClose, IconClo
 import { useMenuStore } from '../stores/menu'
 import { useAuthStore } from '../stores/auth'
 import { useNavigationStore } from '../stores/navigation'
+import { getTabTitle } from './composables/tabTitleMap'
 import type { TabItem } from '../stores/navigation'
 import { changeLanguage } from '../locales'
 
@@ -775,85 +776,28 @@ const updateTabTitles = () => {
   const tabs = navigationStore.tabs
   const updatedTabs = tabs.map((tab) => {
     let newTitle = tab.title
-    // 根据组件名称更新标签页标题
-    switch (tab.componentName) {
-      case 'LiveGuide':
-        newTitle = t('layout.liveGuide')
-        break
-      case 'Cloud':
-        newTitle = t('layout.cloud')
-        break
-      case 'SystemManagement':
-        newTitle = t('layout.systemManagement')
-        break
-      case 'LiveDomain':
-        newTitle = t('layout.liveDomain')
-        break
-      case 'PushDomain':
-        newTitle = t('layout.pushDomains')
-        break
-      case 'PlayDomain':
-        newTitle = t('layout.playDomains')
-        break
-      case 'LiveStream':
-        newTitle = t('layout.liveStreams')
-        break
-      case 'PullStreamTask':
-        newTitle = t('layout.pullStream')
-        break
-      case 'PullStreamTaskForm':
-        if (tab.params?.taskId) {
-          newTitle = t('layout.editTask')
-        } else {
-          newTitle = t('layout.createTask')
-        }
-        break
-      case 'LiveHighlightClips':
-        newTitle = t('layout.highlightClips')
-        break
-      case 'LiveRecordings':
-        newTitle = t('layout.recordings')
-        break
-      case 'LiveRoomList':
-        newTitle = t('layout.rooms')
-        break
-      case 'LiveRoomForm':
-        if (tab.params?.id) {
-          newTitle = t('layout.editRoom')
-        } else {
-          newTitle = t('layout.createRoom')
-        }
-        break
-      case 'UserProfile':
-        newTitle = t('layout.userProfile')
-        break
-      case 'MetadataListView':
-      case 'TableView':
-        // 对于元数据和表格视图，从菜单中查找更新后的标题
-        const path = tab.params?.tablePath || (tab.params?.tableId ? `/metadata/list/${tab.params.tableId}` : null)
-        if (path) {
-          const findMenuTitle = (items: any[]): string | null => {
-            for (const item of items) {
-              if (item.path === path) {
-                return item.title
-              }
-              if (item.children?.length) {
-                const childTitle = findMenuTitle(item.children)
-                if (childTitle) return childTitle
-              }
+    const mappedTitle = getTabTitle(tab.componentName, t, tab.params)
+    if (mappedTitle) {
+      newTitle = mappedTitle
+    } else if (tab.componentName === 'MetadataListView' || tab.componentName === 'TableView') {
+      const path = tab.params?.tablePath || (tab.params?.tableId ? `/metadata/list/${tab.params.tableId}` : null)
+      if (path) {
+        const findMenuTitle = (items: any[]): string | null => {
+          for (const item of items) {
+            if (item.path === path) return item.title
+            if (item.children?.length) {
+              const childTitle = findMenuTitle(item.children)
+              if (childTitle) return childTitle
             }
-            return null
           }
-          const foundTitle = findMenuTitle(navItems.value)
-          if (foundTitle) {
-            newTitle = foundTitle
-          }
+          return null
         }
-        break
+        const foundTitle = findMenuTitle(navItems.value)
+        if (foundTitle) newTitle = foundTitle
+      }
     }
     return { ...tab, title: newTitle }
   })
-  // 替换标签页列表
   navigationStore.replaceTabs(updatedTabs)
 }
 </script>
