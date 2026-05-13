@@ -23,9 +23,11 @@ const loading = ref(false)
 
 const editableColumns = computed(() => {
   return props.columns.filter((col) => {
-    if (!col.MODIFI_ABLE || col.MODIFI_ABLE === 'N') return false
-    if (col.SET_VALUE_TYPE === 'pk' || col.SET_VALUE_TYPE === 'sysdate' || col.SET_VALUE_TYPE === 'createBy') return false
-    if (col.DB_NAME === 'ID' || col.DB_NAME === 'CREATE_TIME' || col.DB_NAME === 'UPDATE_TIME') return false
+    if (!col.IS_ACTIVE || col.IS_ACTIVE !== 'Y') return false
+    if (col.SET_VALUE_TYPE === 'pk') return false
+    if (col.SET_VALUE_TYPE === 'sysdate') return false
+    if (col.SET_VALUE_TYPE === 'createBy') return false
+    if (col.DB_NAME === 'ID') return false
     return true
   })
 })

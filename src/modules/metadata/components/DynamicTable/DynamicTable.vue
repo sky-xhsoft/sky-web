@@ -1227,7 +1227,7 @@ function handleBatchEdit() {
     return
   }
   batchEditMode.value = 'selected'
-  batchEditColumns.value = tableColumns.value.map((c: any) => c._raw || c).filter(Boolean) as SysColumn[]
+  batchEditColumns.value = tableConfig.value?.columns || []
   showBatchEditDialog.value = true
 }
 
@@ -1236,7 +1236,7 @@ function handleBatchEdit() {
  */
 function handleBatchEditAll() {
   batchEditMode.value = 'all'
-  batchEditColumns.value = tableColumns.value.map((c: any) => c._raw || c).filter(Boolean) as SysColumn[]
+  batchEditColumns.value = tableConfig.value?.columns || []
   showBatchEditDialog.value = true
 }
 
