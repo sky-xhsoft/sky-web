@@ -155,6 +155,14 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     } finally { st.loading = false }
   }
 
+  function reset(tableName?: string) {
+    if (tableName) {
+      tables[tableName] = newTableState()
+    } else {
+      Object.keys(tables).forEach(k => { tables[k] = newTableState() })
+    }
+  }
+
   return {
     tables,
     loadRecords, refresh, changePage, changePageSize,
@@ -162,6 +170,6 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     selectRows, toggleSelectAll, clearSelection, getSelectedRecords,
     getRecords, getPagination, getFilters, getSorters,
     getSelectedRowKeys, getLoading, getHasSelection, getSelectedCount,
-    batchDelete, deleteRecord
+    batchDelete, deleteRecord, reset
   }
 })
