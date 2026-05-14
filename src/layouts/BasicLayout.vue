@@ -599,31 +599,21 @@ watch(
       return
     }
     try {
+      let comp: Component | null = null
       if (componentName === 'MetadataFormView') {
-        // 动态加载表单视图组件
-        const MetadataFormView = (await import('../modules/metadata/views/MetadataFormView.vue')).default
-        currentComponent.value = MetadataFormView
+        comp = (await import('../modules/metadata/views/MetadataFormView.vue')).default
       } else if (componentName === 'MetadataListView') {
-        // 动态加载列表视图组件
-        const MetadataListView = (await import('../modules/metadata/views/MetadataListView.vue')).default
-        currentComponent.value = MetadataListView
+        comp = (await import('../modules/metadata/views/MetadataListView.vue')).default
       } else if (componentRegistry[componentName]) {
-        // 如果组件在 componentRegistry 中，直接使用
-        currentComponent.value = componentRegistry[componentName]
+        comp = componentRegistry[componentName]
       } else {
-        // 未知组件，显示空白页
         console.warn(`未知组件名: ${componentName}，已显示空白页`)
-        currentComponent.value = {
-          render: () => h('div', { class: 'empty-page' }, '')
-        }
+        comp = { render: () => h('div', { class: 'empty-page' }, '') }
       }
+      if (comp) currentComponent.value = comp
     } catch (e) {
-      // 组件加载失败，显示空白页并提示错误
       console.error(`组件 ${componentName} 加载失败:`, e)
-      Message.error(`页面加载失败: ${(e as Error).message}`)
-      currentComponent.value = {
-        render: () => h('div', { class: 'empty-page' }, '')
-      }
+      currentComponent.value = { render: () => h('div', { class: 'empty-page' }, '') }
     }
   },
   { immediate: true }
