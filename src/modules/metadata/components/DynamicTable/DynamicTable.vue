@@ -102,7 +102,7 @@
         <div v-if="queryColumns.length > 0" class="query-actions">
           <a-space>
             <a-button
-              v-if="queryColumns.length > 3"
+              v-if="queryColumns.length > 4"
               type="text"
               @click="showAdvancedQuery = !showAdvancedQuery"
             >
@@ -640,8 +640,8 @@ const visibleQueryColumns = computed(() => {
   if (showAdvancedQuery.value) {
     return queryColumns.value
   }
-  // 默认只显示前3个
-  return queryColumns.value.slice(0, 3)
+  // 默认显示前4个
+  return queryColumns.value.slice(0, 4)
 })
 
 /**
@@ -1647,9 +1647,9 @@ defineExpose({
 
 .dynamic-table__query .query-form :deep(.arco-form-item) {
   margin-bottom: 12px !important;
-  margin-right: 24px !important;
-  min-width: 180px;
-  max-width: 220px;
+  margin-right: 16px !important;
+  width: calc(25% - 16px);
+  min-width: 160px;
 }
 
 .dynamic-table__query .query-actions {
