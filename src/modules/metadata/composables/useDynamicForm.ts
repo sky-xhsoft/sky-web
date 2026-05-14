@@ -551,8 +551,8 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
   function getFieldRules(column: SysColumn): ValidationRule[] {
     const rules: ValidationRule[] = []
 
-    // 必填规则（创建模式强制，编辑模式由 validateForm 控制）
-    if (column.NULL_ABLE === 'N' && mode === 'create') {
+    // 必填规则
+    if (column.NULL_ABLE === 'N') {
       rules.push({
         required: true,
         message: column.ERROR_MSG || `${column.DISPLAY_NAME}不能为空`

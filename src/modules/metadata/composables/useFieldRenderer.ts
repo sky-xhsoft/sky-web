@@ -48,7 +48,7 @@ const FIELD_COMPONENT_MAP: Record<string, string> = {
   hr: 'HrField'
 }
 
-export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view', originalValue?: any) {
+export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
   /**
    * 获取字段渲染组件名称
    */
@@ -313,25 +313,10 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view', ori
 
     // 必填规则
     if (nullAble === 'N') {
-      if (mode === 'create') {
-        rules.push({
-          required: true,
-          message: errorMsg || `${displayName}不能为空`
-        })
-      } else if (mode === 'edit') {
-        rules.push({
-          validator: (_rule: any, value: any, callback: any) => {
-            if (originalValue !== null && originalValue !== undefined && originalValue !== '') {
-              if (value === null || value === undefined || value === '') {
-                callback(errorMsg || `${displayName}不能为空`)
-                return
-              }
-            }
-            callback()
-          },
-          trigger: ['blur', 'change']
-        })
-      }
+      rules.push({
+        required: true,
+        message: errorMsg || `${displayName}不能为空`
+      })
     }
 
     // 正则规则
