@@ -570,13 +570,20 @@ function handleDetailEdit(detailTable: any, record: any) {
  * 子表 - 删除
  */
 async function handleDetailDelete(detailTable: any, record: any) {
-  const tableName = detailTable.table?.NAME || detailTable.table?.name
   const recordId = record.ID || record.id
-  if (!tableName || !recordId) {
-    Message.error('无法获取表名或记录ID')
+  if (!recordId) {
+    Message.error('无法获取记录ID')
     return
   }
   try {
+    // 通过 tableId 获取表名
+    const tableId = detailTable.id
+    const config = await metadataStore.loadTableConfig(tableId)
+    const tableName = (config?.table as any)?.NAME || (config?.table as any)?.name
+    if (!tableName) {
+      Message.error('无法获取表名')
+      return
+    }
     await metadataApi.deleteRecord(tableName, recordId)
     Message.success('删除成功')
     // 刷新详情列表
