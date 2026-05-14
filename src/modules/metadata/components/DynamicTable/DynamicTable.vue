@@ -1,119 +1,11 @@
 <!-- 动态表格组件 -->
 <template>
   <div class="dynamic-table">
-    <!-- 查询区域 - 始终显示 -->
-    <div class="dynamic-table__query">
-      <div class="query-header">
-        <icon-search class="query-icon" />
-        <span class="query-title">查询条件</span>
-      </div>
-
-      <a-form
-        :model="queryForm"
-        layout="inline"
-        @submit="handleQuery"
-        class="query-form"
-      >
-        <template v-if="queryColumns.length > 0">
-          <a-form-item
-            v-for="column in visibleQueryColumns"
-            :key="column.DB_NAME || column.DB_NAME"
-            :label="column.DISPLAY_NAME || column.DISPLAY_NAME"
-            :field="column.DB_NAME || column.DB_NAME"
-          >
-              <!-- 外键下拉选择 -->
-              <ForeignKeyField
-                v-if="isForeignKeyColumn(column)"
-                :column="column"
-                :model-value="queryForm[column.DB_NAME || column.DB_NAME]"
-                mode="edit"
-                @update:model-value="val => queryForm[column.DB_NAME || column.DB_NAME] = val"
-              />
-
-              <!-- 文本输入 -->
-              <a-input
-                v-else-if="column.CONTROL_TYPE === 'text' || column.CONTROL_TYPE === 'email' || column.CONTROL_TYPE === 'url'"
-                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
-                :placeholder="`请输入${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
-                allow-clear
-                @input="(value: string) => handleQueryInputChange(column, value)"
-              />
-
-              <!-- 数字输入 -->
-              <a-input-number
-                v-else-if="column.CONTROL_TYPE === 'number'"
-                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
-                :placeholder="`请输入${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
-                style="width: 100%"
-              />
-
-              <!-- 下拉选择 -->
-              <a-select
-                v-else-if="column.CONTROL_TYPE === 'select'"
-                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
-                :placeholder="`请选择${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
-                allow-clear
-              >
-                <a-option
-                  v-for="option in getDictOptions(column)"
-                  :key="option.value"
-                  :value="option.value"
-                >
-                  {{ option.label }}
-                </a-option>
-              </a-select>
-
-              <!-- 日期选择 -->
-              <a-date-picker
-                v-else-if="column.CONTROL_TYPE === 'date'"
-                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
-                :placeholder="`请选择${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
-                allow-clear
-                style="width: 100%"
-              />
-
-              <!-- 日期时间选择 -->
-              <a-date-picker
-                v-else-if="column.CONTROL_TYPE === 'datetime'"
-                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
-                :placeholder="`请选择${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
-                show-time
-                allow-clear
-                style="width: 100%"
-              />
-
-              <!-- 默认文本输入 -->
-              <a-input
-                v-else
-                v-model="queryForm[column.DB_NAME || column.DB_NAME]"
-                :placeholder="`请输入${column.DISPLAY_NAME || column.DISPLAY_NAME}`"
-                allow-clear
-                @input="(value: string) => handleQueryInputChange(column, value)"
-              />
-            </a-form-item>
-        </template>
-
-        <!-- 无查询字段提示 -->
-        <div v-else class="query-empty">
-          <span class="query-empty-text">暂无查询字段</span>
-        </div>
-
-        <!-- 查询按钮区域 -->
-        <div v-if="queryColumns.length > 0" class="query-actions">
-          <a-space>
-            <a-button
-              v-if="queryColumns.length > 4"
-              type="text"
-              @click="showAdvancedQuery = !showAdvancedQuery"
-            >
-              {{ showAdvancedQuery ? '收起' : '展开' }}
-              <icon-down v-if="!showAdvancedQuery" />
-              <icon-up v-else />
-            </a-button>
-          </a-space>
-        </div>
-      </a-form>
-    </div>
+    <DynamicQueryBar
+      :columns="queryColumns"
+      @query="handleQuery"
+      @reset="handleReset"
+    />
 
     <!-- 工具栏 -->
     <div v-if="showToolbar" class="dynamic-table__toolbar">
@@ -532,6 +424,7 @@ import { useDynamicTableStore } from '../../stores'
 import { formatDate as formatDateUtil, formatDateTime as formatDateTimeUtil } from '@/utils/format'
 import ForeignKeyCell from './ForeignKeyCell.vue'
 import ForeignKeyField from '../FieldRenderers/ForeignKeyField.vue'
+import DynamicQueryBar from './DynamicQueryBar.vue'
 import { submitRecord, unsubmitRecord } from '../../api/metadata'
 import type { TableColumnData } from '@arco-design/web-vue'
 import type { FormData, SysColumn } from '../../types'
