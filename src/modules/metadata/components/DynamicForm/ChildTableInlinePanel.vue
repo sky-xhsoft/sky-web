@@ -661,7 +661,18 @@ async function handleBatchDelete() {
 function handleExport() {
   const tn = props.childTable?.table?.NAME || props.childTable?.table?.name
   if (!tn) { Message.warning('无法获取表名'); return }
-  metadataApi.exportRecords(tn).then(blob => {
+
+  const filters: Record<string, any> = {}
+  if (props.parentRecordId) {
+    const refColumn = (props.childTable.columns || []).find((col: any) => {
+      return (col.REF_TABLE_ID || (col as any).refTableId) === props.parentTableId
+    })
+    if (refColumn) {
+      filters[refColumn.DB_NAME || refColumn.dbName] = props.parentRecordId
+    }
+  }
+
+  metadataApi.exportRecords(tn, filters).then(blob => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url; a.download = `${tn}.xlsx`
