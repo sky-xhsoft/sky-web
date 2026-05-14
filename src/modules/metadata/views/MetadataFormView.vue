@@ -144,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
 import {
@@ -489,9 +489,16 @@ async function handleRefresh() {
 /**
  * 返回
  */
-async function handleBack() {
+function handleBack() {
   const goBack = () => {
-    navigationStore.removeTab(navigationStore.activeTabKey)
+    if (props.tableId) {
+      navigationStore.navigateTo('MetadataListView', '数据列表', {
+        tableId: props.tableId
+      }, false)
+    }
+    nextTick(() => {
+      navigationStore.removeTab(navigationStore.activeTabKey)
+    })
   }
 
   if (hasChanges.value) {
