@@ -298,14 +298,14 @@ export function useDynamicList(tableId: number) {
    * 选中行
    */
   function handleSelectionChange(keys: (string | number)[]) {
-    tableStore.selectRows(keys)
+    tableStore.selectRows(tableName.value, keys)
   }
 
   /**
    * 全选/取消全选
    */
   function handleSelectAll() {
-    tableStore.toggleSelectAll(pkField.value)
+    tableStore.toggleSelectAll(tableName.value, pkField.value)
   }
 
   /**
@@ -325,13 +325,13 @@ export function useDynamicList(tableId: number) {
    * 批量删除
    */
   async function handleBatchDelete() {
-    if (!tableStore.hasSelection) {
+    if (!tableStore.getHasSelection(tableName.value).value) {
       Message.warning('请先选择要删除的记录')
       return
     }
 
     try {
-      const selectedRecords = tableStore.getSelectedRecords(pkField.value)
+      const selectedRecords = tableStore.getSelectedRecords(tableName.value, pkField.value)
       const ids = selectedRecords.map(r => r[pkField.value] as number)
       await tableStore.batchDelete(tableName.value, ids)
       Message.success('批量删除成功')
@@ -351,7 +351,7 @@ export function useDynamicList(tableId: number) {
     }
 
     try {
-      const filters = tableStore.getFilters?.(tableName) || {}
+      const filters = tableStore.getFilters(tableName.value).value || {}
       const blob = await exportRecords(tableName, filters)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -459,13 +459,13 @@ export function useDynamicList(tableId: number) {
     filterForm,
     showAdvancedFilter,
 
-    // 计算属性 - 从 tableStore
-    records: computed(() => tableStore.records),
-    pagination: computed(() => tableStore.pagination),
-    loading: computed(() => tableStore.loading),
-    selectedRowKeys: computed(() => tableStore.selectedRowKeys),
-    hasSelection: computed(() => tableStore.hasSelection),
-    selectedCount: computed(() => tableStore.selectedCount),
+    // 计算属性 - 从 tableStore (按表隔离)
+    records: computed(() => tableStore.getRecords(tableName.value).value),
+    pagination: computed(() => tableStore.getPagination(tableName.value).value),
+    loading: computed(() => tableStore.getLoading(tableName.value).value),
+    selectedRowKeys: computed(() => tableStore.getSelectedRowKeys(tableName.value).value),
+    hasSelection: computed(() => tableStore.getHasSelection(tableName.value).value),
+    selectedCount: computed(() => tableStore.getSelectedCount(tableName.value).value),
 
     // 计算属性 - 本地
     tableColumns,

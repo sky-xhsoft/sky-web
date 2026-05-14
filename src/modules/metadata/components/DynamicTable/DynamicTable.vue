@@ -1050,16 +1050,7 @@ function handleQueryInputChange(column: any, value: string) {
 async function handleQuery() {
   try {
     const tableStore = useDynamicTableStore()
-
-    // 更新 store 中的 filters
-    tableStore.filters = { ...queryForm.value }
-
-    // 重置到第一页
-    tableStore.pagination.page = 1
-
-    // 重新加载数据
-    await tableStore.loadRecords(tableName.value)
-
+    await tableStore.updateFilters(tableName.value, { ...queryForm.value })
     Message.success('查询成功')
   } catch (error: any) {
     Message.error(error.message || '查询失败')
@@ -1075,16 +1066,7 @@ async function handleReset() {
 
   try {
     const tableStore = useDynamicTableStore()
-
-    // 清空 store 中的 filters
-    tableStore.filters = {}
-
-    // 重置到第一页
-    tableStore.pagination.page = 1
-
-    // 重新加载数据
-    await tableStore.loadRecords(tableName.value)
-
+    await tableStore.resetFilters(tableName.value)
     Message.success('已重置')
   } catch (error: any) {
     Message.error(error.message || '重置失败')
@@ -1284,8 +1266,7 @@ async function handleRefresh() {
 
     // 清空 store 中的排序
     const tableStore = useDynamicTableStore()
-    tableStore.sorters = []
-
+    tableStore.updateSorters(tableName.value, [])
     await refresh()
   } catch (error: any) {
     // 错误已在 composable 中处理
