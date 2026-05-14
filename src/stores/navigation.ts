@@ -185,39 +185,30 @@ export const useNavigationStore = defineStore('navigation', () => {
     if (index === -1) return
 
     const tab = tabs.value[index]
-    if (tab.isFixed) return // 固定标签不可关闭
+    if (tab.isFixed) return
 
-    // 从标签列表中移除
-    tabs.value.splice(index, 1)
-
-    // 如果关闭的是当前激活的标签，切换到相邻标签
+    // 先确定要切换到哪个标签，设置好 current，再 splice
     if (key === activeTabKey.value) {
-      if (tabs.value.length > 0) {
-        let newActiveKey: string
-        if (index < tabs.value.length) {
-          newActiveKey = tabs.value[index].key
-        } else {
-          newActiveKey = tabs.value[tabs.value.length - 1].key
-        }
-        switchTab(newActiveKey)
+      if (tabs.value.length > 1) {
+        const newIndex = index < tabs.value.length - 1 ? index + 1 : index - 1
+        const target = tabs.value[newIndex]
+        activeTabKey.value = target.key
+        current.value = { componentName: target.componentName, title: target.title, params: target.params }
       } else {
         activeTabKey.value = ''
-        current.value = {
-          componentName: '',
-          title: '',
-          params: {}
-        }
+        current.value = { componentName: '', title: '', params: {} }
       }
     }
+
+    // splice 放在最后，此时 current 已指向新标签
+    tabs.value.splice(index, 1)
 
     // 检查是否还有其他页面使用该组件，没有则从缓存中移除
     const componentName = tab.componentName
     const hasOtherTab = tabs.value.some(t => t.componentName === componentName)
     if (!hasOtherTab) {
       const cacheIndex = keepAliveIncludes.value.indexOf(componentName)
-      if (cacheIndex > -1) {
-        keepAliveIncludes.value.splice(cacheIndex, 1)
-      }
+      if (cacheIndex > -1) keepAliveIncludes.value.splice(cacheIndex, 1)
     }
   }
 
