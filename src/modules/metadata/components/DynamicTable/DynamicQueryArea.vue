@@ -20,7 +20,7 @@
         <a-form
           :model="queryForm"
           layout="inline"
-          @submit="handleQuery"
+          @submit.prevent="handleQuery"
           class="query-form"
         >
           <template v-if="queryColumns.length > 0">

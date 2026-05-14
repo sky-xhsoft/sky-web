@@ -52,7 +52,7 @@ defineExpose({ queryForm, handleQuery })
       <span class="query-title">查询条件</span>
     </div>
 
-    <a-form :model="queryForm" layout="inline" class="query-form">
+    <a-form :model="queryForm" layout="inline" class="query-form" @submit.prevent="handleQuery">
       <template v-if="columns.length > 0">
         <a-form-item
           v-for="col in visibleColumns"
