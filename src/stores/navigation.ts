@@ -181,6 +181,7 @@ export const useNavigationStore = defineStore('navigation', () => {
    * 关闭指定标签页
    */
   function removeTab(key: string): void {
+    if (!tabs?.value) return
     const index = tabs.value.findIndex(tab => tab.key === key)
     if (index === -1) return
 
