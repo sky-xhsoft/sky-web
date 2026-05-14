@@ -1639,8 +1639,8 @@ defineExpose({
 .query-header {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  background: linear-gradient(to right, #f7f8fa, #ffffff);
+  padding: 8px 12px;
+  background: #f7f8fa;
   border-bottom: 1px solid #e5e6eb;
   border-radius: 4px 4px 0 0;
 }
@@ -1658,10 +1658,10 @@ defineExpose({
 }
 
 .dynamic-table__query .query-form {
-  padding: 16px;
-  padding-right: 260px; /* 为按钮留出足够空间 */
+  padding: 10px 12px;
+  padding-right: 260px;
   position: relative;
-  min-height: 50px;
+  min-height: 36px;
 }
 
 .dynamic-table__query .query-form :deep(.arco-form-item) {

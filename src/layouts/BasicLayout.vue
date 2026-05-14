@@ -1041,16 +1041,16 @@ const updateTabTitles = () => {
 }
 
 .app-content {
-  padding: 20px;
+  padding: 12px;
   background: #ffffff;
   flex: 1;
   overflow-x: hidden;
   overflow-y: auto;
   position: relative;
-  border-radius: 10px;
-  width: calc(100% - 40px);
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
-  margin: 10px;
+  border-radius: 8px;
+  width: calc(100% - 16px);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  margin: 4px 8px;
 }
 .sidebar-toggle {
   width: 32px;
