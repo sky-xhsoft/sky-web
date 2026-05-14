@@ -110,18 +110,6 @@
               <icon-down v-if="!showAdvancedQuery" />
               <icon-up v-else />
             </a-button>
-            <a-button @click="handleReset">
-              <template #icon><icon-refresh /></template>
-              重置
-            </a-button>
-            <a-button
-              type="primary"
-              html-type="submit"
-              :loading="loading"
-            >
-              <template #icon><icon-search /></template>
-              查询
-            </a-button>
           </a-space>
         </div>
       </a-form>
@@ -131,7 +119,20 @@
     <div v-if="showToolbar" class="dynamic-table__toolbar">
       <div class="toolbar-left">
         <a-space>
-          <!-- 新增按钮 -->
+          <a-button type="primary" @click="handleQuery">
+            <template #icon><icon-search /></template>
+            查询
+          </a-button>
+          <a-button @click="handleReset">
+            <template #icon><icon-refresh /></template>
+            重置
+          </a-button>
+          <slot name="toolbar-left" />
+        </a-space>
+      </div>
+
+      <div class="toolbar-right">
+        <a-space>
           <a-button
             v-if="canCreate"
             type="primary"
@@ -141,14 +142,6 @@
             新增
           </a-button>
 
-          <!-- 自定义工具栏插槽 -->
-          <slot name="toolbar-left" />
-        </a-space>
-      </div>
-
-      <div class="toolbar-right">
-        <a-space>
-          <!-- 提交按钮 -->
           <a-button
             v-if="canSubmit"
             type="primary"
