@@ -489,18 +489,25 @@ async function handleRefresh() {
  * 返回
  */
 async function handleBack() {
+  const goBack = () => {
+    if (props.tableId) {
+      navigationStore.navigateTo('MetadataListView', '数据列表', {
+        tableId: props.tableId
+      }, false)
+    }
+    navigationStore.removeTab(navigationStore.activeTabKey)
+  }
+
   if (hasChanges.value) {
     Modal.confirm({
       title: '提示',
       content: '表单有未保存的修改，确定要离开吗？',
-      onOk: () => {
-        navigationStore.removeTab(navigationStore.activeTabKey)
-      }
+      onOk: goBack
     })
     return
   }
 
-  navigationStore.removeTab(navigationStore.activeTabKey)
+  goBack()
 }
 
 /**
