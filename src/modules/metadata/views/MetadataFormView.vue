@@ -490,7 +490,7 @@ async function handleRefresh() {
  * 返回
  */
 function handleBack() {
-  // 纯tab切换：不删标签不splice，只改变激活状态
+  // 先激活列表标签
   const listTab = navigationStore.tabs.find(t => t.componentName === 'MetadataListView')
   if (listTab && listTab.key !== navigationStore.activeTabKey) {
     navigationStore.activeTabKey = listTab.key
@@ -500,7 +500,15 @@ function handleBack() {
       params: listTab.params || {}
     }
   }
-  // 如果没有找到列表标签，什么都不做（保持当前页面）
+  // 等 Vue 完成当前渲染周期（释放同步锁）后，再关闭编辑标签
+  const myKey = navigationStore.activeTabKey === listTab?.key 
+    ? navigationStore.tabs.find(t => t.componentName === 'MetadataFormView')?.key 
+    : navigationStore.activeTabKey
+  if (myKey) {
+    setTimeout(() => {
+      navigationStore.removeTab(myKey)
+    }, 0)
+  }
 }
 
 /**
