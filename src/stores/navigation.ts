@@ -4,7 +4,7 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 
 // 事件回调类型
 type BackCallback = (fromComponent: string, toComponent: string) => void
@@ -187,7 +187,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     const tab = tabs.value[index]
     if (tab.isFixed) return
 
-    // 先确定要切换到哪个标签，设置好 current，再 splice
+    // 先确定要切换到哪个标签，设置好 current
     if (key === activeTabKey.value) {
       if (tabs.value.length > 1) {
         const newIndex = index < tabs.value.length - 1 ? index + 1 : index - 1
@@ -200,8 +200,10 @@ export const useNavigationStore = defineStore('navigation', () => {
       }
     }
 
-    // splice 放在最后，此时 current 已指向新标签
-    tabs.value.splice(index, 1)
+    // 延迟 splice 到 nextTick，让 Vue 先处理 current 变更
+    nextTick(() => {
+      tabs.value.splice(index, 1)
+    })
 
     // 检查是否还有其他页面使用该组件，没有则从缓存中移除
     const componentName = tab.componentName
