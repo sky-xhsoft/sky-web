@@ -144,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
 import {
@@ -492,15 +492,11 @@ async function handleRefresh() {
 function handleBack() {
   const goBack = () => {
     const tabKey = navigationStore.activeTabKey
-    const tabs = navigationStore.tabs
-    // 找到相邻的列表页标签
-    const listTab = tabs.find(t => t.componentName === 'MetadataListView')
+    const listTab = navigationStore.tabs.find(t => t.componentName === 'MetadataListView')
     if (listTab) {
       navigationStore.switchTab(listTab.key)
     }
-    nextTick(() => {
-      navigationStore.removeTab(tabKey)
-    })
+    navigationStore.removeTab(tabKey)
   }
 
   if (hasChanges.value) {
