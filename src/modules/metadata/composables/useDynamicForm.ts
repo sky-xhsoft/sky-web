@@ -111,6 +111,7 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
   async function loadTableConfig() {
     loading.value = true
     try {
+      formStore.reset()  // 清空store残留数据
       tableConfig.value = await metadataStore.loadTableConfig(tableId)
 
       // 初始化表单数据
@@ -131,6 +132,7 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
   function initFormData() {
     if (!tableConfig.value) return
 
+    formData.value = {}  // 先清空，再填充默认值
     const data: FormData = {}
 
     // 设置默认值
