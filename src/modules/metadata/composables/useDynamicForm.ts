@@ -321,6 +321,10 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
 
     formColumns.value.forEach(column => {
       const value = formData.value[column.DB_NAME]
+      // 编辑模式：跳过不在formData中的字段（未渲染或隐藏的字段）
+      if (mode === 'edit' && !(column.DB_NAME in formData.value)) {
+        return
+      }
       const error = validateField(column, value)
       if (error) {
         newErrors[column.DB_NAME] = error
