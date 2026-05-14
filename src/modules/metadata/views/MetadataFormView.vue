@@ -551,7 +551,8 @@ function handleDetailCreate(detailTable: any) {
   navigationStore.navigateTo('MetadataFormView', '新增明细', {
     tableId: detailTable.id,
     mode: 'create',
-    parentId: recordId.value
+    parentId: recordId.value,
+    _t: Date.now()  // 确保每次创建新标签页
   })
 }
 
