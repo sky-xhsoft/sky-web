@@ -3,7 +3,7 @@
  * 用于管理动态表单的数据加载、验证、提交等逻辑
  */
 
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useMetadataStore } from '../stores/useMetadataStore'
 import { useDynamicFormStore } from '../stores/useDynamicFormStore'
@@ -665,6 +665,14 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
     },
     { deep: true }
   )
+
+  // 组件销毁时清空数据
+  onUnmounted(() => {
+    formStore.reset()
+    formData.value = {}
+    originalData.value = {}
+    errors.value = {}
+  })
 
   // ==================== 返回 ====================
 
