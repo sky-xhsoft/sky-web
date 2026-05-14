@@ -827,7 +827,7 @@ const updateTabTitles = () => {
         <main class="app-content">
           <!-- 使用动态组件，传递 navigationStore 中的参数 -->
           <!-- 使用 keep-alive 缓存页面状态 -->
-          <keep-alive :include="navigationStore.keepAliveIncludes" :exclude="['BatchEditPage']" :max="10">
+          <keep-alive :include="navigationStore.keepAliveIncludes" :exclude="['BatchEditPage', 'MetadataFormView']" :max="10">
             <component
               :is="currentComponent"
               v-bind="navigationStore.current.params"
