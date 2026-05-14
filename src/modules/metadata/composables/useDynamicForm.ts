@@ -217,6 +217,13 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
     // 必填验证
     if (nullAble === 'N') {
       if (value === null || value === undefined || value === '') {
+        // 编辑模式：如果原始值也是空，不报错（允许不修改）
+        if (mode === 'edit') {
+          const orig = originalData.value[column.DB_NAME]
+          if (orig === null || orig === undefined || orig === '') {
+            return null
+          }
+        }
         return errorMsg || `${displayName}不能为空`
       }
     }
