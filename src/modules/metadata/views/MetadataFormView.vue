@@ -490,14 +490,8 @@ async function handleRefresh() {
  * 返回
  */
 function handleBack() {
-  const goBack = () => {
-    navigationStore.removeTab(navigationStore.activeTabKey)
-  }
-  if (hasChanges.value) {
-    Modal.confirm({ title: '提示', content: '表单有未保存的修改，确定要离开吗？', onOk: goBack })
-    return
-  }
-  goBack()
+  // 直接关闭当前标签页（removeTab已处理切换逻辑）
+  navigationStore.removeTab(navigationStore.activeTabKey)
 }
 
 /**
