@@ -490,13 +490,7 @@ async function handleRefresh() {
  */
 async function handleBack() {
   const goBack = () => {
-    const currentTabKey = navigationStore.activeTabKey
-    if (props.tableId) {
-      navigationStore.navigateTo('MetadataListView', '数据列表', {
-        tableId: props.tableId
-      }, false)
-    }
-    navigationStore.removeTab(currentTabKey)
+    navigationStore.removeTab(navigationStore.activeTabKey)
   }
 
   if (hasChanges.value) {
