@@ -490,24 +490,12 @@ async function handleRefresh() {
  * 返回
  */
 function handleBack() {
-  // 先激活列表标签
-  const listTab = navigationStore.tabs.find(t => t.componentName === 'MetadataListView')
-  if (listTab && listTab.key !== navigationStore.activeTabKey) {
+  // 核方案：只改两个ref，不删标签不splice不setTimeout
+  const tabs = navigationStore.tabs
+  const listTab = tabs.find(t => t.componentName === 'MetadataListView')
+  if (listTab) {
     navigationStore.activeTabKey = listTab.key
-    navigationStore.current = {
-      componentName: listTab.componentName,
-      title: listTab.title,
-      params: listTab.params || {}
-    }
-  }
-  // 等 Vue 完成当前渲染周期（释放同步锁）后，再关闭编辑标签
-  const myKey = navigationStore.activeTabKey === listTab?.key 
-    ? navigationStore.tabs.find(t => t.componentName === 'MetadataFormView')?.key 
-    : navigationStore.activeTabKey
-  if (myKey) {
-    setTimeout(() => {
-      navigationStore.removeTab(myKey)
-    }, 0)
+    navigationStore.current = { componentName: listTab.componentName, title: listTab.title, params: listTab.params || {} }
   }
 }
 
