@@ -548,10 +548,10 @@ async function loadRecordList() {
  * 子表 - 新增
  */
 function handleDetailCreate(detailTable: any) {
-  router.push({
-    name: 'MetadataFormCreate',
-    params: { tableId: detailTable.id },
-    query: { parentId: recordId.value }
+  navigationStore.navigateTo('MetadataFormView', '新增明细', {
+    tableId: detailTable.id,
+    mode: 'create',
+    parentId: recordId.value
   })
 }
 
