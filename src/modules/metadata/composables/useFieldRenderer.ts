@@ -311,8 +311,8 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
     const displayType = column.DISPLAY_TYPE || (column as any).displayType
     const controlType = (displayType || column.CONTROL_TYPE || (column as any).controlType)?.toLowerCase()
 
-    // 必填规则
-    if (nullAble === 'N') {
+    // 必填规则（仅创建模式强制校验，编辑模式由 validateForm 控制）
+    if (nullAble === 'N' && mode === 'create') {
       rules.push({
         required: true,
         message: errorMsg || `${displayName}不能为空`
