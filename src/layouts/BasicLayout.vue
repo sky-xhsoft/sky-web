@@ -831,7 +831,6 @@ const updateTabTitles = () => {
             <component
               :is="currentComponent"
               v-bind="navigationStore.current.params"
-              :key="navigationStore.activeTabKey"
             />
           </keep-alive>
         </main>
