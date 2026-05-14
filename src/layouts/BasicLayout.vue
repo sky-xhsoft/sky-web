@@ -1045,7 +1045,7 @@ const updateTabTitles = () => {
   background: #ffffff;
   flex: 1;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   position: relative;
   border-radius: 8px;
   width: calc(100% - 16px);

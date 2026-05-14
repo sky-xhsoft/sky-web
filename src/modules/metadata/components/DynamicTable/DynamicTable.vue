@@ -1603,7 +1603,7 @@ defineExpose({
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  overflow-x: auto !important;
+  overflow: hidden;
 }
 
 /* 选择+序号列样式 */
@@ -1769,13 +1769,20 @@ defineExpose({
 .dynamic-table :deep(.arco-table-container) {
   overflow-x: auto !important;
   width: 100% !important;
+  flex: 1;
+  overflow-y: auto !important;
+}
+
+/* 表格体滚动区域 */
+.dynamic-table :deep(.arco-table-body) {
+  overflow-y: auto !important;
 }
 
 /* 表格最小宽度，保证列不会被过度挤压，更容易触发横向滚动 */
 .dynamic-table :deep(.arco-table) {
   min-width: 500px !important;
   width: auto !important;
-  table-layout: fixed !important; /* 固定列宽布局，配合固定列使用 */
+  table-layout: fixed !important;
 }
 
 /* 表格布局 - 使用固定布局以确保列对齐 */
