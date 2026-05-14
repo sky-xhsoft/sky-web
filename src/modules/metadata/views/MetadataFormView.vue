@@ -163,6 +163,7 @@ import { useDynamicFormStore } from '../stores/useDynamicFormStore'
 import { useDynamicTableStore } from '../stores/useDynamicTableStore'
 import type { FormMode, TableConfig, FormData } from '../types'
 import { useNavigationStore } from '@/stores/navigation'
+import * as metadataApi from '../api/metadata'
 
 // ==================== Props ====================
 
@@ -568,8 +569,23 @@ function handleDetailEdit(detailTable: any, record: any) {
 /**
  * 子表 - 删除
  */
-async function handleDetailDelete(_detailTable: any, record: any) {
-  Message.success(`删除成功: ${record.DISPLAY_NAME || record.NAME}`)
+async function handleDetailDelete(detailTable: any, record: any) {
+  const tableName = detailTable.table?.NAME || detailTable.table?.name
+  const recordId = record.ID || record.id
+  if (!tableName || !recordId) {
+    Message.error('无法获取表名或记录ID')
+    return
+  }
+  try {
+    await metadataApi.deleteRecord(tableName, recordId)
+    Message.success('删除成功')
+    // 刷新详情列表
+    if (formRef.value) {
+      formRef.value.refreshDetails?.()
+    }
+  } catch (e: any) {
+    Message.error('删除失败: ' + (e?.message || '未知错误'))
+  }
 }
 
 // ==================== 生命周期 ====================
