@@ -490,8 +490,17 @@ async function handleRefresh() {
  * 返回
  */
 function handleBack() {
-  // 强制跳回应用首页，BasicLayout 会自动激活上一个标签
-  router.push('/')
+  // 纯tab切换：不删标签不splice，只改变激活状态
+  const listTab = navigationStore.tabs.find(t => t.componentName === 'MetadataListView')
+  if (listTab && listTab.key !== navigationStore.activeTabKey) {
+    navigationStore.activeTabKey = listTab.key
+    navigationStore.current = {
+      componentName: listTab.componentName,
+      title: listTab.title,
+      params: listTab.params || {}
+    }
+  }
+  // 如果没有找到列表标签，什么都不做（保持当前页面）
 }
 
 /**
