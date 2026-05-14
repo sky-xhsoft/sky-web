@@ -48,7 +48,7 @@ const FIELD_COMPONENT_MAP: Record<string, string> = {
   hr: 'HrField'
 }
 
-export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
+export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view', originalValue?: any) {
   /**
    * 获取字段渲染组件名称
    */
@@ -311,12 +311,27 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
     const displayType = column.DISPLAY_TYPE || (column as any).displayType
     const controlType = (displayType || column.CONTROL_TYPE || (column as any).controlType)?.toLowerCase()
 
-    // 必填规则（仅创建模式强制校验，编辑模式由 validateForm 控制）
-    if (nullAble === 'N' && mode === 'create') {
-      rules.push({
-        required: true,
-        message: errorMsg || `${displayName}不能为空`
-      })
+    // 必填规则
+    if (nullAble === 'N') {
+      if (mode === 'create') {
+        rules.push({
+          required: true,
+          message: errorMsg || `${displayName}不能为空`
+        })
+      } else if (mode === 'edit') {
+        rules.push({
+          validator: (_rule: any, value: any, callback: any) => {
+            if (originalValue !== null && originalValue !== undefined && originalValue !== '') {
+              if (value === null || value === undefined || value === '') {
+                callback(errorMsg || `${displayName}不能为空`)
+                return
+              }
+            }
+            callback()
+          },
+          trigger: ['blur', 'change']
+        })
+      }
     }
 
     // 正则规则
