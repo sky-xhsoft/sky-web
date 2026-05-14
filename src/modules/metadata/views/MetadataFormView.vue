@@ -490,8 +490,17 @@ async function handleRefresh() {
  * 返回
  */
 function handleBack() {
-  // 直接关闭当前标签页（removeTab已处理切换逻辑）
-  navigationStore.removeTab(navigationStore.activeTabKey)
+  // 方案：不删标签，不打乱DOM，只切换激活标签
+  // 找到列表中标签并激活它
+  const listTab = navigationStore.tabs.find(t => t.componentName === 'MetadataListView')
+  if (listTab) {
+    navigationStore.activeTabKey = listTab.key
+    navigationStore.current = {
+      componentName: listTab.componentName,
+      title: listTab.title,
+      params: listTab.params || {}
+    }
+  }
 }
 
 /**
