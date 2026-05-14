@@ -491,13 +491,15 @@ async function handleRefresh() {
  */
 function handleBack() {
   const goBack = () => {
-    if (props.tableId) {
-      navigationStore.navigateTo('MetadataListView', '数据列表', {
-        tableId: props.tableId
-      }, false)
+    const tabKey = navigationStore.activeTabKey
+    const tabs = navigationStore.tabs
+    // 找到相邻的列表页标签
+    const listTab = tabs.find(t => t.componentName === 'MetadataListView')
+    if (listTab) {
+      navigationStore.switchTab(listTab.key)
     }
     nextTick(() => {
-      navigationStore.removeTab(navigationStore.activeTabKey)
+      navigationStore.removeTab(tabKey)
     })
   }
 
