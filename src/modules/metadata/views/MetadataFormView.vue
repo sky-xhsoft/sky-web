@@ -494,37 +494,13 @@ async function handleBack() {
       title: '提示',
       content: '表单有未保存的修改，确定要离开吗？',
       onOk: () => {
-        // 用户点击确定后再返回
-        // 优先使用历史栈返回
-        const hasHistory = navigationStore.goBack()
-        if (!hasHistory) {
-          // 如果没有历史记录，返回到当前表的列表页
-          if (props.tableId) {
-            navigationStore.navigateTo('MetadataListView', '数据列表', {
-              tableId: props.tableId
-            }, false) // 不推入历史栈
-          } else {
-            router.back()
-          }
-        }
+        navigationStore.removeTab(navigationStore.activeTabKey)
       }
     })
     return
   }
 
-  // 没有修改，直接返回
-  // 优先使用历史栈返回
-  const hasHistory = navigationStore.goBack()
-  if (!hasHistory) {
-    // 如果没有历史记录，返回到当前表的列表页
-    if (props.tableId) {
-      navigationStore.navigateTo('MetadataListView', '数据列表', {
-        tableId: props.tableId
-      }, false) // 不推入历史栈
-    } else {
-      router.back()
-    }
-  }
+  navigationStore.removeTab(navigationStore.activeTabKey)
 }
 
 /**
