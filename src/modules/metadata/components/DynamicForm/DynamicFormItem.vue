@@ -1,7 +1,6 @@
 <!-- 动态表单项组件 -->
 <template>
   <a-form-item
-    :field="column.DB_NAME || column.dbName"
     :label="column.DISPLAY_NAME || column.displayName"
     :rules="validationRules"
     :validate-trigger="['blur', 'change']"
