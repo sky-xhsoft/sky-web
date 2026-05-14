@@ -620,6 +620,17 @@ watch(
   }
 )
 
+// 监听当前标签页切换，从明细操作返回时刷新数据
+const parentTabKey = navigationStore.activeTabKey
+watch(
+  () => navigationStore.activeTabKey,
+  (newKey) => {
+    if (newKey === parentTabKey && newKey !== '') {
+      loadConfig()
+    }
+  }
+)
+
 // 监听 props.mode 变化（查看 -> 编辑切换）
 watch(
   () => props.mode,
