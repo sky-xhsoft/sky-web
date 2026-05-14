@@ -55,15 +55,10 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   /**
    * 加载数据列表
    */
-  let loadingRequest: Promise<any> | null = null  // 防止重复请求
   async function loadRecords(tableName: string, params?: Partial<PageRequest>) {
-    // 如果正在加载，返回已有的 Promise
-    if (loadingRequest) {
-      return loadingRequest
-    }
-
     loading.value = true
     error.value = null
+    records.value = []  // 立即清空旧数据，避免切换时显示脏数据
     try {
 
       // 构建排序参数（多字段用逗号分隔）
@@ -81,8 +76,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
         ...params
       }
 
-      loadingRequest = api.fetchRecords(tableName, requestParams)
-      const result = await loadingRequest
+      const result = await api.fetchRecords(tableName, requestParams)
 
       records.value = result.list
       pagination.value = {
