@@ -491,14 +491,8 @@ async function handleRefresh() {
  */
 function handleBack() {
   const goBack = () => {
-    const myKey = navigationStore.activeTabKey
-    const listTab = navigationStore.tabs.find(t => t.componentName === 'MetadataListView')
-    if (listTab && listTab.key !== myKey) {
-      navigationStore.switchTab(listTab.key)
-    }
-    navigationStore.removeTab(myKey)
+    navigationStore.removeTab(navigationStore.activeTabKey)
   }
-
   if (hasChanges.value) {
     Modal.confirm({ title: '提示', content: '表单有未保存的修改，确定要离开吗？', onOk: goBack })
     return
