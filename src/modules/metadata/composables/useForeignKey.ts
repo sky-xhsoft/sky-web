@@ -60,8 +60,12 @@ export function useForeignKey(column: SysColumn) {
         pageSize: params?.pageSize || 100
       })
 
-      options.value = result.list
-      optionsCache.set(cacheKey, result.list)
+      const safeList = (result.list || []).map((item: any) => ({
+        ...item,
+        label: String(item.label ?? '')
+      }))
+      options.value = safeList
+      optionsCache.set(cacheKey, safeList)
 
       // 设置是否为下拉框模式（默认 Y 表示下拉框）
       isDropdownMode.value = result.isDropdown !== 'N'
@@ -89,7 +93,7 @@ export function useForeignKey(column: SysColumn) {
 
     // 先从已加载的选项中查找
     const option = options.value.find(opt => opt.value === value)
-    if (option) return option.label
+    if (option) return String(option.label)
 
     // 检查全局缓存
     const refTableId = column.REF_TABLE_ID || (column as any).refTableId

@@ -102,7 +102,7 @@ const options = computed(() => {
         if (dictItems && dictItems.length > 0) {
           const opts = dictItems.map(item => ({
             value: item.VALUE || (item as any).value,
-            label: item.DISPLAY_NAME || (item as any).displayName
+            label: String(item.DISPLAY_NAME || (item as any).displayName || '')
           }))
           return opts
         }

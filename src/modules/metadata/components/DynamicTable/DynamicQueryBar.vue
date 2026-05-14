@@ -41,6 +41,8 @@ function handleReset() {
   queryForm.value = {}
   emit('reset')
 }
+
+defineExpose({ queryForm, handleQuery })
 </script>
 
 <template>

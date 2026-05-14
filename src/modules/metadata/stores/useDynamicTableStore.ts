@@ -22,7 +22,7 @@ interface TableState {
 function newTableState(): TableState {
   return {
     records: [],
-    pagination: { page: 1, pageSize: 20, total: 0 },
+    pagination: { page: 1, pageSize: 15, total: 0 },
     filters: {},
     sorters: [],
     selectedRowKeys: [],

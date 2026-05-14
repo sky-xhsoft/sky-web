@@ -490,12 +490,17 @@ async function handleRefresh() {
  * 返回
  */
 function handleBack() {
-  // 核方案：只改两个ref，不删标签不splice不setTimeout
   const tabs = navigationStore.tabs
+  if (!tabs || !Array.isArray(tabs)) {
+    console.error('[handleBack] tabs is not an array:', tabs)
+    return
+  }
+  const formTabKey = navigationStore.activeTabKey
   const listTab = tabs.find(t => t.componentName === 'MetadataListView')
   if (listTab) {
     navigationStore.activeTabKey = listTab.key
     navigationStore.current = { componentName: listTab.componentName, title: listTab.title, params: listTab.params || {} }
+    navigationStore.removeTab(formTabKey)
   }
 }
 
@@ -519,6 +524,11 @@ async function loadRecordList() {
     await tableStore.loadRecords(tableName)
 
     recordList.value = tableStore.records
+
+    if (!recordList.value || !Array.isArray(recordList.value)) {
+      console.warn('[loadRecordList] recordList is not an array, skipping findIndex')
+      return
+    }
 
     currentIndex.value = recordList.value.findIndex(
       r => r.ID === Number(recordId.value)

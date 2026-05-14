@@ -549,7 +549,7 @@ function getDictOptions(column: SysColumn): Array<{ value: string; label: string
 
   return dictItems.map((item: any) => ({
     value: item.VALUE || (item as any).value,
-    label: item.DISPLAY_NAME || (item as any).displayName
+    label: String(item.DISPLAY_NAME || (item as any).displayName || '')
   }))
 }
 
@@ -559,7 +559,7 @@ function getDictOptions(column: SysColumn): Array<{ value: string; label: string
 function getSelectLabel(column: SysColumn, value: any): string {
   const options = getDictOptions(column)
   const option = options.find(opt => opt.value === value)
-  return option ? option.label : value
+  return option ? String(option.label) : String(value ?? '')
 }
 
 /**

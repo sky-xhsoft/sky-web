@@ -59,7 +59,7 @@ const options = computed(() => {
       // 转换为选项格式
       return dictItems.map(item => ({
         value: item.VALUE || (item as any).value,
-        label: item.DISPLAY_NAME || (item as any).displayName
+        label: String(item.DISPLAY_NAME || (item as any).displayName || '')
       }))
     }
   }

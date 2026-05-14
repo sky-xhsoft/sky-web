@@ -250,7 +250,7 @@ export async function fetchRecords(
   const requestBody = {
     tableName,
     page: params?.page || 1,
-    pageSize: params?.pageSize || 20,
+    pageSize: params?.pageSize || 15,
     ...params
   }
   const { data } = await api.post<ApiResponse<any>>(`/data/${tableName}/query`, requestBody)

@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onActivated } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import { IconApps, IconFile } from '@arco-design/web-vue/es/icon'
@@ -64,6 +64,7 @@ const navigationStore = useNavigationStore()
 const filterForm = ref<Record<string, any>>({})
 const currentFilters = ref<Record<string, any>>({})
 const currentTable = ref<SysTable | null>(null)
+const tableRef = ref<InstanceType<typeof DynamicTable>>()
 
 /**
  * 查询
@@ -129,6 +130,15 @@ onMounted(async () => {
       // 加载表单配置
       await loadTableById(tableId)
     }
+  }
+})
+
+// keep-alive 激活时刷新数据，保留查询条件
+let activatedCount = 0
+onActivated(() => {
+  activatedCount++
+  if (activatedCount > 1) {
+    ;(tableRef.value as any)?.triggerQuery?.()
   }
 })
 

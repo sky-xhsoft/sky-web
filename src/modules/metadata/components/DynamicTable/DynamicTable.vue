@@ -2,6 +2,7 @@
 <template>
   <div class="dynamic-table">
     <DynamicQueryBar
+      ref="queryBarRef"
       :columns="queryColumns"
       @query="handleQuery"
       @reset="handleReset"
@@ -11,7 +12,7 @@
     <div v-if="showToolbar" class="dynamic-table__toolbar">
       <div class="toolbar-left">
         <a-space>
-          <a-button type="primary" @click="handleQuery">
+          <a-button type="primary" @click="queryBarRef?.handleQuery()">
             <template #icon><icon-search /></template>
             查询
           </a-button>
@@ -155,7 +156,7 @@
       :columns="visibleColumns"
       :data="records"
       :loading="loading"
-      :pagination="paginationConfig"
+      :pagination="false"
       :bordered="bordered"
       :stripe="stripe"
       :hoverable="hoverable"
@@ -357,41 +358,58 @@
       </template>
     </a-table>
 
-    <!-- 图例 -->
-    <div v-if="legendItems.length > 0" class="table-legend">
-      <span class="legend-title">图例</span>
-      <div
-        v-for="legend in legendItems"
-        :key="legend.fieldName"
-        class="legend-group"
+    <!-- 底部固定：分页 + 图例 -->
+    <div class="table-footer">
+      <a-pagination
+        :current="pagination.page"
+        :page-size="pagination.pageSize"
+        :total="pagination.total"
+        :show-total="true"
+        :show-jumper="true"
+        :show-page-size="true"
+        :page-size-options="[10, 15, 20, 50, 100]"
+        size="small"
+        @change="handlePageChange"
+        @page-size-change="handlePageSizeChange"
       >
-        <span class="legend-field-label">{{ legend.fieldLabel }}:</span>
-        <span
-          v-for="item in legend.items"
-          :key="item.value"
-          class="legend-item"
+        <template #total>
+          共 {{ pagination.total }} 条
+        </template>
+      </a-pagination>
+
+      <div v-if="legendItems.length > 0" class="table-legend">
+        <span class="legend-title">图例</span>
+        <div
+          v-for="legend in legendItems"
+          :key="legend.fieldName"
+          class="legend-group"
         >
-          <!-- 有 CSS 样式的项 -->
-          <template v-if="item.cssClass">
-            <a-tag
-              v-if="item.isTag"
-              :color="item.cssClass"
-              size="small"
-            >
-              {{ item.label }}
-            </a-tag>
-            <span
-              v-else
-              :class="`dict-label-${item.cssClass}`"
-            >
+          <span class="legend-field-label">{{ legend.fieldLabel }}:</span>
+          <span
+            v-for="item in legend.items"
+            :key="item.value"
+            class="legend-item"
+          >
+            <template v-if="item.cssClass">
+              <a-tag
+                v-if="item.isTag"
+                :color="item.cssClass"
+                size="small"
+              >
+                {{ item.label }}
+              </a-tag>
+              <span
+                v-else
+                :class="`dict-label-${item.cssClass}`"
+              >
+                {{ item.label }}
+              </span>
+            </template>
+            <span v-else class="legend-default">
               {{ item.label }}
             </span>
-          </template>
-          <!-- 没有 CSS 样式的项（默认样式） -->
-          <span v-else class="legend-default">
-            {{ item.label }}
           </span>
-        </span>
+        </div>
       </div>
     </div>
   </div>
@@ -515,6 +533,7 @@ const columnSorters = ref<Record<string, { direction: 'ascend' | 'descend', prio
 
 // 查询相关状态
 const queryForm = ref<Record<string, any>>({})
+const queryBarRef = ref<InstanceType<typeof DynamicQueryBar>>()
 const showAdvancedQuery = ref(false)
 
 // ==================== 计算属性 ====================
@@ -645,7 +664,7 @@ const visibleColumns = computed(() => {
 })
 
 /**
- * 分页配置
+ * 滚动配置
  */
 const paginationConfig = computed(() => ({
   current: pagination.value.page,
@@ -659,14 +678,10 @@ const paginationConfig = computed(() => ({
   showTotalText: (total: number) => `共 ${total} 条数据`
 }))
 
-/**
- * 滚动配置
- */
 const scrollConfig = computed(() => {
-  // 固定足够大的水平滚动宽度，确保字段多时自动出现滚动条
   return {
-    x: 1800,  // 固定水平滚动宽度，字段多时自动出现横向滚动条
-    y: 500  // 竖向最大高度500px，超过时滚动，表头固定
+    x: 1800,
+    y: 810
   }
 })
 
@@ -710,7 +725,7 @@ const legendItems = computed(() => {
       const isTag = cssClass ? ['success', 'danger', 'warning', 'primary', 'info'].includes(cssClass) : false
       return {
         value: item.VALUE || (item as any).value,
-        label: item.DISPLAY_NAME || (item as any).displayName,
+        label: String(item.DISPLAY_NAME || (item as any).displayName || ''),
         cssClass: cssClass || undefined,
         isTag
       }
@@ -912,7 +927,7 @@ function getDictOptions(column: SysColumn): Array<{ value: string; label: string
   // 转换为选项格式
   return dictItems.map(item => ({
     value: item.VALUE || (item as any).value,
-    label: item.DISPLAY_NAME || (item as any).displayName
+    label: String(item.DISPLAY_NAME || (item as any).displayName || '')
   }))
 }
 
@@ -933,10 +948,10 @@ function handleQueryInputChange(column: any, value: string) {
 /**
  * 查询
  */
-async function handleQuery() {
+async function handleQuery(form?: Record<string, any>) {
   try {
     const tableStore = useDynamicTableStore()
-    await tableStore.updateFilters(tableName.value, { ...queryForm.value })
+    await tableStore.updateFilters(tableName.value, form ? { ...form } : { ...queryForm.value })
     Message.success('查询成功')
   } catch (error: any) {
     Message.error(error.message || '查询失败')
@@ -1457,7 +1472,8 @@ watch(
 
 defineExpose({
   refresh,
-  loadData
+  loadData,
+  triggerQuery: () => queryBarRef.value?.handleQuery()
 })
 </script>
 
@@ -1751,12 +1767,6 @@ defineExpose({
   transition: box-shadow 0.3s;
   content: '';
   pointer-events: none;
-}
-
-/* 分页样式 */
-.dynamic-table :deep(.arco-pagination) {
-  padding: 16px;
-  justify-content: flex-end;
 }
 
 /* 隐藏默认的排序图标 */
@@ -2107,20 +2117,29 @@ defineExpose({
   text-decoration: line-through !important;
 }
 
-/* 图例样式 - 固定在页面底部 */
+/* 底部栏：分页 + 图例 */
+.table-footer {
+  flex-shrink: 0;
+  background: #fff;
+  border-top: 1px solid #e5e6eb;
+}
+
+.table-footer .arco-pagination {
+  padding: 8px 16px;
+  justify-content: flex-end;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* 图例样式 */
 .table-legend {
   display: flex;
   align-items: flex-start;
   gap: 24px;
-  padding: 12px 16px;
+  padding: 8px 16px;
   background: #f7f8fa;
-  border-top: 1px solid #e5e6eb;
   font-size: 13px;
   flex-wrap: wrap;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-  max-height: 100px;
+  max-height: 80px;
   overflow-y: auto;
 }
 
