@@ -197,7 +197,10 @@ import { IconPlus, IconRefresh, IconDelete, IconExport, IconImport, IconMore } f
 import DynamicForm from './DynamicForm.vue'
 import * as metadataApi from '../../api/metadata'
 import { useForeignKey } from '../../composables/useForeignKey'
+import { useChildTableHelpers } from './useChildTableHelpers'
 import type { FormMode, SysColumn } from '../../types'
+
+const { getTableName, getColumnDbName, findRefColumn, getOrderNo } = useChildTableHelpers()
 
 interface Props {
   parentTableId: number
@@ -306,7 +309,7 @@ const canRefresh = computed(() => true)
 const tableColumns = computed(() => {
   const columns = props.childTable.columns
     .filter((col: any) => {
-      const orderno = col.ORDERNO || col.orderno || 0
+      const orderno = getOrderNo(col)
       const isActive = col.IS_ACTIVE || col.isActive
 
       // 排除系统字段和非活动字段
@@ -330,7 +333,7 @@ const tableColumns = computed(() => {
       }
 
       // 没有 MASK 也没有列宽配置，检查是否是系统字段
-      const dbName = col.DB_NAME || col.dbName
+      const dbName = getColumnDbName(col)
       const systemFields = ['ID', 'CREATE_BY', 'CREATE_TIME', 'UPDATE_BY', 'UPDATE_TIME', 'SYS_COMPANY_ID', 'IS_ACTIVE']
       if (systemFields.includes(dbName)) {
         return false  // 系统字段默认不显示（如果既没有 mask 也没有列宽）
@@ -351,8 +354,8 @@ const tableColumns = computed(() => {
               h('span', { style: 'color: #f53f3f; font-weight: bold;' }, ' *')
             ]
           : displayName,
-        dataIndex: col.DB_NAME || col.dbName,
-        slotName: needsSlot(col) ? (col.DB_NAME || col.dbName) : undefined,
+        dataIndex: getColumnDbName(col),
+        slotName: needsSlot(col) ? (getColumnDbName(col)) : undefined,
         width: col.LIST_WIDTH || col.listWidth || undefined
       }
     })
@@ -394,7 +397,7 @@ const selectColumns = computed(() => {
       return setValueType === 'select'
     })
     .map((col: any) => ({
-      dataIndex: col.DB_NAME || col.dbName,
+      dataIndex: getColumnDbName(col),
       dictId: col.SYS_DICT_ID || col.sysDictId
     }))
 })
@@ -406,7 +409,7 @@ const fkColumns = computed(() => {
       return setValueType === 'fk'
     })
     .map((col: any) => {
-      const dbName = col.DB_NAME || col.dbName
+      const dbName = getColumnDbName(col)
       return {
         dataIndex: dbName,
         displayField: `${dbName}_DISPLAY`,
@@ -498,7 +501,7 @@ async function loadChildData() {
       return
     }
 
-    const refColumnDbName = refColumn.DB_NAME || refColumn.dbName
+    const refColumnDbName = getColumnDbName(refColumn)
 
     // 构建过滤条件：使用 filters 对象而不是 where 字符串
     const filters: Record<string, any> = {
@@ -525,7 +528,7 @@ async function loadChildData() {
     }
 
     const table = props.childTable.table
-    const childTableName = table.NAME || table.name
+    const childTableName = getTableName(table)
 
     const response = await metadataApi.fetchRecords(childTableName, {
       filters,
@@ -619,7 +622,7 @@ function handleFormLoaded(_config: any) {
 async function handleDelete(record: any) {
   try {
     const table = props.childTable.table
-    const childTableName = table.NAME || table.name
+    const childTableName = getTableName(table)
     const recordId = record.ID || record.id
 
     await metadataApi.deleteRecord(childTableName, recordId)
@@ -682,7 +685,7 @@ async function handleDialogOk() {
     })
 
     if (refColumn) {
-      const refColumnDbName = refColumn.DB_NAME || refColumn.dbName
+      const refColumnDbName = getColumnDbName(refColumn)
       formData[refColumnDbName] = props.parentRecordId
     } else {
       console.error('[ChildTablePanel] ❌ 未找到外键字段！')
@@ -696,7 +699,7 @@ async function handleDialogOk() {
     }
 
     const table = props.childTable.table
-    const childTableName = table.NAME || table.name
+    const childTableName = getTableName(table)
 
     // 确保 formData 包含所有必需字段
 
@@ -748,7 +751,7 @@ async function handleBatchDelete() {
 
   try {
     const table = props.childTable.table
-    const childTableName = table.NAME || table.name
+    const childTableName = getTableName(table)
 
     // 删除选中的记录
     for (const key of selectedRowKeys.value) {
@@ -783,7 +786,7 @@ function handleExport() {
       return refTableId === props.parentTableId
     })
     if (refColumn) {
-      filters[refColumn.DB_NAME || refColumn.dbName] = props.parentRecordId
+      filters[getColumnDbName(refColumn)] = props.parentRecordId
     }
   }
 

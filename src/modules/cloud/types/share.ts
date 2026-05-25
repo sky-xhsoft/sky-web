@@ -76,6 +76,7 @@ export interface ShareCreateResponse {
 export interface ShareListItem {
   // CloudShare 字段（嵌入）- 小驼峰命名
   id: number
+  ID?: number
   sysCompanyId?: number
   createBy?: string
   createTime: string

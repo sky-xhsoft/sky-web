@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <!-- 语言切换 -->
   <div class="language-switcher">
     <div class="language-label">{{ currentLang === 'zh' ? '中文' : 'English' }}</div>
@@ -271,7 +271,6 @@ import { Message } from '@arco-design/web-vue'
 import {
   IconFile,
   IconFolder,
-  IconLock,
   IconDownload,
   IconEye,
   IconExclamationCircle,
@@ -279,14 +278,12 @@ import {
   IconVideoCamera,
   IconMusic,
   IconFilePdf,
-  IconPlayCircle,
-  IconShareAlt,
-  IconUser,
-  IconClockCircle,
-  IconUnlock
+  IconPlayCircle
 } from '@arco-design/web-vue/es/icon'
 import { getShareInfo, accessShare, downloadShareFile, getShareFolderContent } from '@/modules/cloud/api/share'
 import type { ShareInfo } from '@/modules/cloud/types'
+import { formatFileSize, formatDate } from '@/utils/format'
+import { getFileType, canPreview, hasAccessUrl, getAccessUrl, getFilePreviewUrl, getFileDownloadUrl } from '@/composables/useShareFileUtils'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -329,29 +326,16 @@ const audioRef = ref<HTMLAudioElement | null>(null)
 function getResourceName(): string {
   if (!shareInfo.value) return ''
   if (shareInfo.value.resourceType === 'file') {
-    return shareInfo.value.file?.name || '文件'
+    return shareInfo.value.file?.name || t('share.resource.file')
   }
-  return shareInfo.value.folder?.name || '文件夹'
+  return shareInfo.value.folder?.name || t('share.resource.folder')
 }
 
 function getFileSize(): number {
   if (!shareInfo.value || shareInfo.value.resourceType !== 'file') return 0
-  return shareInfo.value.file?.fileSize || 0
+  return shareInfo.value.file?.size || 0
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-}
-
-function formatDate(date: string): string {
-  return new Date(date).toLocaleString(locale.value)
-}
-
-// 视频懒加载 - 滚动到可见区域才加载封面
 function initVideoLazyLoad() {
   // 先清理之前的 observer
   if (videoObserver) {
@@ -550,47 +534,6 @@ async function navigateToFolder(folderId?: number, folderName?: string) {
   await loadFolderContent(currentFolderId.value)
 }
 
-function getFileType(fileName: string): 'image' | 'video' | 'audio' | 'pdf' | 'text' | 'unknown' {
-  const ext = fileName.split('.').pop()?.toLowerCase() || ''
-
-  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']
-  const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv']
-  const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'm4a']
-  const pdfExts = ['pdf']
-  const textExts = ['txt', 'md', 'json', 'xml', 'csv', 'log']
-
-  if (imageExts.includes(ext)) return 'image'
-  if (videoExts.includes(ext)) return 'video'
-  if (audioExts.includes(ext)) return 'audio'
-  if (pdfExts.includes(ext)) return 'pdf'
-  if (textExts.includes(ext)) return 'text'
-
-  return 'unknown'
-}
-
-function hasAccessUrl(item: any): boolean {
-  const url = item.accessUrl || item.accessURL || item.AccessURL || item.AccessUrl || ''
-  // 只有完整的 HTTP/HTTPS URL 才算有效访问链接
-  return url.startsWith('http://') || url.startsWith('https://')
-}
-
-function getAccessUrl(item: any): string {
-  return item.accessUrl || item.accessURL || item.AccessURL || item.AccessUrl || ''
-}
-
-function canPreview(fileName: string): boolean {
-  const type = getFileType(fileName)
-  return ['image', 'video', 'audio', 'pdf', 'text'].includes(type)
-}
-
-function getFilePreviewUrl(fileId: number): string {
-  return `/api/v1/cloud/shares/${shareCode.value}/files/${fileId}/preview`
-}
-
-function getFileDownloadUrl(fileId: number): string {
-  return `/api/v1/cloud/shares/${shareCode.value}/files/${fileId}/download`
-}
-
 function handlePreviewFile(file: any) {
   if (!canPreview(file.name)) {
     Message.warning(t('share.previewNotSupport'))
@@ -605,7 +548,7 @@ function handlePreviewFile(file: any) {
   if (accessUrl && (accessUrl.startsWith('http://') || accessUrl.startsWith('https://'))) {
     previewUrl.value = accessUrl
   } else {
-    previewUrl.value = getFilePreviewUrl(file.id)
+    previewUrl.value = getFilePreviewUrl(shareCode.value, file.id)
   }
 
   previewVisible.value = true
@@ -662,7 +605,7 @@ function handleDownloadFile(file: any) {
     Message.success('开始下载')
     return
   }
-  const downloadUrl = getFileDownloadUrl(file.id)
+  const downloadUrl = getFileDownloadUrl(shareCode.value, file.id)
   const link = document.createElement('a')
   link.href = downloadUrl
   link.download = file.name

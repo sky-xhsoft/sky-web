@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { IconSearch, IconDown, IconUp } from '@arco-design/web-vue/es/icon'
-import ForeignKeyField from '../FieldRenderers/ForeignKeyField.vue'
-import type { SysColumn } from '../../../types'
+import { IconDown, IconUp } from '@arco-design/web-vue/es/icon'
+import FkQueryInput from './FkQueryInput.vue'
+import type { SysColumn } from '../../types'
 
 interface Props {
   columns: SysColumn[]
@@ -24,10 +24,21 @@ const visibleColumns = computed(() => {
   return props.columns.slice(0, 4)
 })
 
+function getFieldKey(col: SysColumn, index: number): string {
+  return col.DB_NAME || (col as any).dbName || `field_${index}`
+}
+
 function isFK(col: SysColumn) {
   return col.CONTROL_TYPE === 'foreign_key' || col.SET_VALUE_TYPE === 'fk'
 }
 
+function getLabel(col: SysColumn): string {
+  return col.DISPLAY_NAME || (col as any).displayName || col.DB_NAME || (col as any).dbName || ''
+}
+function getPlaceholder(col: SysColumn): string {
+  const label = getLabel(col)
+  return label ? `请输入${label}` : `请输入`
+}
 function getOptions(col: SysColumn) {
   const dictId = col.SYS_DICT_ID || (col as any).sysDictId
   return dictId ? (props.dictOptions?.[String(dictId)] || []) : []
@@ -47,29 +58,23 @@ defineExpose({ queryForm, handleQuery })
 
 <template>
   <div class="dynamic-table__query">
-    <div class="query-header">
-      <IconSearch class="query-icon" />
-      <span class="query-title">查询条件</span>
-    </div>
-
     <a-form :model="queryForm" layout="inline" class="query-form" @submit.prevent="handleQuery">
       <template v-if="columns.length > 0">
-        <a-form-item
-          v-for="col in visibleColumns"
-          :key="col.DB_NAME"
-          :label="col.DISPLAY_NAME"
+          <a-form-item
+          v-for="(col, idx) in visibleColumns"
+          :key="getFieldKey(col, idx)"
+          :label="getLabel(col)"
         >
-          <ForeignKeyField
+          <FkQueryInput
             v-if="isFK(col)"
             :column="col"
             :model-value="queryForm[col.DB_NAME]"
-            mode="edit"
             @update:model-value="v => queryForm[col.DB_NAME] = v"
           />
           <a-select
             v-else-if="col.CONTROL_TYPE === 'select'"
             v-model="queryForm[col.DB_NAME]"
-            :placeholder="`请选择${col.DISPLAY_NAME}`"
+            :placeholder="`请选择${getLabel(col)}`"
             allow-clear
           >
             <a-option v-for="o in getOptions(col)" :key="o.value" :value="o.value">{{ o.label }}</a-option>
@@ -78,20 +83,20 @@ defineExpose({ queryForm, handleQuery })
             v-else-if="col.CONTROL_TYPE === 'date' || col.CONTROL_TYPE === 'datetime'"
             v-model="queryForm[col.DB_NAME]"
             :show-time="col.CONTROL_TYPE === 'datetime'"
-            :placeholder="`请选择${col.DISPLAY_NAME}`"
+            :placeholder="`请选择${getLabel(col)}`"
             allow-clear
             style="width:100%"
           />
           <a-input-number
             v-else-if="col.CONTROL_TYPE === 'number'"
             v-model="queryForm[col.DB_NAME]"
-            :placeholder="`请输入${col.DISPLAY_NAME}`"
+            :placeholder="getPlaceholder(col)"
             style="width:100%"
           />
           <a-input
             v-else
             v-model="queryForm[col.DB_NAME]"
-            :placeholder="`请输入${col.DISPLAY_NAME}`"
+            :placeholder="getPlaceholder(col)"
             allow-clear
           />
         </a-form-item>
@@ -110,11 +115,8 @@ defineExpose({ queryForm, handleQuery })
 
 <style scoped>
 .dynamic-table__query { flex-shrink: 0; padding: 0; background: #fff; border: 1px solid #e5e6eb; border-radius: 4px; }
-.query-header { display: flex; align-items: center; padding: 8px 12px; background: #f7f8fa; border-bottom: 1px solid #e5e6eb; border-radius: 4px 4px 0 0; }
-.query-icon { font-size: 16px; color: #3370ff; margin-right: 8px; }
-.query-title { font-size: 14px; font-weight: 500; color: #1d2129; }
-.query-form { padding: 10px 12px; padding-right: 260px; position: relative; min-height: 36px; }
-.query-form :deep(.arco-form-item) { margin-bottom: 12px !important; margin-right: 16px !important; width: calc(25% - 16px); min-width: 160px; }
+.query-form { padding: 12px 16px; padding-right: 120px; position: relative; min-height: 36px; }
+.query-form :deep(.arco-form-item) { margin-bottom: 12px !important; margin-right: 16px !important; width: calc(25% - 16px); min-width: 180px; }
 .query-actions { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); }
 .query-empty { padding: 24px 16px; text-align: center; }
 .query-empty-text { color: #86909c; font-size: 14px; }

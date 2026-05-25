@@ -342,3 +342,167 @@ export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
  * 必填字段类型转换
  */
 export type RequiredBy<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>
+
+// ==================== 类型守卫与工具函数 ====================
+
+/**
+ * 检查是否为有效的表单模式
+ */
+export function isFormMode(mode: any): mode is FormMode {
+  return mode === 'create' || mode === 'edit' || mode === 'view'
+}
+
+/**
+ * 检查是否为有效的激活状态
+ */
+export function isActiveStatus(status: any): status is 'Y' | 'N' {
+  return status === 'Y' || status === 'N'
+}
+
+/**
+ * 检查字段是否为外键字段
+ */
+export function isForeignKeyColumn(column: Partial<SysColumn>): boolean {
+  const setValueType = column.SET_VALUE_TYPE || (column as any).setValueType
+  if (setValueType === 'fk') return true
+
+  const displayType = column.DISPLAY_TYPE || (column as any).displayType
+  const refTableId = column.REF_TABLE_ID || (column as any).refTableId
+  if (refTableId && displayType === 'foreign_key') return true
+
+  return false
+}
+
+/**
+ * 检查字段是否为选择类型字段
+ */
+export function isSelectColumn(column: Partial<SysColumn>): boolean {
+  const setValueType = column.SET_VALUE_TYPE || (column as any).setValueType
+  if (setValueType === 'select') return true
+
+  if (column.SYS_DICT_ID || (column as any).sysDictId) return true
+
+  const displayType = column.DISPLAY_TYPE || (column as any).displayType
+  if (displayType === 'select') return true
+
+  return false
+}
+
+/**
+ * TableMask 权限位索引
+ */
+export const TableMaskIndex = {
+  SHOW_IN_CREATE: 0,
+  EDIT_IN_CREATE: 1,
+  SHOW_IN_EDIT: 2,
+  EDIT_IN_EDIT: 3,
+  SHOW_IN_VIEW: 4,
+} as const
+
+/**
+ * 检查字段在指定模式下是否应该显示
+ */
+export function shouldShowColumnInMode(column: Partial<SysColumn>, mode: FormMode): boolean {
+  const mask = column.MASK || column.mask || ''
+
+  let bitIndex: number
+  switch (mode) {
+    case 'create':
+      bitIndex = TableMaskIndex.SHOW_IN_CREATE
+      break
+    case 'edit':
+      bitIndex = TableMaskIndex.SHOW_IN_EDIT
+      break
+    case 'view':
+    default:
+      bitIndex = TableMaskIndex.SHOW_IN_VIEW
+      break
+  }
+
+  if (mask.length > bitIndex) {
+    return mask[bitIndex] === '1'
+  }
+
+  // 默认显示
+  return true
+}
+
+/**
+ * 检查字段在指定模式下是否应该可编辑
+ */
+export function shouldEditColumnInMode(column: Partial<SysColumn>, mode: FormMode): boolean {
+  if (mode === 'view') return false
+
+  const modifiAble = column.MODIFI_ABLE || (column as any).modifiAble
+  if (modifiAble === 'N') return false
+
+  const mask = column.MASK || column.mask || ''
+
+  let bitIndex: number
+  switch (mode) {
+    case 'create':
+      bitIndex = TableMaskIndex.EDIT_IN_CREATE
+      break
+    case 'edit':
+      bitIndex = TableMaskIndex.EDIT_IN_EDIT
+      break
+    default:
+      return false
+  }
+
+  if (mask.length > bitIndex) {
+    return mask[bitIndex] === '1'
+  }
+
+  // 默认可编辑
+  return true
+}
+
+/**
+ * 检查表是否有指定权限
+ */
+export function hasTablePermission(table: Partial<SysTable>, permission: string): boolean {
+  const mask = table.MASK || table.mask || ''
+  return mask.includes(permission)
+}
+
+/**
+ * 安全解析 PROPS JSON 字符串
+ */
+export function parsePropsSafe(propsStr: string | undefined | null): Record<string, any> {
+  if (!propsStr) return {}
+  try {
+    const parsed = JSON.parse(propsStr)
+    return typeof parsed === 'object' && parsed !== null ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * 获取字段显示名称
+ */
+export function getColumnDisplayName(column: Partial<SysColumn>): string {
+  return column.DISPLAY_NAME || (column as any).displayName || column.DB_NAME || (column as any).dbName || ''
+}
+
+/**
+ * 获取字段数据库名称
+ */
+export function getColumnDbName(column: Partial<SysColumn>): string {
+  return column.DB_NAME || (column as any).dbName || ''
+}
+
+/**
+ * 获取表物理名称
+ */
+export function getTableName(table: Partial<SysTable>): string {
+  return table.NAME || (table as any).name || ''
+}
+
+/**
+ * 获取表显示名称
+ */
+export function getTableDisplayName(table: Partial<SysTable>): string {
+  return table.DISPLAY_NAME || (table as any).displayName || table.NAME || (table as any).name || ''
+}

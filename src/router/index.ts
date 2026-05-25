@@ -1,16 +1,9 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import BasicLayout from '../layouts/BasicLayout.vue'
-import Dashboard from '../pages/Dashboard.vue'
 import Welcome from '../pages/Welcome.vue'
 import Login from '../pages/Login.vue'
-import Share from '../pages/Share.vue'
-import LiveDomain from '../pages/LiveDomain.vue'
-import PushDomain from '../pages/PushDomain.vue'
-import PlayDomain from '../pages/PlayDomain.vue'
-import LiveRoomList from '../pages/LiveRoomList.vue'
-import LiveRoomForm from '../pages/LiveRoomForm.vue'
-import UserProfile from '../pages/UserProfile.vue'
+import CompanyRegister from '../pages/CompanyRegister.vue'
 import { useAuthStore } from '../stores/auth'
 import { useMenuStore } from '../stores/menu'
 
@@ -28,9 +21,15 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '登录', requiresAuth: false },
   },
   {
+    path: '/company-register',
+    name: 'company-register',
+    component: CompanyRegister,
+    meta: { title: '企业注册', requiresAuth: false },
+  },
+  {
     path: '/share/:code',
     name: 'share',
-    component: Share,
+    component: () => import('../pages/Share.vue'),
     meta: { title: '文件分享', requiresAuth: false },
   },
   {
@@ -53,42 +52,42 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'live/domains',
         name: 'live-domains',
-        component: LiveDomain,
+        component: () => import('../pages/LiveDomain.vue'),
         meta: { title: '直播域名管理', requiresAuth: true },
       },
       // 推流域名管理页面
       {
         path: 'live/push-domains',
         name: 'push-domains',
-        component: PushDomain,
+        component: () => import('../pages/PushDomain.vue'),
         meta: { title: '推流域名管理', requiresAuth: true },
       },
       // 播放域名管理页面
       {
         path: 'live/play-domains',
         name: 'play-domains',
-        component: PlayDomain,
+        component: () => import('../pages/PlayDomain.vue'),
         meta: { title: '播放域名管理', requiresAuth: true },
       },
       // 直播间列表页面
       {
         path: 'live/rooms',
         name: 'live-rooms',
-        component: LiveRoomList,
+        component: () => import('../pages/LiveRoomList.vue'),
         meta: { title: '直播间管理', requiresAuth: true },
       },
       // 创建直播间页面
       {
         path: 'live/rooms/create',
         name: 'live-room-create',
-        component: LiveRoomForm,
+        component: () => import('../pages/LiveRoomForm.vue'),
         meta: { title: '创建直播间', requiresAuth: true },
       },
       // 编辑直播间页面
       {
         path: 'live/rooms/edit/:id',
         name: 'live-room-edit',
-        component: LiveRoomForm,
+        component: () => import('../pages/LiveRoomForm.vue'),
         meta: { title: '编辑直播间', requiresAuth: true },
       },
       // 云盘系统
@@ -123,10 +122,17 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'user/profile',
         name: 'user-profile',
-        component: UserProfile,
+        component: () => import('../pages/UserProfile.vue'),
         meta: { title: '个人中心', requiresAuth: true },
       },
     ],
+  },
+  // 404 通配路由
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('../components/NotFoundPage.vue'),
+    meta: { title: '页面不存在', requiresAuth: false },
   },
 ]
 

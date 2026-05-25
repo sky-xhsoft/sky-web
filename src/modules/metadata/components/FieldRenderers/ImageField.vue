@@ -10,7 +10,7 @@
           class="image-field__item"
           @click="handlePreview(index)"
         >
-          <img :src="image.url" :alt="image.name" class="image-field__img" />
+          <img v-lazy="image.url" :alt="image.name" class="image-field__img" />
           <div class="image-field__mask">
             <icon-eye />
           </div>

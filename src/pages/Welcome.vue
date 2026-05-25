@@ -27,6 +27,10 @@ const goToLogin = (p:string) => {
   router.push(`/login?type=${p}`)
 }
 
+const goToRegister = () => {
+  router.push('/company-register')
+}
+
 const selectPlatform = (platform: string) => {
   selectedPlatform = platform
 }
@@ -63,6 +67,7 @@ const selectPlatform = (platform: string) => {
             <a href="#stats" class="nav-link">{{ t('welcome.navLinks.stats') }}</a>
           </div>
           <div class="nav-actions">
+            <a @click="goToRegister" class="register-btn">{{ t('login.register') }}</a>
             <LanguageSwitcher />
           </div>
         </div>
@@ -514,6 +519,17 @@ const selectPlatform = (platform: string) => {
   align-items: center;
   gap: 12px;
 }
+
+.register-btn {
+  color: #165dff;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px 16px;
+  border: 1px solid #165dff;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.register-btn:hover { background: #165dff; color: #fff; }
 
 .nav-brand {
   display: flex;

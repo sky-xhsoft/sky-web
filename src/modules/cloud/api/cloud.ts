@@ -5,6 +5,7 @@
  */
 
 import api from '@/api/http'
+import SparkMD5 from 'spark-md5'
 import { API_BASE_URL } from '@/config'
 import { getAccessToken } from '@/utils/token'
 import type {
@@ -113,14 +114,14 @@ export async function fetchFiles(folderId = 0): Promise<FileItem[]> {
 
   // 确保字段使用 PascalCase（与后端API文档一致）
   return list.map((item) => ({
-    ID: item.ID || item.id,
+    ID: item.ID ?? item.id ?? 0,
     FileName: item.FileName || item.fileName || item.name || '',
     FileSize: item.FileSize || item.fileSize || 0,
     FileType: item.FileType || item.fileType || '',
     FileExt: item.FileExt || item.fileExt || '',
     FolderID: item.FolderID ?? item.folderId ?? 0,
     UserID: item.UserID ?? item.ownerId ?? item.userId ?? 0,
-    CreateTime: item.CreateTime || item.createTime,
+    CreateTime: item.CreateTime || item.createTime || '',
     StoragePath: item.StoragePath || item.storagePath,
   }))
 }
@@ -662,8 +663,8 @@ export async function checkFileHash(params: CheckHashRequest): Promise<CheckHash
   try {
     // 新后端通过 init 接口检查秒传
     const result = await initMultipartUpload({
-      fileName: params.fileName,
-      fileSize: params.fileSize,
+      fileName: params.fileName || '',
+      fileSize: params.fileSize || 0,
       fileMd5: params.hash,
     })
 
@@ -761,7 +762,14 @@ export async function completeResumableUpload(uploadId: string): Promise<Complet
     code: 200,
     message: 'success',
     data: {
-      fileId: String(file.ID),
+      ID: file.ID,
+      FileName: file.FileName,
+      FileSize: file.FileSize,
+      FileType: file.FileType || '',
+      FolderID: file.FolderID || 0,
+      UserID: file.UserID || 0,
+      CreateTime: file.CreateTime || '',
+      fileId: file.ID,
       fileName: file.FileName,
       fileSize: file.FileSize,
     },
@@ -772,7 +780,6 @@ export async function completeResumableUpload(uploadId: string): Promise<Complet
  * 计算分片MD5（辅助函数）
  */
 async function calculateChunkMD5(chunk: Blob): Promise<string> {
-  const SparkMD5 = (await import('spark-md5')).default
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = (e) => {

@@ -1,8 +1,13 @@
 <!-- 单选框字段渲染器 -->
 <template>
+  <div v-if="isDisabled || isReadonly" class="radio-field-view">
+    {{ displayText }}
+  </div>
   <a-radio-group
+    v-else
     :model-value="modelValue"
     :disabled="disabled"
+    :direction="direction"
     @update:model-value="handleChange"
   >
     <a-radio
@@ -15,59 +20,88 @@
   </a-radio-group>
 </template>
 
+<style scoped>
+.radio-field-view {
+  display: inline-block;
+  padding: 4px 0;
+  color: #333;
+  line-height: 24px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+</style>
+
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useMetadataStore } from '../../stores'
-import type { SysColumn, FieldValue } from '../../types'
+import { useFieldRendererBase, useDictOptions } from '../../composables'
+import type { SysColumn, FieldValue, FormMode } from '../../types'
 
 interface Props {
   column: SysColumn
   modelValue?: FieldValue
+  mode?: FormMode
   disabled?: boolean
+  readonly?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  disabled: false
+  disabled: false,
+  readonly: false
 })
 
 const emit = defineEmits<{
   'update:modelValue': [value: FieldValue]
 }>()
 
-const metadataStore = useMetadataStore()
+const { isReadonly, isDisabled, formatValue, fieldProps } = useFieldRendererBase(props)
+const { dictOptions, hasDictConfig } = useDictOptions({ column: props.column })
+
+// 排列方向
+const direction = computed<'vertical' | 'horizontal'>(() => {
+  return fieldProps.value.direction || 'horizontal'
+})
 
 // 选项列表
 const options = computed(() => {
-  // 获取字典ID
-  const sysDictID = props.column.SYS_DICT_ID || (props.column as any).sysDictId
-  if (!sysDictID) {
-    // 如果没有字典ID，返回默认的 Y/N 选项
-    return [
-      { value: 'Y', label: '是' },
-      { value: 'N', label: '否' }
-    ]
+  // 如果有字典配置，优先使用字典选项
+  if (hasDictConfig.value && dictOptions.value.length > 0) {
+    return dictOptions.value
   }
 
-  // 从 metadataStore 的 tableConfig 中获取字典项
-  const tableId = props.column.TABLE_ID || (props.column as any).tableId || (props.column as any).sysTableId
-  if (tableId) {
-    const tableConfig = metadataStore.getTableConfig(tableId)
-    const dictID = typeof sysDictID === 'string' ? parseInt(sysDictID, 10) : sysDictID
-    const dictItems = tableConfig?.dictData?.[dictID]
-
-    if (dictItems && dictItems.length > 0) {
-      // 转换为选项格式
-      return dictItems.map(item => ({
-        value: item.VALUE || (item as any).value,
-        label: String(item.DISPLAY_NAME || (item as any).displayName || '')
-      }))
-    }
+  // 从 PROPS 中获取自定义 options
+  if (fieldProps.value.options && Array.isArray(fieldProps.value.options)) {
+    return fieldProps.value.options
   }
 
+  // 默认返回 Y/N 选项
   return [
     { value: 'Y', label: '是' },
     { value: 'N', label: '否' }
   ]
+})
+
+// 显示文本（用于查看模式）
+const displayText = computed(() => {
+  if (props.modelValue === null || props.modelValue === undefined || props.modelValue === '') {
+    return '-'
+  }
+
+  const option = options.value.find(opt => opt.value === props.modelValue)
+  if (option) {
+    return option.label
+  }
+
+  // 检查是否是布尔值或 Y/N 格式
+  const value = String(props.modelValue).toUpperCase()
+  if (value === 'Y' || value === '1' || value === 'TRUE') {
+    return '是'
+  }
+  if (value === 'N' || value === '0' || value === 'FALSE') {
+    return '否'
+  }
+
+  return String(props.modelValue)
 })
 
 // 值变化处理

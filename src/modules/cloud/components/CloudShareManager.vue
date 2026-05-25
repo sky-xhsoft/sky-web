@@ -130,11 +130,11 @@
             </span>
           </div>
           <div class="share-quick-copy">
-              <a-tag size="mini" @click.stop="handleCopyShareCode(share)" :bordered="false" color="arcoblue">
+              <a-tag size="small" @click.stop="handleCopyShareCode(share)" :bordered="false" color="arcoblue">
                 <icon-copy />
                 {{ t('cloud.copyLink') }}
               </a-tag>
-              <a-tag v-if="share.password" size="mini" @click.stop="handleCopyPassword(share)" :bordered="false" color="green">
+              <a-tag v-if="share.password" size="small" @click.stop="handleCopyPassword(share)" :bordered="false" color="green">
                 <icon-lock />
                 {{ t('cloud.copyPassword') }}
               </a-tag>

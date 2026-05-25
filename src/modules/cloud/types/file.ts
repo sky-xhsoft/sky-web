@@ -18,6 +18,22 @@ export interface FileItem {
   StoragePath?: string
   CreateTime: string
   UpdateTime?: string
+  id?: number
+  fileName?: string
+  name?: string
+  fileSize?: number
+  fileType?: string
+  fileExt?: string
+  folderId?: number
+  FolderId?: number
+  ownerId?: number
+  userId?: number
+  storagePath?: string
+  createTime?: string
+  updateTime?: string
+  StorageType?: string
+  AccessURL?: string
+  accessUrl?: string
 }
 
 /**
@@ -55,7 +71,8 @@ export interface FileMoveParams {
  * 文件搜索参数（前端扩展，后端暂未实现）
  */
 export interface FileSearchParams {
-  query: string
+  query?: string
+  keyword?: string
   folderId?: number
   fileType?: string
 }

@@ -6,6 +6,7 @@
 
 import { ref, computed, watch } from 'vue'
 import Fuse from 'fuse.js'
+import type { IFuseOptions, FuseResultMatch } from 'fuse.js'
 import { useCloudStore } from '@/modules/cloud/stores/cloudStore'
 import { searchFiles } from '@/modules/cloud/api'
 import type { FileItem, FileSearchParams } from '@/modules/cloud/types'
@@ -14,7 +15,7 @@ import { debounce, memoize } from '@/modules/cloud/utils/performance'
 /**
  * Fuse.js 配置
  */
-const FUSE_OPTIONS: Fuse.IFuseOptions<FileItem> = {
+const FUSE_OPTIONS: IFuseOptions<FileItem> = {
   keys: [
     { name: 'FileName', weight: 0.7 },
     { name: 'FileType', weight: 0.2 },
@@ -47,10 +48,12 @@ export function useCloudSearch() {
   const searchFileType = ref<string>()
 
   let fuseInstance: Fuse<FileItem> | null = null
+  let fuseSourceLength = -1
 
   function getFuseInstance(): Fuse<FileItem> {
-    if (!fuseInstance || fuseInstance.getIndex().size !== store.files.length) {
+    if (!fuseInstance || fuseSourceLength !== store.files.length) {
       fuseInstance = new Fuse(store.files, FUSE_OPTIONS)
+      fuseSourceLength = store.files.length
     }
     return fuseInstance
   }
@@ -145,7 +148,7 @@ export function useCloudSearch() {
   function highlightKeyword(
     text: string,
     keyword: string,
-    matches?: readonly Fuse.FuseResultMatch[]
+    matches?: readonly FuseResultMatch[]
   ): string {
     if (!keyword.trim()) return text
 

@@ -1,4 +1,4 @@
-<!-- 动态表格组件 -->
+﻿<!-- 动态表格组件 -->
 <template>
   <div class="dynamic-table">
     <DynamicQueryBar
@@ -9,147 +9,29 @@
     />
 
     <!-- 工具栏 -->
-    <div v-if="showToolbar" class="dynamic-table__toolbar">
-      <div class="toolbar-left">
-        <a-space>
-          <a-button type="primary" @click="queryBarRef?.handleQuery()">
-            <template #icon><icon-search /></template>
-            查询
-          </a-button>
-          <a-button @click="handleReset">
-            <template #icon><icon-refresh /></template>
-            重置
-          </a-button>
-          <slot name="toolbar-left" />
-        </a-space>
-      </div>
-
-      <div class="toolbar-right">
-        <a-space>
-          <a-button
-            v-if="canCreate"
-            type="primary"
-            @click="handleCreate"
-          >
-            <template #icon><icon-plus /></template>
-            新增
-          </a-button>
-
-          <a-button
-            v-if="canSubmit"
-            type="primary"
-            @click="handleSubmit"
-          >
-            提交
-          </a-button>
-
-          <!-- 反提交按钮 -->
-          <a-button
-            v-if="canUnsubmit"
-            @click="handleUnsubmit"
-          >
-            反提交
-          </a-button>
-
-          <!-- 自定义工具栏右侧插槽 -->
-          <slot name="toolbar-right" />
-
-          <!-- 更多操作 -->
-          <a-dropdown :popup-max-height="false">
-            <a-button type="text">
-              <template #icon><icon-more /></template>
-              更多
-            </a-button>
-            <template #content>
-              <a-doption v-if="canDelete" status="danger" @click="handleBatchDelete">
-                <template #icon><icon-delete /></template>
-                删除
-              </a-doption>
-              <a-doption v-if="canImport" @click="handleImport">
-                <template #icon><icon-upload /></template>
-                导入
-              </a-doption>
-              <a-doption v-if="canExport" @click="handleExport">
-                <template #icon><icon-download /></template>
-                导出
-              </a-doption>
-              <a-doption v-if="canPrint" @click="handlePrint">
-                <template #icon><icon-printer /></template>
-                套打
-              </a-doption>
-              <a-doption v-if="canCreate" @click="handleCopy">
-                <template #icon><icon-copy /></template>
-                复制
-              </a-doption>
-              <a-doption v-if="canEdit" @click="handleBatchEdit">
-                <template #icon><icon-edit /></template>
-                修改选中行
-              </a-doption>
-              <a-doption v-if="canEdit" @click="handleBatchEditAll">
-                <template #icon><icon-edit /></template>
-                修改结果集
-              </a-doption>
-            </template>
-          </a-dropdown>
-
-          <!-- 列设置 -->
-          <a-popover
-            v-model:popup-visible="showColumnSettings"
-            trigger="click"
-            position="bl"
-            :popup-container="'body'"
-          >
-            <a-tooltip content="列设置">
-              <a-button type="text">
-                <template #icon><icon-settings /></template>
-              </a-button>
-            </a-tooltip>
-            <template #content>
-              <div class="column-settings-popover">
-                <div class="settings-header">
-                  <span>列设置</span>
-                </div>
-                <div class="settings-body">
-                  <div
-                    v-for="(column, index) in allColumns"
-                    :key="column.dataIndex"
-                    class="column-item"
-                    draggable="true"
-                    @dragstart="handleDragStart(index)"
-                    @dragover.prevent
-                    @drop="handleDrop(index)"
-                  >
-                    <icon-drag-dot-vertical class="drag-handle" />
-                    <a-checkbox
-                      :model-value="selectedColumnKeys.includes(column.dataIndex as string)"
-                      @change="(checked: boolean) => handleColumnToggle(column.dataIndex as string, checked)"
-                    >
-                      {{ column.title }}
-                    </a-checkbox>
-                  </div>
-                </div>
-                <div class="settings-footer">
-                  <a-button type="text" size="small" @click="handleResetColumns">
-                    重置
-                  </a-button>
-                </div>
-              </div>
-            </template>
-          </a-popover>
-
-          <!-- 刷新 -->
-          <a-tooltip content="刷新">
-            <a-button
-              type="text"
-              :loading="loading"
-              @click="handleRefresh"
-            >
-              <template #icon><icon-refresh /></template>
-            </a-button>
-          </a-tooltip>
-        </a-space>
-      </div>
-    </div>
+    <TableToolbarButtons
+      v-bind="toolbarProps"
+      @query="() => queryBarRef?.handleQuery()"
+      @reset="handleReset"
+      @create="handleCreate"
+      @submit="handleSubmit"
+      @unsubmit="handleUnsubmit"
+      @batch-delete="handleBatchDelete"
+      @import="handleImport"
+      @export="handleExport"
+      @print="handlePrint"
+      @copy="handleCopy"
+      @batch-edit="handleBatchEdit"
+      @batch-edit-all="handleBatchEditAll"
+      @column-toggle="handleColumnToggle"
+      @drag-start="handleDragStart"
+      @drop="handleDrop"
+      @reset-columns="handleResetColumns"
+      @refresh="handleRefresh"
+    >
+      <template #toolbar-left><slot name="toolbar-left" /></template>
+      <template #toolbar-right><slot name="toolbar-right" /></template>
+    </TableToolbarButtons>
 
     <!-- 表格 -->
     <a-table
@@ -186,8 +68,8 @@
       <template #__selection_index__="{ record, rowIndex }">
         <div class="selection-index-cell">
           <a-checkbox
-            :model-value="selectedRowKeys.includes(record[pkField])"
-            @change="(checked: boolean) => handleSingleSelect(record[pkField], checked)"
+            :model-value="selectedRowKeys.includes(getRecordKey(record))"
+            @change="(checked: boolean) => handleSingleSelect(getRecordKey(record), checked)"
           />
           <span class="row-number">
             {{ (pagination.page - 1) * pagination.pageSize + rowIndex + 1 }}
@@ -443,6 +325,9 @@ import { formatDate as formatDateUtil, formatDateTime as formatDateTimeUtil } fr
 import ForeignKeyCell from './ForeignKeyCell.vue'
 import ForeignKeyField from '../FieldRenderers/ForeignKeyField.vue'
 import DynamicQueryBar from './DynamicQueryBar.vue'
+import TableToolbarButtons from './TableToolbarButtons.vue'
+import { useTableColumns } from './useTableColumns'
+import { useCellDisplay } from './useCellDisplay'
 import { submitRecord, unsubmitRecord } from '../../api/metadata'
 import type { TableColumnData } from '@arco-design/web-vue'
 import type { FormData, SysColumn } from '../../types'
@@ -522,9 +407,34 @@ const {
 
 // ==================== 状态 ====================
 
-const showColumnSettings = ref(false)
 const selectedColumnKeys = ref<string[]>([])
 const allColumns = ref<TableColumnData[]>([])
+
+const { columns, visibleColumns, isStatusColumn, isDateColumn, isDateTimeColumn, getColumnAlign, findColumnConfig } =
+  useTableColumns({
+    tableConfig,
+    tableColumns,
+    allColumns,
+    selectedColumnKeys,
+    customColumns: props.customColumns,
+  })
+
+const cellDisplay = useCellDisplay(() => tableConfig.value)
+
+const toolbarProps = computed(() => ({
+  showToolbar: props.showToolbar,
+  loading: loading.value,
+  allColumns: allColumns.value,
+  selectedColumnKeys: selectedColumnKeys.value,
+  canCreate: canCreate.value,
+  canEdit: canEdit.value,
+  canDelete: canDelete.value,
+  canSubmit: canSubmit.value,
+  canUnsubmit: canUnsubmit.value,
+  canImport: canImport.value,
+  canExport: canExport.value,
+  canPrint: canPrint.value
+}))
 const draggedIndex = ref<number>(-1)
 
 // 排序状态（跟踪多字段排序）
@@ -542,125 +452,8 @@ const showAdvancedQuery = ref(false)
  * 可见的查询字段（支持展开/收起）
  */
 const visibleQueryColumns = computed(() => {
-  if (showAdvancedQuery.value) {
-    return queryColumns.value
-  }
-  // 默认显示前4个
+  if (showAdvancedQuery.value) return queryColumns.value
   return queryColumns.value.slice(0, 4)
-})
-
-/**
- * 表格列配置
- */
-const columns = computed<TableColumnData[]>(() => {
-  const cols: TableColumnData[] = []
-
-  // 添加自定义选择+序号列
-  cols.push({
-    title: '序号',
-    dataIndex: '__selection_index__',
-    width: 80,
-    align: 'center',
-    slotName: '__selection_index__',
-    titleSlotName: 'selection-index-title',
-    fixed: 'left'
-  })
-
-  // 业务列
-  tableColumns.value.forEach(column => {
-    const col: TableColumnData = {
-      title: column.title,
-      dataIndex: column.dataIndex,
-      width: column.width || 180,
-      ellipsis: true,
-      tooltip: true,
-      align: getColumnAlign(column.dataIndex)
-    }
-
-    // 如果列可排序，添加自定义表头插槽
-    if (column.sortable) {
-      col.titleSlotName = `title-${column.dataIndex}`
-    }
-
-    // 获取原始列配置（用于判断外键等特殊类型）
-    const originalColumn = tableConfig.value?.columns.find(c => {
-      const dbName = c.DB_NAME || (c as any).dbName
-      return dbName === column.dataIndex
-    })
-
-    // 自定义渲染
-    const setValueType = originalColumn?.SET_VALUE_TYPE || (originalColumn as any)?.setValueType
-    const displayType = originalColumn?.DISPLAY_TYPE || (originalColumn as any)?.displayType
-
-    if (displayType === 'image') {
-      // 图片列
-      col.slotName = 'image'
-      ;(col as any).originalColumn = originalColumn
-    } else if (setValueType === 'fk') {
-      // 外键列
-      col.slotName = 'foreignkey'
-      // 保存原始列配置到 col，供 slot 使用
-      ;(col as any).originalColumn = originalColumn
-    } else if (setValueType === 'select') {
-      // 下拉选择列
-      col.slotName = 'select'
-      ;(col as any).originalColumn = originalColumn
-    } else if (isStatusColumn(column.dataIndex)) {
-      col.slotName = 'status'
-    } else if (isDateColumn(column.dataIndex)) {
-      col.slotName = 'date'
-    } else if (isDateTimeColumn(column.dataIndex)) {
-      col.slotName = 'datetime'
-    } else if (props.customColumns.includes(column.dataIndex)) {
-      col.slotName = column.dataIndex
-    }
-
-    cols.push(col)
-  })
-
-  // 操作列
-  cols.push({
-    title: '操作',
-    dataIndex: 'actions',
-    width: 200,
-    align: 'center',
-    fixed: 'right',
-    slotName: 'actions'
-  })
-
-  return cols
-})
-
-/**
- * 可见列（按 allColumns 顺序排列）
- */
-const visibleColumns = computed(() => {
-  if (selectedColumnKeys.value.length === 0) {
-    return columns.value
-  }
-
-  // 固定列（选择列和操作列）
-  const fixedCols = columns.value.filter(col =>
-    col.dataIndex === '__selection_index__' || col.dataIndex === 'actions'
-  )
-
-  // 业务列按 allColumns 顺序排列，但使用 columns.value 中的最新配置（包含排序序号）
-  const businessCols = allColumns.value
-    .filter((col: TableColumnData) => selectedColumnKeys.value.includes(col.dataIndex as string))
-    .map((col: TableColumnData) => {
-      // 从 columns.value 中找到对应的列配置（包含排序序号）
-      return columns.value.find(c => c.dataIndex === col.dataIndex) || col
-    })
-
-  // 组合：选择列 + 业务列（按顺序） + 操作列
-  const selectionCol = fixedCols.find(col => col.dataIndex === '__selection_index__')
-  const actionCol = fixedCols.find(col => col.dataIndex === 'actions')
-
-  return [
-    ...(selectionCol ? [selectionCol] : []),
-    ...businessCols,
-    ...(actionCol ? [actionCol] : [])
-  ]
 })
 
 /**
@@ -754,64 +547,9 @@ function isForeignKeyColumn(column: SysColumn): boolean {
 /**
  * 判断是否为状态列
  */
-function isStatusColumn(dataIndex: string): boolean {
-  if (!dataIndex) return false
-  return dataIndex.toUpperCase().includes('STATUS') ||
-         dataIndex.toUpperCase().includes('STATE') ||
-         dataIndex === 'IS_ACTIVE'
-}
-
 /**
- * 判断是否为日期列
+ * 获取状态颜色
  */
-function isDateColumn(dataIndex: string): boolean {
-  const column = tableConfig.value?.columns.find(c => c.DB_NAME === dataIndex)
-  return column?.CONTROL_TYPE === 'date'
-}
-
-/**
- * 判断是否为日期时间列
- */
-function isDateTimeColumn(dataIndex: string): boolean {
-  // 常见的时间字段名（系统审计字段）- 支持大写下划线和小写驼峰两种格式
-  const commonDateTimeFields = [
-    'CREATE_TIME', 'UPDATE_TIME', 'CREATED_AT', 'UPDATED_AT',
-    'createTime', 'updateTime', 'createdAt', 'updatedAt'
-  ]
-
-  const upperDataIndex = dataIndex.toUpperCase()
-  if (commonDateTimeFields.includes(dataIndex) ||
-      upperDataIndex === 'CREATE_TIME' ||
-      upperDataIndex === 'UPDATE_TIME') {
-    return true
-  }
-
-  const column = tableConfig.value?.columns.find(c => c.DB_NAME === dataIndex)
-  const isDateTime = column?.CONTROL_TYPE === 'datetime'
-  if (isDateTime) {
-  }
-  return isDateTime
-}
-
-/**
- * 获取列对齐方式
- */
-function getColumnAlign(dataIndex: string): 'left' | 'center' | 'right' {
-  const column = tableConfig.value?.columns.find(c => c.DB_NAME === dataIndex)
-  if (!column) return 'left'
-
-  // 数字类型右对齐
-  if (column.CONTROL_TYPE === 'number') {
-    return 'right'
-  }
-
-  // 状态、操作等居中
-  if (isStatusColumn(dataIndex)) {
-    return 'center'
-  }
-
-  return 'left'
-}
 
 /**
  * 获取状态颜色
@@ -858,7 +596,7 @@ function formatDateTime(value: any): string {
  */
 function getDictLabelWithStyle(dataIndex: string, value: any): { label: string; cssClass?: string } {
   if (!value) return { label: '-' }
-console.log(dataIndex,value)
+
   // 获取列配置
   const column = tableConfig.value?.columns.find(c => {
     const dbName = c.DB_NAME || (c as any).dbName
@@ -1281,6 +1019,18 @@ function handleHeaderClick(dataIndex: string) {
 }
 
 /**
+ * 获取记录主键值（兼容大小写）
+ */
+function getRecordKey(record: any): string | number {
+  if (!record) return 0
+  if (pkField.value) {
+    const val = record[pkField.value]
+    if (val !== undefined && val !== null) return val
+  }
+  return record.ID ?? record.id ?? record.Id ?? 0
+}
+
+/**
  * 是否全选
  */
 const isAllSelected = computed(() => {
@@ -1310,7 +1060,7 @@ function handleSingleSelect(key: string | number, checked: boolean) {
  * 处理全选
  */
 function handleSelectAll(checked: boolean) {
-  const keys = checked ? records.value.map(r => r[pkField.value] as string | number) : []
+  const keys = checked ? records.value.map(r => getRecordKey(r)) : []
   onSelectionChange(keys)
   emit('selection-change', keys)
 }

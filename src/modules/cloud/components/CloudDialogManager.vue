@@ -101,7 +101,8 @@ import {
   CloudBatchProgressDialog,
   FilePreviewDialog,
 } from './index'
-import type { Folder, ShareListItem, CloudFile } from '@/modules/cloud/types'
+import type { Folder, ShareListItem, FileItem } from '@/modules/cloud/types'
+import type { FileCategory } from '@/modules/cloud/composables/useCloudPreview'
 
 interface Dialogs {
   createFolder: boolean
@@ -149,8 +150,8 @@ interface Props {
   currentDeleteName: string
   currentDeleteCount: number
   currentDeleteDetails: { fileCount?: number; folderCount?: number; totalSize?: number }
-  currentFile: CloudFile | null
-  currentPreviewCategory: string
+  currentFile: FileItem | null
+  currentPreviewCategory: FileCategory
   canPreviewNavigate: boolean
   hasPreviewPrevious: boolean
   hasPreviewNext: boolean
@@ -161,19 +162,19 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const emit = defineEmits<{
-  (e: 'create-folder', folderName: string): void
-  (e: 'rename', newName: string): void
-  (e: 'move', targetFolderId: number): void
-  (e: 'create-share', params: any): void
-  (e: 'edit-share', params: any): void
-  (e: 'delete'): void
-  (e: 'close-batch-progress'): void
-  (e: 'retry-batch-operation'): void
-  (e: 'preview-previous'): void
-  (e: 'preview-next'): void
-  (e: 'preview-download'): void
-}>()
+defineEmits([
+  'create-folder',
+  'rename',
+  'move',
+  'create-share',
+  'edit-share',
+  'delete',
+  'close-batch-progress',
+  'retry-batch-operation',
+  'preview-previous',
+  'preview-next',
+  'preview-download',
+])
 </script>
 
 <style scoped>

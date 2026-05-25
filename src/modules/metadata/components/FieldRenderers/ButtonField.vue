@@ -21,6 +21,7 @@
 import { ref, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import * as ArcoIcons from '@arco-design/web-vue/es/icon'
+import { useNavigationStore } from '@/stores/navigation'
 import type { SysColumn, FormMode } from '../../types'
 
 interface Props {
@@ -42,11 +43,12 @@ const emit = defineEmits<{
 }>()
 
 const loading = ref(false)
+const navigationStore = useNavigationStore()
 
 // 解析控件配置
 const config = computed(() => {
   try {
-    const configStr = props.column.CONTROL_CONFIG || (props.column as any).controlConfig || '{}'
+    const configStr = props.column.PROPS || (props.column as any).props || '{}'
     return JSON.parse(configStr)
   } catch {
     return {}
@@ -84,6 +86,20 @@ const iconComponent = computed(() => {
 async function handleClick() {
   if (props.disabled || loading.value) return
 
+  // 支持直接 URL 导航（CONTROL_CONFIG 中配置 url）
+  const navUrl = config.value.url
+  if (navUrl) {
+    const title = config.value.navTitle || props.column.DISPLAY_NAME || '导航'
+    const recId = props.record?.ID || props.record?.id
+    const params = {
+      ...(config.value.navParams || {}),
+      groupId: recId,
+      recordId: recId
+    }
+    navigationStore.navigateTo(navUrl, title, params)
+    return
+  }
+
   // 获取关联的 action ID
   const actionId = config.value.actionId || props.column.ACTION_ID || (props.column as any).actionId
 
@@ -94,7 +110,6 @@ async function handleClick() {
 
   try {
     loading.value = true
-    // 触发 action 事件，由父组件处理具体的操作逻辑
     emit('action', actionId, props.record || {})
   } catch (error: any) {
     Message.error(error.message || '操作失败')

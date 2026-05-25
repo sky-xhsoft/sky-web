@@ -19,13 +19,13 @@
 import { IconHome } from '@arco-design/web-vue/es/icon'
 
 interface BreadcrumbItem {
-  id: number
+  id: number | null
   name: string
 }
 
 interface Props {
   items: BreadcrumbItem[]
-  currentId?: number
+  currentId?: number | null
 }
 
 interface Emits {

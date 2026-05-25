@@ -5,22 +5,15 @@
 import { ref, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import * as api from '../api/metadata'
+import { useForeignKeyCache } from './useForeignKeyCache'
 import type { SysColumn, ForeignKeyOption } from '../types'
-
-// 全局显示值缓存 - 所有组件共享，避免重复请求
-const globalDisplayValueCache = new Map<string, string>()
-
-// 全局请求去重 - 防止并发请求相同的数据
-const pendingRequests = new Map<string, Promise<string>>()
 
 export function useForeignKey(column: SysColumn) {
   const options = ref<ForeignKeyOption[]>([])
   const loading = ref(false)
   const searchKeyword = ref('')
-  const isDropdownMode = ref(true) // 默认为下拉框模式
 
-  // 选项缓存
-  const optionsCache = new Map<string, ForeignKeyOption[]>()
+  const cache = useForeignKeyCache()
 
   /**
    * 是否为外键字段
@@ -41,9 +34,12 @@ export function useForeignKey(column: SysColumn) {
   }) {
     if (!isForeignKey.value) return
 
-    const cacheKey = `${params?.search || ''}_${params?.page || 1}`
-    if (optionsCache.has(cacheKey)) {
-      options.value = optionsCache.get(cacheKey)!
+    const search = params?.search || ''
+    const page = params?.page || 1
+    const cacheKey = `${search}_${page}`
+    const cached = cache.getOptions(cacheKey)
+    if (cached) {
+      options.value = cached as ForeignKeyOption[]
       return
     }
 
@@ -55,20 +51,17 @@ export function useForeignKey(column: SysColumn) {
       const result = await api.getForeignKeyOptions({
         tableId: refTableId!,
         columnId: refColumnId,
-        search: params?.search || searchKeyword.value,
-        page: params?.page || 1,
-        pageSize: params?.pageSize || 100
+        search: search,
+        page: page,
+        pageSize: params?.pageSize || 100,
       })
 
       const safeList = (result.list || []).map((item: any) => ({
         ...item,
-        label: String(item.label ?? '')
+        label: String(item.label ?? ''),
       }))
       options.value = safeList
-      optionsCache.set(cacheKey, safeList)
-
-      // 设置是否为下拉框模式（默认 Y 表示下拉框）
-      isDropdownMode.value = result.isDropdown !== 'N'
+      cache.setOptions(cacheKey, safeList)
     } catch (error: any) {
       Message.error(error.message || '加载选项失败')
       console.error('[useForeignKey] 加载选项失败:', error)
@@ -91,45 +84,35 @@ export function useForeignKey(column: SysColumn) {
   async function getDisplayValue(value: number | string): Promise<string> {
     if (!value) return ''
 
-    // 先从已加载的选项中查找
-    const option = options.value.find(opt => opt.value === value)
+    const option = options.value.find((opt) => opt.value === value)
     if (option) return String(option.label)
 
-    // 检查全局缓存
     const refTableId = column.REF_TABLE_ID || (column as any).refTableId
     const refColumnId = column.REF_COLUMN_ID || (column as any).refColumnId
-    const cacheKey = `${refTableId}_${value}_${refColumnId || ''}`
 
-    if (globalDisplayValueCache.has(cacheKey)) {
-      return globalDisplayValueCache.get(cacheKey)!
-    }
+    // 检查缓存
+    const cached = cache.getDisplayValue(refTableId!, value, refColumnId)
+    if (cached) return cached
 
-    // 检查是否有正在进行的请求（请求去重）
-    if (pendingRequests.has(cacheKey)) {
-      return pendingRequests.get(cacheKey)!
-    }
+    // 请求去重
+    const cacheKey = `${refTableId}_${value}_${refColumnId}`
+    const pending = cache.getPendingRequest(cacheKey)
+    if (pending) return pending
 
-    // 如果没找到,单独请求
-    const requestPromise = api.getForeignKeyDisplayValue(
-      refTableId!,
-      value,
-      refColumnId
-    ).then(result => {
-      // 缓存结果到全局缓存
-      globalDisplayValueCache.set(cacheKey, result)
-      // 请求完成，从 pending 中移除
-      pendingRequests.delete(cacheKey)
-      return result
-    }).catch(error => {
-      console.error('[useForeignKey] 获取显示值失败:', error)
-      // 请求失败，从 pending 中移除
-      pendingRequests.delete(cacheKey)
-      return String(value)
-    })
+    const requestPromise = api
+      .getForeignKeyDisplayValue(refTableId!, value, refColumnId)
+      .then((result) => {
+        cache.setDisplayValue(refTableId!, value, result, refColumnId)
+        cache.removePendingRequest(cacheKey)
+        return result
+      })
+      .catch((error) => {
+        console.error('[useForeignKey] 获取显示值失败:', error)
+        cache.removePendingRequest(cacheKey)
+        return String(value)
+      })
 
-    // 将请求 Promise 存入 pending
-    pendingRequests.set(cacheKey, requestPromise)
-
+    cache.setPendingRequest(cacheKey, requestPromise)
     return requestPromise
   }
 
@@ -137,9 +120,8 @@ export function useForeignKey(column: SysColumn) {
     options,
     loading,
     isForeignKey,
-    isDropdownMode,
     loadOptions,
     searchOptions,
-    getDisplayValue
+    getDisplayValue,
   }
 }

@@ -21,14 +21,14 @@ import CloudBreadcrumb from './CloudBreadcrumb.vue'
 import { useI18n } from 'vue-i18n'
 
 interface Props {
-  items: Array<{ id: number; name: string }>
+  items: Array<{ id: number | null; name: string }>
   currentId: number | null
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (e: 'navigate', item: { id: number; name: string }): void
+  (e: 'navigate', item: { id: number | null; name: string }): void
   (e: 'open-share-manager'): void
 }>()
 

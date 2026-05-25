@@ -31,7 +31,7 @@
           导出
         </a-button>
 
-        <!-- 自定义左侧插槽 -->
+        <!-- 自定义左侧插�?-->
         <slot name="left" />
       </a-space>
     </div>
@@ -66,17 +66,17 @@
           刷新
         </a-button>
 
-        <!-- 列设置按钮 -->
+        <!-- 列设置按�?-->
         <a-button
           v-if="showColumnSetting"
           size="small"
           @click="$emit('columnSetting')"
         >
           <template #icon><icon-setting /></template>
-          列设置
+          列设�?
         </a-button>
 
-        <!-- 自定义右侧插槽 -->
+        <!-- 自定义右侧插�?-->
         <slot name="right" />
       </a-space>
     </div>
@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { IconPlus, IconUpload, IconDownload, IconList, IconApps, IconRefresh, IconSetting } from '@arco-design/web-vue/es/icon'
+import { IconPlus, IconUpload, IconDownload, IconList, IconApps, IconRefresh, IconSettings } from '@arco-design/web-vue/es/icon'
 
 interface Props {
   viewMode?: 'list' | 'grid'
@@ -137,7 +137,7 @@ defineEmits<Emits>()
   gap: 8px;
 }
 
-/* 响应式 */
+/* 响应�?*/
 @media (max-width: 768px) {
   .dynamic-table-toolbar {
     flex-direction: column;

@@ -1,5 +1,8 @@
+import type { FileItem } from './file'
+import type { Folder } from './folder'
+
 /**
- * 云盘模块类型定义汇总
+ * 云盘模块类型定义汇�?
  *
  * 导出所有类型定义，便于统一导入
  */
@@ -17,7 +20,7 @@ export type {
   FileOperationResult,
 } from './file'
 
-// 文件夹相关类型
+// 文件夹相关类�?
 export type {
   Folder,
   FolderListResponse,
@@ -92,33 +95,20 @@ export interface SortParams {
 }
 
 /**
- * 网格项类型（用于统一展示文件和文件夹）
+ * 网格项类型（用于统一展示文件和文件夹�?
  */
-export type GridItem =
-  | {
-      type: 'folder'
-      id: number
-      name: string
-      meta: string
-      icon: string
-      color: string
-      bg: string
-      folder: Folder
-    }
-  | {
-      type: 'file'
-      id: number
-      name: string
-      meta: string
-      icon: string
-      color: string
-      bg: string
-      file: FileItem
-    }
+export interface GridItem {
+  type: 'folder' | 'file'
+  id: number
+  name: string
+  meta: string
+  icon: string
+  color: string
+  bg: string
+  folder?: Folder
+  file?: FileItem
+}
 
-/**
- * 文件图标配置
- */
 export interface FileIconConfig {
   icon: string
   color: string
@@ -126,12 +116,12 @@ export interface FileIconConfig {
 }
 
 /**
- * 加载状态
+ * 加载状�?
  */
 export interface LoadingState {
-  tree: boolean       // 文件夹树加载中
-  files: boolean      // 文件列表加载中
-  upload: boolean     // 上传中
-  quota: boolean      // 配额加载中
-  shares: boolean     // 分享列表加载中
+  tree: boolean       // 文件夹树加载�?
+  files: boolean      // 文件列表加载�?
+  upload: boolean     // 上传�?
+  quota: boolean      // 配额加载�?
+  shares: boolean     // 分享列表加载�?
 }

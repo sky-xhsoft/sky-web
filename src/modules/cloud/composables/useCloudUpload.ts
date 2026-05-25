@@ -9,7 +9,7 @@ import { Message } from '@arco-design/web-vue'
 import { useCloudStore } from '@/modules/cloud/stores/cloudStore'
 import { uploadFile } from '@/modules/cloud/api'
 import { ResumableUploadManager } from '@/modules/cloud/utils/resumable-upload'
-import type { UploadTask, UploadResult } from '@/modules/cloud/types'
+import type { UploadTask, UploadResult, UploadStatus } from '@/modules/cloud/types'
 
 /**
  * 生成唯一的上传任务ID
@@ -81,7 +81,7 @@ export function useCloudUpload() {
         // 更新任务进度
         const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
         if (taskIndex !== -1) {
-          const updatedTask = {
+          const updatedTask: UploadTask = {
             ...store.uploadQueue[taskIndex],
             progress: Math.min(percent, 100),
             uploadedSize: Math.min(loaded, file.size),
@@ -95,9 +95,9 @@ export function useCloudUpload() {
       // 更新任务状态为完成
       const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
       if (taskIndex !== -1) {
-        const updatedTask = {
+        const updatedTask: UploadTask = {
           ...store.uploadQueue[taskIndex],
-          status: 'completed',
+          status: 'completed' as UploadStatus,
           progress: 100,
           uploadedSize: file.size,
           totalSize: file.size,
@@ -341,7 +341,7 @@ export function useCloudUpload() {
       if (taskIndex !== -1) {
         // 确保更新所有字段，避免 NaN
         const currentTask = store.uploadQueue[taskIndex]
-        const updatedTask = {
+        const updatedTask: UploadTask = {
           ...currentTask,
           ...progress,
           // 确保这些字段始终有值且单位一致
@@ -363,9 +363,9 @@ export function useCloudUpload() {
       // 更新任务状态为完成
       const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
       if (taskIndex !== -1) {
-        const updatedTask = {
+        const updatedTask: UploadTask = {
           ...store.uploadQueue[taskIndex],
-          status: 'completed',
+          status: 'completed' as UploadStatus,
           progress: 100,
           uploadedSize: file.size,
           totalSize: file.size,

@@ -32,6 +32,9 @@ export interface Folder {
 
   // 树形结构
   Children?: Folder[]         // 递归子节点
+  FolderName?: string
+  ParentID?: number | null
+  CreateTime?: string
 }
 
 /**
@@ -82,7 +85,7 @@ export interface FolderOperationResult {
  * 面包屑导航项
  */
 export interface BreadcrumbItem {
-  id: number
+  id: number | null
   name: string
   path: string
 }

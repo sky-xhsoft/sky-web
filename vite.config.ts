@@ -2,10 +2,8 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 
-// https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  // 单独的代理目标，避免与前端 API_BASE_URL 混淆
   const apiTarget = env.VITE_API_PROXY_TARGET || 'http://localhost:9090'
 
   return {
@@ -20,7 +18,6 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       allowedHosts: ['c.skyzhou.cn'],
       proxy: {
-        // 通过本地 dev server 反向代理后端，避免浏览器 CORS
         '/api': {
           target: apiTarget,
           changeOrigin: true,
@@ -30,6 +27,28 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
       },
+    },
+    build: {
+      target: 'es2020',
+      cssCodeSplit: true,
+      sourcemap: mode === 'development',
+      minify: 'esbuild',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-vue': ['vue', 'vue-router', 'pinia'],
+            'vendor-arco': ['@arco-design/web-vue'],
+            'vendor-arco-icons': ['@arco-design/web-vue/es/icon'],
+            'vendor-echarts': ['echarts'],
+            'vendor-editor': ['@wangeditor/editor'],
+            'vendor-utils': ['lodash-es', 'axios', 'dompurify', 'marked', 'fuse.js'],
+          },
+          chunkFileNames: 'assets/js/[name]-[hash].js',
+          entryFileNames: 'assets/js/[name]-[hash].js',
+          assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
+        },
+      },
+      chunkSizeWarningLimit: 1200,
     },
   }
 })

@@ -26,7 +26,8 @@
       :row-selection="selectable ? rowSelection : undefined"
       :row-key="getRowKey"
       row-class="cloud-file-list__row"
-      :scroll="{ x: 'auto' }"
+      :scroll="{ x: 'auto', y: 600 }"
+      :virtual-list-props="{ height: 600, fixedSize: true, estimatedSize: 48 }"
       @row-click="handleRowClick"
       @row-dblclick="handleRowDoubleClick"
     >

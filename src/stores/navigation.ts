@@ -21,6 +21,7 @@ export interface TabItem {
   componentName: string    // 组件名称
   params: Record<string, any> // 组件参数
   isFixed?: boolean        // 是否固定（没有固定标签）
+  sourceTabKey?: string    // 来源标签页的key（用于返回）
 }
 
 export const useNavigationStore = defineStore('navigation', () => {
@@ -107,10 +108,10 @@ export const useNavigationStore = defineStore('navigation', () => {
       if (tabExists) {
         activeTabKey.value = savedActiveKey
       } else {
-        activeTabKey.value = tabs.value.length > 0 ? tabs.value[0].key : ''
+        activeTabKey.value = tabs.value[0]?.key ?? ''
       }
     } else {
-      activeTabKey.value = tabs.value.length > 0 ? tabs.value[0].key : ''
+      activeTabKey.value = tabs.value[0]?.key ?? ''
     }
 
     // 同步当前导航状态到激活的标签
@@ -158,13 +159,14 @@ export const useNavigationStore = defineStore('navigation', () => {
       return
     }
 
-    // 添加新标签
+    // 添加新标签，记录来源标签页
     const newTab: TabItem = {
       key,
       title,
       componentName,
       params: params || {},
-      isFixed: false
+      isFixed: false,
+      sourceTabKey: activeTabKey.value // 记录当前激活的标签页作为来源
     }
     tabs.value.push(newTab)
 
@@ -186,6 +188,7 @@ export const useNavigationStore = defineStore('navigation', () => {
     if (index === -1) return
 
     const tab = tabs.value[index]
+    if (!tab) return
     if (tab.isFixed) return
 
     // 先确定要切换到哪个标签，设置好 current
@@ -193,6 +196,7 @@ export const useNavigationStore = defineStore('navigation', () => {
       if (tabs.value.length > 1) {
         const newIndex = index < tabs.value.length - 1 ? index + 1 : index - 1
         const target = tabs.value[newIndex]
+        if (!target) return
         activeTabKey.value = target.key
         current.value = { componentName: target.componentName, title: target.title, params: target.params }
       } else {

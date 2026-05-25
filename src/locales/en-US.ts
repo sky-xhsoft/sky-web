@@ -79,8 +79,11 @@ export default {
     close: 'Close',
     closeOther: 'Close Other',
     closeAll: 'Close All',
+    expandSidebar: 'Expand Sidebar',
+    collapseSidebar: 'Collapse Sidebar',
     cloud: 'Cloud Storage',
     dataCenter: 'Data Center',
+    mainNav: 'Main Navigation',
     logout: 'Logout',
     systemManagement: 'System Management',
     liveGuide: 'Live Streaming Guide',
@@ -177,6 +180,7 @@ export default {
     dropFilesHint: 'Supports multiple files at once',
     myShares: 'My Shares',
     selectedItems: 'Selected {count} items',
+    batchActions: 'Batch Actions',
     totalSize: 'Total {size}',
     selectAll: 'Select All',
     deselectAll: 'Cancel',
@@ -240,7 +244,6 @@ export default {
     folder: 'Folder',
     file: 'File',
     items: 'items',
-    rootDirectory: 'Root directory',
     folderNameMaxLength: 'Folder name can be up to 100 characters',
     moveTitle: 'Move to',
     selectDestination: 'Select destination folder',
@@ -253,7 +256,6 @@ export default {
     deleteIrreversible: 'This action cannot be undone!',
     files: 'Files',
     folders: 'Folders',
-    totalSize: 'Total Size',
     confirm: 'Confirm',
 
     // Share
@@ -371,6 +373,7 @@ export default {
     quotaUsed: '{used} / {total} used',
     storageQuota: 'Storage Quota',
     storageUsage: 'Storage Usage',
+    usedSpace: 'Used',
     usageRate: 'Usage rate',
 
     // File types
@@ -491,8 +494,61 @@ export default {
       }
     },
     button: 'Login',
+    noAccount: 'No account yet?',
+    register: 'Register',
     success: 'Login successful',
     error: 'Login failed, please check your account information'
+  },
+  register: {
+    title: 'Company Registration',
+    subtitle: 'Create company account to start using AI Video Platform',
+    back: 'Back',
+    steps: {
+      company: 'Company Info',
+      admin: 'Admin Account',
+      done: 'Complete'
+    },
+    company: {
+      name: 'Company Name',
+      namePlaceholder: 'Enter full company name',
+      code: 'Company Code',
+      codePlaceholder: 'Abbreviation, e.g. ACME',
+      email: 'Company Email',
+      emailPlaceholder: 'company@example.com',
+      getCode: 'Get Code',
+      codeRetry: '{n}s',
+      verifyCode: 'Verification Code',
+      verifyCodePlaceholder: '6-digit code',
+      codeSent: 'Verification code sent (simulated)',
+      codeRequired: 'Please enter company email first',
+      codeInvalid: 'Please enter 6-digit verification code',
+      contact: 'Contact Person',
+      contactPlaceholder: 'Name',
+      phone: 'Contact Phone',
+      phonePlaceholder: 'Phone number',
+      next: 'Next'
+    },
+    admin: {
+      desc: 'Create admin account for "{name}"',
+      username: 'Username',
+      usernamePlaceholder: 'Admin username',
+      password: 'Password',
+      passwordPlaceholder: 'At least 8 characters',
+      confirmPassword: 'Confirm Password',
+      confirmPlaceholder: 'Re-enter password',
+      adminName: 'Admin Name',
+      adminNamePlaceholder: 'Full name',
+      prev: 'Previous',
+      submit: 'Submit Registration',
+      passwordMismatch: 'Passwords do not match'
+    },
+    complete: {
+      title: 'Registration Successful!',
+      desc: 'Company account created, admin account activated',
+      goLogin: 'Go to Login'
+    },
+    error: 'Registration failed',
+    success: 'Registration successful'
   },
   liveGuide: {
     quickStart: 'Quick Start',

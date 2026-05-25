@@ -118,8 +118,8 @@ export const useAuthStore = defineStore('auth', {
         refreshToken: res.refreshToken,
         user: res.user,
         deviceId,
-        company: res.company,
-        companyConf: res.companyConf,
+        company: res.company ?? null,
+        companyConf: res.companyConf ?? null,
         loginType: loginType,
       })
     },

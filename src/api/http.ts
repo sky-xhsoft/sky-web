@@ -1,9 +1,16 @@
-import axios from 'axios'
+import axios, { type AxiosError, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { API_BASE_URL } from '../config'
 import { clearAuth, getAccessToken, getDeviceId, getRefreshToken, getStoredUser, saveAuth } from '../utils/token'
 import { refreshAccessToken } from './auth'
+import { ApiError, type ApiResponse } from './types'
 
-const TOKEN_INVALID_CODES = [20003, 401]
+const TOKEN_INVALID_CODES = [20003, 401] as const
+
+/** 扩展的请求配置，支持重试标记 */
+interface RetryableRequestConfig extends AxiosRequestConfig {
+  __isRetryRequest?: boolean
+}
+
 let redirectingToLogin = false
 
 const redirectToLogin = () => {
@@ -68,20 +75,21 @@ async function getNewToken(): Promise<string | null> {
 }
 
 api.interceptors.response.use(
-  (response) => {
+  (response: AxiosResponse<ApiResponse>) => {
     const payload = response?.data
     const code = payload?.code !== undefined ? Number(payload.code) : null
-    if (code && TOKEN_INVALID_CODES.includes(code)) {
+    if (code && (TOKEN_INVALID_CODES as readonly number[]).includes(code)) {
       redirectToLogin()
       return Promise.reject(new Error(payload?.message || '登录已过期，请重新登录'))
     }
     return response
   },
-  async (error) => {
-    const { response, config } = error
+  async (error: AxiosError<ApiResponse>) => {
+    const response = error.response
+    const config = error.config as RetryableRequestConfig | undefined
     const isUnauthorized = response?.status === 401
     const isRefreshRequest = config?.url?.includes('/auth/refresh')
-    if (isUnauthorized && config && !(config as any).__isRetryRequest) {
+    if (isUnauthorized && config && !config.__isRetryRequest) {
       if (isRefreshRequest) {
         redirectToLogin()
         return Promise.reject(error)
@@ -89,7 +97,7 @@ api.interceptors.response.use(
 
       const newToken = await getNewToken()
       if (newToken && config.headers) {
-        ;(config as any).__isRetryRequest = true
+        config.__isRetryRequest = true
         config.headers.Authorization = `Bearer ${newToken}`
         return api(config)
       }
@@ -100,25 +108,26 @@ api.interceptors.response.use(
 
     const payload = response?.data
     const code = payload?.code !== undefined ? Number(payload.code) : null
-    if (code && TOKEN_INVALID_CODES.includes(code)) {
+    if (code && (TOKEN_INVALID_CODES as readonly number[]).includes(code)) {
       redirectToLogin()
     }
 
     // 提取后端返回的详细错误信息
     const errorMessage = payload?.message || error.message || '请求失败'
-    const enhancedError = new Error(errorMessage)
-    ;(enhancedError as any).response = response
-    ;(enhancedError as any).code = code
-    ;(enhancedError as any).data = payload
+    const enhancedError = new ApiError(errorMessage, {
+      response,
+      code,
+      data: payload,
+    })
 
-    // 记录错误日志，特别是腾讯云接口调用错误
+    // 记录错误日志
     console.error('API请求失败:', {
       url: config?.url,
       method: config?.method,
-      code: code,
+      code,
       message: errorMessage,
       data: payload,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     })
 
     return Promise.reject(enhancedError)

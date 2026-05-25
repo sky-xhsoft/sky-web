@@ -30,12 +30,11 @@
               :label="column.DISPLAY_NAME || column.displayName"
               :field="column.DB_NAME || column.dbName"
             >
-              <!-- 外键下拉选择 -->
-              <ForeignKeyField
+              <!-- 外键多选弹框 -->
+              <FkQueryInput
                 v-if="isForeignKeyColumn(column)"
                 :column="column"
                 :model-value="queryForm[column.DB_NAME || column.dbName]"
-                mode="edit"
                 @update:model-value="val => queryForm[column.DB_NAME || column.dbName] = val"
               />
 
@@ -133,7 +132,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { IconSearch, IconDown, IconUp, IconRefresh } from '@arco-design/web-vue/es/icon'
-import ForeignKeyField from './ForeignKeyField.vue'
+import FkQueryInput from './FkQueryInput.vue'
 
 interface Props {
   queryColumns: any[]

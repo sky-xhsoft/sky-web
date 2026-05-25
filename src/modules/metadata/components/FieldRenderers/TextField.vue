@@ -1,8 +1,8 @@
 <!-- 文本输入框字段渲染器 -->
 <template>
   <!-- 查看模式下直接显示文本 -->
-  <span v-if="disabled || readonly" class="text-field-view">
-    {{ modelValue || '-' }}
+  <span v-if="isDisabled || isReadonly" class="text-field-view">
+    {{ formattedValue }}
   </span>
   <!-- 编辑模式下显示输入框 -->
   <a-input
@@ -32,11 +32,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { SysColumn, FieldValue } from '../../types'
+import { useFieldRendererBase } from '../../composables'
+import type { SysColumn, FieldValue, FormMode } from '../../types'
 
 interface Props {
   column: SysColumn
   modelValue?: FieldValue
+  mode?: FormMode
   disabled?: boolean
   readonly?: boolean
 }
@@ -51,15 +53,12 @@ const emit = defineEmits<{
   blur: []
 }>()
 
-// 占位符
-const placeholder = computed(() => {
-  const displayName = props.column.DISPLAY_NAME || props.column.displayName || ''
-  return props.column.PLACEHOLDER || props.column.placeholder || (displayName ? `请输入${displayName}` : '')
-})
+// 使用基础层
+const { placeholder, maxLength: baseMaxLength, formatValue, isReadonly, isDisabled } = useFieldRendererBase(props)
 
 // 最大长度
 const maxLength = computed(() => {
-  return props.column.LENGTH || undefined
+  return baseMaxLength.value || props.column.COL_LENGTH
 })
 
 // 是否显示清除按钮
@@ -67,9 +66,9 @@ const allowClear = computed(() => {
   return !props.disabled && !props.readonly
 })
 
-// 是否自动转大写
-const isUppercase = computed(() => {
-  return props.column.IS_UPPERCASE === 'Y' || (props.column as any).isUppercase === 'Y'
+// 格式化值用于显示
+const formattedValue = computed(() => {
+  return formatValue(props.modelValue)
 })
 
 // 值变化处理
@@ -77,8 +76,11 @@ function handleChange(value: string | undefined) {
   let processedValue = value || null
 
   // 如果配置了自动转大写，则转换为大写
-  if (processedValue && isUppercase.value) {
-    processedValue = processedValue.toUpperCase()
+  if (processedValue) {
+    const isUppercase = props.column.IS_UPPERCASE === 'Y' || (props.column as any).isUppercase === 'Y'
+    if (isUppercase) {
+      processedValue = processedValue.toUpperCase()
+    }
   }
 
   emit('update:modelValue', processedValue)

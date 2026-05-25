@@ -8,8 +8,10 @@ import ArcoEnUS from '@arco-design/web-vue/es/locale/lang/en-us'
 import { useMenuStore } from '../stores/menu'
 
 // 语言配置
+export type LocaleCode = 'zh-CN' | 'en-US'
+
 export interface LanguageOption {
-  code: string
+  code: LocaleCode
   name: string
   flag: string
   arcoLocale: any
@@ -23,12 +25,16 @@ export const LANGUAGES: LanguageOption[] = [
 const messages = {
   'zh-CN': zhCN,
   'en-US': enUS
+} as const
+
+function isLocaleCode(locale: string): locale is LocaleCode {
+  return Object.prototype.hasOwnProperty.call(messages, locale)
 }
 
 // 从 localStorage 获取语言，默认为浏览器语言或中文
-function getDefaultLanguage(): string {
+function getDefaultLanguage(): LocaleCode {
   const saved = localStorage.getItem('language')
-  if (saved && ['zh-CN', 'en-US'].includes(saved)) {
+  if (saved && isLocaleCode(saved)) {
     return saved
   }
   const browserLang = navigator.language || (navigator as any).userLanguage
@@ -51,7 +57,7 @@ export default i18n
 export const currentArcoLocale = ref(LANGUAGES.find(l => l.code === getDefaultLanguage())?.arcoLocale || ArcoZhCN)
 
 export function changeLanguage(locale: string, router?: Router) {
-  if (messages[locale]) {
+  if (isLocaleCode(locale)) {
     i18n.global.locale.value = locale
     localStorage.setItem('language', locale)
     // 更新 Arco Design 的语言

@@ -19,20 +19,21 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import DOMPurify from 'dompurify'
 import type { SysColumn, FormMode } from '../../types'
 
 interface Props {
-  column: SysColumn
-  modelValue: any
-  mode: FormMode
-  disabled?: boolean
-  readonly?: boolean
+	column: SysColumn
+	modelValue: any
+	mode: FormMode
+	disabled?: boolean
+	readonly?: boolean
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
-  'update:modelValue': [value: any]
-  'blur': []
+	'update:modelValue': [value: any]
+	'blur': []
 }>()
 
 // 编辑器引用
@@ -43,41 +44,46 @@ let toolbar: any = null
 
 // 解析控件配置
 const config = computed(() => {
-  try {
-    const configStr = props.column.CONTROL_CONFIG || (props.column as any).controlConfig || '{}'
-    return JSON.parse(configStr)
-  } catch {
-    return {}
-  }
+	try {
+		const configStr = props.column.CONTROL_CONFIG || (props.column as any).controlConfig || '{}'
+		return JSON.parse(configStr)
+	} catch {
+		return {}
+	}
 })
 
 // 计算编辑器高度（优先使用 DISPLAY_ROWS）
 const editorHeight = computed(() => {
-  // 优先使用 CONTROL_CONFIG 中的 height
-  if (config.value.height) {
-    return config.value.height
-  }
-  // 其次使用 DISPLAY_ROWS 计算高度（每行约 32px）
-  const displayRows = props.column.DISPLAY_ROWS || (props.column as any).displayRows
-  if (displayRows && displayRows > 1) {
-    return displayRows * 32 + (displayRows - 1) * 8
-  }
-  // 默认 300px
-  return 300
+	// 优先使用 CONTROL_CONFIG 中的 height
+	if (config.value.height) {
+		return config.value.height
+	}
+	// 其次使用 DISPLAY_ROWS 计算高度（每行约 32px）
+	const displayRows = props.column.DISPLAY_ROWS || (props.column as any).displayRows
+	if (displayRows && displayRows > 1) {
+		return displayRows * 32 + (displayRows - 1) * 8
+	}
+	// 默认 300px
+	return 300
 })
 
 // 文本长度（不包含 HTML 标签）
 const textLength = computed(() => {
-  if (!props.modelValue) return 0
-  const text = String(props.modelValue).replace(/<[^>]*>/g, '')
-  return text.length
+	if (!props.modelValue) return 0
+	const text = String(props.modelValue).replace(/<[^>]*>/g, '')
+	return text.length
 })
 
 // 清理 HTML（防止 XSS）
 const sanitizedHtml = computed(() => {
-  if (!props.modelValue) return '<p style="color: #86909c;">暂无内容</p>'
-  // 简单的 HTML 清理，生产环境建议使用 DOMPurify
-  return props.modelValue
+	if (!props.modelValue) return '<p style="color: #86909c;">暂无内容</p>'
+
+	// 使用 DOMPurify 安全清理 HTML
+	return DOMPurify.sanitize(props.modelValue, {
+		ADD_ATTR: ['target', 'rel'],
+		ALLOW_DATA_ATTR_BOOLS: true,
+		ALLOW_URI_SAFE_ATTR: true
+	})
 })
 
 /**

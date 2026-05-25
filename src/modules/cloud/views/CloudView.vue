@@ -5,43 +5,16 @@
       <!-- 主区域 -->
       <main ref="dropZoneRef" class="cloud-view__main" :class="{ 'drag-over': dragUpload.isDragging.value }">
         <!-- Drag and drop upload overlay -->
-        <div v-if="dragUpload.isDragging.value" class="drag-overlay">
-          <div class="drag-overlay-content">
-            <icon-cloud-download :size="64" />
-            <div class="drag-overlay-text">{{ t('cloud.dropFiles') }}</div>
-            <div class="drag-overlay-hint">{{ t('cloud.dropFilesHint') }}</div>
-          </div>
-        </div>
+        <CloudDragOverlay :visible="dragUpload.isDragging.value" />
 
         <!-- 顶部信息栏：面包屑 + 配额 + 我的分享 -->
-        <div class="cloud-view__header">
-          <div class="header-left">
-            <CloudBreadcrumb
-              :items="store.breadcrumbs"
-              :current-id="store.currentFolderId"
-              @navigate="handleBreadcrumbNavigate"
-            />
-          </div>
-          <div class="header-right">
-            <!-- 精简版配额显示 -->
-            <div class="quota-simple" v-if="store.quota">
-              <div class="quota-info">
-                <span class="quota-text">{{ formatFileSize(store.quota.usedSpace || 0) }} / {{ formatFileSize(store.quota.totalQuota || 0) }}</span>
-              </div>
-              <a-progress
-                :percent="(store.quota.usedSpace || 0) / (store.quota.totalQuota || 1)"
-                :show-text="false"
-                :stroke-width="6"
-                :status="(store.quota.usedSpace || 0) / (store.quota.totalQuota || 1) > 0.9 ? 'danger' : (store.quota.usedSpace || 0) / (store.quota.totalQuota || 1) > 0.7 ? 'warning' : 'success'"
-                class="quota-progress"
-              />
-            </div>
-            <a-button type="text" @click="handleOpenShareManager">
-              <template #icon><icon-share-alt /></template>
-              {{ t('cloud.myShares') }}
-            </a-button>
-          </div>
-        </div>
+        <CloudHeaderBar
+          :breadcrumbs="store.breadcrumbs"
+          :current-folder-id="store.currentFolderId"
+          :quota="store.quota"
+          @navigate="handleBreadcrumbNavigate"
+          @open-shares="handleOpenShareManager"
+        />
 
         <!-- 工具栏 -->
         <div class="cloud-view__toolbar-wrapper">
@@ -90,34 +63,16 @@
         </div>
 
         <!-- 悬浮批量操作工具栏 - 选中文件时显示 -->
-        <transition name="slide-up">
-          <div v-if="selection.selectedCount.value > 0" class="cloud-view__batch-actions">
-            <div class="batch-actions__inner">
-              <div class="batch-info">
-                {{ t('cloud.selectedItems', { count: selection.selectedCount.value }) }}
-                <span class="batch-size" v-if="selection.selectedTotalSize.value > 0">
-                  {{ t('cloud.totalSize', { size: formatFileSize(selection.selectedTotalSize.value) }) }}
-                </span>
-              </div>
-              <div class="batch-buttons">
-                <a-button size="small" @click="handleSelectAll">{{ t('cloud.selectAll') }}</a-button>
-                <a-button size="small" @click="handleClearSelection">{{ t('cloud.deselectAll') }}</a-button>
-                <a-button size="small" @click="handleBatchDownload" :disabled="selection.getSelectedFiles().length === 0">
-                  <template #icon><icon-download /></template>
-                  {{ t('cloud.download') }}
-                </a-button>
-                <a-button size="small" @click="handleShowMoveDialog">
-                  <template #icon><icon-sort /></template>
-                  {{ t('cloud.move') }}
-                </a-button>
-                <a-button size="small" status="danger" @click="handleShowBatchDeleteDialog">
-                  <template #icon><icon-delete /></template>
-                  {{ t('cloud.delete') }}
-                </a-button>
-              </div>
-            </div>
-          </div>
-        </transition>
+        <CloudBatchActionsBar
+          :selected-count="selection.selectedCount.value"
+          :selected-total-size="selection.selectedTotalSize.value"
+          :can-download="selection.getSelectedFiles().length > 0"
+          @select-all="handleSelectAll"
+          @clear-selection="handleClearSelection"
+          @download="handleBatchDownload"
+          @move="handleShowMoveDialog"
+          @delete="handleShowBatchDeleteDialog"
+        />
       </main>
     </div>
 
@@ -224,7 +179,7 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-// 导入组件
+// 导入组件 - 核心组件立即加载
 import {
   CloudBreadcrumb,
   CloudFileDisplay,
@@ -236,16 +191,22 @@ import {
   CloudBatchActions,
   CloudUploadProgress,
   CloudDialogManager,
-  CreateFolderDialog,
-  RenameDialog,
-  MoveFileDialog,
-  CreateShareDialog,
-  EditShareDialog,
-  ShareStatsDialog,
-  ConfirmDeleteDialog,
-  CloudBatchProgressDialog,
-  FilePreviewDialog,
 } from '@/modules/cloud/components'
+import CloudHeaderBar from '@/modules/cloud/components/CloudHeaderBar.vue'
+import CloudDragOverlay from '@/modules/cloud/components/CloudDragOverlay.vue'
+import CloudBatchActionsBar from '@/modules/cloud/components/CloudBatchActionsBar.vue'
+
+// 对话框组件使用懒加载 - defineAsyncComponent
+import { defineAsyncComponent } from 'vue'
+const CreateFolderDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/CreateFolderDialog.vue'))
+const RenameDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/RenameDialog.vue'))
+const MoveFileDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/MoveFileDialog.vue'))
+const CreateShareDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/CreateShareDialog.vue'))
+const EditShareDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/EditShareDialog.vue'))
+const ShareStatsDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/ShareStatsDialog.vue'))
+const ConfirmDeleteDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/ConfirmDeleteDialog.vue'))
+const CloudBatchProgressDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/CloudBatchProgressDialog.vue'))
+const FilePreviewDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/FilePreviewDialog.vue'))
 
 // 导入composables
 import {
@@ -365,8 +326,8 @@ onMounted(async () => {
 })
 
 // ==================== 导航相关 ====================
-function handleBreadcrumbNavigate(item: { id: number; name: string }) {
-  navigation.navigateTo(item.id)
+function handleBreadcrumbNavigate(folderId: number | null) {
+  navigation.navigateTo(folderId || 0)
 }
 
 function handleTreeSelect(selectedKeys: (string | number)[]) {
@@ -706,7 +667,7 @@ function handleOpenEditShare(shareItem: ShareListItem) {
 async function handleEditShare(params: { expirationDays: number; password?: string }) {
   if (!currentShare.value) return
 
-  const success = await share.modifyShare(currentShare.value.ID, params)
+  const success = await share.modifyShare(currentShare.value.ID || currentShare.value.id, params)
   if (success) {
     dialogs.editShare = false
     currentShare.value = null

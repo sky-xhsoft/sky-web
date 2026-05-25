@@ -82,7 +82,7 @@ const currentOption = computed(() => {
 })
 
 const currentLabel = computed(() => {
-  return `${t('cloud.sortBy')}${currentOption.value.label}`
+  return `${t('cloud.sortBy')}${currentOption.value?.label || ''}`
 })
 
 const sortOrderIcon = computed(() => {

@@ -5,3 +5,7 @@
 export { useDynamicForm } from './useDynamicForm'
 export { useDynamicList } from './useDynamicList'
 export { useFieldRenderer } from './useFieldRenderer'
+export { useFieldRendererBase } from './useFieldRendererBase'
+export { useDictOptions } from './useDictOptions'
+export { useForeignKey } from './useForeignKey'
+export { useForeignKeyCache } from './useForeignKeyCache'

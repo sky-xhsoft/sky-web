@@ -3,7 +3,7 @@
     :visible="visible"
     @update:visible="$emit('update:visible', $event)"
     :title="title"
-    :footer="null"
+    :footer="false"
     :closable="!inProgress"
     :mask-closable="false"
     :esc-to-close="!inProgress"

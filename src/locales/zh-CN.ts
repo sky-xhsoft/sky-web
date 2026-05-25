@@ -79,8 +79,11 @@ export default {
     close: '关闭',
     closeOther: '关闭其他',
     closeAll: '关闭所有',
+    expandSidebar: '展开侧边栏',
+    collapseSidebar: '折叠侧边栏',
     cloud: '云盘',
     dataCenter: '数据中心',
+    mainNav: '主导航',
     logout: '退出',
     systemManagement: '系统管理',
     liveGuide: '视频直播功能说明',
@@ -177,6 +180,7 @@ export default {
     dropFilesHint: '支持多个文件同时上传',
     myShares: '我的分享',
     selectedItems: '已选中 {count} 项',
+    batchActions: '批量操作',
     totalSize: '共 {size}',
     selectAll: '全选',
     deselectAll: '取消',
@@ -186,7 +190,6 @@ export default {
     refreshSuccess: '刷新成功',
     fileTooLarge: '文件 {name} 超过 20GB 限制，无法上传',
     previewNotSupported: '暂不支持预览此类型文件',
-    rootDirectory: '根目录',
     myCloud: '我的云盘',
 
     // Toolbar
@@ -253,7 +256,6 @@ export default {
     deleteIrreversible: '此操作不可恢复！',
     files: '文件',
     folders: '文件夹',
-    totalSize: '总大小',
     confirm: '确定',
 
     // Share
@@ -371,6 +373,7 @@ export default {
     quotaUsed: '已用 {used} / {total}',
     storageQuota: '存储空间',
     storageUsage: '存储使用情况',
+    usedSpace: '已使用',
     usageRate: '使用率',
 
     // File types
@@ -491,8 +494,61 @@ export default {
       }
     },
     button: '登录',
+    noAccount: '还没有账号？',
+    register: '注册',
     success: '登录成功',
     error: '登录失败，请检查账号信息'
+  },
+  register: {
+    title: '企业注册',
+    subtitle: '创建公司账户，开始使用 AI 视频管理平台',
+    back: '返回',
+    steps: {
+      company: '公司信息',
+      admin: '管理员账号',
+      done: '完成'
+    },
+    company: {
+      name: '企业名称',
+      namePlaceholder: '请输入企业全称',
+      code: '企业代码',
+      codePlaceholder: '英文缩写，如: ACME',
+      email: '企业邮箱',
+      emailPlaceholder: 'company@example.com',
+      getCode: '获取验证码',
+      codeRetry: '{n}s',
+      verifyCode: '验证码',
+      verifyCodePlaceholder: '6位验证码',
+      codeSent: '验证码已发送（模拟）',
+      codeRequired: '请先输入企业邮箱',
+      codeInvalid: '请输入6位验证码',
+      contact: '联系人',
+      contactPlaceholder: '姓名',
+      phone: '联系电话',
+      phonePlaceholder: '手机号',
+      next: '下一步'
+    },
+    admin: {
+      desc: '为「{name}」创建管理员账号',
+      username: '用户名',
+      usernamePlaceholder: '管理员用户名',
+      password: '密码',
+      passwordPlaceholder: '至少8位',
+      confirmPassword: '确认密码',
+      confirmPlaceholder: '再次输入密码',
+      adminName: '管理员姓名',
+      adminNamePlaceholder: '真实姓名',
+      prev: '上一步',
+      submit: '提交注册',
+      passwordMismatch: '两次密码不一致'
+    },
+    complete: {
+      title: '注册成功！',
+      desc: '公司账户已创建，管理员账号已激活',
+      goLogin: '进入登录'
+    },
+    error: '注册失败',
+    success: '注册成功'
   },
   liveGuide: {
     quickStart: '快速开始',

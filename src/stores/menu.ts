@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { fetchUserMenuTree, type MenuTreeNode } from '../api/menu'
 import type { Router, RouteRecordRaw } from 'vue-router'
-import TableView from '../pages/TableView.vue'
 import { useAuthStore } from './auth'
 
 export type AppRouteLike = MenuTreeNode & { path?: string; title?: string; children?: AppRouteLike[] }
@@ -29,9 +28,9 @@ const buildRoutesFromMenus = (menus: MenuTreeNode[], locale: string = 'zh-CN'): 
       if (node.children?.length) {
         walk(node.children)
       }
-      // 如果节点有 URL，使用 URL；否则使用旧的 /tables/ 路径作为降级
-      if ((node.type === 'table' || !node.children?.length) && node.name) {
-        const routePath = node.url || `/tables/${node.name}`
+      // 如果节点有 URL，使用 URL；否则使用 /metadata/list/{id} 作为默认路径
+      if ((node.type === 'table' || !node.children?.length) && node.id) {
+        const routePath = node.url || `/metadata/list/${node.id}`
 
         // 如果路由以 /metadata/ 开头，说明是元数据系统的路由，已经在 router/index.ts 中静态定义，跳过动态注册
         if (routePath.startsWith('/metadata/')) {
@@ -40,8 +39,8 @@ const buildRoutesFromMenus = (menus: MenuTreeNode[], locale: string = 'zh-CN'): 
 
         routes.push({
           path: routePath,
-          name: `table-${node.name}`,
-          component: TableView,
+          name: `table-${node.id}`,
+          component: () => import('../pages/TableView.vue'),
           meta: { title: getDisplayName(node, locale), requiresAuth: true },
         })
       }
@@ -56,8 +55,8 @@ const mapMenusToNav = (menus: MenuTreeNode[], locale: string = 'zh-CN'): AppRout
     return (nodes || [])
       .map((node) => {
         const isLeaf = !node.children || node.children.length === 0
-        // 如果节点有 URL，使用 URL；否则使用旧的 /tables/ 路径作为降级
-        const path = node.type === 'table' || isLeaf ? (node.url || `/tables/${node.name}`) : undefined
+        // 如果节点有 URL，使用 URL；否则使用 /metadata/list/{id} 作为默认路径
+        const path = node.type === 'table' || isLeaf ? (node.url || (node.id ? `/metadata/list/${node.id}` : undefined)) : undefined
         return {
           ...node,
           title: getDisplayName(node, locale),
@@ -78,6 +77,11 @@ export const useMenuStore = defineStore('menu', {
     sidebarCollapsed: false,
     localeVersion: 0,
   }),
+  // 持久化侧边栏折叠状态（其他状态需要每次加载）
+  persist: {
+    key: 'sky_menu_ui_state',
+    paths: ['sidebarCollapsed'],
+  },
   getters: {
     navMenus: (state) => {
       // 使用 localeVersion 触发响应式依赖

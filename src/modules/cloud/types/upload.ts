@@ -27,6 +27,7 @@ export interface UploadTask {
   controller?: AbortController  // 取消控制器
   startTime?: number            // 开始时间戳
   lastUpdateTime?: number       // 最后更新时间戳
+  resumable?: boolean
 }
 
 /**
@@ -72,6 +73,8 @@ export interface ResumableUploadOptions {
 export interface CheckHashRequest {
   hash: string
   folderId: number
+  fileName?: string
+  fileSize?: number
 }
 
 /**
@@ -82,6 +85,9 @@ export interface CheckHashResponse {
   message: string
   data: {
     exists: boolean       // 文件是否已存在
+    fileId?: number | string
+    fileName?: string
+    fileSize?: number
     file?: {              // 如果存在，返回文件信息
       ID: number
       FileName: string
@@ -101,6 +107,7 @@ export interface InitUploadRequest {
   fileHash: string
   folderId: number
   totalChunks: number
+  chunkSize?: number
 }
 
 /**
@@ -111,6 +118,7 @@ export interface InitUploadResponse {
   message: string
   data: {
     uploadId: string      // 上传任务ID
+    uploadedChunks?: number[]
   }
 }
 
@@ -139,6 +147,10 @@ export interface CompleteUploadResponse {
     FolderID: number
     UserID: number
     CreateTime: string
+    fileId?: number | string
+    fileName?: string
+    fileSize?: number
+    fileType?: string
   }
 }
 

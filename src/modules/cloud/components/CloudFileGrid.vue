@@ -128,6 +128,12 @@ function handleContextMenu(event: MouseEvent, item: GridItem) {
   padding: 16px;
 }
 
+/* 虚拟滚动性能优化：浏览器自动跳过不可见卡片渲染 */
+.cloud-file-grid__container :deep(.cloud-file-card) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
   .cloud-file-grid__container {

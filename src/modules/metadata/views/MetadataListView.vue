@@ -4,8 +4,11 @@
 
     <!-- 主内容区 -->
     <main class="metadata-list-view__main">
+      <!-- 加载中骨架屏 -->
+      <PageSkeleton v-if="loadingTable" type="table" />
+
       <!-- 表格区域 -->
-      <div v-if="currentTable && currentTable.ID" class="main-table">
+      <div v-else-if="currentTable && currentTable.ID" class="main-table">
         <!-- 动态表格组件，已经集成了查询区域、工具栏、表格 -->
         <DynamicTable
           ref="tableRef"
@@ -39,6 +42,7 @@ import { IconApps, IconFile } from '@arco-design/web-vue/es/icon'
 import { DynamicTable } from '@/modules/metadata'
 import { useMetadataStore } from '@/modules/metadata'
 import { useNavigationStore } from '@/stores/navigation'
+import PageSkeleton from '@/components/PageSkeleton.vue'
 import type { SysTable } from '@/modules/metadata'
 
 // ==================== Props ====================
@@ -64,6 +68,7 @@ const navigationStore = useNavigationStore()
 const filterForm = ref<Record<string, any>>({})
 const currentFilters = ref<Record<string, any>>({})
 const currentTable = ref<SysTable | null>(null)
+const loadingTable = ref(false)
 const tableRef = ref<InstanceType<typeof DynamicTable>>()
 
 /**
@@ -171,6 +176,7 @@ watch(
  * 根据 ID 加载表单
  */
 async function loadTableById(tableId: number) {
+  loadingTable.value = true
   try {
 
     // 1. 先重置 DynamicTable 的 store（同步操作，确保在新组件挂载前完成）
@@ -187,6 +193,8 @@ async function loadTableById(tableId: number) {
     currentTable.value = config.table
   } catch (error: any) {
     Message.error(error.message || '加载表单失败')
+  } finally {
+    loadingTable.value = false
   }
 }
 </script>

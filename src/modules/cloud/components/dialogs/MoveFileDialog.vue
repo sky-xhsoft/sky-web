@@ -50,7 +50,7 @@ interface Props {
   visible?: boolean
   loading?: boolean
   selectedCount?: number
-  currentFolderId?: number
+  currentFolderId?: number | null
 }
 
 interface Emits {

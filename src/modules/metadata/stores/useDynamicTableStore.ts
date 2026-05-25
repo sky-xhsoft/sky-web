@@ -83,7 +83,13 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
   }
   async function updateFilters(tableName: string, newFilters: Record<string, any>) {
     const st = getState(tableName)
-    st.filters = { ...newFilters }
+    st.filters = {}
+    for (const key in newFilters) {
+      const val = newFilters[key]
+      if (val !== '' && val !== null && val !== undefined) {
+        st.filters[key] = val
+      }
+    }
     st.pagination.page = 1
     return loadRecords(tableName)
   }
@@ -113,7 +119,10 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     const st = getState(tableName)
     st.selectedRowKeys = st.selectedRowKeys.length === st.records.length
       ? []
-      : st.records.map(r => r[pkField] as string | number)
+      : st.records.map(r => {
+          const key = r[pkField] ?? r['ID'] ?? r['id'] ?? r['Id']
+          return key as string | number
+        })
   }
   function clearSelection(tableName: string) {
     getState(tableName).selectedRowKeys = []
@@ -122,6 +131,13 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     const st = getState(tableName)
     return st.records.filter(r => st.selectedRowKeys.includes(r[pkField] as string | number))
   }
+  const defaultState = computed(() => {
+    const firstTableName = Object.keys(tables)[0] || '__default__'
+    return getState(firstTableName)
+  })
+  const records = computed(() => defaultState.value.records)
+  const pagination = computed(() => defaultState.value.pagination)
+  const filters = computed(() => defaultState.value.filters)
   function getRecords(tableName: string) { return computed(() => getState(tableName).records) }
   function getPagination(tableName: string) { return computed(() => getState(tableName).pagination) }
   function getFilters(tableName: string) { return computed(() => getState(tableName).filters) }
@@ -165,6 +181,9 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
 
   return {
     tables,
+    records,
+    pagination,
+    filters,
     loadRecords, refresh, changePage, changePageSize,
     updateFilters, resetFilters, updateSorter, updateSorters,
     selectRows, toggleSelectAll, clearSelection, getSelectedRecords,

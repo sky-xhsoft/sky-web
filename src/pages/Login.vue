@@ -98,6 +98,10 @@ const goBack = () => {
   router.push('/')
 }
 
+const goRegister = () => {
+  router.push({ name: 'company-register' })
+}
+
 onMounted(() => {
   // 从路由参数中获取登录类型
   const typeParam = route.query.type as string
@@ -142,6 +146,11 @@ onMounted(() => {
       <div class="platform-indicator">
         <span :style="{ color: pageConfig.brandColor }">●</span>
         <span>{{ loginType === 'live' ? t('login.platforms.live') : loginType === 'cloud' ? t('login.platforms.cloud') : t('login.platforms.all') }}</span>
+      </div>
+
+      <div class="register-link">
+        <span>{{ t('login.noAccount') }}</span>
+        <a @click="goRegister">{{ t('login.register') }}</a>
       </div>
     </a-card>
 
@@ -251,6 +260,26 @@ onMounted(() => {
 
 .platform-indicator span:first-child {
   font-size: 10px;
+}
+
+.register-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.register-link a {
+  color: #165dff;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
 }
 
 .login-bg {

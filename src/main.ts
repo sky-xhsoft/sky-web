@@ -6,23 +6,31 @@ import ArcoVue from '@arco-design/web-vue'
 import ArcoVueIcon from '@arco-design/web-vue/es/icon'
 import '@arco-design/web-vue/dist/arco.css'
 import '@wangeditor/editor/dist/css/style.css'
-import i18n from './locales'
+import i18n, { changeLanguage } from './locales'
+import { createPersistPlugin } from './stores/plugins/persist'
+import vLazy from './directives/vLazy'
 import './style.css'
 
 const app = createApp(App)
-app.use(createPinia())
+const pinia = createPinia()
+pinia.use(createPersistPlugin())
+
+app.use(pinia)
 app.use(router)
 app.use(ArcoVue)
 app.use(ArcoVueIcon)
 app.use(i18n)
+
+// 注册全局指令
+app.directive('lazy', vLazy)
+
 app.mount('#app')
 
 // 监听路由参数变化，自动切换语言
 router.afterEach((to) => {
   const lang = to.query.lang
   if (lang && typeof lang === 'string') {
-    i18n.global.locale.value = lang
-    localStorage.setItem('language', lang)
+    changeLanguage(lang, router)
   }
 })
 

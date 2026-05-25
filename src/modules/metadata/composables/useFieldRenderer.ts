@@ -15,29 +15,59 @@ const FIELD_COMPONENT_MAP: Record<string, string> = {
   password: 'PasswordField',
   email: 'EmailField',
   url: 'UrlField',
+  telephone: 'TelephoneField',
+  phone: 'TelephoneField',
+  tel: 'TelephoneField',
 
   // 选择类
   select: 'SelectField',
   radio: 'RadioField',
   checkbox: 'CheckboxField',
   switch: 'SwitchField',
+  tag: 'TagField',
+  tags: 'TagField',
+  cascader: 'CascaderField',
+  treeSelect: 'TreeSelectField',
+  tree: 'TreeSelectField',
+  autoComplete: 'AutoCompleteField',
+  autocomplete: 'AutoCompleteField',
+  dropDownSelect: 'DropDownSelectFilter',
+  dropdownSelect: 'DropDownSelectFilter',
+  dropdownselect: 'DropDownSelectFilter',
+  dropDownSelectFilter: 'DropDownSelectFilter',
+  dropMultiSelect: 'DropMultiSelectFilter',
+  dropmultiselect: 'DropMultiSelectFilter',
+  dropMultiSelectFilter: 'DropMultiSelectFilter',
 
   // 日期时间类
   date: 'DateField',
   datetime: 'DatetimeField',
   time: 'TimeField',
+  week: 'WeekField',
+  month: 'MonthField',
+  quarter: 'QuarterField',
+  year: 'YearField',
 
   // 关联类
   foreign_key: 'ForeignKeyField',
+  foreignKey: 'ForeignKeyField',
+  fk: 'ForeignKeyField',
 
   // 高级编辑器类
   json: 'JsonField',
   richtext: 'RichTextField',
+  clob: 'TextareaField',
+  xml: 'TextareaField',
 
   // 特殊输入类
   color: 'ColorField',
   file: 'FileField',
   image: 'ImageField',
+  avatar: 'AvatarField',
+  rate: 'RateField',
+  rating: 'RateField',
+  slider: 'SliderField',
+  progress: 'ProgressField',
 
   // 权限管理类
   permission_bits: 'PermissionBitField',
@@ -75,22 +105,71 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
     if (displayType) {
       // DISPLAY_TYPE 映射到组件名称
       const displayTypeMap: Record<string, string> = {
+        // 基础输入类
         text: 'TextField',
         textarea: 'TextareaField',
         number: 'NumberField',
+        password: 'PasswordField',
+        email: 'EmailField',
+        url: 'UrlField',
+        telephone: 'TelephoneField',
+        phone: 'TelephoneField',
+        tel: 'TelephoneField',
+
+        // 选择类
         select: 'SelectField',
         radio: 'RadioField',
         checkbox: 'CheckboxField',
+        switch: 'SwitchField',
+        tag: 'TagField',
+        tags: 'TagField',
+        cascader: 'CascaderField',
+        treeSelect: 'TreeSelectField',
+        tree: 'TreeSelectField',
+        autoComplete: 'AutoCompleteField',
+        autocomplete: 'AutoCompleteField',
+        dropDownSelect: 'DropDownSelectFilter',
+        dropdownSelect: 'DropDownSelectFilter',
+        dropdownselect: 'DropDownSelectFilter',
+        dropDownSelectFilter: 'DropDownSelectFilter',
+        dropMultiSelect: 'DropMultiSelectFilter',
+        dropmultiselect: 'DropMultiSelectFilter',
+        dropMultiSelectFilter: 'DropMultiSelectFilter',
+
+        // 日期时间类
         date: 'DateField',
         datetime: 'DatetimeField',
         time: 'TimeField',
-        file: 'FileField',
-        image: 'ImageField',
+        week: 'WeekField',
+        month: 'MonthField',
+        quarter: 'QuarterField',
+        year: 'YearField',
+
+        // 关联类
+        foreign_key: 'ForeignKeyField',
+        foreignKey: 'ForeignKeyField',
+        fk: 'ForeignKeyField',
+
+        // 高级编辑器类
         json: 'JsonField',
         richtext: 'RichTextField',
-        clob: 'TextareaField',  // clob 映射到 textarea
-        xml: 'TextareaField',   // xml 映射到 textarea
-        permission_bits: 'PermissionBitField',  // 权限位字段
+        clob: 'TextareaField',
+        xml: 'TextareaField',
+
+        // 特殊输入类
+        color: 'ColorField',
+        file: 'FileField',
+        image: 'ImageField',
+        avatar: 'AvatarField',
+        rate: 'RateField',
+        rating: 'RateField',
+        slider: 'SliderField',
+        progress: 'ProgressField',
+
+        // 权限管理类
+        permission_bits: 'PermissionBitField',
+
+        // 布局和交互类
         blank: 'BlankField',
         button: 'ButtonField',
         hr: 'HrField'

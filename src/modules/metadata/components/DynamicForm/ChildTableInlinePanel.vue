@@ -285,7 +285,10 @@ import { IconPlus, IconRefresh, IconDelete, IconExport, IconImport, IconMore } f
 import ForeignKeyField from '../FieldRenderers/ForeignKeyField.vue'
 import DynamicForm from './DynamicForm.vue'
 import * as metadataApi from '../../api/metadata'
+import { useChildTableHelpers } from './useChildTableHelpers'
 import type { FormMode, SysColumn } from '../../types'
+
+const { getTableName, getColumnDbName, findRefColumn, getDialogWidth, getOrderNo, isMaskBitSet, generateTempId } = useChildTableHelpers()
 
 interface Props {
   parentTableId: number
@@ -336,30 +339,14 @@ const formLoaded = ref(false)  // 跟踪表单是否已加载完成
  * 根据 SYS_OBJUICONF_ID 计算对话框宽度
  */
 const dialogWidth = computed(() => {
-  const table = props.childTable.table
-  const objUiConfId = table.SYS_OBJUICONF_ID || (table as any).sysObjuiconfId || 2
-
-  // 根据表单列数配置返回不同的宽度
-  // 1: 1列 - 窄，2: 2列 - 中等，3: 3列 - 宽，4: 4列 - 很宽
-  switch (objUiConfId) {
-    case 1:
-      return '700px'  // 1列布局，较窄
-    case 2:
-      return '1000px'  // 2列布局，中等
-    case 3:
-      return '1200px'  // 3列布局，较宽
-    case 4:
-      return '1400px'  // 4列布局，最宽
-    default:
-      return '1000px'  // 默认2列宽度
-  }
+  const objUiConfId = props.childTable.table?.SYS_OBJUICONF_ID || (props.childTable.table as any)?.sysObjuiconfId || 2
+  return getDialogWidth(objUiConfId)
 })
 
 // ==================== 计算属性 ====================
 
 const childTableId = computed(() => {
-  const table = props.childTable.table
-  return table.ID || table.id
+  return props.childTable.table?.ID || props.childTable.table?.id
 })
 
 const editType = computed(() => {
@@ -400,23 +387,11 @@ const canRefresh = computed(() => props.mode !== 'create')
 const editableColumns = computed(() => {
   return props.childTable.columns
     .filter((col: any) => {
-      const orderno = col.ORDERNO || col.orderno || 0
+      const orderno = getOrderNo(col)
       const isActive = col.IS_ACTIVE || col.isActive
-
-      // 排除系统字段和非活动字段
-      if (orderno > 1000 || isActive !== 'Y') {
-        return false
-      }
-
-      // 检查字段 MASK 的第 0 位（索引 0）：列表可见
-      const mask = col.MASK || col.mask
-      if (mask && mask.length >= 1) {
-        const listVisible = mask[0] === '1'
-        return listVisible
-      }
-
-      // 如果没有 MASK，业务字段默认可见
-      const dbName = col.DB_NAME || col.dbName
+      if (orderno > 1000 || isActive !== 'Y') return false
+      if (!isMaskBitSet(col, 0)) return false
+      const dbName = getColumnDbName(col)
       const systemFields = ['ID', 'CREATE_BY', 'CREATE_TIME', 'UPDATE_BY', 'UPDATE_TIME', 'SYS_COMPANY_ID', 'IS_ACTIVE']
       return !systemFields.includes(dbName)
     })

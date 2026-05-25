@@ -153,6 +153,7 @@ import { listDomains } from '../api/live'
 import dayjs from 'dayjs'
 import { IconRefresh, IconDelete } from '@arco-design/web-vue/es/icon'
 import { useI18n } from 'vue-i18n'
+import { convertLiveRoomToFrontend, getStatusColor } from '../composables/useLiveRoomData'
 
 const { t } = useI18n()
 
@@ -293,51 +294,9 @@ const getViewingMethodText = (method: string) => {
   return map[method] || method
 }
 
-const getStatusColor = (status: string) => {
-  const map: Record<string, string> = {
-    draft: 'gray',
-    scheduled: 'blue',
-    live: 'red',
-    ended: 'green',
-    archived: 'gray'
-  }
-  return map[status] || 'gray'
-}
-
 const formatDateTime = (dateTime: string) => {
   if (!dateTime) return '--'
   return dayjs(dateTime).format('YYYY-MM-DD HH:mm')
-}
-
-// 将后端返回的大写下划线格式转换为前端驼峰格式
-const convertToFrontendFormat = (data: any) => {
-  return {
-    id: data.ID,
-    roomName: data.ROOM_NAME || '',
-    roomType: data.ROOM_TYPE || 'video',
-    broadcastFormat: data.BROADCAST_FORMAT || 'live',
-    roomStage: data.ROOM_STAGE || 'formal',
-    displayMode: data.DISPLAY_MODE || 'landscape',
-    startTime: data.START_TIME || '',
-    endTime: data.END_TIME || '',
-    coverImage: data.COVER_IMAGE || '',
-    viewingMethod: data.VIEWING_METHOD || 'public',
-    viewingPassword: data.VIEWING_PASSWORD || '',
-    viewingPrice: data.VIEWING_PRICE || 0,
-    playbackMethod: data.PLAYBACK_METHOD || 'post_end',
-    playbackValidity: data.PLAYBACK_VALIDITY || 'unlimited',
-    playbackStartTime: data.PLAYBACK_START_TIME || '',
-    playbackEndTime: data.PLAYBACK_END_TIME || '',
-    status: data.STATUS || 'draft',
-    viewerCount: data.VIEWER_COUNT || 0,
-    peakViewerCount: data.PEAK_VIEWER_COUNT || 0,
-    duration: data.DURATION || 0,
-    description: data.DESCRIPTION || '',
-    streamName: data.STREAM_NAME || '',
-    pushUrl: data.PUSH_URL || '',
-    playUrl: data.PLAY_URL || '',
-    channel: data.CHANNEL || '--'
-  }
 }
 
 const fetchData = async () => {
@@ -360,7 +319,7 @@ const fetchData = async () => {
 
       // 确保 rawData 是数组
       if (Array.isArray(rawData)) {
-        tableData.value = rawData.map((item: any) => convertToFrontendFormat(item))
+        tableData.value = rawData.map((item: any) => convertLiveRoomToFrontend(item))
       } else {
         console.warn('返回的数据不是数组:', rawData)
         tableData.value = []

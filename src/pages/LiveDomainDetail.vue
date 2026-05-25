@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="live-domain-detail-page">
     <!-- 顶部面包屑导航 -->
     <div class="page-header">
@@ -380,13 +380,19 @@ import {
 import { getDomain, generatePushURL } from '@/api/live'
 import { useNavigationStore } from '@/stores/navigation'
 import { formatDateTime } from '@/utils/date'
+import { useLiveStreamUrl } from '@/composables/useLiveStreamUrl'
 
 const navigationStore = useNavigationStore()
 
 // Props
-const props = defineProps<{
-  domainName: string
-}>()
+const props = defineProps<{ domainName: string }>()
+
+const {
+  pushAuthKey, pushUrlList, pushForm, generatedPushUrl, generatedPushUrlList, pushCollapseActiveKeys,
+  playAuthKey, playUrlList, playForm, generatedPlayUrl, playCollapseActiveKeys,
+  transcodeTemplates, recordTemplates, snapshotTemplates,
+  handleGeneratePushUrl, handleGeneratePlayUrl, copyToClipboard,
+} = useLiveStreamUrl(() => domainInfo.value.name)
 
 // 域名信息
 const domainInfo = ref({
@@ -402,107 +408,6 @@ const domainInfo = ref({
 
 // 当前标签页
 const activeTab = ref('push')
-
-// 推流鉴权密钥
-const pushAuthKey = ref('d0d87c303d4df45fd648af77ea4a9516')
-
-// 推流地址列表
-const pushUrlList = ref([
-  {
-    type: 'RTMP 地址',
-    url: 'rtmp://upload.skyzhou.cn/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
-  },
-  {
-    type: 'WebRTC 地址',
-    url: 'webrtc://upload.skyzhou.cn/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
-  },
-  {
-    type: 'SRT 地址',
-    url: 'srt://upload.skyzhou.cn:9000?streamid=#!::h=upload.skyzhou.cn,r=AppName/StreamName,bSecret=md5(key+StreamName+hex(time)),bTime=hex(time)'
-  },
-  {
-    type: 'RTMP over SRT 地址',
-    url: 'rtmp://upload.skyzhou.cn:3570/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
-  },
-  {
-    type: 'RTMP over QUIC 地址',
-    url: 'rtmp://upload.skyzhou.cn:443/AppName/StreamName?bSecret=md5(key+StreamName+hex(time))&bTime=hex(time)'
-  }
-])
-
-// 推流表单
-const pushForm = reactive({
-  appName: 'live', // 应用名称，默认为 live
-  encryptType: 'MD5',
-  streamName: '',
-  expireTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 默认7天后
-})
-
-// 生成的推流地址
-const generatedPushUrl = ref<any>(null)
-
-// 生成的推流地址列表
-const generatedPushUrlList = ref<any[]>([])
-
-// 推流配置折叠面板激活的 key
-const pushCollapseActiveKeys = ref<string[]>(['1'])
-
-// 播放配置折叠面板激活的 key
-const playCollapseActiveKeys = ref<string[]>(['1'])
-
-// 播放鉴权密钥
-const playAuthKey = ref('d0d87c303d4df45fd648aff7ea4a9516')
-
-// 播放地址列表（根据当前域名动态生成）
-const playUrlList = computed(() => {
-  const domain = domainInfo.value.name || '播放域名'
-  return [
-    {
-      type: 'RTMP 地址',
-      url: `rtmp://${domain}/AppName/StreamName`
-    },
-    {
-      type: 'FLV 地址',
-      url: `http(s)://${domain}/AppName/StreamName.flv`
-    },
-    {
-      type: 'HLS 地址',
-      url: `http(s)://${domain}/AppName/StreamName.m3u8`
-    },
-    {
-      type: 'WebRTC 地址',
-      url: `webrtc://${domain}/AppName/StreamName`
-    }
-  ]
-})
-
-// 播放表单
-const playForm = reactive({
-  encryptType: 'MD5',
-  streamMode: 'original',
-  streamName: '',
-  expireTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 默认7天后
-})
-
-// 生成的播放地址
-const generatedPlayUrl = ref<any>(null)
-
-// 模板配置数据
-const transcodeTemplates = ref([
-  // 示例数据，实际应从后端获取
-])
-
-const recordTemplates = ref([
-  // 示例数据，实际应从后端获取
-])
-
-const snapshotTemplates = ref([
-  // 示例数据，实际应从后端获取
-])
-
-const watermarkTemplates = ref([
-  // 示例数据，实际应从后端获取
-])
 
 // 高级配置数据
 const callbackConfig = ref({
@@ -636,39 +541,7 @@ const generatePushUrl = async () => {
   }
 }
 
-// 复制到剪贴板
-const copyToClipboard = (text: string) => {
-  if (!text) return
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => {
-      Message.success('已复制到剪贴板')
-    }).catch(() => {
-      Message.error('复制失败')
-    })
-  } else {
-    try {
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      textarea.style.position = 'fixed'
-      textarea.style.opacity = '0'
-      document.body.appendChild(textarea)
-      textarea.select()
-      const successful = document.execCommand('copy')
-      document.body.removeChild(textarea)
-
-      if (successful) {
-        Message.success('已复制到剪贴板')
-      } else {
-        Message.error('复制失败')
-      }
-    } catch (err) {
-      Message.error('复制失败，请手动复制')
-    }
-  }
-}
-
-// 一键复制全部结果
+// 复制全部结果
 const copyAllResults = () => {
   if (!generatedPushUrl.value) return
 
