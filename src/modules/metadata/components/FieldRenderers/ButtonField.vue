@@ -2,12 +2,13 @@
 <template>
   <div class="button-field">
     <a-button
+      html-type="button"
       :type="buttonType"
       :size="buttonSize"
       :status="buttonStatus"
       :disabled="disabled"
       :loading="loading"
-      @click="handleClick"
+      @click.prevent.stop="handleClick"
     >
       <template v-if="config.icon" #icon>
         <component :is="iconComponent" />
@@ -21,6 +22,7 @@
 import { ref, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import * as ArcoIcons from '@arco-design/web-vue/es/icon'
+import { useRouter } from 'vue-router'
 import { useNavigationStore } from '@/stores/navigation'
 import type { SysColumn, FormMode } from '../../types'
 
@@ -43,6 +45,7 @@ const emit = defineEmits<{
 }>()
 
 const loading = ref(false)
+const router = useRouter()
 const navigationStore = useNavigationStore()
 
 // 解析控件配置
@@ -86,9 +89,26 @@ const iconComponent = computed(() => {
 async function handleClick() {
   if (props.disabled || loading.value) return
 
-  // 支持直接 URL 导航（CONTROL_CONFIG 中配置 url）
+  // 支持直接 URL 导航（PROPS 中配置 url）
   const navUrl = config.value.url
   if (navUrl) {
+    const metadataMatch = navUrl.match(/^\/metadata\/(?:list|browse)\/(\d+)/)
+    if (metadataMatch) {
+      navigationStore.navigateTo(
+        'MetadataListView',
+        config.value.navTitle || props.column.DISPLAY_NAME || '数据列表',
+        { tableId: Number(metadataMatch[1]) }
+      )
+      return
+    }
+
+    await router.push(navUrl)
+    return
+  }
+
+  // 支持组件导航（PROPS 中配置 componentName）
+  const componentName = config.value.componentName
+  if (componentName) {
     const title = config.value.navTitle || props.column.DISPLAY_NAME || '导航'
     const recId = props.record?.ID || props.record?.id
     const params = {
@@ -96,7 +116,7 @@ async function handleClick() {
       groupId: recId,
       recordId: recId
     }
-    navigationStore.navigateTo(navUrl, title, params)
+    navigationStore.navigateTo(componentName, title, params)
     return
   }
 

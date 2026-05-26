@@ -965,7 +965,7 @@ defineExpose({
   border-radius: 4px;
   overflow: hidden;
 
-  &__header {
+  .dynamic-form__one-to-one-child-table__header {
     padding: 12px 16px;
     background: #f5f5f5;
     border-bottom: 1px solid #e8e8e8;
@@ -974,17 +974,17 @@ defineExpose({
     color: #333;
   }
 
-  &__body {
+  .dynamic-form__one-to-one-child-table__body {
     padding: 16px;
   }
 
-  &__fields {
+  .dynamic-form__one-to-one-child-table__fields {
     display: flex;
     flex-wrap: wrap;
     gap: 16px;
   }
 
-  &__field {
+  .dynamic-form__one-to-one-child-table__field {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -992,14 +992,14 @@ defineExpose({
     flex: 1;
   }
 
-  &__field-label {
+  .dynamic-form__one-to-one-child-table__field-label {
     font-weight: 600;
     color: #333;
     white-space: nowrap;
     flex: 0 0 auto;
   }
 
-  &__field-value {
+  .dynamic-form__one-to-one-child-table__field-value {
     flex: 1;
     min-width: 100px;
   }
