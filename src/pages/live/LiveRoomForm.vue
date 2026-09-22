@@ -171,8 +171,14 @@ const isEditMode = computed(() => !!props.roomId)
 
 const formData = reactive({
   roomName: '',
+  roomType: 'video',
   broadcastFormat: 'live',
   displayMode: 'landscape',
+  roomType: 'video',
+  roomStage: 'formal',
+  viewingMethod: 'public',
+  playbackMethod: 'post_end',
+
   startTime: '',
   endTime: '',
   coverImage: '',
@@ -201,6 +207,7 @@ const loadRoomData = async () => {
     if (response.data?.data) {
       const data = response.data.data
       formData.roomName = data.ROOM_NAME || ''
+      formData.roomType = data.ROOM_TYPE || 'video'
       formData.broadcastFormat = data.BROADCAST_FORMAT || 'live'
       formData.displayMode = data.DISPLAY_MODE || 'landscape'
       formData.startTime = data.START_TIME || ''
@@ -270,7 +277,11 @@ const handleSubmit = async () => {
 
     const requestData = {
       ROOM_NAME: formData.roomName,
-      BROADCAST_FORMAT: formData.broadcastFormat,
+      ROOM_TYPE: formData.roomType || 'video',
+      BROADCAST_FORMAT: formData.broadcastFormat || 'live',
+      ROOM_STAGE: formData.roomStage || 'formal',
+      VIEWING_METHOD: formData.viewingMethod || 'public',
+      PLAYBACK_METHOD: formData.playbackMethod || 'post_end',
       DISPLAY_MODE: formData.displayMode,
       START_TIME: formatDateTime(formData.startTime),
       END_TIME: formatDateTime(formData.endTime),
@@ -278,6 +289,15 @@ const handleSubmit = async () => {
       IS_RECORD: formData.isRecord,
       IS_CLIP: formData.isClip,
       DESCRIPTION: formData.description,    }
+    if (isEditMode.value) {
+      // 编辑时不动这些通用/状态字段，避免重置直播阶段/观看·回放方式/状态
+      delete (requestData as any).ROOM_STAGE
+      delete (requestData as any).VIEWING_METHOD
+      delete (requestData as any).PLAYBACK_METHOD
+      delete (requestData as any).STATUS
+    } else {
+      ;(requestData as any).STATUS = 'draft'
+    }
 
     if (isEditMode.value) {
       await api.put(`/data/LIVE_ROOM/${props.roomId}`, requestData)

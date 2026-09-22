@@ -98,6 +98,7 @@
             <template #actions>
               <a-space class="room-card-actions">
                 <a-button size="mini" type="text" @click="handleEdit(record)"><template #icon><icon-edit /></template>{{ t('liveRoomList.edit') }}</a-button>
+                <a-button size="mini" type="text" @click="handleSpeechTask(record)"><template #icon><icon-language /></template>{{ t('liveRoomList.speechSubtitle') }}</a-button>
                 <a-button size="mini" type="text" v-if="record.status === 'live'" @click="handlePreview(record)">{{ t('liveRoomList.preview') }}</a-button>
                 <a-button size="mini" type="text" @click="handlePullStreamTask(record)">{{ t('liveRoomList.socialDistribution') }}</a-button>
                 <a-button size="mini" type="text" @click="handleHighlightClips(record)">{{ t('liveRoomList.highlightClips') }}</a-button>
@@ -122,6 +123,14 @@
       </div>
     </div>
 
+    <!-- 新增字幕同传任务弹窗 -->
+    <SpeechTaskModal
+      v-model:visible="speechModalVisible"
+      :record="currentSpeechRecord"
+      :title="t('liveRoomList.addSpeechTask')"
+      :ok-text="t('liveRoomList.createSpeechTask')"
+      @success="onSpeechTaskSuccess"
+    />
   </div>
 </template>
 
@@ -132,9 +141,10 @@ import { useNavigationStore } from '../../stores/navigation'
 import api from '../../api/http'
 import { listDomains } from '../../api/live'
 import dayjs from 'dayjs'
-import { IconRefresh, IconDelete } from '@arco-design/web-vue/es/icon'
+import { IconRefresh, IconDelete, IconLanguage } from '@arco-design/web-vue/es/icon'
 import { useI18n } from 'vue-i18n'
 import { convertLiveRoomToFrontend, getStatusColor } from '../../composables/useLiveRoomData'
+import SpeechTaskModal from './components/SpeechTaskModal.vue'
 
 const { t } = useI18n()
 
@@ -146,6 +156,19 @@ let unregisterBackCallback: (() => void) | null = null
 
 // 选中的行
 const selectedRows = ref<any[]>([])
+
+// 字幕同传弹窗状态
+const speechModalVisible = ref(false)
+const currentSpeechRecord = ref<any>(null)
+
+const handleSpeechTask = (record: any) => {
+  currentSpeechRecord.value = record
+  speechModalVisible.value = true
+}
+
+const onSpeechTaskSuccess = () => {
+  // 创建成功后可按需刷新
+}
 
 // 加载域名列表
 const loadDomains = async () => {
@@ -612,6 +635,11 @@ onUnmounted(() => {
 
   .room-card-grid {
     .room-card {
+      border: 1px solid rgb(var(--gray-3));
+      border-radius: 8px;
+      transition: border-color 0.2s;
+      overflow: hidden;
+      &:hover { border-color: rgb(var(--primary-6)); }
       .room-card-cover {
         position: relative;
         height: 140px;

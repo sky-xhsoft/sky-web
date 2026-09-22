@@ -8,43 +8,13 @@
         {{ t('liveRoomDetail.return') }}
       </a-button>
       <a-space>
-        <a-button @click="handlePullStreamTask">
-          <template #icon>
-            <icon-export />
-          </template>
-          {{ t('liveRoomDetail.pullStreamTask') }}
-        </a-button>
-        <a-button @click="handleHighlightClips">
-          <template #icon>
-            <icon-scissor />
-          </template>
-          {{ t('liveRoomDetail.highlightClips') }}
-        </a-button>
-        <a-button @click="handleRecordings">
-          <template #icon>
-            <icon-file />
-          </template>
-          {{ t('liveRoomDetail.recordings') }}
-        </a-button>
-        <a-button @click="handleSubtitle">
-          <template #icon>
-            <icon-language />
-          </template>
-          {{ t('liveRoomDetail.subtitle') }}
-        </a-button>
-<a-button @click="handleEdit">
+        <a-button size="small" @click="handleEdit">
           <template #icon>
             <icon-edit />
           </template>
           {{ t('liveRoomDetail.edit') }}
         </a-button>
-        <a-button @click="handleShare">
-          <template #icon>
-            <icon-share-alt />
-          </template>
-          {{ t('liveRoomDetail.share') }}
-        </a-button>
-        <a-button @click="handleDelete">
+        <a-button size="small" status="danger" @click="handleDelete">
           <template #icon>
             <icon-delete />
           </template>
@@ -54,9 +24,34 @@
     </div>
 
     <div class="content">
-      <a-tabs v-model:activeKey="activeKey" type="line" size="large">
-        <a-tab-pane key="basic" :title="t('liveRoomDetail.basicInfo')">
-          <a-form layout="inline" size="small" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }">
+          <a-layout class="detail-layout">
+            <a-layout-sider :width="180" class="detail-sider">
+              <a-menu :selected-keys="[activeKey]" @menu-item-click="activeKey = $event" class="detail-menu">
+                <a-menu-item key="basic">
+                  <template #icon><icon-info-circle /></template>
+                  {{ t('liveRoomDetail.basicInfo') }}
+                </a-menu-item>
+                <a-menu-item key="subtitle">
+                  <template #icon><icon-language /></template>
+                  {{ t('liveRoomDetail.subtitle') }}
+                </a-menu-item>
+                <a-menu-item key="dispatch">
+                  <template #icon><icon-export /></template>
+                  {{ t('liveRoomDetail.pullStreamTask') }}
+                </a-menu-item>
+                <a-menu-item key="clips">
+                  <template #icon><icon-scissor /></template>
+                  {{ t('liveRoomDetail.highlightClips') }}
+                </a-menu-item>
+                <a-menu-item key="recordings">
+                  <template #icon><icon-file /></template>
+                  {{ t('liveRoomDetail.recordings') }}
+                </a-menu-item>
+              </a-menu>
+            </a-layout-sider>
+            <a-layout-content class="detail-content">
+              <div v-show="activeKey === 'basic'" class="panel">
+              <a-form layout="inline" size="small" :label-col="{ span: 6 }" :wrapper-col="{ span: 18 }">
             <a-row :gutter="8">
               <a-col :span="12">
                 <a-form-item :label="t('liveRoomDetail.roomId')">
@@ -95,116 +90,114 @@
             <a-divider style="margin: 20px 0;" />
             <div class="settings-container">
               <div class="section-header">{{ t('liveRoomDetail.settings.pushInfo') }}</div>
-                <a-form layout="vertical" size="small">
-                  <a-form-item label="推流地址">
-                    <div class="push-addresses">
-                      <div class="address-item">
-                        <span class="address-label">{{ t('liveRoomDetail.urlLabels.rtmpPush') }}</span>
-                        <a-space>
-                          <span class="address-value">{{ getRtmpPushUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getRtmpPushUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
-                        </a-space>
-                      </div>
-                      <div class="address-item">
-                        <span class="address-label">{{ t('liveRoomDetail.urlLabels.webrtcPush') }}</span>
-                        <a-space>
-                          <span class="address-value">{{ getWebrtcPushUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getWebrtcPushUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
-                        </a-space>
-                      </div>
-                      <div class="address-item">
-                        <span class="address-label">{{ t('liveRoomDetail.urlLabels.srtPush') }}</span>
-                        <a-space>
-                          <span class="address-value">{{ getSrtPushUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getSrtPushUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
-                        </a-space>
-                      </div>
-                      <div class="address-item">
-                        <span class="address-label">{{ t('liveRoomDetail.urlLabels.obsServer') }}</span>
-                        <a-space>
-                          <span class="address-value">{{ getObsServerUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getObsServerUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
-                        </a-space>
-                      </div>
-                      <div class="address-item">
-                        <span class="address-label">{{ t('liveRoomDetail.urlLabels.obsStreamKey') }}</span>
-                        <a-space>
-                          <span class="address-value">{{ getObsStreamKey() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getObsStreamKey())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
-                        </a-space>
-                      </div>
-                      <div style="margin-top: 16px;">
-                        <a-button type="primary" size="small" @click="copyAllPushUrls()">
-                          <template #icon>
-                            <icon-copy />
-                          </template>
-                          {{ t('liveRoomDetail.settings.copyAll') }}
-                        </a-button>
-                      </div>
+              <a-form layout="vertical" size="small">
+                <a-form-item label="推流地址">
+                  <div class="push-addresses">
+                    <div class="address-item">
+                      <span class="address-label">{{ t('liveRoomDetail.urlLabels.rtmpPush') }}</span>
+                      <a-space>
+                        <span class="address-value">{{ getRtmpPushUrl() }}</span>
+                        <a-button size="mini" type="text" @click="copyToClipboard(getRtmpPushUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
+                      </a-space>
                     </div>
-                  </a-form-item>
-                </a-form>
+                    <div class="address-item">
+                      <span class="address-label">{{ t('liveRoomDetail.urlLabels.webrtcPush') }}</span>
+                      <a-space>
+                        <span class="address-value">{{ getWebrtcPushUrl() }}</span>
+                        <a-button size="mini" type="text" @click="copyToClipboard(getWebrtcPushUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
+                      </a-space>
+                    </div>
+                    <div class="address-item">
+                      <span class="address-label">{{ t('liveRoomDetail.urlLabels.srtPush') }}</span>
+                      <a-space>
+                        <span class="address-value">{{ getSrtPushUrl() }}</span>
+                        <a-button size="mini" type="text" @click="copyToClipboard(getSrtPushUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
+                      </a-space>
+                    </div>
+                    <div class="address-item">
+                      <span class="address-label">{{ t('liveRoomDetail.urlLabels.obsServer') }}</span>
+                      <a-space>
+                        <span class="address-value">{{ getObsServerUrl() }}</span>
+                        <a-button size="mini" type="text" @click="copyToClipboard(getObsServerUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
+                      </a-space>
+                    </div>
+                    <div class="address-item">
+                      <span class="address-label">{{ t('liveRoomDetail.urlLabels.obsStreamKey') }}</span>
+                      <a-space>
+                        <span class="address-value">{{ getObsStreamKey() }}</span>
+                        <a-button size="mini" type="text" @click="copyToClipboard(getObsStreamKey())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
+                      </a-space>
+                    </div>
+                    <div style="margin-top: 16px;">
+                      <a-button type="primary" size="small" @click="copyAllPushUrls()">
+                        <template #icon>
+                          <icon-copy />
+                        </template>
+                        {{ t('liveRoomDetail.settings.copyAll') }}
+                      </a-button>
+                    </div>
+                  </div>
+                </a-form-item>
+              </a-form>
               <div class="section-header" style="margin-top: 20px;">{{ t('liveRoomDetail.settings.pullInfo') }}</div>
-                <a-form layout="vertical" size="small">
-                  <a-form-item label="播放地址">
-                    <div class="pull-addresses">
-                      <div class="address-item">
-                        <span class="address-label">{{ t('liveRoomDetail.urlLabels.rtmpPull') }}</span>
-                        <a-space>
-                          <span class="address-value">{{ getRtmpPullUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getRtmpPullUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
-                        </a-space>
-                      </div>
-                      <div class="address-item">
-                        <span class="address-label">{{ t('liveRoomDetail.urlLabels.flvPull') }}</span>
-                        <a-space>
-                          <span class="address-value">{{ getFlvPullUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getFlvPullUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
-                        </a-space>
-                      </div>
-                      <div class="address-item">
-                        <span class="address-label">{{ t('liveRoomDetail.urlLabels.hlsPull') }}</span>
-                        <a-space>
-                          <span class="address-value">{{ getHlsPullUrl() }}</span>
-                          <a-button size="mini" type="text" @click="copyToClipboard(getHlsPullUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
-                        </a-space>
-                      </div>
-                      <div style="margin-top: 16px;">
-                        <a-button type="primary" size="small" @click="copyAllPullUrls()">
-                          <template #icon>
-                            <icon-copy />
-                          </template>
-                          {{ t('liveRoomDetail.settings.copyAll') }}
-                        </a-button>
-                      </div>
+              <a-form layout="vertical" size="small">
+                <a-form-item label="播放地址">
+                  <div class="pull-addresses">
+                    <div class="address-item">
+                      <span class="address-label">{{ t('liveRoomDetail.urlLabels.rtmpPull') }}</span>
+                      <a-space>
+                        <span class="address-value">{{ getRtmpPullUrl() }}</span>
+                        <a-button size="mini" type="text" @click="copyToClipboard(getRtmpPullUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
+                      </a-space>
                     </div>
-                  </a-form-item>
-                </a-form>
+                    <div class="address-item">
+                      <span class="address-label">{{ t('liveRoomDetail.urlLabels.flvPull') }}</span>
+                      <a-space>
+                        <span class="address-value">{{ getFlvPullUrl() }}</span>
+                        <a-button size="mini" type="text" @click="copyToClipboard(getFlvPullUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
+                      </a-space>
+                    </div>
+                    <div class="address-item">
+                      <span class="address-label">{{ t('liveRoomDetail.urlLabels.hlsPull') }}</span>
+                      <a-space>
+                        <span class="address-value">{{ getHlsPullUrl() }}</span>
+                        <a-button size="mini" type="text" @click="copyToClipboard(getHlsPullUrl())">{{ t('liveRoomDetail.settings.copy') }}</a-button>
+                      </a-space>
+                    </div>
+                    <div style="margin-top: 16px;">
+                      <a-button type="primary" size="small" @click="copyAllPullUrls()">
+                        <template #icon>
+                          <icon-copy />
+                        </template>
+                        {{ t('liveRoomDetail.settings.copyAll') }}
+                      </a-button>
+                    </div>
+                  </div>
+                </a-form-item>
+              </a-form>
             </div>
           </a-form>
-        </a-tab-pane>
-      </a-tabs>
+        </div>
+
+        <div v-if="roomInfo.id && activeKey === 'subtitle'" class="panel">
+          <SpeechTaskListPanel :room-id="String(roomInfo.id)" :rtmp-pull-url="pullUrls.rtmp" :room-name="roomInfo.roomName" />
+        </div>
+
+        <div v-if="roomInfo.id && activeKey === 'dispatch'" class="panel">
+          <PullStreamTask :room-id="String(roomInfo.id)" />
+        </div>
+
+        <div v-if="roomInfo.id && activeKey === 'clips'" class="panel">
+          <LiveHighlightClips :room-id="String(roomInfo.id)" />
+        </div>
+
+        <div v-if="roomInfo.id && activeKey === 'recordings'" class="panel">
+          <LiveRecordings :room-id="String(roomInfo.id)" />
+        </div>
+        </a-layout-content>
+        </a-layout>
     </div>
   </div>
-
-  <!-- 同传/字幕配置弹窗 -->
-  <a-modal :visible="subtitleDialogVisible" :title="t('liveRoomDetail.subtitleDialogTitle')" :on-before-ok="saveSubtitle" @cancel="subtitleDialogVisible = false">
-    <a-form layout="vertical" size="small">
-      <a-form-item :label="t('liveRoomDetail.subtitleEnabled')">
-        <a-switch v-model="subtitleEnabled" />
-      </a-form-item>
-      <a-form-item :label="t('liveRoomDetail.subtitleSourceLang')">
-        <a-select v-model="subtitleConfig.sourceLang">
-          <a-option v-for="opt in LANG_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</a-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item :label="t('liveRoomDetail.subtitleTargetLangs')">
-        <a-select v-model="subtitleConfig.targetLangs" multiple placeholder="">
-          <a-option v-for="opt in LANG_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</a-option>
-        </a-select>
-      </a-form-item>
-    </a-form>
-  </a-modal>
 </template>
 
 <script setup lang="ts">
@@ -215,9 +208,13 @@ import { useNavigationStore } from '../../stores/navigation'
 import api from '../../api/http'
 import dayjs from 'dayjs'
 import { generatePushURL, generatePlayURL } from '../../api/live'
-import { IconExport, IconScissor, IconFile, IconLanguage } from '@arco-design/web-vue/es/icon'
+import { IconArrowLeft, IconEdit, IconDelete, IconCopy } from '@arco-design/web-vue/es/icon'
 import config from '../../config/index'
 import { useI18n } from 'vue-i18n'
+import PullStreamTask from './PullStreamTask.vue'
+import LiveHighlightClips from './LiveHighlightClips.vue'
+import LiveRecordings from './LiveRecordings.vue'
+import SpeechTaskListPanel from './components/SpeechTaskListPanel.vue'
 
 const { t } = useI18n()
 
@@ -334,13 +331,10 @@ const getObsStreamKey = () => {
   return pushUrls.value.obsStreamKey
 }
 
-// 复制到剪贴板
 const copyToClipboard = (text: string) => {
   if (!text) return
 
-  // 先检查 navigator.clipboard 是否可用
   if (navigator.clipboard && window.isSecureContext) {
-    // 在安全上下文（HTTPS）中使用新 API
     navigator.clipboard.writeText(text)
       .then(() => {
         Message.success(t('liveRoomDetail.messages.copySuccess'))
@@ -349,12 +343,10 @@ const copyToClipboard = (text: string) => {
         fallbackCopy(text)
       })
   } else {
-    // 在非安全上下文（HTTP）或不支持的浏览器中使用降级方案
     fallbackCopy(text)
   }
 }
 
-// 降级方案：使用传统方法复制
 const fallbackCopy = (text: string) => {
   const textarea = document.createElement('textarea')
   textarea.value = text
@@ -373,7 +365,6 @@ const fallbackCopy = (text: string) => {
   }
 }
 
-// 一键复制所有推流地址
 const copyAllPushUrls = () => {
   const urls = [
     t('liveRoomDetail.urlLabels.rtmpPush') + getRtmpPushUrl(),
@@ -387,7 +378,6 @@ const copyAllPushUrls = () => {
   copyToClipboard(text)
 }
 
-// 一键复制所有拉流地址
 const copyAllPullUrls = () => {
   const urls = [
     t('liveRoomDetail.urlLabels.rtmpPull') + getRtmpPullUrl(),
@@ -399,7 +389,6 @@ const copyAllPullUrls = () => {
   copyToClipboard(text)
 }
 
-// 生成拉流地址函数
 const getRtmpPullUrl = () => {
   return pullUrls.value.rtmp
 }
@@ -413,33 +402,16 @@ const getHlsPullUrl = () => {
 }
 
 const handleBack = () => {
-  // 直接导航到直播间列表页面
   navigationStore.navigateTo('LiveRoomList', '直播间管理', {}, false)
-}
-
-const handlePullStreamTask = () => {
-  navigationStore.navigateTo('PullStreamTask', '社媒分发', { roomId: roomInfo.value.id }, false)
-}
-
-const handleHighlightClips = () => {
-  navigationStore.navigateTo('LiveHighlightClips', '直播切片', { roomId: roomInfo.value.id }, false)
-}
-
-const handleRecordings = () => {
-  navigationStore.navigateTo('LiveRecordings', '直播录制', { roomId: roomInfo.value.id }, false)
 }
 
 const handleEdit = () => {
   router.push(`/live/rooms/edit/${route.params.id}`)
 }
 
-const handleShare = () => {
-  Message.info(t('liveRoomDetail.shareFeature'))
-}
-
-// 同传/字幕 配置
-const subtitleDialogVisible = ref(false)
+// 同传/字幕 配置数据
 const subtitleEnabled = ref(false)
+const subtitleSaving = ref(false)
 const subtitleConfig = reactive({
   sourceLang: 'zh',
   targetLangs: ['en'] as string[]
@@ -454,15 +426,9 @@ const LANG_OPTIONS = [
   { label: '西班牙文', value: 'es' },
   { label: '俄文', value: 'ru' }
 ]
-const handleSubtitle = () => {
-  const props = roomInfo.value?.props || roomInfo.value?.PROPS || {}
-  subtitleEnabled.value = !!(props.subtitleEnabled || props.enableSubtitle)
-  const cfg = props.subtitleConfig || props.translateConfig || {}
-  subtitleConfig.sourceLang = cfg.sourceLang || 'zh'
-  subtitleConfig.targetLangs = Array.isArray(cfg.targetLangs) ? [...cfg.targetLangs] : ['en']
-  subtitleDialogVisible.value = true
-}
+
 const saveSubtitle = async () => {
+  subtitleSaving.value = true
   try {
     const id = roomInfo.value?.id || route.params.id
     const props = {
@@ -475,9 +441,10 @@ const saveSubtitle = async () => {
     }
     await api.put(`/live/rooms/${id}`, { props })
     Message.success(t('liveRoomDetail.subtitleSaved'))
-    subtitleDialogVisible.value = false
   } catch (error: any) {
     Message.error(error.message || t('liveRoomDetail.subtitleSaveFailed'))
+  } finally {
+    subtitleSaving.value = false
   }
 }
 
@@ -524,7 +491,12 @@ const formatDateTime = (dateTime: string) => {
 
 const fetchRoomInfo = async () => {
   try {
-    const response = await api.get(`/live/rooms/${navigationStore.current.params.id}`)
+    const roomId = navigationStore.current.params?.id || route.params.id
+    if (!roomId) {
+      Message.error(t('liveRoomDetail.messages.fetchFailed'))
+      return
+    }
+    const response = await api.get(`/live/rooms/${roomId}`)
     roomInfo.value = response.data.data
     // 生成推流和拉流地址
     await generatePushUrls()
@@ -557,8 +529,8 @@ onBeforeMount(() => {
     margin-top: 20px;
   }
 
-  .tab-content {
-    padding: 20px;
+  :deep(.detail-left-tabs .arco-tabs-content) {
+    padding: 0 8px 0 20px;
   }
 
   :deep(.arco-form-item) {

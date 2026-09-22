@@ -285,6 +285,11 @@ export const generatePushURL = (data: GeneratePushURLRequest) => {
   return api.post('/live/push-url/generate', data)
 }
 
+// 根据直播间ID获取推流地址（由后端取当前公司推流域名、鉴权主KEY、直播间开始时间）
+export const generatePushURLByRoom = (roomId: number | string) => {
+  return api.post('/live/push-url/by-room', { roomId })
+}
+
 // ==================== 拉流地址生成 ====================
 
 // 生成拉流地址请求
