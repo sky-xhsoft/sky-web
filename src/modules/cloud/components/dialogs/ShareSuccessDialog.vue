@@ -1,5 +1,5 @@
 <template>
-  <a-modal
+  <V2Modal
     v-model:visible="dialogVisible"
     :title="t('cloud.shareSuccessTitle')"
     :footer="false"
@@ -8,7 +8,7 @@
   >
     <div class="success-content">
       <div class="success-icon">
-        <icon-check-circle-fill :size="64" :style="{ color: '#00b42a' }" />
+        <icon-check-circle-fill :size="64" :style="{ color: 'var(--success)' }" />
       </div>
 
       <div class="share-info">
@@ -29,18 +29,18 @@
       </div>
 
       <div class="actions">
-        <a-button type="primary" long @click="handleCopy">
+        <V2Button type="primary" class="full-width" @click="handleCopy">
           <template #icon>
             <icon-copy />
           </template>
           {{ t('cloud.copyLinkAndPassword') }}
-        </a-button>
-        <a-button long @click="handleOpen" style="margin-top: 12px">
+        </V2Button>
+        <V2Button type="secondary" class="full-width" @click="handleOpen">
           <template #icon>
             <icon-link />
           </template>
           {{ t('cloud.openInNewTab') }}
-        </a-button>
+        </V2Button>
       </div>
 
       <div class="tips">
@@ -48,7 +48,7 @@
         <span>{{ t('cloud.shareSafetyTip') }}</span>
       </div>
     </div>
-  </a-modal>
+  </V2Modal>
 </template>
 
 <script setup lang="ts">
@@ -61,6 +61,7 @@ import {
   IconLink,
   IconInfoCircle,
 } from '@arco-design/web-vue/es/icon'
+import { V2Modal, V2Button } from '@/components/ui'
 
 const { t } = useI18n()
 
@@ -189,21 +190,21 @@ function handleClose() {
 
 .info-label {
   font-size: 14px;
-  color: #86909c;
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
 .info-value {
   font-size: 14px;
-  color: #1d2129;
+  color: var(--text-primary);
   padding: 12px;
-  background: #f7f8fa;
-  border-radius: 4px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
   word-break: break-all;
 }
 
 .info-value.link {
-  color: #165dff;
+  color: var(--brand-blue);
   font-weight: 500;
 }
 
@@ -217,6 +218,14 @@ function handleClose() {
 
 .actions {
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.full-width {
+  width: 100%;
+  justify-content: center;
 }
 
 .tips {
@@ -224,10 +233,10 @@ function handleClose() {
   align-items: flex-start;
   gap: 8px;
   padding: 12px;
-  background: #fff7e8;
-  border-radius: 4px;
+  background: var(--warning-bg);
+  border-radius: var(--radius-md);
   font-size: 13px;
-  color: #ff7d00;
+  color: var(--warning);
 }
 
 .tips span {

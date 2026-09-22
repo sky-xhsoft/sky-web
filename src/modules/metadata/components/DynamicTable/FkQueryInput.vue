@@ -105,27 +105,27 @@ watch(() => props.modelValue, (val) => {
   gap: 4px;
   min-height: 32px;
   padding: 2px 8px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
-  background: #fff;
+  background: var(--bg-card);
   transition: border-color 0.2s;
 }
 
 .fk-query-tags:hover {
-  border-color: #3370ff;
+  border-color: var(--brand-blue);
 }
 
 .fk-query-placeholder {
   display: flex;
   align-items: center;
-  color: #86909c;
+  color: var(--text-tertiary);
   font-size: 14px;
 }
 
 .fk-query-tags-more {
   font-size: 12px;
-  color: #86909c;
+  color: var(--text-tertiary);
   line-height: 24px;
 }
 </style>

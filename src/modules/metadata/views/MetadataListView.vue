@@ -1,9 +1,15 @@
 <!-- 元数据列表视图 -->
 <template>
   <div class="metadata-list-view">
+      <!-- 页头 (对齐 table-list 原型 page-header) -->
+      <V2PageHeader
+        v-if="currentTable && currentTable.ID"
+        :title="`${currentTable.DISPLAY_NAME || '数据表'}管理`"
+        :description="'元数据驱动 — 列、查询条件与操作均由 sys_column 配置生成'"
+      />
 
-    <!-- 主内容区 -->
-    <main class="metadata-list-view__main">
+      <!-- 主内容区 -->
+      <main class="metadata-list-view__main">
       <!-- 加载中骨架屏 -->
       <PageSkeleton v-if="loadingTable" type="table" />
 
@@ -16,8 +22,9 @@
           :table-id="currentTable.ID"
           :filters="currentFilters"
           @create="handleCreate"
-          @view="handleView"
-          @edit="handleEdit"
+                    @copy="handleCopy"
+                    @view="handleView"
+                    @edit="handleEdit"
           @delete="handleDelete"
         />
       </div>
@@ -36,13 +43,14 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onActivated } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
-import { IconApps, IconFile } from '@arco-design/web-vue/es/icon'
+import { IconFile } from '@arco-design/web-vue/es/icon'
 import { DynamicTable } from '@/modules/metadata'
 import { useMetadataStore } from '@/modules/metadata'
 import { useNavigationStore } from '@/stores/navigation'
 import PageSkeleton from '@/components/PageSkeleton.vue'
+import { V2PageHeader } from '@/components/ui'
 import type { SysTable } from '@/modules/metadata'
 
 // ==================== Props ====================
@@ -55,7 +63,6 @@ const props = defineProps<Props>()
 
 // ==================== Router ====================
 
-const router = useRouter()
 const route = useRoute()
 
 // ==================== Store ====================
@@ -84,6 +91,19 @@ function handleCreate() {
     tableId: currentTable.value.ID,
     mode: 'create'
   })
+}
+
+/**
+ * 复制：跳转到新增表单并预填选中记录数据（copyFrom）
+ */
+function handleCopy(record: any) {
+  if (!currentTable.value) return
+
+  navigationStore.navigateTo('MetadataFormView', `新增${currentTable.value.DISPLAY_NAME}(复制来源)`, {
+      tableId: currentTable.value.ID,
+      mode: 'create',
+      copyFrom: record.ID
+    })
 }
 
 /**
@@ -204,8 +224,9 @@ async function loadTableById(tableId: number) {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background: var(--bg-page);
   overflow: hidden;
+  padding: 12px 16px;
 }
 
 /* 主内容区 */
@@ -215,6 +236,7 @@ async function loadTableById(tableId: number) {
   flex-direction: column;
   overflow: hidden;
   height: 100%;
+  min-height: 0;
 }
 
 .main-table {
@@ -234,14 +256,14 @@ async function loadTableById(tableId: number) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   margin: 20px;
 }
 
 .main-empty :deep(.arco-empty-image) {
-  color: #94a3b8;
+  color: var(--text-tertiary);
 }
 
 /* 响应式 */

@@ -299,6 +299,29 @@ export interface ForeignKeyOption {
   record?: Record<string, any>
 }
 
+/**
+ * 动作定义（SYS_ACTION）
+ * DISPLAY_TYPE: list_button / list_menu_item / obj_button / obj_menu_item / tab_button
+ * ACTION_TYPE: url / sp / job / js / bsh / py / go
+ */
+export interface SysAction {
+  id: number
+  sysTableId: number
+  name: string
+  displayName: string
+  displayType: string
+  actionType: string
+  content?: string
+  scripts?: string
+  urlTarget?: string
+  saveObj?: string
+  comments?: string
+  filter?: string
+  orderno?: number
+  SYS_COMPANY_ID?: number
+  isActive?: string
+}
+
 // ==================== 组件 Props 类型 ====================
 
 /**

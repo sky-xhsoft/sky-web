@@ -116,32 +116,32 @@ function handlePresetClick(color: string) {
   align-items: center;
   gap: 8px;
   padding: 4px 12px;
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .color-field__trigger:hover {
-  border-color: #3370ff;
+  border-color: var(--brand-blue);
 }
 
 .color-field__preview {
   width: 24px;
   height: 24px;
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--border);
   border-radius: 4px;
   flex-shrink: 0;
 }
 
 .color-field__text {
   font-size: 14px;
-  color: #1d2129;
+  color: var(--text-primary);
 }
 
 .color-field__icon {
   margin-left: auto;
-  color: #86909c;
+  color: var(--text-tertiary);
   font-size: 12px;
 }
 
@@ -152,12 +152,12 @@ function handlePresetClick(color: string) {
 .color-field__presets {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #e5e6eb;
+  border-top: 1px solid var(--border);
 }
 
 .color-field__presets-title {
   font-size: 12px;
-  color: #86909c;
+  color: var(--text-tertiary);
   margin-bottom: 8px;
 }
 
@@ -170,7 +170,7 @@ function handlePresetClick(color: string) {
 .color-field__preset-item {
   width: 24px;
   height: 24px;
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
   transition: transform 0.2s;

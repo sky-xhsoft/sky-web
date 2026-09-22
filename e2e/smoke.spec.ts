@@ -8,7 +8,9 @@ import { test, expect } from '@playwright/test'
 test.describe('Smoke Tests', () => {
   test('登录页可访问', async ({ page }) => {
     await page.goto('/login')
-    await expect(page).toHaveTitle(/.*(登录|Login).*/i)
+    // 页面 title 为静态 "AI Live"，不随路由变化；改为断言登录表单渲染
+    await expect(page.locator('.login-page')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.title')).toBeVisible()
   })
 
   test('欢迎页可访问', async ({ page }) => {

@@ -1,145 +1,133 @@
 <!-- 元数据表单视图 -->
 <template>
   <div class="metadata-form-view">
-    <!-- 顶部操作栏 -->
-    <header class="metadata-form-view__header">
-      <div class="header-left">
-        <a-breadcrumb>
-          <a-breadcrumb-item>
-            <icon-apps />
-            元数据管理
-          </a-breadcrumb-item>
-          <a-breadcrumb-item v-if="tableConfig">
-            {{ (tableConfig.table as any).DISPLAY_NAME || (tableConfig.table as any).displayName || '未命名表单' }}
-          </a-breadcrumb-item>
-          <a-breadcrumb-item>
-            {{ modeName }}
-          </a-breadcrumb-item>
-        </a-breadcrumb>
-      </div>
+    <!-- 页头 (对齐 table-form 原型 page-header) -->
+    <V2PageHeader
+      :title="headerTitle"
+      :description="`${tableConfig?.table?.DISPLAY_NAME || ''} — ${modeName}`"
+      class="metadata-form-view__header"
+    >
+      <template #actions>
+              <!-- 主操作：编辑/保存 / 返回 -->
+              <V2Button v-if="mode === 'view' && canEdit" type="primary" @click="handleEdit">
+                <template #icon><icon-edit /></template>
+                编辑
+              </V2Button>
+              <V2Button v-if="mode === 'edit' || mode === 'create'" type="primary" :loading="saving" @click="handleSave">
+                <template #icon><icon-save /></template>
+                保存
+              </V2Button>
 
-      <div class="header-right">
-        <a-space>
-          <!-- 上一条 -->
-          <!-- <a-button
-            v-if="mode !== 'create' && hasPrevious"
-            type="text"
-            @click="handleNavigate('previous')"
-          >
-            <template #icon><icon-left /></template>
-            上一条
-          </a-button> -->
+              <!-- 更多...下拉：聚合次要操作 (对齐门户 保存/更多/关闭) -->
+              <a-dropdown v-if="showMoreActions" trigger="click" position="br">
+                <V2Button type="secondary">
+                  <template #icon><icon-more /></template>
+                  更多...
+                </V2Button>
+                <template #content>
+                  <a-doption v-if="mode === 'view' && canCreate" @click="handleCopy">
+                    <icon-copy /> 复制
+                  </a-doption>
+                  <a-doption v-if="mode !== 'create' && canPrint" @click="handlePrint">
+                    <icon-printer /> 打印
+                  </a-doption>
+                  <a-doption v-if="mode !== 'create'" @click="handleRefresh">
+                    <icon-refresh /> 刷新
+                  </a-doption>
+                </template>
+              </a-dropdown>
 
-          <!-- 下一条 -->
-          <!-- <a-button
-            v-if="mode !== 'create' && hasNext"
-            type="text"
-            @click="handleNavigate('next')"
-          >
-            下一条
-            <template #icon><icon-right /></template>
-          </a-button> -->
-
-          <!-- 复制 -->
-          <a-button
-            v-if="mode === 'view' && canCreate"
-            @click="handleCopy"
-          >
-            <template #icon><icon-copy /></template>
-            复制
-          </a-button>
-
-          <!-- 打印 -->
-          <a-button
-            v-if="mode !== 'create' && canPrint"
-            @click="handlePrint"
-          >
-            <template #icon><icon-printer /></template>
-            打印
-          </a-button>
-
-          <!-- 刷新 -->
-          <a-button
-            v-if="mode !== 'create'"
-            @click="handleRefresh"
-          >
-            <template #icon><icon-refresh /></template>
-            刷新
-          </a-button>
-
-          <!-- 编辑 -->
-          <a-button
-            v-if="mode === 'view' && canEdit"
-            type="primary"
-            @click="handleEdit"
-          >
-            <template #icon><icon-edit /></template>
-            编辑
-          </a-button>
-
-          <!-- 保存 -->
-          <a-button
-            v-if="mode === 'edit' || mode === 'create'"
-            type="primary"
-            :loading="saving"
-            @click="handleSave"
-          >
-            <template #icon><icon-save /></template>
-            保存
-          </a-button>
-
-          <!-- 返回 -->
-          <a-button @click.stop="handleBack">
-            <template #icon><icon-close /></template>
-            返回
-          </a-button>
-        </a-space>
-      </div>
-    </header>
+              <!-- 返回 -->
+              <V2Button type="secondary" @click.stop="handleBack">
+                <template #icon><icon-close /></template>
+                返回
+              </V2Button>
+            </template>
+    </V2PageHeader>
 
     <!-- 主内容区 -->
-    <main class="metadata-form-view__main">
-      <a-spin :loading="loading" class="form-spin">
-        <a-card :bordered="false" class="form-card">
-          <!-- 动态表单 -->
-          <DynamicForm
-            ref="formRef"
-            :table-id="Number(tableId)"
-            :record-id="recordId ? Number(recordId) : undefined"
-            :copy-from="copyFrom ? Number(copyFrom) : undefined"
-            :mode="mode"
-            :label-col-span="6"
-            :wrapper-col-span="18"
-            :show-system-fields="showSystemFields"
-            @submit="handleFormSubmit"
-            @change="handleFormChange"
-            @loaded="handleFormLoaded"
-          />
+        <main class="metadata-form-view__main">
+          <a-spin :loading="loading" class="form-spin">
+                      <a-card :bordered="false" class="form-card">
+                        <!-- 标准新增/修改页：主表数据 + 子表(明细)Tab + 操作日志 (对齐门户销售价调整单编辑页) -->
+                        <a-tabs v-model:active-key="activeFormTab" class="form-main-tabs">
+                <!-- Tab 1: 主表数据 -->
+                <a-tab-pane key="master" title="主表数据">
+                  <DynamicForm
+                    ref="formRef"
+                    :table-id="Number(tableId)"
+                    :record-id="recordId ? Number(recordId) : undefined"
+                    :copy-from="copyFrom ? Number(copyFrom) : undefined"
+                    :mode="mode"
+                    :label-col-span="6"
+                    :wrapper-col-span="18"
+                    :show-system-fields="showSystemFields"
+                    :hide-inline-child-tables="true"
+                    @submit="handleFormSubmit"
+                    @change="handleFormChange"
+                    @loaded="handleFormLoaded"
+                  />
+                </a-tab-pane>
 
-          <!-- 子表区域 -->
-          <div v-if="detailTables.length > 0" class="detail-tables">
-            <a-divider />
-            <a-tabs v-model:active-key="activeDetailTab">
-              <a-tab-pane
-                v-for="detailTable in detailTables"
-                :key="detailTable.id"
-                :title="detailTable.title"
-              >
-                <DynamicTable
-                  :table-id="detailTable.id"
-                  :filters="{ parentId: recordId }"
-                  :page-size="10"
-                  :show-toolbar="mode !== 'view'"
-                  @create="handleDetailCreate(detailTable)"
-                  @edit="handleDetailEdit(detailTable, $event)"
-                  @delete="handleDetailDelete(detailTable, $event)"
-                />
-              </a-tab-pane>
-            </a-tabs>
-          </div>
-        </a-card>
-      </a-spin>
-    </main>
+                <!-- 子表 Tab: 1:1 子表 每个一个 -->
+                <a-tab-pane
+                  v-for="childTable in oneToOneChildTables"
+                  :key="`one-to-one-${childTableKey(childTable)}`"
+                  :title="childTableTitle(childTable)"
+                >
+                  <OneToOneChildTable
+                    :child-table="childTable"
+                    :record="oneToOneChildTableRecords[childTableKey(childTable)]"
+                    :mode="mode"
+                    :row-gutter="16"
+                    @update:record="(record) => (oneToOneChildTableRecords[childTableKey(childTable)] = record)"
+                  />
+                </a-tab-pane>
+
+                <!-- 子表 Tab: 1:N 子表 -->
+                <a-tab-pane
+                  v-for="childTable in oneToManyChildTables"
+                  :key="`one-to-many-${childTableKey(childTable)}`"
+                  :title="childTableTitle(childTable)"
+                >
+                  <OneToManyChildTable
+                    :child-tables="[childTable]"
+                    :mode="mode"
+                    :parent-table-id="Number(tableId)"
+                    :parent-record-id="recordId ? Number(recordId) : undefined"
+                  />
+                </a-tab-pane>
+
+                <!-- 子表 Tab: props.detailTables 驱动的明细 -->
+                <a-tab-pane
+                  v-for="detailTable in detailTables"
+                  :key="String(detailTable.id)"
+                  :title="detailTable.title"
+                >
+                  <DynamicTable
+                    :table-id="detailTable.id"
+                    :filters="{ parentId: recordId }"
+                    :page-size="10"
+                    :show-toolbar="mode !== 'view'"
+                    @create="handleDetailCreate(detailTable)"
+                    @edit="handleDetailEdit(detailTable, $event)"
+                    @delete="handleDetailDelete(detailTable, $event)"
+                  />
+                </a-tab-pane>
+
+                <!-- 操作日志 Tab -->
+                <a-tab-pane key="log" title="操作日志">
+                  <RecordLogPanel
+                    v-if="!isCreate"
+                    :record="loadedRecord"
+                    :table-display-name="tableConfig?.table?.DISPLAY_NAME || ''"
+                  />
+                  <a-empty v-else description="新增记录暂无可查看的日志" />
+                </a-tab-pane>
+              </a-tabs>
+            </a-card>
+          </a-spin>
+        </main>
   </div>
 </template>
 
@@ -148,20 +136,24 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
 import {
-  IconApps,
   IconCopy,
   IconPrinter,
   IconRefresh,
   IconEdit,
   IconSave,
-  IconClose
+  IconClose,
+  IconMore
 } from '@arco-design/web-vue/es/icon'
 import { DynamicForm } from '../components/DynamicForm'
 import { DynamicTable } from '../components/DynamicTable'
+import OneToOneChildTable from '../components/DynamicForm/OneToOneChildTable.vue'
+import OneToManyChildTable from '../components/DynamicForm/OneToManyChildTable.vue'
+import RecordLogPanel from '../components/RecordLogPanel.vue'
+import { V2PageHeader, V2Button } from '@/components/ui'
 import { useMetadataStore } from '../stores/useMetadataStore'
 import { useDynamicFormStore } from '../stores/useDynamicFormStore'
 import { useDynamicTableStore } from '../stores/useDynamicTableStore'
-import type { FormMode, TableConfig, FormData } from '../types'
+import type { FormMode, TableConfig } from '../types'
 import { useNavigationStore } from '@/stores/navigation'
 import * as metadataApi from '../api/metadata'
 
@@ -213,7 +205,8 @@ const mode = computed<FormMode>(() => {
 })
 
 const tableConfig = ref<TableConfig | null>(null)
-const activeDetailTab = ref<string>()
+const activeFormTab = ref<string>('master')
+const loadedRecord = ref<any>(null)
 const hasChanges = ref(false)
 
 // 上一条/下一条导航
@@ -235,6 +228,22 @@ const modeName = computed(() => {
   }
   return names[mode.value]
 })
+
+/** 页头标题 (对齐 table-form 原型 form-title) */
+const headerTitle = computed(() => {
+  const tableName = (tableConfig.value?.table as any)?.DISPLAY_NAME || (tableConfig.value?.table as any)?.displayName || '数据表'
+  return `${modeName.value}${tableName}`
+})
+
+/** 是否为新增模式 */
+const isCreate = computed(() => mode.value === 'create')
+
+/** 是否显示「更多...」下拉（存在任一可收拢的次要操作时） */
+const showMoreActions = computed(() => (
+  (mode.value === 'view' && canCreate.value) || // 复制
+  (mode.value !== 'create' && canPrint.value) || // 打印
+  mode.value !== 'create' // 刷新
+))
 
 /**
  * 权限控制
@@ -268,8 +277,46 @@ const detailTables = computed(() => {
   return tableConfig.value.props.detailTables as Array<{
     id: number
     title: string
-  }>
-})
+  }>})
+
+/** 子表（1:1 / 1:N），来源 tableConfig.childTables */
+const childTables = computed(() => tableConfig.value?.childTables || [])
+
+/** 是否为 1:1 子表（与 DynamicForm 内部判定保持一致） */
+function isOneToOneChildTable(childTable: any): boolean {
+  const ref = childTable?.ref || {}
+  const assoType = ref.assoType ?? ref.ASSOCTYPE
+  // 兼容 linkType/relationType 遗留字段
+  const linkType = ref.linkType ?? ref.LINK_TYPE
+  const relType = ref.relationType ?? ref.RELATION_TYPE
+  return (
+    String(assoType) === '1' ||
+    String(linkType) === '1' ||
+    String(relType) === '1' ||
+    String(childTable?.relationType) === '1' ||
+    String(childTable?.linkType) === '1'
+  )
+}
+
+const oneToOneChildTables = computed(() => childTables.value.filter((c: any) => isOneToOneChildTable(c)))
+const oneToManyChildTables = computed(() => childTables.value.filter((c: any) => !isOneToOneChildTable(c)))
+
+/** 子表稳定 key */
+function childTableKey(childTable: any): string | number {
+  return childTable?.table?.ID ?? childTable?.table?.id ?? childTable?.id ?? Math.random()
+}
+
+/** 子表标题 */
+function childTableTitle(childTable: any): string {
+  return childTable?.ref?.displayName ||
+         childTable?.ref?.DISPLAY_NAME ||
+         childTable?.table?.DISPLAY_NAME ||
+         childTable?.table?.displayName ||
+         '明细信息'
+}
+
+/** 1:1 子表记录映射（key: childTableKey） */
+const oneToOneChildTableRecords = ref<Record<string | number, any>>({})
 
 // ==================== 方法 ====================
 
@@ -280,12 +327,6 @@ async function loadConfig() {
   loading.value = true
   try {
     tableConfig.value = await metadataStore.loadTableConfig(Number(tableId.value))
-
-    // 如果有子表，默认激活第一个
-    if (detailTables.value.length > 0) {
-      const firstDetailTable = detailTables.value[0] as any
-      activeDetailTab.value = String(firstDetailTable.id)
-    }
   } catch (error: any) {
     Message.error(error.message || '加载配置失败')
   } finally {
@@ -297,9 +338,58 @@ async function loadConfig() {
  * 表单加载完成
  */
 function handleFormLoaded(_config: TableConfig) {
+  // 记录当前已加载的数据，供「操作日志」Tab 使用
+  try {
+    if (formRef.value?.getFormData) {
+      loadedRecord.value = formRef.value.getFormData()
+    }
+  } catch (e) {
+    console.warn('读取表单数据失败', e)
+  }
+  // 加载 1:1 子表关联记录（如「公司配置」）
+  if (mode.value !== 'create' && recordId.value && oneToOneChildTables.value.length > 0) {
+    loadOneToOneRecords()
+  }
   // 加载记录列表用于上一条/下一条导航
   if (mode.value !== 'create') {
     loadRecordList()
+  }
+}
+
+/**
+ * 加载所有 1:1 子表的关联记录（外键 = 当前主表记录 ID）
+ * 例如「公司(4) → 公司配置(55)」：子表 SYS_COMPANY_ID = 主表记录 ID
+ */
+async function loadOneToOneRecords() {
+  if (!recordId.value) return
+  const childList = oneToOneChildTables.value
+  if (!childList || childList.length === 0) return
+
+  const mainId = Number(recordId.value)
+  for (const childTable of childList) {
+    try {
+      const ref = childTable.ref || {}
+      const refColumnId = Number(ref.refColumnId ?? ref.REF_COLUMN_ID)
+      // 找到 refColumnId 对应的子表列名（如 SYS_COMPANY_ID）
+      const fkCol = ((childTable.columns as any[]) || []).find(
+        (c: any) => Number(c.id ?? c.ID) === refColumnId
+      )
+      const fkName = fkCol?.dbName ?? fkCol?.DB_NAME
+      if (!fkName) continue
+      const tableName = childTable.table?.NAME || childTable.table?.name
+      if (!tableName) continue
+
+      const result = await tableStore.loadRecords(tableName, {
+              filters: { [fkName]: mainId },
+              page: 1,
+              pageSize: 1
+            } as any)
+      const recs = result?.list ?? tableStore.records
+      const rec = Array.isArray(recs) && recs.length ? recs[0] : null
+      oneToOneChildTableRecords.value[childTableKey(childTable)] = rec || undefined
+    } catch (e) {
+      console.warn('加载 1:1 子表记录失败', childTable.ref?.displayName, e)
+    }
   }
 }
 
@@ -496,11 +586,26 @@ function handleBack() {
     return
   }
   const formTabKey = navigationStore.activeTabKey
-  const listTab = tabs.find(t => t.componentName === 'MetadataListView')
+
+  // 优先返回来源标签页（addTab 时记录的 sourceTabKey），保证回到正确的列表/来源窗口
+  const currentTab = tabs.find(t => t.key === formTabKey)
+  const sourceTab = currentTab?.sourceTabKey
+    ? tabs.find(t => t.key === currentTab.sourceTabKey)
+    : undefined
+
+  // 其次找同 tableId 的 MetadataListView（浏览/详情场景）
+  const tableIdNum = Number(tableId.value)
+  const listTab = sourceTab ||
+    tabs.find(t => t.componentName === 'MetadataListView' && Number((t.params as any)?.tableId) === tableIdNum) ||
+    tabs.find(t => t.componentName === 'MetadataListView')
+
   if (listTab) {
     navigationStore.activeTabKey = listTab.key
     navigationStore.current = { componentName: listTab.componentName, title: listTab.title, params: listTab.params || {} }
     navigationStore.removeTab(formTabKey)
+  } else {
+    // 都没有则回退历史栈
+    navigationStore.goBack()
   }
 }
 
@@ -653,127 +758,106 @@ watch(
   flex-direction: column;
   height: 100%;
   min-height: calc(100vh - 64px);
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background: var(--bg-page);
   overflow: hidden;
 }
 
-/* 顶部操作栏 */
+/* —— 单对象页统一配色（与企业后台观感一致，覆盖上方历史规则） —— */
+/* 顶部操作栏：白底 + 细下边框（收敛阴影） */
 .metadata-form-view__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
-
-.header-left {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-left :deep(.arco-breadcrumb) {
-  font-size: 14px;
-}
-
-.header-left :deep(.arco-breadcrumb-item) {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.header-right {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-}
-
-.header-right :deep(.arco-btn) {
-  border-radius: 6px;
-}
-
-.header-right :deep(.arco-btn-primary) {
-  background: linear-gradient(135deg, #165dff 0%, #3b82f6 100%);
-  border: none;
-  box-shadow: 0 2px 8px rgba(22, 93, 255, 0.25);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 /* 主内容区 */
 .metadata-form-view__main {
   width: 100%;
   flex: 1;
-  padding: 20px;
+  padding: 12px 16px;
   overflow-y: auto;
+  flex-shrink: 1;
+  min-height: 0;
 }
 
 .form-spin {
   width: 100%;
-  min-height: 500px;
+  min-height: 240px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.form-card {
-  width: 100% !important;
-  display: block;
-  margin-bottom: 20px;
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  background: #ffffff;
-}
-
-.form-card :deep(.arco-card-body) {
-  width: 100% !important;
-  display: block;
-  padding: 32px;
-}
-
-/* 表单样式优化 */
+/* 表单样式优化（全局生效） */
 :deep(.arco-form) {
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
 }
 
 :deep(.arco-form-item) {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
-:deep(.arco-form-label) {
-  font-weight: 500;
-  color: #334155;
+/* 主内容卡片：细边框 + 轻阴影 + 通栏 */
+.form-card {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-:deep(.arco-input),
-:deep(.arco-select),
-:deep(.arco-date-picker),
-:deep(.arco-input-number) {
+/* 卡片正文内边距统一 */
+.form-card :deep(.arco-card-body) {
+  padding: 20px;
+}
+
+/* 表单标签：深字加粗、右对齐简洁 */
+.metadata-form-view :deep(.arco-form-label) {
+  font-weight: 600;
+  color: #1f2329;
+}
+
+/* 输入类控件：细边框、hover/focus 品牌蓝细分 */
+.metadata-form-view :deep(.arco-input),
+.metadata-form-view :deep(.arco-select),
+.metadata-form-view :deep(.arco-date-picker),
+.metadata-form-view :deep(.arco-input-number),
+.metadata-form-view :deep(.arco-textarea) {
   border-radius: 6px;
-  border: 1px solid #cbd5e1;
-  transition: all 0.2s ease;
+  border: 1px solid #dcdfe6;
+  font-size: 13px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.metadata-form-view :deep(.arco-input):hover,
+.metadata-form-view :deep(.arco-select):hover,
+.metadata-form-view :deep(.arco-date-picker):hover,
+.metadata-form-view :deep(.arco-input-number):hover {
+  border-color: #b8bfcc;
+}
+.metadata-form-view :deep(.arco-input):focus,
+.metadata-form-view :deep(.arco-select):focus,
+.metadata-form-view :deep(.arco-date-picker):focus,
+.metadata-form-view :deep(.arco-input-number):focus {
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.08);
 }
 
-:deep(.arco-input):focus,
-:deep(.arco-select):focus,
-:deep(.arco-date-picker):focus,
-:deep(.arco-input-number):focus {
-  border-color: #165dff;
-  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.1);
+/* 必填星标、错误提示对齐 */
+.metadata-form-view :deep(.arco-form-item-label-required-symbol) {
+  color: #f53f3f;
+}
+.metadata-form-view :deep(.arco-form-item-message) {
+  color: #f53f3f;
 }
 
 /* 子表区域 */
 .detail-tables {
   margin-top: 32px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border);
   padding-top: 24px;
 }
 
 .detail-tables :deep(.arco-tabs) {
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -795,12 +879,12 @@ watch(
 
   .metadata-form-view__main {
     padding: 0;
-    background: #ffffff;
+    background: var(--bg-card);
   }
 
   .form-card {
     box-shadow: none;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
   }
 }
 

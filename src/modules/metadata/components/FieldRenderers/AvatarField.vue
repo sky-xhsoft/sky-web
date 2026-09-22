@@ -53,7 +53,7 @@
 
 .avatar-name {
   font-size: 14px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .avatar-field__edit {
@@ -68,7 +68,7 @@
   border-radius: 50%;
   overflow: hidden;
   cursor: pointer;
-  border: 2px solid #e5e6eb;
+  border: 2px solid var(--border);
 }
 
 .avatar-upload__img {
@@ -104,7 +104,7 @@
   width: 88px;
   height: 88px;
   border-radius: 50%;
-  border: 2px dashed #e5e6eb;
+  border: 2px dashed var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -113,13 +113,13 @@
 }
 
 .avatar-upload__placeholder:hover {
-  border-color: var(--color-primary);
-  background: #f2f5ff;
+  border-color: var(--brand-blue);
+  background: var(--info-bg);
 }
 
 .avatar-upload__placeholder .arco-icon {
   font-size: 32px;
-  color: #c9cdd4;
+  color: var(--text-tertiary);
 }
 </style>
 

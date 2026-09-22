@@ -2,9 +2,8 @@
  * 表格列配置 composable
  * 从 DynamicTable.vue 提取列配置逻辑
  */
-import { computed, ref, type Ref } from 'vue'
+import { computed, type Ref } from 'vue'
 import type { TableColumnData } from '@arco-design/web-vue'
-import type { SysColumn } from '../../types'
 
 interface UseTableColumnsOptions {
   tableConfig: Ref<any>

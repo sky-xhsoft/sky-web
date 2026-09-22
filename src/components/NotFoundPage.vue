@@ -19,7 +19,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { IconHome, IconArrowLeft } from '@arco-design/web-vue/es/icon'
 import { useAuthStore } from '../stores/auth'
@@ -29,7 +28,7 @@ interface Props {
   description?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   title: '页面不存在',
   description: '您访问的页面不存在或已被移除'
 })
@@ -40,7 +39,7 @@ const authStore = useAuthStore()
 function goHome() {
   const loginType = authStore.loginType
   if (loginType === 'live') {
-    router.push('/LiveGuide')
+    router.push('/')
   } else if (loginType === 'cloud') {
     router.push('/cloud')
   } else {

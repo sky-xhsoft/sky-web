@@ -7,10 +7,10 @@
     />
 
     <div class="cloud-top-bar__actions">
-      <a-button @click="$emit('open-share-manager')" size="small">
-        <icon-share-alt />
+      <V2Button type="secondary" size="sm" @click="$emit('open-share-manager')">
+        <template #icon><icon-share-alt /></template>
         {{ t('cloud.myShares') }}
-      </a-button>
+      </V2Button>
     </div>
   </div>
 </template>
@@ -19,6 +19,7 @@
 import { IconShareAlt } from '@arco-design/web-vue/es/icon'
 import CloudBreadcrumb from './CloudBreadcrumb.vue'
 import { useI18n } from 'vue-i18n'
+import { V2Button } from '@/components/ui'
 
 interface Props {
   items: Array<{ id: number | null; name: string }>
@@ -27,7 +28,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'navigate', item: { id: number | null; name: string }): void
   (e: 'open-share-manager'): void
 }>()
@@ -42,8 +43,8 @@ const { t } = useI18n()
   justify-content: space-between;
   gap: 24px;
   padding: 16px 24px;
-  background: linear-gradient(to right, #ffffff 0%, #fafafa 100%);
-  border-bottom: 1px solid #e8e8e8;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
   min-height: 64px;
 }

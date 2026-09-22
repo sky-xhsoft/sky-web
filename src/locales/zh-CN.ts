@@ -1,8 +1,57 @@
 export default {
   dashboard: {
+    title: '总览控制台',
     welcomeBack: '欢迎回来，管理员',
     haveANiceDay: '祝您今天工作愉快！',
     createLiveRoom: '新建直播间',
+    stats: {
+      totalRooms: '直播间总数',
+      totalRoomsDesc: '累计创建的直播间',
+      todayLiveSessions: '今日直播场次',
+      todayLiveSessionsDesc: '今日已开始的直播',
+      usedStorage: '已用存储空间',
+      usedStorageDesc: '云盘已占用容量',
+      recordingStorage: '直播录制使用空间',
+      recordingStorageDesc: '录制与剪辑文件占用',
+      groupCount: '权限组数量',
+      groupCountDesc: '企业权限组总数'
+    },
+    quickStart: '快速开始',
+    quickStartSteps: {
+      domainConfig: '配置直播域名',
+      domainConfigDesc: '添加推流和播放域名',
+      createRoom: '创建直播间',
+      createRoomDesc: '填写基本信息生成直播间',
+      startStreaming: '开始推流',
+      startStreamingDesc: '获取推流地址开始直播',
+      contentManage: '内容管理',
+      contentManageDesc: '管理录制、切片与云盘文件'
+    },
+    trendTitle: '近 7 天趋势',
+    trend: {
+      liveSessions: '直播场次',
+      recordings: '录制文件'
+    },
+    recentLive: '最近直播',
+    latestActivity: '最新动态',
+    table: {
+      room: '直播间',
+      status: '状态',
+      startTime: '开始时间',
+      ops: '操作'
+    },
+    moduleFeatures: {
+      createRoom: '创建直播间',
+      manageRoom: '管理直播间',
+      uploadFile: '上传文件',
+      shareFile: '分享文件',
+      pushDomain: '推流域名',
+      playDomain: '播放域名',
+      userPermission: '用户权限',
+      systemConfig: '系统配置',
+      recordingList: '录制列表',
+      recordingManage: '录制管理'
+    },
     liveRooms: '活跃直播间',
     cloudStorage: '云盘使用量',
     viewCount: '今日观看人次',
@@ -19,6 +68,8 @@ export default {
     domainManagementDesc: '配置直播推流和播放域名',
     socialDistribution: '社媒分发',
     socialDistributionDesc: '管理跨平台直播分发任务',
+    liveRecording: '直播录制',
+    liveRecordingDesc: '自动录制直播内容',
     systemSettings: '系统设置',
     systemSettingsDesc: '配置系统参数和用户权限',
     userGuide: '使用指南',
@@ -68,6 +119,100 @@ export default {
       '查看文件详情和存储空间'
     ]
   },
+  cloudDash: {
+    title: '云盘概览',
+    subtitle: '欢迎回来，这里是你的云盘工作台',
+    upload: '上传文件',
+    quickStart: '快速开始',
+    trendTitle: '近 7 日存储趋势',
+    recentFiles: '最近文件',
+    latestActivity: '最新动态',
+    stats: {
+      usedStorage: '已用存储',
+      usedStorageDesc: '共 500 GB',
+      fileCount: '文件数量',
+      fileCountDesc: '+186 本月',
+      folderCount: '文件夹',
+      folderCountDesc: '+5 本月',
+      shareCount: '分享链接',
+      shareCountDesc: '15 有效',
+    },
+    quick: {
+      upload: '上传文件',
+      uploadDesc: '支持大文件分片上传',
+      folder: '新建文件夹',
+      folderDesc: '整理归档云盘内容',
+      share: '创建分享',
+      shareDesc: '生成分享链接给同事',
+      manage: '管理云盘',
+      manageDesc: '进入云盘首页管理文件',
+    },
+    modules: {
+      files: '文件管理',
+      filesDesc: '网格/列表浏览，快速查找',
+      share: '分享中心',
+      shareDesc: '管理分享链接与权限',
+      type: '文件类型',
+      typeDesc: '视频/图片/文档分类',
+      recycle: '回收站',
+      recycleDesc: '删除文件恢复与清理',
+    },
+    feat: { upload: '上传', folder: '文件夹', shareLink: '分享链接', permission: '权限', video: '视频', image: '图片', restore: '恢复', clear: '清空' },
+    fileType: { video: '视频', image: '图片' },
+    fileTable: { name: '文件名', type: '类型', size: '大小' },
+    activity: { '10m': '10 分钟前', '1h': '1 小时前', '2h': '2 小时前', yesterday: '昨天', uploaded: '上传文件到云盘', createdShare: '创建了分享链接', autoRecording: '自动入库录制', createdFolder: '创建了文件夹' },
+    trend: { uploads: '上传次数', files: '新增文件' },
+  },
+  sysDash: {
+    title: '系统中心',
+    subtitle: '欢迎回来，这里是系统管理工作台',
+    managePermission: '权限管理',
+    quickActions: '快速操作',
+    trendTitle: '近 7 日系统访问',
+    recentOps: '最近操作',
+    systemNotice: '系统公告',
+    important: '重要',
+    stats: {
+      users: '系统用户',
+      usersDesc: '含各任职角色',
+      groups: '权限组',
+      groupsDesc: 'RBAC 授权',
+      tables: '元数据表',
+      tablesDesc: '数据驱动配置',
+      companies: '接入公司',
+      companiesDesc: '多租户隔离',
+    },
+    quick: {
+      users: '系统用户',
+      usersDesc: '账号管理与角色分配',
+      groups: '权限组',
+      groupsDesc: '权限组与安全等级',
+      companies: '公司配置',
+      companiesDesc: '租户与凭证管理',
+      tables: '元数据表',
+      tablesDesc: '系统表单与字典',
+    },
+    modules: {
+      users: '用户管理',
+      usersDesc: '账号、角色与任职',
+      permission: '权限管理',
+      permissionDesc: '权限组与权限矩阵',
+      metadata: '元数据',
+      metadataDesc: '表结构、字典与字段',
+      company: '公司配置',
+      companyDesc: '多租户与云凭证',
+    },
+    feat: { account: '账号', bind: '角色绑定', group: '权限组', permMatrix: '权限矩阵', dict: '数据字典', columns: '字段配置', tenant: '租户', credential: '凭证' },
+    op: { createUser: '创建了用户', updateGroup: '更新了权限组', updatePermission: '更新了权限', updateDict: '更新了字典' },
+    opTable: { user: '操作人', action: '操作', target: '对象', time: '时间' },
+    noticeMaintenance: '系统维护通知',
+    noticeMaintenanceDesc: '本周六凌晨将进行系统升级',
+    noticeFeature: '新功能上线',
+    noticeFeatureDesc: '元数据批量编辑已开放',
+    noticeStorage: '存储扩容优惠',
+    noticeStorageDesc: '企业套餐限时 8 折',
+    trend: { logins: '登录次数', ops: '操作次数' },
+  },
   language: {
     zhCN: '简体中文',
     enUS: 'English',
@@ -79,6 +224,8 @@ export default {
     close: '关闭',
     closeOther: '关闭其他',
     closeAll: '关闭所有',
+    lightMode: '浅色模式',
+    darkMode: '暗色模式',
     expandSidebar: '展开侧边栏',
     collapseSidebar: '折叠侧边栏',
     cloud: '云盘',
@@ -86,6 +233,8 @@ export default {
     mainNav: '主导航',
     logout: '退出',
     systemManagement: '系统管理',
+    systemCenter: '系统中心',
+    permissionManagement: '权限管理',
     liveGuide: '视频直播功能说明',
     liveDomain: '直播域名管理',
     pushDomains: '推流域名管理',
@@ -114,9 +263,27 @@ export default {
   },
 
   common: {
-    copy: '副本'
+    copy: '副本',
+    detail: '详情'
   },
 
+  roomStatus: {
+    draft: '未开始',
+    scheduled: '已排期',
+    live: '直播中',
+    ended: '已结束',
+    archived: '已归档'
+  },
+
+  userCenter: {
+    profile: '个人资料',
+    companyConfig: '公司配置',
+    admin: '管理员',
+    member: '普通用户',
+    company: '所属公司',
+    phone: '联系电话',
+    email: '邮箱',
+  },
   userProfile: {
     title: '个人中心',
     personalInfo: '个人信息',
@@ -176,6 +343,7 @@ export default {
 
   cloud: {
     // CloudView.vue
+    breadcrumb: '文件导航',
     dropFiles: '释放文件以上传',
     dropFilesHint: '支持多个文件同时上传',
     myShares: '我的分享',
@@ -191,6 +359,7 @@ export default {
     fileTooLarge: '文件 {name} 超过 20GB 限制，无法上传',
     previewNotSupported: '暂不支持预览此类型文件',
     myCloud: '我的云盘',
+    permission: '权限',
 
     // Toolbar
     upload: '上传',
@@ -386,6 +555,29 @@ export default {
     typeOther: '其他'
   },
 
+  cloudItemPermission: {
+    title: '权限设置',
+    existing: '已有授权',
+    grant: '添加授权',
+    loading: '加载中...',
+    noPerms: '暂无授权',
+    read: '读',
+    write: '写',
+    none: '无权限',
+    targetType: '类型',
+    typeUser: '用户',
+    typeRole: '角色',
+    typeGroup: '组',
+    selectUser: '选择用户',
+    selectUserFirst: '请先选择用户',
+    readHint: '读=可查看/预览/下载，写=可上传/删除/改名/移动',
+    add: '添加',
+    addSuccess: '权限添加成功',
+    addFailed: '权限添加失败',
+    removeSuccess: '权限已删除',
+    removeFailed: '权限删除失败',
+  },
+
   company: {
     logo: '公司Logo',
     address: '地址',
@@ -480,16 +672,20 @@ export default {
   },
   login: {
     backButton: '返回选择',
+    welcomeBack: '欢迎回来',
+    signInHint: '登录 {system}，开启高效工作',
+    enterSystem: '进入{system}',
     platforms: {
-      live: '直播中心',
-      cloud: '云盘中心',
-      all: '综合中心'
+      live: '视频系统',
+      cloud: '云盘系统',
+      system: '系统中心',
+      all: '全部平台'
     },
     fields: {
-      username: '用户名',
+      username: '用户名 / 手机号',
       password: '密码',
       placeholder: {
-        username: '请输入用户名',
+        username: '请输入用户名或手机号',
         password: '请输入密码'
       }
     },
@@ -497,6 +693,9 @@ export default {
     noAccount: '还没有账号？',
     register: '注册',
     success: '登录成功',
+    remember: '记住我',
+    forgot: '忘记密码？',
+    or: '或',
     error: '登录失败，请检查账号信息'
   },
   register: {
@@ -522,6 +721,10 @@ export default {
       codeSent: '验证码已发送（模拟）',
       codeRequired: '请先输入企业邮箱',
       codeInvalid: '请输入6位验证码',
+      codeSendFailed: '验证码发送失败',
+      phoneRequired: '请先输入手机号',
+      getSmsCode: '获取短信验证码',
+      smsVerifyCode: '短信验证码',
       contact: '联系人',
       contactPlaceholder: '姓名',
       phone: '联系电话',
@@ -583,7 +786,7 @@ export default {
     enterManage: '进入管理'
   },
   welcome: {
-    brandTitle: 'AI Live',
+    brandTitle: 'Zigebo',
     brandSubtitle: 'AI视频平台',
     navLinks: {
       features: '功能介绍',
@@ -613,10 +816,16 @@ export default {
         features: ['文件上传下载', '文件夹管理', '文件分享'],
         button: '进入云盘中心'
       },
+      systemCenter: {
+        title: '系统中心',
+        description: '系统配置与元数据驱动管理，掌握平台运行核心',
+        features: ['元数据管理', '权限体系', '系统配置'],
+        button: '进入系统中心'
+      },
       allCenter: {
         title: '综合中心',
-        description: '使用全部功能，包括直播、云盘、社媒分发等所有模块',
-        features: ['全部直播功能', '全部云盘功能', '社媒分发'],
+        description: '一站式使用直播、云盘与系统管理的全部功能',
+        features: ['直播中心', '云盘中心', '系统中心'],
         button: '进入综合中心'
       }
     },
@@ -668,7 +877,7 @@ export default {
       companyLinks: ['关于我们', '新闻动态', '加入我们', '联系方式'],
       supportTitle: '支持',
       supportLinks: ['帮助中心', '使用教程', '服务状态', '提交工单'],
-      copyright: '© 2024 AI Live AI视频平台. All rights reserved.'
+      copyright: '© 2024 Zigebo AI视频平台. All rights reserved.'
     }
   },
   systemManagement: {
@@ -705,6 +914,21 @@ export default {
       SYS_USER_GROUPS: '分配用户所属的权限组',
       SYS_GROUP_PREM: '配置权限组的具体权限明细'
     }
+  },
+  systemCenter: {
+    title: '系统中心',
+    subtitle: '元数据驱动 · 权限管控 · 系统配置',
+    platformName: '系统中心',
+    bannerDesc: '集中管理系统配置、元数据与权限体系，支撑业务平台高效运行',
+    moduleTitle: '功能模块',
+    tables: '个数据表',
+    quickTitle: '快捷入口',
+    quickCompanies: '公司配置',
+    quickUsers: '系统用户',
+    quickGroups: '权限组',
+    quickDict: '数据字典',
+    quickTables: '系统表单',
+    quickSubsystems: '子系统',
   },
   liveDomain: {
     pageTitle: '直播域名管理',
@@ -774,7 +998,8 @@ export default {
       enable: '启用',
       forbid: '禁用',
       tip: '提示',
-      warning: '警告'
+      warning: '警告',
+      complete: '完成'
     },
     cname: {
       status: {
@@ -793,6 +1018,20 @@ export default {
         value: '记录值'
       }
     },
+    ownerVerify: {
+      tip: '该域名需要验证所有权，请完成域名归属验证后重试。',
+      verifyBtn: '验证',
+      modalTitle: '验证域名归属权',
+      verified: '域名归属验证成功，可以继续添加。',
+      notVerified: '该域名尚未通过归属验证，请按照下方信息在域名 DNS 服务商处添加解析记录。',
+      dnsTip: '请在域名解析服务商（如阿里云、腾讯云、DNSPod 等）添加以下 DNS 记录：',
+      domain: '域名',
+      hostRecord: '主机记录',
+      recordType: '记录类型',
+      verifyContent: '验证记录值',
+      recheckBtn: '重新验证',
+      howTo: '配置完成后需等待 DNS 解析生效，再重新提交添加域名。'
+    },
     messages: {
       addSuccess: '添加域名成功',
       enableSuccess: '启用域名成功',
@@ -805,9 +1044,33 @@ export default {
       domainNotExists: '域名信息不存在'
     }
   },
+  liveTranslation: {
+    title: '同传/字幕',
+    desc: '配置直播同传与字幕转码任务',
+    return: '返回详情',
+    save: '保存配置',
+    saved: '配置已保存',
+    saveFailed: '保存失败',
+    fetchFailed: '加载直播间信息失败'
+  },
   liveRoomDetail: {
     return: '返回',
+    desc: '查看直播间信息和推流/播放地址',
+    nav: {
+      info: '直播间信息',
+      history: '直播历史记录',
+      address: '推流播放地址',
+      group1: '直播',
+      group2: '分发明细'
+    },
     pullStreamTask: '社媒分发',
+    subtitle: '同传/字幕',
+    subtitleDialogTitle: '同传/字幕配置',
+    subtitleEnabled: '启用同传/字幕',
+    subtitleSourceLang: '源语言',
+    subtitleTargetLangs: '目标语言',
+    subtitleSaved: '同传/字幕配置已保存',
+    subtitleSaveFailed: '保存同传/字幕配置失败',
     highlightClips: '直播切片',
     recordings: '直播录制',
     edit: '编辑',
@@ -833,6 +1096,7 @@ export default {
     },
     coverImage: '直播间封面',
     settings: {
+      addrInfo: '推流 / 播放地址',
       pushInfo: '推流信息',
       pullInfo: '拉流信息',
       copy: '复制',
@@ -851,7 +1115,7 @@ export default {
     messages: {
       copySuccess: '已复制到剪贴板',
       copyFailed: '复制失败',
-      deleteConfirm: {
+    deleteConfirm: {
         title: '确认删除',
         content: '确定要删除直播间"{name}"吗？'
       },
@@ -859,13 +1123,108 @@ export default {
       deleteFailed: '删除失败',
       fetchFailed: '获取直播间信息失败'
     },
-    shareFeature: '分享功能开发中'
+    related: {
+      title: '关联数据',
+      history: '直播历史记录',
+      historyTitle: '直播历史记录',
+      recordings: '直播录制明细',
+      clips: '直播切片数据',
+      tasks: '社媒分发明细',
+      copy: '复制',
+      preview: '播放预览',
+      empty: '暂无数据'
+    },
+    subtitleButton: '新增同传/字幕',
+    subtitleDialogTitle: '新建任务',
+    subtitleDialogDesc: '开启声影同传，为直播提供实时字幕与多语种翻译',
+    subtitleEnabled: '开启字幕',
+    subtitleEnabledTip: '开启后观众可实时查看直播间字幕',
+    subtitleLanguage: '目标语言',
+    subtitleLanguageTip: '选择实时翻译的目标语言',
+    subtitleLangOptions: {
+      zh: '中文（简体）',
+      en: 'English（英文）',
+      ja: '日本語（日文）',
+      ko: '한국어（韩文）',
+      es: 'Español（西班牙文）',
+      ar: 'العربية（阿拉伯文）'
+    },
+    subtitleSave: '创建',
+    subtitleCancel: '取消',
+    subtitleSaved: '同传/字幕配置已保存',
+    subtitleError: '保存同传/字幕配置失败',
+    subtitleConfigured: '已配置同传/字幕',
+    translation: {
+      basicTitle: '基本配置',
+      taskTitle: '标题',
+      taskTitlePlaceholder: '请输入标题',
+      taskTitleTip: '支持中文、大小写字母、数字、-、_组合，不超过20个字符',
+      relayTime: '转推时间',
+      liveAddress: '直播地址',
+      sourceUrl: '源流地址',
+      sourceUrlPlaceholder: '请输入拉流地址',
+      sourceUrlTip: '需要拉取的原始流地址，支持 RTMP、FLV 地址，也可以通过',
+      targetUrl: '转推地址',
+      targetUrlPlaceholder: '请输入转推的推流地址',
+      targetUrlTip: '同传后转推的地址，支持 RTMP 地址，也可以通过',
+      urlGenerator: '地址生成器',
+      mode: '选择模式',
+      delay: '播出延迟',
+      delayTip1: '声影同传下处理延迟时长，支持输入 1-60s；',
+      delayTip2: '口型、声音、字幕建议输入 20s；',
+      delayTip3: '声音、字幕建议输入 12s；',
+      delayTip4: '仅字幕建议输入 8s；',
+      language: '翻译语言',
+      languageTip: '选择直播输入语言和输出语言',
+      digitalLips: '数字人口型',
+      translationVoice: '同传声音',
+      voiceConfig: '音色配置',
+      voiceAuto: '自动复制',
+      voiceFixed: '固定音色',
+      noiseReduction: '降噪开关',
+      volumeBalance: '音量均衡',
+      subtitleTitle: '字幕配置',
+      subtitleEnabled: '添加字幕配置',
+      subtitleFormat: '字幕格式',
+      formatBoth: '原文+译文',
+      formatTarget: '译文',
+      subtitleLines: '字幕行数',
+      lines1: '1行',
+      lines2: '2行',
+      linesAuto: '自适应',
+      subtitleOrder: '字幕排序',
+      orderSourceTop: '原文在上',
+      orderTargetTop: '译文在上',
+      sideMargin: '左右边距',
+      bottomMargin: '底部边距',
+      targetStyleTitle: '译文字幕样式',
+      charsPerLine: '每行字数',
+      fontSize: '字号',
+      fontFamily: '字体',
+      keywordLibrary: '关键词库',
+      keywordLibraryPlaceholder: '按"原文:译文"方式排列，用逗号隔开，例如"火山引擎:Volcengine,视频直播:Live"',
+      errorWords: '易错词',
+      errorWordsTip: '根据译文关键词进行强制纠错，单词不超50个字，最多添加500个纠错词，建议根据实际效果调整。',
+      errorWordSource: '译文',
+      errorWordTarget: '纠正',
+      addErrorWord: '添加易错词',
+      errorWordRemaining: '还可以添加{count}个标签',
+      previewTitle: '预览效果',
+      previewTip: '请选择源流尺寸，转码字幕会按源流尺寸等比缩放',
+      uploadBackground: '上传背景图',
+      previewPlaceholder: '请上传背景图',
+      previewOverflowTip: '超出显示范围时，内容将会被截断',
+      fullscreenTip: '弹窗内暂不支持全屏预览'
+    }
   },
   liveRoomForm: {
+    sectionBasic: '基本信息',
+    sectionCoverRec: '封面与录制',
+    sectionDesc: '描述',
     return: '返回',
     submit: '立即创建',
     edit: '修改',
-    compliance: '请您遵守国家相关规定，禁止发布含有违法、违规、低俗、暴力、色情、虚假宣传等内容的直播。AI Live将会对直播内容进行监管，如发现违规行为将会对直播内容进行下架、封禁等操作',
+    compliance: '请您遵守国家相关规定，禁止发布含有违法、违规、低俗、暴力、色情、虚假宣传等内容的直播。Zigebo将会对直播内容进行监管，如发现违规行为将会对直播内容进行下架、封禁等操作',
     broadcastFormat: '直播形式',
     broadcastFormatOptions: {
       live: '直播',
@@ -879,6 +1238,13 @@ export default {
     roomNamePlaceholder: '请输入直播名称，100字内',
     roomNameMaxLength: '直播名称不能超过100字',
     startTime: '开始时间',
+    endTime: '结束时间',
+    viewingPassword: '观看密码',
+    viewingPrice: '观看价格(元)',
+    playbackMethod: '回放方式',
+    playbackValidity: '回放有效期',
+    description: '直播间描述',
+    descriptionPlaceholder: '请输入直播间描述',
     coverImage: '直播封面',
     coverImageTips: '推荐图片尺寸为：1000*562 支持JPG、PNG格式',
     upload: '选择图片',
@@ -891,6 +1257,35 @@ export default {
     deleteCoverSuccess: '已删除封面',
     uploadSuccess: '上传成功',
     uploadError: '上传失败',
+    isRecord: '是否录制',
+    isClip: '是否切片',
+    isRecordTips: '开启后直播将自动录制，结束后可回放',
+    isClipTips: '开启后直播过程将自动智能切片，生成精彩片段',
+    subtitleButton: '新增同传/字幕',
+    subtitleDialogTitle: '新增同传/字幕',
+    subtitleDialogDesc: '开启声影同传，为直播提供实时字幕与多语种翻译',
+    subtitleEnabled: '开启字幕',
+    subtitleEnabledTip: '开启后观众可实时查看直播间字幕',
+    subtitleLanguage: '目标语言',
+    subtitleLanguageTip: '选择实时翻译的目标语言',
+    subtitleLangOptions: {
+      zh: '中文（简体）',
+      en: 'English（英文）',
+      ja: '日本語（日文）',
+      ko: '한국어（韩文）',
+      es: 'Español（西班牙文）',
+      ar: 'العربية（阿拉伯文）'
+    },
+    subtitleSave: '保存配置',
+    subtitleSaved: '同传/字幕配置已保存',
+    subtitleConfigured: '已配置同传/字幕',
+    subtitleSourceLang: '源语言',
+    subtitleConfirm: '确定',
+    subtitleCancel: '取消',
+    displayMode: '显示模式',
+    displayModePortrait: '竖屏',
+    displayModeLandscape: '横屏',
+    displayModeTip: '切换后直播封面将按对应比例展示',
     validation: {
       required: '请选择',
       roomName: '请输入直播名称',
@@ -898,6 +1293,8 @@ export default {
     }
   },
   liveRoomList: {
+    title: '直播间管理',
+    desc: '创建和管理直播间',
     createLiveRoom: '创建直播',
     refresh: '刷新',
     batchDelete: '批量删除',

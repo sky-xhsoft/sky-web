@@ -58,11 +58,11 @@ export function useComponentLoader(options: ComponentLoaderOptions) {
    */
   const staticRouteMap: Record<string, { componentKey: string; titleKey: string }> = {
     '/cloud': { componentKey: 'Cloud', titleKey: 'layout.cloud' },
+    '/system-center': { componentKey: 'SystemCenter', titleKey: 'layout.systemCenter' },
     '/system-management': {
       componentKey: 'SystemManagement',
       titleKey: 'layout.systemManagement',
     },
-    '/LiveGuide': { componentKey: 'LiveGuide', titleKey: 'layout.liveGuide' },
     '/live/domains': { componentKey: 'LiveDomain', titleKey: 'layout.liveDomain' },
     '/live/push-domains': { componentKey: 'PushDomain', titleKey: 'layout.pushDomains' },
     '/live/play-domains': { componentKey: 'PlayDomain', titleKey: 'layout.playDomains' },
@@ -139,12 +139,15 @@ export function useComponentLoader(options: ComponentLoaderOptions) {
   function handleRootPath() {
     const loginType = authStore.loginType
     if (loginType === 'cloud') {
-      currentComponent.value = getRegistryComponent('Cloud')
-      navigationStore.navigateTo('Cloud', t('layout.cloud'), {}, false)
+      currentComponent.value = getRegistryComponent('CloudDashboard')
+      navigationStore.navigateTo('CloudDashboard', t('cloudDash.title'), {}, false)
+    } else if (loginType === 'system') {
+      currentComponent.value = getRegistryComponent('SystemDashboard')
+      navigationStore.navigateTo('SystemDashboard', t('sysDash.title'), {}, false)
     } else {
       // live 或默认
-      currentComponent.value = getRegistryComponent('LiveGuide')
-      navigationStore.navigateTo('LiveGuide', t('layout.liveGuide'), {}, false)
+      currentComponent.value = getRegistryComponent('LiveDashboard')
+      navigationStore.navigateTo('LiveDashboard', t('dashboard.title'), {}, false)
     }
   }
 
@@ -184,7 +187,7 @@ export function useComponentLoader(options: ComponentLoaderOptions) {
   async function loadTableView(path: string): Promise<boolean> {
     if (!path.startsWith('/tables/')) return false
 
-    const TableView = (await import('../../pages/TableView.vue')).default
+    const TableView = (await import('@/pages/system/TableView.vue')).default
     currentComponent.value = TableView
     let title = '表单'
     const foundTitle = findMenuTitle(navItems.value, path)

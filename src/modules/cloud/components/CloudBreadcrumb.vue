@@ -1,21 +1,24 @@
 <template>
-  <div class="cloud-breadcrumb">
-    <a-breadcrumb>
-      <a-breadcrumb-item
-        v-for="(item, index) in items"
-        :key="item.id"
-        @click="handleClick(item)"
+  <nav class="cloud-breadcrumb" :aria-label="t('cloud.breadcrumb')">
+    <template v-for="(item, index) in items" :key="item.id">
+      <a
+        v-if="index < items.length - 1"
+        class="cloud-breadcrumb__link"
+        @click.prevent="handleClick(item)"
       >
-        <a :class="{ 'is-current': item.id === currentId, 'is-first': index === 0 }">
-          <icon-home v-if="index === 0" class="home-icon" />
-          {{ item.name }}
-        </a>
-      </a-breadcrumb-item>
-    </a-breadcrumb>
-  </div>
+        <icon-home v-if="index === 0" class="home-icon" />
+        {{ item.name }}
+      </a>
+      <template v-else>
+        <span class="cloud-breadcrumb__current">{{ item.name }}</span>
+      </template>
+      <span v-if="index < items.length - 1" class="cloud-breadcrumb__sep">/</span>
+    </template>
+  </nav>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { IconHome } from '@arco-design/web-vue/es/icon'
 
 interface BreadcrumbItem {
@@ -35,6 +38,8 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+const { t } = useI18n()
+
 function handleClick(item: BreadcrumbItem) {
   if (item.id !== props.currentId) {
     emit('navigate', item)
@@ -44,48 +49,38 @@ function handleClick(item: BreadcrumbItem) {
 
 <style scoped>
 .cloud-breadcrumb {
-  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  flex-wrap: wrap;
   min-width: 0;
 }
 
-.cloud-breadcrumb :deep(.arco-breadcrumb) {
-  font-size: 14px;
-}
-
-.cloud-breadcrumb :deep(.arco-breadcrumb-item) {
-  transition: all 0.2s ease;
-}
-
-.cloud-breadcrumb a {
+.cloud-breadcrumb__link {
+  color: var(--brand-blue);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  color: var(--color-text-2);
-  font-weight: 400;
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
 }
 
-.cloud-breadcrumb a:hover:not(.is-current) {
-  background: rgba(var(--primary-1), 0.6);
-  color: rgb(var(--primary-6));
-  transform: translateY(-1px);
+.cloud-breadcrumb__link:hover {
+  color: var(--brand-blue-hover);
 }
 
-.cloud-breadcrumb a.is-current {
-  color: rgb(var(--primary-6));
-  cursor: default;
+.cloud-breadcrumb__current {
+  color: var(--text-primary);
   font-weight: 600;
-  background: rgba(var(--primary-1), 0.3);
 }
 
-.cloud-breadcrumb a.is-first {
-  font-weight: 500;
+.cloud-breadcrumb__sep {
+  color: var(--text-tertiary);
 }
 
 .home-icon {
-  font-size: 16px;
+  font-size: 15px;
 }
 </style>

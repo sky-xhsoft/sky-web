@@ -48,7 +48,7 @@
 }
 
 .tag-empty {
-  color: #c9cdd4;
+  color: var(--text-tertiary);
   font-size: 14px;
 }
 </style>

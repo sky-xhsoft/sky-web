@@ -251,8 +251,6 @@ const tableColumns = computed(() => {
   return [selCol, ...columns.value]
 })
 
-const currentSessionRows = computed(() => selectedRows.value.filter(r => !r.__label))
-
 const isAllSelected = computed(() => {
   return tableData.value.length > 0 && tableData.value.every(r => pageSelectedIds.value.has(getRowId(r)))
 })
@@ -310,9 +308,12 @@ function getRowLabel(row: any): string {
   if (!refTableColumns.value.length) {
     return row.NAME || row.name || row.label || String(getRowId(row))
   }
-  const dkCol = refTableColumns.value.find(c => c.IS_DK === 'Y' || (c as any).isDk === 'Y')
-  const dkField = dkCol ? (dkCol.DB_NAME || (dkCol as any).dbName) : 'NAME'
-  return row[dkField] || row.NAME || row.name || row.label || String(getRowId(row))
+  const akCol = refTableColumns.value.find(c => c.IS_AK === 'Y' || (c as any).isAk === 'Y')
+    const dkCol = refTableColumns.value.find(c => c.IS_DK === 'Y' || (c as any).isDk === 'Y')
+    // 输入(选择)场景优先展示输入键 AK，其次显示键 DK，最后兜底 NAME/ID
+    const keyCol = akCol || dkCol
+    const dkField = keyCol ? (keyCol.DB_NAME || (keyCol as any).dbName) : 'NAME'
+    return row[dkField] || row.NAME || row.name || row.label || String(getRowId(row))
 }
 
 async function loadTableColumns() {
@@ -396,26 +397,8 @@ function handleSelectAll(checked: boolean) {
   }
 }
 
-function handleAddAll() {
-  tableData.value.forEach(row => {
-    const rowKey = getRowId(row)
-    if (!selectedRows.value.find(r => !r.__label && getRowId(r) === rowKey)) {
-      const stubIdx = selectedRows.value.findIndex(r => r.__label && getRowId(r) === rowKey)
-      if (stubIdx > -1) selectedRows.value.splice(stubIdx, 1)
-      selectedRows.value.push(row)
-    }
-    pageSelectedIds.value.add(rowKey)
-  })
-}
-
 function handleRemoveSelection(rowKey: string | number) {
   selectedRows.value = selectedRows.value.filter(r => getRowId(r) !== rowKey)
-}
-
-function handleExclude() {
-  const currentIds = new Set(tableData.value.map(r => getRowId(r)))
-  currentIds.forEach(id => pageSelectedIds.value.delete(id))
-  selectedRows.value = selectedRows.value.filter(r => r.__label || !currentIds.has(getRowId(r)))
 }
 
 function handleRemoveAll() {
@@ -514,25 +497,25 @@ onMounted(() => {
   min-height: 420px;
   max-height: 65vh;
   gap: 0;
-  border: 1px solid #99cbea;
+  border: 1px solid var(--info);
 
   .selection-panel {
     width: 280px;
-    background: #fff;
-    border-right: 1px solid #ddd;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
 
     .panel-header {
       padding: 8px 12px;
-      background: linear-gradient(to bottom, #fff, #e8e8e8);
-      border-bottom: 1px solid #ddd;
+      background: linear-gradient(to bottom, #fff, var(--border));
+      border-bottom: 1px solid var(--border);
       font-size: 13px;
       font-weight: 500;
       display: flex;
       align-items: center;
       gap: 6px;
-      color: #333;
+      color: var(--text-primary);
     }
 
     .panel-body {
@@ -540,11 +523,11 @@ onMounted(() => {
       overflow-y: auto;
       padding: 4px;
       min-height: 0;
-      background: #fff;
+      background: var(--bg-card);
 
       .panel-empty {
         text-align: center;
-        color: #999;
+        color: var(--text-tertiary);
         font-size: 12px;
         padding: 20px 0;
       }
@@ -555,14 +538,14 @@ onMounted(() => {
         justify-content: space-between;
         padding: 4px 6px;
         background: white;
-        border: 1px solid #ddd;
+        border: 1px solid var(--border);
         border-radius: 0;
         margin-bottom: 2px;
         font-size: 12px;
         cursor: pointer;
 
         &:hover {
-          background: #e8f4fc;
+          background: var(--info-bg);
         }
 
         .item-label {
@@ -574,7 +557,7 @@ onMounted(() => {
         }
 
         .remove-btn {
-          color: #dc3545;
+          color: var(--error);
           padding: 0 4px;
         }
       }
@@ -582,8 +565,8 @@ onMounted(() => {
 
     .panel-footer {
       padding: 8px 12px;
-      background: #f5f5f5;
-      border-top: 1px solid #ddd;
+      background: var(--bg-hover);
+      border-top: 1px solid var(--border);
       display: flex;
       gap: 8px;
       flex-direction: column;
@@ -592,7 +575,7 @@ onMounted(() => {
       .footer-btn {
         text-align: left;
         padding: 4px 8px;
-        color: #0f59a4;
+        color: var(--brand-blue);
       }
     }
   }
@@ -605,8 +588,8 @@ onMounted(() => {
     padding: 0;
 
     .query-area {
-      background: #fff;
-      border-bottom: 1px solid #99cbea;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--info);
       padding: 8px 12px;
       margin-bottom: 0;
 
@@ -617,7 +600,7 @@ onMounted(() => {
         display: flex;
         align-items: center;
         gap: 6px;
-        color: #333;
+        color: var(--text-primary);
       }
 
       .query-actions {
@@ -635,11 +618,11 @@ onMounted(() => {
     .bottom-info {
       margin-top: 8px;
       padding-top: 8px;
-      border-top: 1px solid #ddd;
+      border-top: 1px solid var(--border);
 
       .filter-label {
         font-size: 12px;
-        color: #cc0000;
+        color: var(--error);
         display: flex;
         align-items: center;
         gap: 4px;
@@ -648,23 +631,31 @@ onMounted(() => {
       .selection-result {
         margin-left: 16px;
         font-size: 12px;
-        color: #cc0000;
+        color: var(--error);
       }
     }
   }
 }
 
 :deep(.arco-table) {
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 0;
 
   .arco-table-th {
-    background: linear-gradient(to bottom, #fff, #e8e8e8);
-    border-bottom: 1px solid #ddd;
+    background: linear-gradient(to bottom, #fff, var(--border));
+    border-bottom: 1px solid var(--border);
   }
 
   .arco-table-td {
-    border-bottom: 1px solid #e5e5e5;
-  }
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* 斑马纹: 偶数行 td 铺浅灰(与主列表 #eceef3 一致) */
+    .arco-table-tr:nth-child(even) .arco-table-td {
+      background-color: #eceef3 !important;
+    }
+    .arco-table-tr:nth-child(even):hover .arco-table-td {
+      background-color: #e2e6f0 !important;
+    }
 }
 </style>

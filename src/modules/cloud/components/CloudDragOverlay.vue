@@ -28,9 +28,9 @@ const { t } = useI18n()
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(22, 93, 255, 0.08);
-  border: 3px dashed #165dff;
-  border-radius: 12px;
+  background: var(--info-bg);
+  border: 3px dashed var(--brand-blue);
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -40,25 +40,25 @@ const { t } = useI18n()
 }
 
 .drag-overlay-content {
-  background: #fff;
+  background: var(--bg-card);
   padding: 40px 60px;
-  border-radius: 16px;
-  box-shadow: 0 12px 40px rgba(22, 93, 255, 0.2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   text-align: center;
   animation: float 2s ease-in-out infinite;
-  color: #165dff;
+  color: var(--brand-blue);
 }
 
 .drag-overlay-text {
   font-size: 20px;
   font-weight: 600;
   margin-top: 12px;
-  color: #1d2129;
+  color: var(--text-primary);
 }
 
 .drag-overlay-hint {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-top: 6px;
 }
 

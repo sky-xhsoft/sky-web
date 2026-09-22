@@ -13,7 +13,7 @@ describe('LayoutHeader', () => {
 
   it('renders brand title and subtitle', () => {
     const wrapper = mount(LayoutHeader, { props: defaultProps })
-    expect(wrapper.find('.brand-title').text()).toBe('AI Live')
+    expect(wrapper.find('.brand-title').text()).toBe('Zigebo')
     expect(wrapper.find('.brand-subtitle').exists()).toBe(true)
   })
 

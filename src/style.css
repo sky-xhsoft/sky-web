@@ -1,13 +1,15 @@
 :root {
-  font-family: 'Inter', 'PingFang SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-family);
   line-height: 1.5;
   font-weight: 400;
-  color: #1f2430;
-  background-color: #f6f7fb;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out);
 }
 
 *,
@@ -20,7 +22,8 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  background: #f6f7fb;
+  background: var(--bg-page);
+  transition: background var(--duration-base) var(--ease-out);
 }
 
 #app {

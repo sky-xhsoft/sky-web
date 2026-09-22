@@ -1,43 +1,49 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch, shallowRef, nextTick, h, onBeforeUnmount, type Component } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Menu, Message, Tabs, Dropdown } from '@arco-design/web-vue'
+import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'
-import { IconMenuFold, IconMenuUnfold, IconRefresh, IconClose, IconCloseCircle } from '@arco-design/web-vue/es/icon'
+import { IconMenuFold, IconMenuUnfold, IconClose, IconCloseCircle, IconMoon, IconSun, IconUser, IconExport } from '@arco-design/web-vue/es/icon'
 import { useMenuStore } from '../stores/menu'
+import { useThemeStore } from '../stores/theme'
 import { useAuthStore } from '../stores/auth'
 import { useNavigationStore } from '../stores/navigation'
 import { getTabTitle } from './composables/tabTitleMap'
 import { findMenuTitle } from './composables/menuUtils'
 import LayoutTabContextMenu from './components/LayoutTabContextMenu.vue'
 import LayoutSidebar from './components/LayoutSidebar.vue'
-import type { TabItem } from '../stores/navigation'
-import { changeLanguage } from '../locales'
 
 // 导入常用组件
-import HomeDashboard from '../pages/HomeDashboard.vue'
-import Dashboard from '../pages/Dashboard.vue'
-import Cloud from '../pages/Cloud.vue'
-import CloudShareManager from '../pages/CloudShareManager.vue'
-import SystemManagement from '../pages/SystemManagement.vue'
-import LiveGuide from '../pages/LiveGuide.vue'
-import TableView from '../pages/TableView.vue'
-import LiveDomain from '../pages/LiveDomain.vue'
-import PushDomain from '../pages/PushDomain.vue'
-import PlayDomain from '../pages/PlayDomain.vue'
-import LiveDomainDetail from '../pages/LiveDomainDetail.vue'
-import LiveStream from '../pages/LiveStream.vue'
-import LivePreview from '../pages/LivePreview.vue'
-import PullStreamTask from '../pages/PullStreamTask.vue'
-import PullStreamTaskForm from '../pages/PullStreamTaskForm.vue'
-import LiveHighlightClips from '../pages/LiveHighlightClips.vue'
-import LiveHighlightClipPreview from '../pages/LiveHighlightClipPreview.vue'
-import LiveRecordings from '../pages/LiveRecordings.vue'
-import LiveRecordingPreview from '../pages/LiveRecordingPreview.vue'
-import LiveRoomList from '../pages/LiveRoomList.vue'
-import LiveRoomForm from '../pages/LiveRoomForm.vue'
-import LiveRoomDetail from '../pages/LiveRoomDetail.vue'
-import UserProfile from '../pages/UserProfile.vue'
+import HomeDashboard from '@/pages/common/HomeDashboard.vue'
+import Dashboard from '@/pages/common/Dashboard.vue'
+import Cloud from '@/pages/cloud/Cloud.vue'
+import CloudShareManager from '@/pages/cloud/CloudShareManager.vue'
+import SystemManagement from '@/pages/system/SystemManagement.vue'
+import SystemCenter from '@/pages/system/SystemCenter.vue'
+import CloudDashboard from '@/pages/cloud/CloudDashboard.vue'
+import SystemDashboard from '@/pages/system/SystemDashboard.vue'
+import LiveDashboard from '@/pages/live/LiveDashboard.vue'
+import TableView from '@/pages/system/TableView.vue'
+import LiveDomain from '@/pages/live/LiveDomain.vue'
+import PushDomain from '@/pages/live/PushDomain.vue'
+import PlayDomain from '@/pages/live/PlayDomain.vue'
+import LiveDomainDetail from '@/pages/live/LiveDomainDetail.vue'
+import LiveStream from '@/pages/live/LiveStream.vue'
+import LivePreview from '@/pages/live/LivePreview.vue'
+import PullStreamTask from '@/pages/live/PullStreamTask.vue'
+import PullStreamTaskForm from '@/pages/live/PullStreamTaskForm.vue'
+import LiveHighlightClips from '@/pages/live/LiveHighlightClips.vue'
+import LiveHighlightClipPreview from '@/pages/live/LiveHighlightClipPreview.vue'
+import LiveRecordings from '@/pages/live/LiveRecordings.vue'
+import LiveRecordingPreview from '@/pages/live/LiveRecordingPreview.vue'
+import LiveRoomList from '@/pages/live/LiveRoomList.vue'
+import LiveRoomForm from '@/pages/live/LiveRoomForm.vue'
+import LiveRoomDetail from '@/pages/live/LiveRoomDetail.vue'
+import LiveTranslation from '@/pages/live/LiveTranslation.vue'
+import UserProfile from '@/pages/system/UserProfile.vue'
+import CompanyConfig from '@/pages/system/CompanyConfig.vue'
+import UserCenterPage from '@/pages/system/UserCenterPage.vue'
+import PermissionManagement from '@/pages/system/PermissionManagement.vue'
 import BatchEditPage from '../modules/metadata/components/DynamicTable/BatchEditPage.vue'
 
 const router = useRouter()
@@ -45,6 +51,7 @@ const route = useRoute()
 const menuStore = useMenuStore()
 const authStore = useAuthStore()
 const navigationStore = useNavigationStore()
+const themeStore = useThemeStore()
 const { t } = useI18n()
 
 // 标签页右键菜单当前操作的key
@@ -55,6 +62,24 @@ const contextMenuVisible = ref(false)
 const contextMenuPosition = ref({ x: 0, y: 0 })
 // 移动端侧边栏显示控制
 const mobileSidebarShow = ref(false)
+// 标签栏容器（用于滚动定位活跃 tab）
+const tabBarRef = ref<HTMLElement | null>(null)
+
+// 活跃 tab 变化时，自动滚动到可视区（保证"当前活跃"标签可见）
+watch(
+  () => navigationStore.activeTabKey,
+  (key) => {
+    if (!key) return
+    nextTick(() => {
+      const bar = tabBarRef.value
+      if (!bar) return
+      const activeEl = bar.querySelector('.v2-tab.active') as HTMLElement | null
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+      }
+    })
+  }
+)
 
 /**
  * 处理标签页右键点击
@@ -144,7 +169,10 @@ const componentRegistry: Record<string, Component> = {
   Cloud,
   CloudShareManager,
   SystemManagement,
-  LiveGuide,
+      SystemCenter,
+      CloudDashboard,
+      SystemDashboard,
+      LiveDashboard,
   TableView,
   LiveDomain,
   PushDomain,
@@ -161,9 +189,13 @@ const componentRegistry: Record<string, Component> = {
   LiveRoomList,
   LiveRoomForm,
   LiveRoomDetail,
-  UserProfile,
-  BatchEditPage,
-}
+    LiveTranslation,
+    UserProfile,
+      CompanyConfig,
+      UserCenterPage,
+      PermissionManagement,
+      BatchEditPage,
+    }
 
 // 当前显示的组件（使用 shallowRef 提高性能）
 const currentComponent = shallowRef(HomeDashboard)
@@ -186,7 +218,7 @@ const mapMenu = (items: any[]): NavItem[] => {
       children: item.children ? mapMenu(item.children) : undefined,
     }))
     .sort((a, b) => a.order - b.order)
-    .map(({ order, ...rest }) => rest)
+    .map(({ order: _order, ...rest }) => rest)
 }
 
 const navItems = computed<NavItem[]>(() => {
@@ -278,33 +310,52 @@ async function loadComponent(path: string) {
     }
 
   // 其他路由
-  switch (path) {
-    case '/':
+    switch (path) {
+      case '/LiveDashboard':
+        currentComponent.value = componentRegistry.LiveDashboard
+        navigationStore.navigateTo('LiveDashboard', t('dashboard.title'), {}, false)
+        break
+      case '/CloudDashboard':
+        currentComponent.value = componentRegistry.CloudDashboard
+        navigationStore.navigateTo('CloudDashboard', t('cloudDash.title'), {}, false)
+        break
+      case '/SystemDashboard':
+        currentComponent.value = componentRegistry.SystemDashboard
+        navigationStore.navigateTo('SystemDashboard', t('sysDash.title'), {}, false)
+        break
+      case '/':
       // 根路径不显示首页，根据登录类型跳转到对应系统的默认页面
       const loginType = authStore.loginType
-      if (loginType === 'live') {
-        currentComponent.value = componentRegistry.LiveGuide
-        navigationStore.navigateTo('LiveGuide', t('layout.liveGuide'), {}, false)
-      } else if (loginType === 'cloud') {
-        currentComponent.value = componentRegistry.Cloud
-        navigationStore.navigateTo('Cloud', t('layout.cloud'), {}, false)
-      } else {
-        // 默认跳转到直播系统的默认页面
-        currentComponent.value = componentRegistry.LiveGuide
-        navigationStore.navigateTo('LiveGuide', t('layout.liveGuide'), {}, false)
-      }
-      break
+            if (loginType === 'live') {
+                    currentComponent.value = componentRegistry.LiveDashboard
+                    navigationStore.navigateTo('LiveDashboard', t('dashboard.title'), {}, false)
+                  } else if (loginType === 'cloud') {
+                    currentComponent.value = componentRegistry.CloudDashboard
+                    navigationStore.navigateTo('CloudDashboard', t('cloudDash.title'), {}, false)
+                  } else if (loginType === 'system') {
+                    currentComponent.value = componentRegistry.SystemDashboard
+                    navigationStore.navigateTo('SystemDashboard', t('sysDash.title'), {}, false)
+                  } else {
+                          // 默认跳转到直播系统的默认页面
+                          currentComponent.value = componentRegistry.LiveDashboard
+                          navigationStore.navigateTo('LiveDashboard', t('dashboard.title'), {}, false)
+                        }
+                        break
     case '/cloud':
-      currentComponent.value = componentRegistry.Cloud
-      navigationStore.navigateTo('Cloud', t('layout.cloud'), {}, false)
-      break
-    case '/system-management':
+              currentComponent.value = componentRegistry.Cloud
+              navigationStore.navigateTo('Cloud', t('layout.cloud'), {}, false)
+              break
+            case '/cloud/shares':
+          currentComponent.value = componentRegistry.CloudShareManager
+          navigationStore.navigateTo('CloudShareManager', t('cloud.myShares'), {}, false)
+          break
+        case '/system-center':
+          currentComponent.value = componentRegistry.SystemCenter
+          navigationStore.navigateTo('SystemCenter', t('layout.systemCenter'), {}, false)
+          break
+        case '/system-management':
       currentComponent.value = componentRegistry.SystemManagement
       navigationStore.navigateTo('SystemManagement', t('layout.systemManagement'), {}, false)
-      break
-    case '/LiveGuide':
-      currentComponent.value = componentRegistry.LiveGuide
-      navigationStore.navigateTo('LiveGuide', t('layout.liveGuide'), {}, false)
       break
     case '/live/domains':
       currentComponent.value = componentRegistry.LiveDomain
@@ -369,13 +420,21 @@ async function loadComponent(path: string) {
       navigationStore.navigateTo('LiveRoomDetail', t('layout.roomDetail'), { id: detailRoomId }, false)
       break
     case '/user/profile':
-      currentComponent.value = componentRegistry.UserProfile
-      navigationStore.navigateTo('UserProfile', t('layout.userProfile'), {}, false)
+          currentComponent.value = componentRegistry.UserCenterPage
+          navigationStore.navigateTo('UserCenterPage', t('layout.userProfile'), {}, false)
+          break
+    case '/system/company-config':
+      currentComponent.value = componentRegistry.CompanyConfig
+      navigationStore.navigateTo('CompanyConfig', '公司配置', {}, false)
+      break
+    case '/system/permission':
+      currentComponent.value = componentRegistry.PermissionManagement
+      navigationStore.navigateTo('PermissionManagement', '权限矩阵', {}, false)
       break
     default:
       // 动态表单路由 /tables/xxx
       if (path.startsWith('/tables/')) {
-        const TableView = (await import('../pages/TableView.vue')).default
+        const TableView = (await import('@/pages/system/TableView.vue')).default
         currentComponent.value = TableView
         // 从菜单中获取对应的标题
         let title = '表单'
@@ -416,10 +475,6 @@ const onMenuClick = async (key: string) => {
   if (parentKey && !openKeys.value.includes(parentKey)) {
     openKeys.value = [...openKeys.value, parentKey]
   }
-}
-
-const onOpenChange = (keys: string[]) => {
-  openKeys.value = keys as string[]
 }
 
 const onRootClick = async (key: string) => {
@@ -467,12 +522,14 @@ const goHome = async () => {
   // 跳转到对应系统的默认页面，而不是首页
   const loginType = authStore.loginType
   if (loginType === 'live') {
-    await loadComponent('/LiveGuide')
+    currentComponent.value = componentRegistry.LiveDashboard
+    navigationStore.navigateTo('LiveDashboard', t('dashboard.title'), {}, false)
   } else if (loginType === 'cloud') {
     await loadComponent('/cloud')
   } else {
     // 默认跳转到直播系统的默认页面
-    await loadComponent('/LiveGuide')
+    currentComponent.value = componentRegistry.LiveDashboard
+    navigationStore.navigateTo('LiveDashboard', t('dashboard.title'), {}, false)
   }
 }
 
@@ -498,6 +555,10 @@ const handleProfile = async () => {
   await loadComponent('/user/profile')
 }
 
+const onUserClick = () => {
+  handleProfile()
+}
+
 /**
  * 关闭其他标签页
  */
@@ -514,27 +575,11 @@ const handleCloseAllTabs = () => {
   navigationStore.closeAllTabs()
 }
 
-/**
- * 渲染标签页标题（带右键菜单支持）
- */
-const renderTabPaneTitle = (tab: TabItem) => {
-  return h('div', {
-    class: 'tab-title-wrapper',
-    onContextmenu: (e: MouseEvent) => handleTabContextMenu(e, tab.key),
-    onClick: (e: MouseEvent) => {
-      // 防止点击标签标题时触发外层点击事件导致菜单关闭
-      e.stopPropagation()
-    }
-  }, [
-    h('span', { class: 'tab-title-text' }, tab.title)
-  ])
-}
-
 onMounted(async () => {
   if (!menuStore.menus.length && authStore.isAuthenticated) {
     try {
       await menuStore.loadMenus()
-    } catch (e) {
+    } catch {
       Message.error('加载菜单失败')
     }
   }
@@ -550,32 +595,34 @@ onMounted(async () => {
     // 检查当前标签页是否与登录类型匹配
     const loginType = authStore.loginType
     const isTabMatchingType = navigationStore.tabs.length > 0 && (
-      (loginType === 'live' && navigationStore.tabs.some(tab => tab.componentName === 'LiveGuide')) ||
-      (loginType === 'cloud' && navigationStore.tabs.some(tab => tab.componentName === 'Cloud'))
+      (loginType === 'live' && navigationStore.tabs.some(tab => tab.componentName === 'LiveDashboard')) ||
+      (loginType === 'cloud' && navigationStore.tabs.some(tab => tab.componentName === 'CloudDashboard')) ||
+      (loginType === 'system' && navigationStore.tabs.some(tab => tab.componentName === 'SystemDashboard'))
     )
 
     // 如果没有标签页，或者标签页类型不匹配，重新加载
     if (navigationStore.tabs.length === 0 || !isTabMatchingType) {
       navigationStore.closeAllTabs()
       if (loginType === 'live') {
-        // 初始化固定标签页
-        navigationStore.initializeDefaultTab('LiveGuide', t('layout.liveGuide'), {})
-        currentComponent.value = componentRegistry.LiveGuide
+        navigationStore.initializeDefaultTab('LiveDashboard', t('dashboard.title'), {})
+        currentComponent.value = componentRegistry.LiveDashboard
       } else if (loginType === 'cloud') {
-        // 初始化固定标签页
-        navigationStore.initializeDefaultTab('Cloud', t('layout.cloud'), {})
-        currentComponent.value = componentRegistry.Cloud
+        navigationStore.initializeDefaultTab('CloudDashboard', t('cloudDash.title'), {})
+        currentComponent.value = componentRegistry.CloudDashboard
+      } else if (loginType === 'system') {
+        navigationStore.initializeDefaultTab('SystemDashboard', t('sysDash.title'), {})
+        currentComponent.value = componentRegistry.SystemDashboard
       } else {
-        // 默认跳转到直播系统的默认页面
-        navigationStore.initializeDefaultTab('LiveGuide', t('layout.liveGuide'), {})
-        currentComponent.value = componentRegistry.LiveGuide
+        navigationStore.initializeDefaultTab('LiveDashboard', t('dashboard.title'), {})
+        currentComponent.value = componentRegistry.LiveDashboard
       }
     } else {
-      // 如果标签页类型匹配，但没有显示对应组件，手动设置
-      if (loginType === 'live' && currentComponent.value !== componentRegistry.LiveGuide) {
-        currentComponent.value = componentRegistry.LiveGuide
-      } else if (loginType === 'cloud' && currentComponent.value !== componentRegistry.Cloud) {
-        currentComponent.value = componentRegistry.Cloud
+      if (loginType === 'live' && currentComponent.value !== componentRegistry.LiveDashboard) {
+        currentComponent.value = componentRegistry.LiveDashboard
+      } else if (loginType === 'cloud' && currentComponent.value !== componentRegistry.CloudDashboard) {
+        currentComponent.value = componentRegistry.CloudDashboard
+      } else if (loginType === 'system' && currentComponent.value !== componentRegistry.SystemDashboard) {
+        currentComponent.value = componentRegistry.SystemDashboard
       }
     }
   }
@@ -588,15 +635,17 @@ watch(
     if (!componentName) {
       // 组件名为空，根据登录类型显示对应的默认页面，不显示首页
       const loginType = authStore.loginType
-      if (loginType === 'live') {
-        currentComponent.value = componentRegistry.LiveGuide
-      } else if (loginType === 'cloud') {
-        currentComponent.value = componentRegistry.Cloud
-      } else {
-        // 默认跳转到直播系统的默认页面
-        currentComponent.value = componentRegistry.LiveGuide
-      }
-      return
+            if (loginType === 'live') {
+              currentComponent.value = componentRegistry.LiveDashboard
+            } else if (loginType === 'cloud') {
+              currentComponent.value = componentRegistry.CloudDashboard
+            } else if (loginType === 'system') {
+              currentComponent.value = componentRegistry.SystemDashboard
+            } else {
+              // 默认跳转到直播系统的默认页面
+              currentComponent.value = componentRegistry.LiveDashboard
+            }
+            return
     }
     try {
       let comp: Component | null = null
@@ -635,26 +684,29 @@ watch(
   () => authStore.isAuthenticated,
   (newVal) => {
     if (newVal) {
-      // 检查当前标签页是否与登录类型匹配
-      const loginType = authStore.loginType
-      const isTabMatchingType = navigationStore.tabs.length > 0 && (
-        (loginType === 'live' && navigationStore.tabs.some(tab => tab.componentName === 'LiveGuide')) ||
-        (loginType === 'cloud' && navigationStore.tabs.some(tab => tab.componentName === 'Cloud'))
-      )
+          // 检查当前标签页是否与登录类型匹配
+          const loginType = authStore.loginType
+          const isTabMatchingType = navigationStore.tabs.length > 0 && (
+                      (loginType === 'live' && navigationStore.tabs.some(tab => tab.componentName === 'LiveDashboard')) ||
+                      (loginType === 'cloud' && navigationStore.tabs.some(tab => tab.componentName === 'CloudDashboard')) ||
+                      (loginType === 'system' && navigationStore.tabs.some(tab => tab.componentName === 'SystemDashboard'))
+                    )
 
-      // 如果没有标签页，或者标签页类型不匹配，重新加载
-      if (navigationStore.tabs.length === 0 || !isTabMatchingType) {
-        navigationStore.closeAllTabs()
-        if (loginType === 'live') {
-          navigationStore.initializeDefaultTab('LiveGuide', t('layout.liveGuide'), {})
-        } else if (loginType === 'cloud') {
-          navigationStore.initializeDefaultTab('Cloud', t('layout.cloud'), {})
-        } else {
-          // 默认跳转到直播系统的默认页面
-          navigationStore.initializeDefaultTab('LiveGuide', t('layout.liveGuide'), {})
+                    // 如果没有标签页，或者标签页类型不匹配，重新加载
+                    if (navigationStore.tabs.length === 0 || !isTabMatchingType) {
+                      navigationStore.closeAllTabs()
+                      if (loginType === 'live') {
+                        navigationStore.initializeDefaultTab('LiveDashboard', t('dashboard.title'), {})
+                      } else if (loginType === 'cloud') {
+                        navigationStore.initializeDefaultTab('CloudDashboard', t('cloudDash.title'), {})
+                      } else if (loginType === 'system') {
+                        navigationStore.initializeDefaultTab('SystemDashboard', t('sysDash.title'), {})
+                      } else {
+                        // 默认跳转到直播系统的默认页面
+                        navigationStore.initializeDefaultTab('LiveDashboard', t('dashboard.title'), {})
+                      }
+                    }
         }
-      }
-    }
   },
   { immediate: true }
 )
@@ -668,14 +720,14 @@ watch(
       if (path !== '/') {
         await loadComponent(path)
       } else {
-        // 当路径是 '/' 时，根据登录类型显示对应的页面
+        // 当路径是 '/' 时，根据登录类型显示对应的页面（兼容旧落点）
         const loginType = authStore.loginType
         if (loginType === 'live') {
-          currentComponent.value = componentRegistry.LiveGuide
+          currentComponent.value = componentRegistry.LiveDashboard
         } else if (loginType === 'cloud') {
           currentComponent.value = componentRegistry.Cloud
         } else {
-          currentComponent.value = componentRegistry.LiveGuide
+          currentComponent.value = componentRegistry.LiveDashboard
         }
       }
     }
@@ -719,93 +771,51 @@ const updateTabTitles = () => {
 
 <template>
   <div class="app-shell">
-    <header class="app-header">
-      <div class="header-inner">
-        <div class="header-left-wrap">
-          <div class="brand-area" role="button" tabindex="0" @click="goHome">
-            <div class="logo-mark">AI</div>
-            <div class="brand-text">
-              <div class="brand-title">AI Live</div>
-              <div class="brand-subtitle">{{ t('layout.dataCenter') }}</div>
-            </div>
-          </div>
-          <div class="root-menu-bar">
-            <a-menu
-              mode="horizontal"
-              :selected-keys="rootSelectedKeys"
-              @menuItemClick="onRootClick"
-              class="root-menu-flat"
-              :ellipsis="false"
-            >
-              <a-menu-item v-for="item in rootMenus" :key="item.key">
-                {{ item.title }}
-              </a-menu-item>
-            </a-menu>
-          </div>
-        </div>
-        <div class="header-actions">
-          <a-button type="text" size="small" @click="handleProfile">{{ t('layout.userProfile') }}</a-button>
-          <a-button type="text" size="small" @click="handleLogout">{{ t('layout.logout') }}</a-button>
-        </div>
-      </div>
-    </header>
-    <div class="main-layout">
+    <div class="app-shell__inner">
       <LayoutSidebar
-        :items="sidebarItems"
+        :items="rootMenus"
         :open-keys="openKeys"
         :selected-keys="selectedKeys"
         :mobile-show="mobileSidebarShow"
         @update:open-keys="openKeys = $event"
         @update:selected-keys="selectedKeys = $event"
         @click="onMenuClick"
+        @toggle="toggleSidebar"
         @toggle-mobile="toggleMobileSidebar"
-      />
-      <div class="content-wrapper">
-        <!-- 标签页栏 - 现在放在右侧内容区域顶部 -->
-        <div class="tabs-bar">
-          <!-- 侧边栏折叠按钮 -->
-          <div class="sidebar-toggle" @click="toggleSidebar">
-            <IconMenuFold v-if="!menuStore.sidebarCollapsed" />
-            <IconMenuUnfold v-else />
-          </div>
-          <a-tabs
-            :active-key="navigationStore.activeTabKey"
-            type="card"
-            :closable="true"
-            :editable="true"
-            @update:active-key="onTabChange"
-            @delete="onTabClose"
-            class="page-tabs"
-          >
-            <!-- 标签栏右侧操作按钮 -->
-            <template #extra>
-              <a-space size="small">
-                <a-button size="small" @click="handleCloseOtherTabs">
-                  <template #icon><icon-close-circle /></template>
-                  {{ t('layout.closeOther') }}
-                </a-button>
-                <a-button size="small" @click="handleCloseAllTabs">
-                  <template #icon><icon-close /></template>
-                  {{ t('layout.closeAll') }}
-                </a-button>
-              </a-space>
-            </template>
-            <a-tab-pane
+                @logo-click="goHome"
+                        @user-click="onUserClick"
+                                              />
+                              <div class="v2-main">
+        <!-- 标签页栏 -->
+        <div class="v2-tabbar">
+          <div class="v2-tabs" ref="tabBarRef">
+            <div
               v-for="tab in navigationStore.tabs"
               :key="tab.key"
-              :closable="!tab.isFixed"
+              :class="['v2-tab', { active: tab.key === navigationStore.activeTabKey }]"
+              @click="onTabChange(tab.key)"
+              @contextmenu.prevent.stop="(e) => handleTabContextMenu(e, tab.key)"
             >
-              <template #title>
-                <div
-                  class="tab-title-wrapper"
-                  @contextmenu.stop="(e) => handleTabContextMenu(e, tab.key)"
-                >
-                  {{ tab.title }}
-                </div>
-              </template>
-            </a-tab-pane>
-          </a-tabs>
+              <span class="v2-tab__title">{{ tab.title }}</span>
+              <i
+                v-if="!tab.isFixed"
+                class="v2-tab-close"
+                @click.stop="onTabClose(tab.key)"
+              >×</i>
+            </div>
+          </div>
+          <div class="v2-tabbar-actions">
+            <button class="v2-icon-btn" :title="t('layout.closeOther')" @click="handleCloseOtherTabs"><icon-close-circle /></button>
+            <button class="v2-icon-btn" :title="t('layout.closeAll')" @click="handleCloseAllTabs"><icon-close /></button>
+            <button class="v2-icon-btn" :title="themeStore.theme === 'dark' ? t('layout.lightMode') : t('layout.darkMode')" @click="themeStore.toggleTheme">
+                          <icon-sun v-if="themeStore.theme === 'dark'" />
+                          <icon-moon v-else />
+                        </button>
+                        <button class="v2-icon-btn" :title="t('layout.logout')" @click="handleLogout"><icon-export /></button>
+                      </div>
+        </div>
 
+        <div class="v2-content">
           <LayoutTabContextMenu
             :visible="contextMenuVisible"
             :x="contextMenuPosition.x"
@@ -813,399 +823,193 @@ const updateTabTitles = () => {
             @close="contextMenuVisible = false"
             @action="onTabContextMenuClick"
           />
-        </div>
-        <main class="app-content">
           <!-- 使用动态组件，传递 navigationStore 中的参数 -->
-          <!-- 使用 keep-alive 缓存页面状态 -->
-          <keep-alive :include="navigationStore.keepAliveIncludes" :exclude="['BatchEditPage', 'MetadataFormView']" :max="10">
-            <component
-              :is="currentComponent"
-              v-bind="navigationStore.current.params"
-              :key="navigationStore.activeTabKey"
-            />
-          </keep-alive>
-        </main>
+                    <!-- out-in 过渡：先淡出旧页面再淡入新页面，避免菜单切换时的闪白/硬切 -->
+                    <Transition name="v2-fade" mode="out-in" appear>
+                      <keep-alive :include="navigationStore.keepAliveIncludes" :exclude="['BatchEditPage', 'MetadataFormView']" :max="10">
+                        <component
+                          :is="currentComponent"
+                          v-bind="navigationStore.current.params"
+                          :key="navigationStore.activeTabKey"
+                        />
+                      </keep-alive>
+                    </Transition>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* ============ 整体外壳：左侧侧边栏 + 右侧主区 ============ */
 .app-shell {
   min-height: 100vh;
-  background: #f5f6fa;
+  background: var(--bg-page);
 }
-.app-header {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 12px;
-  background: #ffffff;
-  color: #1f2937;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+.app-shell__inner {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
 }
 
-/* 标签页栏样式 - 现在在右侧内容区域顶部 */
-.tabs-bar {
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+/* ============ 右侧主区：标签栏 + 内容 ============ */
+.v2-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 标签页栏 */
+.v2-tabbar {
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+.v2-tabs {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+.v2-tabs::-webkit-scrollbar { display: none; }
+.v2-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+.v2-tab:hover {
+  color: var(--brand-blue);
+  background: var(--bg-hover);
+}
+.v2-tab.active {
+  background: var(--brand-blue);
+  color: #fff;
+  font-weight: 500;
+}
+.v2-tab-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-style: normal;
+  border-radius: 50%;
+  line-height: 1;
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+.v2-tab-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+  opacity: 1;
+}
+.v2-tab.active .v2-tab-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.v2-tabbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
 }
-
-.page-tabs {
-  height: 40px;
-  margin-left: 52px;
+.v2-icon-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+.v2-icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--brand-blue);
 }
 
-.page-tabs :deep(.arco-tabs-header) {
-  height: 40px;
-  padding: 0;
+/* 内容区 */
+.v2-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-page);
+  padding: 12px 16px;
 }
 
-.page-tabs :deep(.arco-tabs-nav) {
-  height: 40px;
+/* 页面切换过渡：菜单切换时旧页淡出新页淡入，避免闪白 */
+.v2-fade-enter-active,
+.v2-fade-leave-active {
+  transition: opacity 0.18s var(--ease-out);
+}
+.v2-fade-enter-from,
+.v2-fade-leave-to {
+  opacity: 0;
 }
 
-.page-tabs :deep(.arco-tabs-tab) {
-  height: 39px;
-  line-height: 39px;
-  padding: 0 16px;
-  border-radius: 6px 6px 0 0;
-}
-
-.page-tabs :deep(.arco-tabs-tab-active) {
-  background: #f5f6fa;
-}
-
-.page-tabs :deep(.arco-tabs-tab-btn) {
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.page-tabs :deep(.arco-tabs-tab-remove) {
-  margin-left: 8px;
-}
-
-/* 右键菜单样式 */
+/* ============ 右键菜单（标签页） ============ */
 .tab-context-menu {
   position: fixed;
   z-index: 10000;
-  background: #ffffff;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
   padding: 4px 0;
 }
-
 .tab-context-menu :deep(.arco-menu) {
   min-width: 160px;
   border: none;
   box-shadow: none;
+  background: var(--bg-card);
 }
-
 .tab-context-menu :deep(.arco-menu-item) {
   height: 32px;
   line-height: 32px;
   padding: 0 16px;
   font-size: 14px;
+  color: var(--text-primary);
 }
-
 .tab-context-menu :deep(.arco-menu-item:hover) {
-  background: #f5f6fa;
+  background: var(--bg-hover);
 }
 
-/* 标签页标题容器 */
-.tab-title-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  padding: 0 8px;
-}
-.header-inner {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-}
-.header-left-wrap {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex: 1;
-  min-width: 0;
-}
-.brand-area {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  width: 230px;
-  min-width: 230px;
-  justify-content: center;
-}
-.logo-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #165dff, #34c759);
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-}
-.brand-text {
-  line-height: 1.2;
-}
-.brand-title {
-  font-size: 16px;
-  font-weight: 700;
-}
-.brand-subtitle {
-  font-size: 12px;
-  color: #6b7280;
-  text-align: center;
-}
-.root-menu-bar :deep(.arco-menu-horizontal) {
-  background: transparent;
-  color: #1f2937;
-  border: none;
-}
-.root-menu-bar {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  overflow: visible;
-}
-.root-menu-bar :deep(.arco-menu-horizontal .arco-menu-item) {
-  padding: 0 16px;
-  margin: 0 4px;
-}
-.root-menu-bar :deep(.arco-menu-horizontal .arco-menu-inner) {
-  padding-left: 20px;
-}
-.root-menu-bar :deep(.arco-menu-selected) {
-  background: rgba(22, 93, 255, 0.1);
-  color: #165dff;
-}
-.header-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-.main-layout {
-  position: relative;
-  height: calc(100vh - 64px);
-  display: flex;
-  overflow: hidden;
-}
-.side-nav {
-  position: fixed;
-  left: 0;
-  top: 64px;
-  height: calc(100vh - 64px);
-  width: 230px;
-  background: #f8f9fb;
-  border-right: 1px solid #e5e7eb;
-  transition: all 0.2s ease;
-  overflow-y: auto;
-  z-index: 10;
-}
-.side-nav.collapsed {
-  width: 48px;
-}
-
-/* 右侧内容容器 */
-.content-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-width: 0;
-}
-
-.app-content {
-  padding: 12px;
-  background: #ffffff;
-  flex: 1;
-  overflow-x: hidden;
-  overflow-y: hidden;
-  position: relative;
-  border-radius: 8px;
-  width: calc(100% - 16px);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-  margin: 4px 8px;
-}
-.sidebar-toggle {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 4px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  margin: 4px 8px 4px 12px;
-  float: left;
-}
-.sidebar-toggle:hover {
-  background: #f2f3f5;
-  border-color: #165dff;
-  color: #165dff;
-  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.15);
-}
-.side-nav {
-  background: #f8f9fb;
-  border-right: 1px solid #e5e7eb;
-  transition: all 0.2s ease;
-}
-.side-nav :deep(.arco-menu) {
-  background: transparent;
-  transition: all 0.2s ease;
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-}
-
-.side-nav :deep(.arco-menu-root) {
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-}
-
-.side-nav :deep(.arco-menu-inner) {
-  padding-top: 0 !important;
-  margin-top: 0 !important;
-}
-
-.side-nav :deep(.arco-menu-item:first-child) {
-  margin-top: 0 !important;
-}
-
-.side-nav :deep(.arco-sub-menu:first-child) {
-  margin-top: 0 !important;
-}
-.side-nav :deep(.arco-menu-item) {
-  border-radius: 6px;
-  margin: 4px 8px;
-}
-.side-nav :deep(.arco-menu-selected) {
-  background: rgba(22, 93, 255, 0.12);
-  color: #165dff;
-}
-.side-nav :deep(.arco-layout-sider-collapsed .arco-menu) {
-  padding-left: 0;
-}
-.side-nav :deep(.arco-layout-sider-collapsed .arco-menu-item) {
-  display: flex;
-  justify-content: center;
-  padding: 0;
-  margin: 8px 4px;
-}
-.side-nav :deep(.arco-layout-sider-collapsed .arco-menu-icon) {
-  margin-right: 0;
-  font-size: 18px;
-}
-.side-nav :deep(.arco-layout-sider-collapsed .arco-menu-item-inner) {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-.side-nav :deep(.arco-menu-inner) {
-  padding: 8px 0 14px 0 !important;
-  margin: 0 !important;
-}
-
-/* 响应式适配：小屏幕 */
+/* ============ 响应式 ============ */
 @media (max-width: 768px) {
-  .side-nav {
-    position: fixed;
-    left: -240px;
-    top: 0;
-    bottom: 0;
-    z-index: 1000;
-    transition: left 0.3s ease;
-    height: 100vh !important;
-  }
-
-  .side-nav.collapsed {
-    left: -60px;
-  }
-
-  .side-nav.mobile-show {
-    left: 0;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
-  }
-
-  .content-wrapper {
-    margin-left: 0 !important;
-    width: 100% !important;
-  }
-
-  .tabs-bar {
-    padding: 0 8px;
-  }
-
-  .page-tabs :deep(.arco-tabs-header) {
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-
-  .page-tabs :deep(.arco-tabs-nav-list) {
-    flex-wrap: nowrap;
-  }
-
-  .sidebar-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .app-header .header-right {
-    gap: 8px;
-  }
-
-  .app-header .header-right .user-info span {
-    display: none;
-  }
-
-  /* 遮罩层 */
-  .mobile-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 999;
-    display: none;
-  }
-
-  .mobile-overlay.show {
+  .app-shell__inner {
+    height: 100vh;
     display: block;
   }
-
-  .brand-area {
-    width: auto;
-    min-width: auto;
-    padding: 0 16px;
-  }
-
-  .brand-text {
-    display: none;
-  }
-
-  .root-menu-bar {
-    display: none;
+  .v2-main {
+    height: 100vh;
+    margin-left: 0;
   }
 }
 </style>

@@ -15,10 +15,7 @@
     </div>
 
     <!-- 图标 -->
-    <div
-      class="cloud-file-card__icon"
-      :style="{ backgroundColor: item.bg, color: item.color }"
-    >
+    <div class="cloud-file-card__icon" :style="{ color: item.color, background: item.bg }">
       <span class="icon-emoji">{{ item.icon }}</span>
     </div>
 
@@ -35,9 +32,9 @@
     <!-- 操作菜单 -->
     <div v-if="showActions" class="cloud-file-card__actions" @click.stop>
       <a-dropdown trigger="click" @select="handleAction">
-        <a-button size="mini" type="text">
+        <V2Button size="sm" type="text">
           <icon-more />
-        </a-button>
+        </V2Button>
         <template #content>
           <a-doption value="preview" v-if="item.type === 'file'">
             <icon-eye />
@@ -59,6 +56,10 @@
             <icon-share-alt />
             {{ t('cloud.share') }}
           </a-doption>
+          <a-doption value="permission">
+            <icon-safe />
+            {{ t('cloud.permission') }}
+          </a-doption>
           <a-doption value="delete" class="danger-option">
             <icon-delete />
             {{ t('cloud.deleteItem') }}
@@ -77,10 +78,12 @@ import {
   IconEdit,
   IconExport,
   IconShareAlt,
+  IconSafe,
   IconDelete,
 } from '@arco-design/web-vue/es/icon'
 import type { GridItem } from '@/modules/cloud/types'
 import { useI18n } from 'vue-i18n'
+import { V2Button } from '@/components/ui'
 
 const { t } = useI18n()
 
@@ -128,36 +131,37 @@ function handleAction(value: string | number | Record<string, any> | undefined) 
 function handleContextMenu(event: MouseEvent) {
   emit('contextmenu', event, props.item)
 }
-
 </script>
 
 <style scoped>
+/* 对齐原型 cloud-card：白卡圆角 + hover 上浮 */
 .cloud-file-card {
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px;
-  border-radius: 8px;
-  background: #fff;
-  border: 2px solid transparent;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: all 0.2s;
+  border: 1px solid transparent;
+  transition: box-shadow var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
   user-select: none;
 }
 
 .cloud-file-card:hover {
-  background: #f9fafb;
-  border-color: #e5e7eb;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border);
 }
 
 .cloud-file-card.is-selected {
-  background: #eff6ff;
-  border-color: #3b82f6;
-}
-
-.cloud-file-card.is-folder:hover {
-  border-color: #fbbf24;
+  background: var(--info-bg);
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px var(--info-bg);
 }
 
 .cloud-file-card__checkbox {
@@ -168,43 +172,44 @@ function handleContextMenu(event: MouseEvent) {
 }
 
 .cloud-file-card__icon {
-  width: 80px;
-  height: 80px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  transition: transform 0.2s;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  font-size: 24px;
+  line-height: 1;
+  transition: transform var(--duration-base) var(--ease-out);
 }
 
 .cloud-file-card:hover .cloud-file-card__icon {
-  transform: scale(1.05);
+  transform: scale(1.06);
 }
 
 .icon-emoji {
-  font-size: 48px;
   line-height: 1;
 }
 
 .cloud-file-card__info {
-  width: 100%;
-  text-align: center;
+  min-width: 0;
+  flex: 1;
 }
 
 .cloud-file-card__name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 4px;
 }
 
 .cloud-file-card__meta {
-  font-size: 12px;
-  color: #9ca3af;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -215,7 +220,7 @@ function handleContextMenu(event: MouseEvent) {
   top: 8px;
   right: 8px;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 .cloud-file-card:hover .cloud-file-card__actions {
@@ -223,6 +228,6 @@ function handleContextMenu(event: MouseEvent) {
 }
 
 .danger-option {
-  color: #f53f3f;
+  color: var(--error);
 }
 </style>

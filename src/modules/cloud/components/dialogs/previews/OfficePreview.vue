@@ -8,12 +8,12 @@
     <!-- 不支持的类型 -->
     <div v-else class="office-unsupported">
       <p>不支持的文档类型</p>
-      <a-button type="primary" @click="handleDownload">
+      <V2Button type="primary" @click="handleDownload">
         <template #icon>
           <icon-download />
         </template>
         下载
-      </a-button>
+      </V2Button>
     </div>
   </div>
 </template>
@@ -174,7 +174,7 @@ onUnmounted(() => {
 
 .office-unsupported p {
   margin: 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 16px;
 }
 </style>

@@ -27,17 +27,17 @@
 
 .rate-star {
   font-size: 18px;
-  color: #e5e6eb;
+  color: var(--border);
   line-height: 1;
 }
 
 .rate-star.active {
-  color: #ff7d00;
+  color: var(--warning);
 }
 
 .rate-text {
   margin-left: 8px;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 </style>

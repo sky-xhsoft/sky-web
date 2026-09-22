@@ -93,7 +93,7 @@ async function loadUserGroups() {
 async function handleRemove(record: any) {
   try {
     await api.delete(`/groups/users/${props.userId}`, {
-      data: { groupId: record.GROUP_ID || record.groupId }
+      data: { directoryId: record.groupId || record.id }
     })
     Message.success('移除成功')
     await loadUserGroups()
@@ -108,7 +108,7 @@ async function handleAssign() {
     return
   }
   try {
-    await api.post(`/groups/users/${props.userId}`, { groupIds: selectedGroupIds.value })
+    await api.post(`/groups/users/${props.userId}`, { directoryIds: selectedGroupIds.value })
     Message.success('分配成功')
     showDialog.value = false
     await loadUserGroups()
@@ -129,8 +129,8 @@ watch(() => props.userId, async (id) => {
 
 <style scoped>
 .user-groups-panel {
-  background: #fff;
-  border: 1px solid #e5e6eb;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -139,12 +139,12 @@ watch(() => props.userId, async (id) => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #f7f8fa;
-  border-bottom: 1px solid #e5e6eb;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border);
 }
 .panel-summary {
   font-size: 13px;
-  color: #86909c;
+  color: var(--text-tertiary);
 }
 .dialog-footer {
   display: flex;

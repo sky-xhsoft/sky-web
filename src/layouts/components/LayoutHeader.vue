@@ -63,7 +63,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  brandTitle: 'AI Live',
+  brandTitle: 'Zigebo',
 })
 
 defineEmits<{

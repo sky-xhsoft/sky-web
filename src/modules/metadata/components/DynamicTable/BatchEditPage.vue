@@ -286,16 +286,16 @@ async function handleSave() {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #374151;
+  color: var(--text-secondary);
 }
 .success-state h3 { margin: 0; }
-.success-state p { margin: 0; font-size: 14px; color: #6b7280; }
+.success-state p { margin: 0; font-size: 14px; color: var(--text-secondary); }
 
 .edit-grid {
   flex: 1;
   overflow-y: auto;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -306,24 +306,24 @@ async function handleSave() {
   justify-content: space-between;
   align-items: center;
   padding: 10px 16px;
-  background: #fafbfc;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 .field-summary {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .grid-header {
   display: grid;
   grid-template-columns: 60px 1fr 160px 80px 240px;
   padding: 10px 16px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border);
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-secondary);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -335,22 +335,22 @@ async function handleSave() {
   grid-template-columns: 60px 1fr 160px 80px 240px;
   padding: 10px 16px;
   align-items: center;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--bg-hover);
   transition: background 0.15s;
   flex-shrink: 0;
 }
-.grid-row:hover { background: #fafbfc; }
-.grid-row.active { background: #eff6ff; }
+.grid-row:hover { background: var(--bg-hover); }
+.grid-row.active { background: var(--info-bg); }
 
-.col-name .field-label { font-size: 14px; font-weight: 500; color: #1f2937; }
-.col-dbname code { font-size: 11px; color: #9ca3af; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; }
-.disabled-hint { color: #d1d5db; }
+.col-name .field-label { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.col-dbname code { font-size: 11px; color: var(--text-tertiary); background: var(--bg-hover); padding: 1px 4px; border-radius: 3px; }
+.disabled-hint { color: var(--text-tertiary); }
 
 .page-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 0;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
 }
 </style>

@@ -24,7 +24,7 @@
 .radio-field-view {
   display: inline-block;
   padding: 4px 0;
-  color: #333;
+  color: var(--text-primary);
   line-height: 24px;
   min-height: 32px;
   display: flex;
@@ -54,7 +54,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: FieldValue]
 }>()
 
-const { isReadonly, isDisabled, formatValue, fieldProps } = useFieldRendererBase(props)
+const { isReadonly, isDisabled, fieldProps } = useFieldRendererBase(props)
 const { dictOptions, hasDictConfig } = useDictOptions({ column: props.column })
 
 // 排列方向

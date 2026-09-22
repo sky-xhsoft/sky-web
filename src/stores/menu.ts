@@ -40,7 +40,7 @@ const buildRoutesFromMenus = (menus: MenuTreeNode[], locale: string = 'zh-CN'): 
         routes.push({
           path: routePath,
           name: `table-${node.id}`,
-          component: () => import('../pages/TableView.vue'),
+          component: () => import('@/pages/system/TableView.vue'),
           meta: { title: getDisplayName(node, locale), requiresAuth: true },
         })
       }

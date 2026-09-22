@@ -207,8 +207,8 @@ onBeforeUnmount(() => {
 
 .richtext-field__view {
   padding: 12px;
-  background: #f7f8fa;
-  border: 1px solid #e5e6eb;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
   border-radius: 4px;
   min-height: 100px;
   max-height: 500px;
@@ -217,7 +217,7 @@ onBeforeUnmount(() => {
 
 .richtext-field__content {
   line-height: 1.6;
-  color: #1d2129;
+  color: var(--text-primary);
 }
 
 .richtext-field__content :deep(p) {
@@ -234,41 +234,41 @@ onBeforeUnmount(() => {
 }
 
 .richtext-field__content :deep(pre) {
-  background: #f7f8fa;
+  background: var(--bg-hover);
   padding: 12px;
   border-radius: 4px;
   overflow-x: auto;
 }
 
 .richtext-field__content :deep(blockquote) {
-  border-left: 4px solid #e5e6eb;
+  border-left: 4px solid var(--border);
   padding-left: 12px;
   margin: 12px 0;
-  color: #86909c;
+  color: var(--text-tertiary);
 }
 
 .richtext-field__edit {
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--border);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .richtext-field__toolbar {
-  border-bottom: 1px solid #e5e6eb;
-  background: #fff;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
 }
 
 .richtext-field__editor {
   min-height: v-bind('editorHeight + "px"');
-  background: #fff;
+  background: var(--bg-card);
 }
 
 .richtext-field__counter {
   padding: 8px 12px;
   text-align: right;
   font-size: 12px;
-  color: #86909c;
-  border-top: 1px solid #e5e6eb;
-  background: #f7f8fa;
+  color: var(--text-tertiary);
+  border-top: 1px solid var(--border);
+  background: var(--bg-hover);
 }
 </style>

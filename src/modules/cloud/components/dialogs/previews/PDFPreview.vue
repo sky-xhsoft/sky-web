@@ -31,7 +31,7 @@ interface Props {
   fileName: string
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 // ==================== 状态 ====================
 const loading = ref(true)
@@ -80,23 +80,23 @@ function handleError() {
 
 .loading-overlay p {
   margin: 0;
-  color: #e5e7eb;
+  color: var(--border);
   font-size: 14px;
 }
 
 .error-overlay :deep(.arco-icon) {
   font-size: 64px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .error-overlay p {
   margin: 0;
-  color: #e5e7eb;
+  color: var(--border);
   font-size: 14px;
 }
 
 .error-hint {
   font-size: 12px !important;
-  color: #9ca3af !important;
+  color: var(--text-tertiary) !important;
 }
 </style>

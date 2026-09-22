@@ -28,12 +28,14 @@
       @drop="handleDrop"
       @reset-columns="handleResetColumns"
       @refresh="handleRefresh"
+      @action="handleListAction"
     >
       <template #toolbar-left><slot name="toolbar-left" /></template>
       <template #toolbar-right><slot name="toolbar-right" /></template>
     </TableToolbarButtons>
 
-    <!-- 表格 -->
+    <!-- 表格（外套一层弹性容器，ResizeObserver 动态计算高度，消除加载时高度跳越） -->
+    <div ref="tableWrapRef" class="table-flex">
     <a-table
       :columns="visibleColumns"
       :data="records"
@@ -46,11 +48,13 @@
       :size="size"
       :scroll="scrollConfig"
       :row-class="getRowClass"
+      :row-style="canEdit ? editableRowStyle : undefined"
       show-sorter-tooltip
       style="width: 100%;"
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
       @sorter-change="handleSorterChange"
+      @row-click="handleRowClick"
     >
       <!-- 选择+序号列表头 -->
       <template #selection-index-title>
@@ -100,7 +104,7 @@
       <!-- 外键列自定义渲染 -->
       <template #foreignkey="{ record, column }">
         <div class="fk-cell">
-          <!-- 显示文本 -->
+          <!-- 显示文本: 有跳转时 = 外跳图标 + 可点击名称(门户风格) -->
           <span
             v-if="record[column.dataIndex + '_display']"
             class="fk-text"
@@ -108,6 +112,11 @@
             :title="record[column.dataIndex + '_ref'] ? '点击查看关联记录' : ''"
             @click="record[column.dataIndex + '_ref'] && handleForeignKeyJump(record[column.dataIndex + '_ref'])"
           >
+            <span v-if="record[column.dataIndex + '_ref']" class="fk-jump-icon">
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor">
+                <path d="M12 8.5V12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3.5a.5.5 0 0 1 0 1H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V8.5a.5.5 0 0 1 1 0z M13.5 2.5V6a.5.5 0 0 1-1 0V3.7L8.85 7.35a.5.5 0 1 1-.7-.7L11.8 3H10a.5.5 0 0 1 0-1h3a.5.5 0 0 1 .5.5z"/>
+              </svg>
+            </span>
             {{ record[column.dataIndex + '_display'] }}
           </span>
           <!-- 降级到前端查询 -->
@@ -115,6 +124,8 @@
             v-else
             :column-config="column"
             :value="record[column.dataIndex]"
+            :jump-ref="record[column.dataIndex + '_ref']"
+            @jump="handleForeignKeyJump"
           />
         </div>
       </template>
@@ -158,46 +169,24 @@
       </template>
 
       <!-- 操作列 -->
-      <template #actions="{ record }">
-        <a-space>
-          <!-- 查看 -->
-          <a-button
-            type="text"
-            size="small"
-            @click="handleView(record)"
-          >
-            查看
-          </a-button>
+            <template #actions="{ record }">
+              <a-space>
+                <!-- 编辑（默认：点击行即进入编辑页，行内保留编辑入口） -->
+                <V2Button v-if="canEdit" type="text" size="sm" @click="handleEdit(record)">编辑</V2Button>
 
-          <!-- 编辑 -->
-          <a-button
-            v-if="canEdit"
-            type="text"
-            size="small"
-            @click="handleEdit(record)"
-          >
-            编辑
-          </a-button>
+                <!-- 删除 -->
+                <a-popconfirm
+                  v-if="canDelete"
+                  content="确定要删除这条记录吗？"
+                  @ok="handleDelete(record)"
+                >
+                  <V2Button type="text" size="sm" class="danger">删除</V2Button>
+                </a-popconfirm>
 
-          <!-- 删除 -->
-          <a-popconfirm
-            v-if="canDelete"
-            content="确定要删除这条记录吗？"
-            @ok="handleDelete(record)"
-          >
-            <a-button
-              type="text"
-              status="danger"
-              size="small"
-            >
-              删除
-            </a-button>
-          </a-popconfirm>
-
-          <!-- 自定义操作插槽 -->
-          <slot name="actions" :record="record" />
-        </a-space>
-      </template>
+                <!-- 自定义操作插槽 -->
+                <slot name="actions" :record="record" />
+              </a-space>
+            </template>
 
       <!-- 自定义单元格插槽 -->
       <template
@@ -239,26 +228,10 @@
         </span>
       </template>
     </a-table>
+    </div>
 
-    <!-- 底部固定：分页 + 图例 -->
+    <!-- 底部固定：图例(左) + 分页(右) -->
     <div class="table-footer">
-      <a-pagination
-        :current="pagination.page"
-        :page-size="pagination.pageSize"
-        :total="pagination.total"
-        :show-total="true"
-        :show-jumper="true"
-        :show-page-size="true"
-        :page-size-options="[10, 15, 20, 50, 100]"
-        size="small"
-        @change="handlePageChange"
-        @page-size-change="handlePageSizeChange"
-      >
-        <template #total>
-          共 {{ pagination.total }} 条
-        </template>
-      </a-pagination>
-
       <div v-if="legendItems.length > 0" class="table-legend">
         <span class="legend-title">图例</span>
         <div
@@ -293,44 +266,74 @@
           </span>
         </div>
       </div>
+
+      <a-pagination
+        :current="pagination.page"
+        :page-size="pagination.pageSize"
+        :total="pagination.total"
+        :show-total="true"
+        :show-jumper="true"
+        :show-page-size="true"
+        :page-size-options="[10, 15, 20, 50, 100]"
+        size="small"
+        @change="handlePageChange"
+        @page-size-change="handlePageSizeChange"
+      >
+        <template #total>
+          共 {{ pagination.total }} 条
+        </template>
+      </a-pagination>
     </div>
   </div>
+
+  <!-- 导入弹窗：下载模板 + 选择文件 -->
+  <a-modal
+    v-model:visible="importVisible"
+    title="导入数据"
+    :width="480"
+    :footer="false"
+    @cancel="handleImportCancel"
+  >
+    <div class="import-modal-body">
+      <div class="import-modal-tip">
+        请先下载导入模板，按模板列格式填写后上传文件。外键/字典列请填写对应的显示名称。
+      </div>
+      <div class="import-modal-actions">
+        <a-button type="outline" long :loading="importing" @click="handleDownloadTemplate">
+          <template #icon><icon-download /></template>
+          下载导入模板
+        </a-button>
+        <a-button type="primary" long :loading="importing" @click="handleChooseFile">
+          <template #icon><icon-upload /></template>
+          选择文件并上传
+        </a-button>
+      </div>
+    </div>
+  </a-modal>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
+import api from '@/api/http'
 import { useNavigationStore } from '@/stores/navigation'
 import {
-  IconPlus,
-  IconDelete,
-  IconDownload,
-  IconUpload,
-  IconMore,
-  IconSettings,
-  IconRefresh,
-  IconSearch,
-  IconDown,
-  IconUp,
-  IconPrinter,
-  IconCopy,
-  IconEdit,
-  IconDragDotVertical,
   IconArrowUp,
-  IconArrowDown
+  IconArrowDown,
+  IconDownload,
+  IconUpload
 } from '@arco-design/web-vue/es/icon'
+import { V2Button } from '@/components/ui'
 import { useDynamicList } from '../../composables'
 import { useDynamicTableStore } from '../../stores'
 import { formatDate as formatDateUtil, formatDateTime as formatDateTimeUtil } from '@/utils/format'
 import ForeignKeyCell from './ForeignKeyCell.vue'
-import ForeignKeyField from '../FieldRenderers/ForeignKeyField.vue'
 import DynamicQueryBar from './DynamicQueryBar.vue'
 import TableToolbarButtons from './TableToolbarButtons.vue'
 import { useTableColumns } from './useTableColumns'
-import { useCellDisplay } from './useCellDisplay'
-import { submitRecord, unsubmitRecord } from '../../api/metadata'
+import { submitRecord, unsubmitRecord, getImportTemplate, fetchTableActions } from '../../api/metadata'
 import type { TableColumnData } from '@arco-design/web-vue'
-import type { FormData, SysColumn } from '../../types'
+import type { FormData, SysAction } from '../../types'
 
 // ==================== Props ====================
 
@@ -362,6 +365,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   create: []
+  copy: [record: FormData]
   view: [record: FormData]
   edit: [record: FormData]
   delete: [record: FormData]
@@ -410,7 +414,7 @@ const {
 const selectedColumnKeys = ref<string[]>([])
 const allColumns = ref<TableColumnData[]>([])
 
-const { columns, visibleColumns, isStatusColumn, isDateColumn, isDateTimeColumn, getColumnAlign, findColumnConfig } =
+const { columns, visibleColumns } =
   useTableColumns({
     tableConfig,
     tableColumns,
@@ -419,11 +423,11 @@ const { columns, visibleColumns, isStatusColumn, isDateColumn, isDateTimeColumn,
     customColumns: props.customColumns,
   })
 
-const cellDisplay = useCellDisplay(() => tableConfig.value)
-
 const toolbarProps = computed(() => ({
   showToolbar: props.showToolbar,
   loading: loading.value,
+  hasSelection: hasSelection.value,
+  selectedCount: selectedCount.value,
   allColumns: allColumns.value,
   selectedColumnKeys: selectedColumnKeys.value,
   canCreate: canCreate.value,
@@ -433,9 +437,43 @@ const toolbarProps = computed(() => ({
   canUnsubmit: canUnsubmit.value,
   canImport: canImport.value,
   canExport: canExport.value,
-  canPrint: canPrint.value
+  canPrint: canPrint.value,
+  listActions: listActions.value,
+  executingAction: executingAction.value
 }))
 const draggedIndex = ref<number>(-1)
+
+// ==================== 动作按钮（list_button 动态加载） ====================
+const listActions = ref<SysAction[]>([])
+const executingAction = ref<number | null>(null)
+
+/** 加载该表的动作定义，取 list_button 类型（列表栏按钮） */
+async function loadListActions() {
+  if (!props.tableId) return
+  try {
+    const all = await fetchTableActions(Number(props.tableId))
+    listActions.value = (all || []).filter(a => (a.displayType || '').toLowerCase() === 'list_button')
+  } catch (e) {
+    listActions.value = []
+  }
+}
+
+/** 执行动作：POST /actions/{id}/execute */
+async function handleListAction(action: SysAction) {
+  if (executingAction.value) return
+  executingAction.value = action.id
+  try {
+    const { data } = await api.post(`/actions/${action.id}/execute`, {})
+    const res = data?.data || data
+    const ok = data?.code === 200 || res?.success
+    Message.success(action.displayName || action.name + ' 执行成功')
+    await refresh()
+  } catch (error: any) {
+    Message.error(error?.message || `动作「${action.displayName || action.name}」执行失败`)
+  } finally {
+    executingAction.value = null
+  }
+}
 
 // 排序状态（跟踪多字段排序）
 // 存储格式：{ field: { direction, priority } }
@@ -444,38 +482,47 @@ const columnSorters = ref<Record<string, { direction: 'ascend' | 'descend', prio
 // 查询相关状态
 const queryForm = ref<Record<string, any>>({})
 const queryBarRef = ref<InstanceType<typeof DynamicQueryBar>>()
-const showAdvancedQuery = ref(false)
 
 // ==================== 计算属性 ====================
 
 /**
- * 可见的查询字段（支持展开/收起）
- */
-const visibleQueryColumns = computed(() => {
-  if (showAdvancedQuery.value) return queryColumns.value
-  return queryColumns.value.slice(0, 4)
-})
-
-/**
  * 滚动配置
  */
-const paginationConfig = computed(() => ({
-  current: pagination.value.page,
-  pageSize: pagination.value.pageSize,
-  total: pagination.value.total,
-  showTotal: true,
-  showJumper: true,
-  showPageSize: true,
-  pageSizeOptions: [10, 20, 50, 100],
-  // 自定义总数显示
-  showTotalText: (total: number) => `共 ${total} 条数据`
-}))
-
 const scrollConfig = computed(() => {
   return {
     x: 1800,
-    y: 810
+    y: tableHeight.value
   }
+})
+
+// 动态表格高度：监听表格容器高度，让 scroll.y 跟随容器（消除硬编码 810 导致的加载高度跳越）
+const tableWrapRef = ref<HTMLDivElement>()
+const tableHeight = ref(480)
+let resizeObserver: ResizeObserver | null = null
+let scrollResetTimer: number | null = null
+
+onMounted(() => {
+  const el = tableWrapRef.value
+  if (el) {
+    const update = () => {
+      if (el.clientHeight > 0) {
+        tableHeight.value = el.clientHeight
+      } else if (el.getBoundingClientRect().height > 0) {
+        tableHeight.value = el.getBoundingClientRect().height
+      }
+    }
+    update()
+    resizeObserver = new ResizeObserver(() => {
+      // 高度稳定后再应用，避免加载瞬间反复跳变
+      update()
+    })
+    resizeObserver.observe(el)
+  }
+})
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+  if (scrollResetTimer) window.clearTimeout(scrollResetTimer)
 })
 
 /**
@@ -524,6 +571,11 @@ const legendItems = computed(() => {
       }
     })
 
+    // 仅当该字段的字典至少有一项配置了 CSS 样式才纳入图例
+    // （无样式可图例的显示，整表单字典 CSS 均未配置时图例整体不显示）
+    const hasCssConfig = items.some(item => item.cssClass)
+    if (!hasCssConfig) return
+
     legends.push({
       fieldName: column.DB_NAME || (column as any).dbName,
       fieldLabel: column.DISPLAY_NAME || (column as any).displayName,
@@ -535,14 +587,6 @@ const legendItems = computed(() => {
 })
 
 // ==================== 方法 ====================
-
-/**
- * 判断是否为外键列
- */
-function isForeignKeyColumn(column: SysColumn): boolean {
-  const setValueType = column.SET_VALUE_TYPE || (column as any).setValueType
-  return setValueType === 'fk'
-}
 
 /**
  * 判断是否为状态列
@@ -645,45 +689,6 @@ function getDictLabelWithStyle(dataIndex: string, value: any): { label: string; 
 }
 
 /**
- * 获取字段的字典选项
- */
-function getDictOptions(column: SysColumn): Array<{ value: string; label: string }> {
-  // 特殊处理 check 类型（只有 Y/N）
-  const displayType = column.DISPLAY_TYPE || (column as any).displayType
-  // 获取字典ID（同时支持SYS_DICT_ID和DICT_TABLE_ID）
-  const sysDictID = column.SYS_DICT_ID || (column as any).sysDictId || column.DICT_TABLE_ID || (column as any).dictTableId
-  if (!sysDictID || !tableConfig.value?.dictData) {
-    return []
-  }
-
-  // 转换字典ID为数字
-  const dictID = typeof sysDictID === 'string' ? parseInt(sysDictID, 10) : sysDictID
-  const dictItems = tableConfig.value.dictData[dictID]
-
-  if (!dictItems) return []
-
-  // 转换为选项格式
-  return dictItems.map(item => ({
-    value: item.VALUE || (item as any).value,
-    label: String(item.DISPLAY_NAME || (item as any).displayName || '')
-  }))
-}
-
-/**
- * 处理查询输入框变化（支持自动转大写）
- */
-function handleQueryInputChange(column: any, value: string) {
-  const fieldName = column.DB_NAME || column.DB_NAME
-
-  // 如果配置了自动转大写，则转换为大写
-  if (value && (column.IS_UPPERCASE === 'Y' || column.isUppercase === 'Y')) {
-    queryForm.value[fieldName] = value.toUpperCase()
-  } else {
-    queryForm.value[fieldName] = value
-  }
-}
-
-/**
  * 查询
  */
 async function handleQuery(form?: Record<string, any>) {
@@ -733,6 +738,28 @@ function handleEdit(record: FormData) {
   emit('edit', record)
 }
 
+/** 行可编辑指针样式（提示可点击编辑） */
+const editableRowStyle = computed(() => ({ cursor: 'pointer' }))
+
+/**
+ * 行点击 → 默认进入编辑页
+ * 排除已有点击目标：复选框、外键跳转、操作列按钮（编辑/删除）
+ */
+function handleRowClick(record: FormData, event: Event) {
+  if (!canEdit) return
+  const target = event.target as HTMLElement | null
+  if (!target) return
+  // 排除交互元素：checkbox 框内、按钮、链接（外键跳转/查看）、a-tag 点击
+  const interactive = target.closest(
+    'button, a, input, [class*="arco-checkbox"], [class*="fk-text"], [class*="arco-tag"], [class*="arco-link"], label'
+  )
+  if (interactive) return
+  // 复选框单元格（选择+序号）内的其余位置也不触发
+  const nearestDataCol = target.closest('td')
+  if (nearestDataCol && nearestDataCol.className.includes('selection')) return
+  handleEdit(record)
+}
+
 /**
  * 外键跳转 - 跳转到关联记录的查看页面
  */
@@ -758,7 +785,7 @@ async function handleDelete(record: FormData) {
   try {
     await onDelete(record)
     emit('delete', record)
-  } catch (error: any) {
+  } catch {
     // 错误已在 composable 中处理
   }
 }
@@ -788,15 +815,51 @@ function handleBatchDelete() {
 }
 
 /**
- * 导入
+ * 导入 - 先弹窗，支持下载导入模板 + 选择文件上传
  */
+const importVisible = ref(false)
+const importing = ref(false)
+
 function handleImport() {
+  importVisible.value = true
+}
+
+function handleImportCancel() {
+  importVisible.value = false
+}
+
+async function handleDownloadTemplate() {
+  try {
+    const blob = await getImportTemplate(tableName.value)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${tableName.value}_导入模板.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    Message.success('模板已下载，请按格式填写后导入')
+  } catch (e) {
+    Message.error((e as any)?.message || '模板下载失败')
+  }
+}
+
+function handleChooseFile() {
   const input = document.createElement('input')
   input.type = 'file'
   input.accept = '.xlsx,.xls'
   input.onchange = async (e: Event) => {
     const file = (e.target as HTMLInputElement).files?.[0]
-    if (file) await onImport(file)
+    if (file) {
+      importing.value = true
+      try {
+        await onImport(file)
+        importVisible.value = false
+      } finally {
+        importing.value = false
+      }
+    }
   }
   input.click()
 }
@@ -817,11 +880,20 @@ function handlePrint() {
 }
 
 /**
- * 复制
+ * 复制：将选中行复制为一条新记录（预填到新增表单）
  */
 function handleCopy() {
-  Message.info('复制功能开发中')
-  // TODO: 实现复制逻辑
+  if (!hasSelection.value) {
+    Message.warning('请先选择要复制的记录')
+    return
+  }
+  const firstKey = selectedRowKeys.value[0]
+  const record = records.value.find(r => String(getRecordKey(r)) === String(firstKey))
+  if (!record) {
+    Message.warning('未找到要复制的记录')
+    return
+  }
+  emit('copy', record)
 }
 
 /**
@@ -907,7 +979,7 @@ async function handleRefresh() {
     const tableStore = useDynamicTableStore()
     tableStore.updateSorters(tableName.value, [])
     await refresh()
-  } catch (error: any) {
+  } catch {
     // 错误已在 composable 中处理
   }
 }
@@ -1188,6 +1260,7 @@ function initColumnSettings() {
 
 onMounted(() => {
   initColumnSettings()
+  loadListActions()
 })
 
 // 监听列变化 - 当业务列加载后重新初始化
@@ -1214,6 +1287,9 @@ watch(
       // 同时清空 store 的 filters（因为可能之前点过查询按钮）
       const tableStore = useDynamicTableStore()
       tableStore.filters = {}
+
+      // 重新加载该表的动作按钮
+      loadListActions()
     }
   }
 )
@@ -1228,15 +1304,66 @@ defineExpose({
 </script>
 
 <style scoped>
+/* 导入弹窗 */
+.import-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 4px;
+}
+.import-modal-tip {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-fill-2);
+  color: var(--color-text-2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.import-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.import-modal-actions :deep(.arco-btn) {
+  height: 40px;
+}
 .dynamic-table {
   width: 100%;
   height: 100%;
-  background: #fff;
-  border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* 状态/字典 Tag 对齐 v2 功能色 */
+.dynamic-table :deep(.arco-tag-green),
+.dynamic-table :deep(.arco-tag.arco-tag-color-green) {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.dynamic-table :deep(.arco-tag-red),
+.dynamic-table :deep(.arco-tag.arco-tag-color-red) {
+  background: var(--error-bg);
+  color: var(--error);
+}
+.dynamic-table :deep(.arco-tag-gray),
+.dynamic-table :deep(.arco-tag.arco-tag-color-gray) {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+.dynamic-table :deep(.arco-tag-blue),
+.dynamic-table :deep(.arco-tag.arco-tag-color-primary),
+.dynamic-table :deep(.arco-tag.arco-tag-color-arcoblue) {
+  background: var(--info-bg);
+  color: var(--info);
+}
+.dynamic-table :deep(.arco-tag-orange),
+.dynamic-table :deep(.arco-tag.arco-tag-color-orange) {
+  background: var(--warning-bg);
+  color: var(--warning);
 }
 
 /* 选择+序号列样式 */
@@ -1253,19 +1380,45 @@ defineExpose({
 }
 
 .row-number {
-  color: #86909c;
+  color: var(--text-tertiary);
   font-size: 14px;
   min-width: 24px;
   text-align: center;
 }
 
 
+/* ===== 统一卡片视觉 ===== */
+.dynamic-table {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.dynamic-table__query {
+  border-radius: 10px 10px 0 0;
+  border: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.dynamic-table__toolbar {
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+}
+
+.dynamic-table :deep(.arco-table-container) {
+  border-left: none;
+  border-right: none;
+}
+
 /* 查询区域 */
 .dynamic-table__query {
   flex-shrink: 0;
   padding: 0;
-  background: #fff;
-  border: 1px solid #e5e6eb;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 4px;
 }
 
@@ -1273,21 +1426,21 @@ defineExpose({
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  background: #f7f8fa;
-  border-bottom: 1px solid #e5e6eb;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border);
   border-radius: 4px 4px 0 0;
 }
 
 .query-icon {
   font-size: 16px;
-  color: #3370ff;
+  color: var(--brand-blue);
   margin-right: 8px;
 }
 
 .query-title {
   font-size: 14px;
   font-weight: 500;
-  color: #1d2129;
+  color: var(--text-primary);
 }
 
 .dynamic-table__query .query-form {
@@ -1311,7 +1464,7 @@ defineExpose({
   display: flex !important;
   justify-content: flex-end !important;
   z-index: 999 !important;
-  background: #fff;
+  background: var(--bg-card);
   padding: 8px;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -1377,7 +1530,7 @@ defineExpose({
 }
 
 .query-empty-text {
-  color: #86909c;
+  color: var(--text-tertiary);
   font-size: 14px;
 }
 
@@ -1387,7 +1540,7 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   padding: 6px;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid var(--border);
 }
 
 .toolbar-left,
@@ -1440,26 +1593,46 @@ defineExpose({
 }
 
 .dynamic-table :deep(.arco-table-th) {
-  background: #fafafa;
+  background: #f5f7fa;
   font-weight: 600;
-  color: var(--color-text-1);
+  color: #1f2329;
   padding: 5px 12px;
   height: 30px;
   line-height: 20px;
+  border-bottom: 1px solid var(--border);
 }
 
+/* 表头单元格右细边（企业后台列分隔观感） */
+.dynamic-table :deep(.arco-table-th)::after {
+  border-right-color: var(--border-light) !important;
+}
+
+/* 行悬停 / 选中：淡蓝（避免过艳） */
 .dynamic-table :deep(.arco-table-tr:hover) {
-  background: #e6f7ff;
+  background: #f0f6ff;
 }
-
 .dynamic-table :deep(.arco-table-tr.arco-table-tr-checked) {
-  background: #bae7ff;
+  background: #eaf2ff;
 }
 
+/* 数据行：细下边框分隔、正文深色 */
 .dynamic-table :deep(.arco-table-td) {
   padding: 5px 12px;
   height: 30px;
   line-height: 20px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
+}
+.dynamic-table :deep(.arco-table-td-content) {
+  color: var(--text-primary);
+}
+
+/* 斑马纹（极浅，保持整齐） */
+.dynamic-table :deep(.arco-table-tr:nth-child(even)) {
+  background: #fafbfc;
+}
+.dynamic-table :deep(.arco-table-tr:nth-child(even):hover) {
+  background: #f0f6ff;
 }
 
 /* 操作按钮样式 */
@@ -1468,7 +1641,7 @@ defineExpose({
 }
 
 .dynamic-table :deep(.arco-btn-text):hover {
-  background: rgba(var(--primary-6), 0.1);
+  background: var(--info-bg);
 }
 
 
@@ -1478,7 +1651,7 @@ defineExpose({
   position: sticky !important;
   left: 0 !important;
   z-index: 2 !important;
-  background: #fff !important;
+  background: var(--bg-card) !important;
 }
 
 .dynamic-table :deep(.arco-table-th-fixed-right),
@@ -1486,12 +1659,12 @@ defineExpose({
   position: sticky !important;
   right: 0 !important;
   z-index: 2 !important;
-  background: #fff !important;
+  background: var(--bg-card) !important;
 }
 
 .dynamic-table :deep(.arco-table-th-fixed-left),
 .dynamic-table :deep(.arco-table-th-fixed-right) {
-  background: #fafafa !important;
+  background: #f5f7fa !important;
 }
 
 /* 固定列阴影效果 */
@@ -1531,7 +1704,7 @@ defineExpose({
 
 /* 复选框样式 */
 .dynamic-table :deep(.arco-checkbox) {
-  --color-primary: #2b9e91;
+  --color-primary: var(--success);
 }
 
 /* 空状态样式 */
@@ -1578,10 +1751,10 @@ defineExpose({
 
 .settings-header {
   padding: 8px 12px;
-  border-bottom: 1px solid #e5e6eb;
+  border-bottom: 1px solid var(--border);
   font-weight: 600;
   font-size: 14px;
-  color: #1d2129;
+  color: var(--text-primary);
 }
 
 .settings-body {
@@ -1600,12 +1773,12 @@ defineExpose({
 }
 
 .column-item:hover {
-  background-color: #f7f8fa;
+  background-color: var(--bg-hover);
 }
 
 .drag-handle {
   margin-right: 8px;
-  color: #86909c;
+  color: var(--text-tertiary);
   font-size: 14px;
   cursor: grab;
 }
@@ -1620,12 +1793,12 @@ defineExpose({
 
 .settings-footer {
   padding: 8px 12px;
-  border-top: 1px solid #e5e6eb;
+  border-top: 1px solid var(--border);
   text-align: center;
 }
 
 .settings-footer :deep(.arco-btn-text) {
-  color: #3370ff;
+  color: var(--brand-blue);
 }
 
 /* 外键单元格样式 */
@@ -1641,54 +1814,54 @@ defineExpose({
 
 /* 有链接的文本样式 */
 .fk-text.has-link {
-  color: #3370ff;
+  color: var(--brand-blue);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .fk-text.has-link:hover {
-  color: #0e42d2;
+  color: var(--brand-blue-hover);
   text-decoration: underline;
 }
 
 /* 字典标签自定义样式 */
 /* 禁用/停用状态 - 灰色斜体 */
 .dict-label-disabled {
-  color: #999;
+  color: var(--text-tertiary);
   font-style: italic;
 }
 
 /* 非活动状态 - 灰色斜体 + 删除线 */
 .dict-label-inactive {
-  color: #999;
+  color: var(--text-tertiary);
   font-style: italic;
   text-decoration: line-through;
 }
 
 /* 草稿状态 - 浅灰色 */
 .dict-label-draft {
-  color: #bbb;
+  color: var(--text-tertiary);
 }
 
 /* 待审核状态 - 橙色 */
 .dict-label-pending {
-  color: #ff7d00;
+  color: var(--warning);
 }
 
 /* 已完成状态 - 绿色加粗 */
 .dict-label-completed {
-  color: #00b42a;
+  color: var(--success);
   font-weight: 600;
 }
 
 /* 已拒绝状态 - 红色 */
 .dict-label-rejected {
-  color: #f53f3f;
+  color: var(--error);
 }
 
 /* 已过期状态 - 灰色 + 删除线 */
 .dict-label-expired {
-  color: #999;
+  color: var(--text-tertiary);
   text-decoration: line-through;
 }
 
@@ -1747,7 +1920,7 @@ defineExpose({
 /* 自定义样式类对应的行样式 */
 .dynamic-table :deep(tr.row-dict-label-disabled),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-disabled) {
-  color: #999 !important;
+  color: var(--text-tertiary) !important;
   font-style: italic !important;
   background-color: rgba(153, 153, 153, 0.05) !important;
 }
@@ -1759,13 +1932,13 @@ defineExpose({
 
 .dynamic-table :deep(tr.row-dict-label-disabled td),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-disabled td) {
-  color: #999 !important;
+  color: var(--text-tertiary) !important;
   font-style: italic !important;
 }
 
 .dynamic-table :deep(tr.row-dict-label-inactive),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-inactive) {
-  color: #999 !important;
+  color: var(--text-tertiary) !important;
   font-style: italic !important;
   text-decoration: line-through !important;
   background-color: rgba(153, 153, 153, 0.05) !important;
@@ -1778,14 +1951,14 @@ defineExpose({
 
 .dynamic-table :deep(tr.row-dict-label-inactive td),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-inactive td) {
-  color: #999 !important;
+  color: var(--text-tertiary) !important;
   font-style: italic !important;
   text-decoration: line-through !important;
 }
 
 .dynamic-table :deep(tr.row-dict-label-draft),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-draft) {
-  color: #bbb !important;
+  color: var(--text-tertiary) !important;
   background-color: rgba(187, 187, 187, 0.03) !important;
 }
 
@@ -1796,12 +1969,12 @@ defineExpose({
 
 .dynamic-table :deep(tr.row-dict-label-draft td),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-draft td) {
-  color: #bbb !important;
+  color: var(--text-tertiary) !important;
 }
 
 .dynamic-table :deep(tr.row-dict-label-pending),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-pending) {
-  color: #ff7d00 !important;
+  color: var(--warning) !important;
   background-color: rgba(255, 125, 0, 0.05) !important;
 }
 
@@ -1812,12 +1985,12 @@ defineExpose({
 
 .dynamic-table :deep(tr.row-dict-label-pending td),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-pending td) {
-  color: #ff7d00 !important;
+  color: var(--warning) !important;
 }
 
 .dynamic-table :deep(tr.row-dict-label-completed),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-completed) {
-  color: #00b42a !important;
+  color: var(--success) !important;
   font-weight: 600 !important;
   background-color: rgba(0, 180, 42, 0.05) !important;
 }
@@ -1829,13 +2002,13 @@ defineExpose({
 
 .dynamic-table :deep(tr.row-dict-label-completed td),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-completed td) {
-  color: #00b42a !important;
+  color: var(--success) !important;
   font-weight: 600 !important;
 }
 
 .dynamic-table :deep(tr.row-dict-label-rejected),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-rejected) {
-  color: #f53f3f !important;
+  color: var(--error) !important;
   background-color: rgba(245, 63, 63, 0.05) !important;
 }
 
@@ -1846,12 +2019,12 @@ defineExpose({
 
 .dynamic-table :deep(tr.row-dict-label-rejected td),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-rejected td) {
-  color: #f53f3f !important;
+  color: var(--error) !important;
 }
 
 .dynamic-table :deep(tr.row-dict-label-expired),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-expired) {
-  color: #999 !important;
+  color: var(--text-tertiary) !important;
   text-decoration: line-through !important;
   background-color: rgba(153, 153, 153, 0.05) !important;
 }
@@ -1863,21 +2036,21 @@ defineExpose({
 
 .dynamic-table :deep(tr.row-dict-label-expired td),
 .dynamic-table :deep(.arco-table-tr.row-dict-label-expired td) {
-  color: #999 !important;
+  color: var(--text-tertiary) !important;
   text-decoration: line-through !important;
 }
 
 /* 底部栏：分页 + 图例 */
 .table-footer {
   flex-shrink: 0;
-  background: #fff;
-  border-top: 1px solid #e5e6eb;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
 }
 
 .table-footer .arco-pagination {
   padding: 8px 16px;
   justify-content: flex-end;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-light);
 }
 
 /* 图例样式 */
@@ -1886,7 +2059,7 @@ defineExpose({
   align-items: flex-start;
   gap: 24px;
   padding: 8px 16px;
-  background: #f7f8fa;
+  background: var(--bg-hover);
   font-size: 13px;
   flex-wrap: wrap;
   max-height: 80px;
@@ -1901,7 +2074,7 @@ defineExpose({
 
 .legend-title {
   font-weight: 600;
-  color: #1d2129;
+  color: var(--text-primary);
   flex-shrink: 0;
 }
 
@@ -1914,7 +2087,7 @@ defineExpose({
 
 .legend-field-label {
   font-weight: 500;
-  color: #4e5969;
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
@@ -1927,15 +2100,36 @@ defineExpose({
 .legend-item:not(:last-child)::after {
   content: '|';
   margin-left: 8px;
-  color: #c9cdd4;
+  color: var(--text-tertiary);
 }
 
 .legend-default {
-  color: #1d2129;
+  color: var(--text-primary);
   padding: 0 4px;
 }
 
 /* 让表格自动填充剩余空间 */
+/* 根容器纵向弹性布局：QueryBar/工具栏固定，表格区自适应高度（消除加载高度跳越） */
+.dynamic-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* 表格弹性容器：占满剩余高度，内部表格独立滚动 */
+.table-flex {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.table-flex :deep(.arco-table) {
+  flex: 1;
+  min-height: 0;
+}
+
 /* 表格独立滚动容器 - 仅表格部分滚动 */
 .table-scroll-container {
   width: 100%;
@@ -1975,12 +2169,268 @@ defineExpose({
 }
 
 .image-cell .arco-image {
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--border);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .image-empty {
-  color: #c9cdd4;
+  color: var(--text-tertiary);
+}
+
+/* ============ 整体 UI 与布局精修（本轮） ============ */
+
+/* —— 查询区：内嵌标题栏 + 更舒展的字段间距 —— */
+.dynamic-table__query {
+  position: relative;
+}
+.dynamic-table__query::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--brand-blue), rgba(22,93,255,0.3));
+  z-index: 1;
+}
+.dynamic-table__query .query-form {
+  padding: 14px 16px 6px;
+  padding-right: 120px;
+}
+.dynamic-table__query .query-form :deep(.arco-form-item) {
+  margin-bottom: 14px !important;
+  margin-right: 18px !important;
+}
+.dynamic-table__query .query-form :deep(.arco-form-item-label) {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.dynamic-table__query .query-form :deep(.arco-input),
+.dynamic-table__query .query-form :deep(.arco-select),
+.dynamic-table__query .query-form :deep(.arco-picker) {
+  border-radius: 6px;
+}
+
+/* —— 工具栏：分组更清晰，主操作显眼 —— */
+.dynamic-table__toolbar {
+  padding: 10px 14px;
+  gap: 8px;
+}
+.dynamic-table__toolbar .toolbar-left :deep(.arco-space-item) { margin-right: 4px !important; }
+.dynamic-table__toolbar .toolbar-right :deep(.arco-space-item) { margin-right: 2px !important; }
+.dynamic-table__toolbar .toolbar-right :deep(button.v2-button) {
+  height: 30px;
+  border-radius: 6px;
+}
+/* 更多 / 工具 icon 按钮 */
+.dynamic-table__toolbar :deep(.arco-btn) {
+  border-radius: 6px;
+}
+
+/* —— 表格：行高舒适 + 斑马纹 + hover 平滑 —— */
+.dynamic-table :deep(.arco-table-th) {
+  height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--bg-hover), #fff);
+}
+.dynamic-table :deep(.arco-table-td) {
+  height: 44px;
+  padding: 0 14px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-light);
+}
+/* 斑马纹 - 明暗交替 */
+.dynamic-table :deep(.arco-table-tr:nth-child(even)) {
+  background: #eceef3;
+}
+.dynamic-table :deep(.arco-table-tr:nth-child(even) .arco-table-td) {
+  background-color: #eceef3 !important;
+}
+.dynamic-table :deep(.arco-table-tr:hover) {
+  background: var(--info-bg) !important;
+  transition: background 0.15s ease;
+}
+
+/* —— 外键列: 外跳图标(门户风格) —— */
+.dynamic-table :deep(.fk-jump-icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  background: var(--brand-blue);
+  color: #fff;
+  margin-right: 4px;
+  vertical-align: -2px;
+  flex-shrink: 0;
+}
+.dynamic-table :deep(.fk-text.has-link .fk-jump-icon) {
+  position: relative;
+  top: -1px;
+}
+
+/* —— 操作列：按钮间加分隔竖线，悬停更清晰 —— */
+.dynamic-table :deep(.arco-table-td) .arco-space-item {
+  position: relative;
+}
+.dynamic-table :deep(.arco-table-td) :deep(.arco-btn-text) {
+  padding: 4px 6px;
+  color: var(--brand-blue);
+  font-size: 13px;
+}
+.dynamic-table :deep(.arco-table-td) :deep(.arco-btn-text.danger) {
+  color: var(--error);
+}
+.dynamic-table :deep(.arco-table-td) :deep(.arco-btn-text:not(:first-of-type)::before) {
+  content: '';
+  position: absolute;
+  left: -1px; top: 50%;
+  transform: translateY(-50%);
+  width: 1px; height: 14px;
+  background: var(--border);
+}
+
+/* —— Footer：分页与图例分栏，胶囊风格 —— */
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.table-footer :deep(.arco-pagination) {
+  flex-wrap: wrap;
+}
+.table-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.legend-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-right: 2px;
+}
+.legend-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  background: var(--bg-hover);
+  border-radius: 20px;
+  font-size: 12px;
+}
+.legend-field-label {
+  color: var(--text-tertiary);
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+}
+.legend-default {
+  color: var(--text-secondary);
+}
+
+/* —— 空状态优化 —— */
+.dynamic-table :deep(.arco-empty) {
+  padding: 48px 0;
+}
+.dynamic-table :deep(.arco-empty-image) {
+  color: var(--brand-blue);
+  opacity: 0.4;
+}
+.dynamic-table :deep(.arco-spin) {
+  min-height: 240px;
+}
+
+/* ═══════════════════════════════════════════════
+   列表参考 Arco Pro search-table：表头灰 #f2f3f5、数据纯白、
+   行 hover Arco 浅蓝、无斑马纹、细下边框
+   ═══════════════════════════════════════════════ */
+.dynamic-table :deep(.arco-table-th) {
+  height: 38px;
+  padding: 0 14px;
+  background: #f2f3f5 !important;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1d2129;
+}
+.dynamic-table :deep(.arco-table-th)::before {
+  background: #f2f3f5 !important;
+}
+.dynamic-table :deep(.arco-table-th)::after {
+  border-right: none;
+}
+.dynamic-table :deep(.arco-table-th-fixed-left),
+.dynamic-table :deep(.arco-table-th-fixed-right) {
+  background: #f2f3f5 !important;
+}
+
+/* 数据行：纯白、无斑马、细下边框、行 hover Arco 浅蓝 */
+.dynamic-table :deep(.arco-table-tr),
+.dynamic-table :deep(.arco-table-td) {
+  background: #fff;
+  color: #1d2129;
+}
+.dynamic-table :deep(.arco-table-td) {
+  height: 44px;
+  padding: 0 14px;
+  font-size: 13px;
+  border-bottom: 1px solid #f2f3f5;
+}
+.dynamic-table :deep(.arco-table-tr:nth-child(even)),
+.dynamic-table :deep(.arco-table-tr:nth-child(even) .arco-table-td) {
+  background: #fff !important;
+}
+.dynamic-table :deep(.arco-table-tr:hover),
+.dynamic-table :deep(.arco-table-tr:nth-child(even):hover),
+.dynamic-table :deep(.arco-table-tr:hover .arco-table-td) {
+  background: #e8f3ff !important;
+}
+.dynamic-table :deep(.arco-table-tr.arco-table-tr-checked),
+.dynamic-table :deep(.arco-table-tr.arco-table-tr-checked .arco-table-td) {
+  background: #e8f3ff !important;
+}
+
+/* 行内操作按钮：Arco link 蓝 / 红删除 */
+.dynamic-table :deep(.arco-table-td) :deep(.arco-btn-text) {
+  color: #165dff;
+  font-size: 13px;
+  padding: 4px 6px;
+}
+.dynamic-table :deep(.arco-table-td) :deep(.arco-btn-text.danger) {
+  color: #f53f3f;
+}
+.dynamic-table :deep(.arco-table-td) :deep(.arco-btn-text):hover {
+  color: #0e4bdb;
+  background: #e8f3ff;
+}
+.dynamic-table :deep(.arco-table-td) :deep(.arco-btn-text.danger:hover) {
+  color: #d73535;
+}
+
+/* 分页：Arco 默认，当前页品牌蓝 */
+.dynamic-table :deep(.arco-pagination) {
+  font-size: 13px;
+}
+.dynamic-table :deep(.arco-pagination-item) {
+  border-radius: 4px;
+  color: #4e5969;
+}
+.dynamic-table :deep(.arco-pagination-item-active) {
+  background: #165dff !important;
+  border-color: #165dff !important;
+  color: #fff !important;
+}
+.dynamic-table :deep(.arco-pagination-item-active:hover) {
+  background: #0e4bdb !important;
 }
 </style>

@@ -16,7 +16,6 @@ import {
   getColumnDbName,
   getTableName,
   getTableDisplayName,
-  TableMaskIndex,
   SysTable,
   SysColumn,
 } from './index'

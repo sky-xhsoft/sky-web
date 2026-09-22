@@ -1,5 +1,5 @@
 <template>
-  <a-modal
+  <V2Modal
     :visible="visible"
     @update:visible="$emit('update:visible', $event)"
     :title="title"
@@ -13,11 +13,13 @@
     <div class="batch-progress-container">
       <!-- Progress Bar -->
       <div class="progress-section">
-        <a-progress
-          :percent="progressPercent"
-          :status="progressStatus"
-          :stroke-width="12"
-        />
+        <div class="progress-track">
+          <i
+            :style="{ width: progressPercent + '%' }"
+            class="progress-fill"
+            :class="progressColorClass"
+          />
+        </div>
         <div class="progress-text">
           <template v-if="inProgress">
             正在处理: {{ completed }} / {{ total }}
@@ -51,14 +53,10 @@
 
       <!-- Failed Items List -->
       <div v-if="failedItems.length > 0" class="failed-section">
-        <a-alert type="error" :show-icon="true">
-          <template #icon>
-            <icon-exclamation-circle-fill />
-          </template>
-          <template #title>
-            以下 {{ failedItems.length }} 项操作失败
-          </template>
-        </a-alert>
+        <div class="failed-alert">
+          <icon-exclamation-circle-fill />
+          <span>以下 {{ failedItems.length }} 项操作失败</span>
+        </div>
         <div class="failed-list">
           <div v-for="(item, index) in failedItems" :key="index" class="failed-item">
             <icon-close-circle-fill class="failed-icon" />
@@ -69,25 +67,24 @@
 
       <!-- Action Buttons -->
       <div v-if="isComplete" class="action-buttons">
-        <a-space>
-          <a-button type="primary" @click="handleClose">
-            确定
-          </a-button>
-          <a-button v-if="failed > 0" @click="handleRetry">
-            重试失败项
-          </a-button>
-        </a-space>
+        <V2Button type="primary" @click="handleClose">
+          确定
+        </V2Button>
+        <V2Button v-if="failed > 0" type="secondary" @click="handleRetry">
+          重试失败项
+        </V2Button>
       </div>
     </div>
-  </a-modal>
+  </V2Modal>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import {
   IconExclamationCircleFill,
   IconCloseCircleFill,
 } from '@arco-design/web-vue/es/icon'
+import { V2Modal, V2Button } from '@/components/ui'
 
 interface Props {
   visible: boolean
@@ -121,11 +118,10 @@ const progressPercent = computed(() => {
   return Math.round((props.completed / props.total) * 100)
 })
 
-// 计算进度状态
-const progressStatus = computed(() => {
-  if (props.inProgress) return 'normal'
-  if (props.failed === 0) return 'success'
-  return 'warning'
+const progressColorClass = computed(() => {
+  if (props.inProgress) return 'is-progress'
+  if (props.failed === 0) return 'is-success'
+  return 'is-warning'
 })
 
 // 是否已完成
@@ -136,12 +132,10 @@ const isComplete = computed(() => {
 // Auto-close timer
 let autoCloseTimer: number | null = null
 
-// Watch for completion and auto-close
 watch(
   () => isComplete.value,
   (complete) => {
     if (complete && props.autoClose && props.failed === 0) {
-      // Only auto-close if there are no failures
       autoCloseTimer = window.setTimeout(() => {
         handleClose()
       }, props.autoCloseDelay)
@@ -149,7 +143,6 @@ watch(
   }
 )
 
-// Handle close
 function handleClose() {
   if (autoCloseTimer) {
     window.clearTimeout(autoCloseTimer)
@@ -159,116 +152,149 @@ function handleClose() {
   emit('close')
 }
 
-// Handle cancel (only when not in progress)
 function handleCancel() {
   if (!props.inProgress) {
     handleClose()
   }
 }
 
-// Handle retry
 function handleRetry() {
   emit('retry')
 }
 </script>
 
-<style scoped lang="less">
+<style scoped>
 .batch-progress-container {
   padding: 8px 0;
+}
 
-  .progress-section {
-    margin-bottom: 24px;
+.progress-section {
+  margin-bottom: 24px;
+}
 
-    .progress-text {
-      margin-top: 12px;
-      text-align: center;
-      font-size: 14px;
-      color: var(--color-text-2);
-      font-weight: 500;
-    }
-  }
+.progress-track {
+  height: 10px;
+  background: var(--bg-hover);
+  border-radius: 999px;
+  overflow: hidden;
+}
 
-  .stats-section {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 24px;
-    padding: 16px;
-    background: var(--color-fill-2);
-    border-radius: 8px;
+.progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand-gradient);
+  transition: width var(--duration-base) var(--ease-out);
+}
 
-    .stat-item {
-      text-align: center;
-      flex: 1;
+.progress-fill.is-success {
+  background: var(--success);
+}
 
-      .stat-label {
-        font-size: 12px;
-        color: var(--color-text-3);
-        margin-bottom: 4px;
-      }
+.progress-fill.is-warning {
+  background: var(--warning);
+}
 
-      .stat-value {
-        font-size: 24px;
-        font-weight: 600;
-      }
+.progress-text {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
 
-      &.success .stat-value {
-        color: rgb(var(--success-6));
-      }
+.stats-section {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-lg);
+}
 
-      &.failed .stat-value {
-        color: rgb(var(--danger-6));
-      }
+.stat-item {
+  text-align: center;
+  flex: 1;
+}
 
-      &.total .stat-value {
-        color: rgb(var(--primary-6));
-      }
-    }
-  }
+.stat-label {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
 
-  .failed-section {
-    margin-bottom: 16px;
+.stat-value {
+  font-size: 24px;
+  font-weight: 600;
+}
 
-    .failed-list {
-      margin-top: 12px;
-      max-height: 200px;
-      overflow-y: auto;
-      padding: 8px;
-      background: var(--color-fill-1);
-      border-radius: 4px;
+.stat-item.success .stat-value {
+  color: var(--success);
+}
 
-      .failed-item {
-        display: flex;
-        align-items: center;
-        padding: 6px 8px;
-        margin-bottom: 4px;
-        background: var(--color-bg-2);
-        border-radius: 4px;
-        font-size: 13px;
+.stat-item.failed .stat-value {
+  color: var(--error);
+}
 
-        .failed-icon {
-          color: rgb(var(--danger-6));
-          margin-right: 8px;
-          font-size: 14px;
-          flex-shrink: 0;
-        }
+.stat-item.total .stat-value {
+  color: var(--info);
+}
 
-        .failed-name {
-          color: var(--color-text-2);
-          word-break: break-all;
-        }
+.failed-section {
+  margin-bottom: 16px;
+}
 
-        &:last-child {
-          margin-bottom: 0;
-        }
-      }
-    }
-  }
+.failed-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--error-bg);
+  color: var(--error);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
 
-  .action-buttons {
-    display: flex;
-    justify-content: center;
-    padding-top: 8px;
-    border-top: 1px solid var(--color-border-2);
-  }
+.failed-list {
+  margin-top: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+}
+
+.failed-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
+
+.failed-icon {
+  color: var(--error);
+  margin-right: 8px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.failed-name {
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.failed-item:last-child {
+  margin-bottom: 0;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
 }
 </style>

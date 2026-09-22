@@ -1,19 +1,19 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import BasicLayout from '../layouts/BasicLayout.vue'
-import Welcome from '../pages/Welcome.vue'
-import Login from '../pages/Login.vue'
-import CompanyRegister from '../pages/CompanyRegister.vue'
+import Welcome from '@/pages/common/Welcome.vue'
+import Login from '@/pages/common/Login.vue'
+import CompanyRegister from '@/pages/common/CompanyRegister.vue'
 import { useAuthStore } from '../stores/auth'
 import { useMenuStore } from '../stores/menu'
 
 const routes: RouteRecordRaw[] = [
   {
-    path: '/',
-    name: 'welcome',
-    component: Welcome,
-    meta: { title: '欢迎使用', requiresAuth: false },
-  },
+      path: '/welcome',
+      name: 'welcome',
+      component: Welcome,
+      meta: { title: '欢迎使用', requiresAuth: false },
+    },
   {
     path: '/login',
     name: 'login',
@@ -29,7 +29,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/share/:code',
     name: 'share',
-    component: () => import('../pages/Share.vue'),
+    component: () => import('@/pages/cloud/Share.vue'),
     meta: { title: '文件分享', requiresAuth: false },
   },
   {
@@ -41,88 +41,113 @@ const routes: RouteRecordRaw[] = [
       // 使用隐式路由方案，所有页面都在这个路由下
       // 实际的页面切换由 BasicLayout 中的动态组件控制
       {
-        path: '',
-        name: 'app',
-        component: {  // 空组件，完全由 BasicLayout 控制显示
-          render: (h: any) => h('div')
-        },
-        meta: { title: '应用', requiresAuth: true },
-      },
+              path: '',
+              name: 'app',
+              component: {  // 空组件，完全由 BasicLayout 控制显示
+                render: (h: any) => h('div')
+              },
+              meta: { title: '应用', requiresAuth: true },
+            },
+            // 三子系统 Dashboard 独立路由（由 BasicLayout 按路径渲染对应 Dashboard）
+            {
+              path: 'LiveDashboard',
+              name: 'live-dashboard',
+              component: { render: (h: any) => h('div') },
+              meta: { title: '直播中心', requiresAuth: true },
+            },
+            {
+              path: 'CloudDashboard',
+              name: 'cloud-dashboard',
+              component: { render: (h: any) => h('div') },
+              meta: { title: '云盘中心', requiresAuth: true },
+            },
+            {
+              path: 'SystemDashboard',
+              name: 'system-dashboard',
+              component: { render: (h: any) => h('div') },
+              meta: { title: '系统中心', requiresAuth: true },
+            },
       // 直播域名管理页面
       {
         path: 'live/domains',
         name: 'live-domains',
-        component: () => import('../pages/LiveDomain.vue'),
+        component: () => import('@/pages/live/LiveDomain.vue'),
         meta: { title: '直播域名管理', requiresAuth: true },
       },
       // 推流域名管理页面
       {
         path: 'live/push-domains',
         name: 'push-domains',
-        component: () => import('../pages/PushDomain.vue'),
+        component: () => import('@/pages/live/PushDomain.vue'),
         meta: { title: '推流域名管理', requiresAuth: true },
       },
       // 播放域名管理页面
       {
         path: 'live/play-domains',
         name: 'play-domains',
-        component: () => import('../pages/PlayDomain.vue'),
+        component: () => import('@/pages/live/PlayDomain.vue'),
         meta: { title: '播放域名管理', requiresAuth: true },
       },
       // 直播间列表页面
       {
         path: 'live/rooms',
         name: 'live-rooms',
-        component: () => import('../pages/LiveRoomList.vue'),
+        component: () => import('@/pages/live/LiveRoomList.vue'),
         meta: { title: '直播间管理', requiresAuth: true },
       },
       // 创建直播间页面
       {
         path: 'live/rooms/create',
         name: 'live-room-create',
-        component: () => import('../pages/LiveRoomForm.vue'),
+        component: () => import('@/pages/live/LiveRoomForm.vue'),
         meta: { title: '创建直播间', requiresAuth: true },
       },
       // 编辑直播间页面
       {
         path: 'live/rooms/edit/:id',
         name: 'live-room-edit',
-        component: () => import('../pages/LiveRoomForm.vue'),
+        component: () => import('@/pages/live/LiveRoomForm.vue'),
         meta: { title: '编辑直播间', requiresAuth: true },
       },
       // 云盘系统
       {
         path: 'cloud',
         name: 'cloud',
-        component: () => import('../pages/Cloud.vue'),
+        component: () => import('@/pages/cloud/Cloud.vue'),
         meta: { title: '云盘系统', requiresAuth: true },
-      },
-      // 直播功能说明页面
-      {
-        path: 'LiveGuide',
-        name: 'live-guide',
-        component: () => import('../pages/LiveGuide.vue'),
-        meta: { title: '视频直播功能说明', requiresAuth: true },
       },
       // 直播管理详情页面
       {
         path: 'live/rooms/detail/:id',
-        name: 'live-room-detail',
-        component: () => import('../pages/LiveRoomDetail.vue'),
-        meta: { title: '直播间详情', requiresAuth: true },
-      },
+                name: 'live-room-detail',
+                component: () => import('@/pages/live/LiveRoomDetail.vue'),
+                meta: { title: '直播间详情', requiresAuth: true },
+              },
+              {
+                path: 'live/rooms/detail/:id/translation',
+                name: 'live-room-translation',
+                component: () => import('@/pages/live/LiveTranslation.vue'),
+                meta: { title: '同传/字幕', requiresAuth: true },
+              },
       // 分享管理页面
       {
         path: 'cloud/shares',
         name: 'cloud-shares',
-        component: () => import('../pages/CloudShareManager.vue'),
+        component: () => import('@/pages/cloud/CloudShareManager.vue'),
         meta: { title: '我的分享', requiresAuth: true },
+      },
+      // 系统中心首页
+      {
+        path: 'system-center',
+        name: 'system-center',
+        component: () => import('@/pages/system/SystemCenter.vue'),
+        meta: { title: '系统中心', requiresAuth: true },
       },
       // 个人中心页面
       {
         path: 'user/profile',
         name: 'user-profile',
-        component: () => import('../pages/UserProfile.vue'),
+        component: () => import('@/pages/system/UserProfile.vue'),
         meta: { title: '个人中心', requiresAuth: true },
       },
     ],
@@ -148,11 +173,21 @@ router.beforeEach(async (to, from, next) => {
   const isWelcomeRoute = to.name === 'welcome'
   const hasTypeParam = to.query.type !== undefined && to.query.type !== null && to.query.type !== ''
 
+  // 登录类型 → Dashboard 首页路径（子系统独立路由，按登录类型加载对应 Dashboard）
+        const systemHomePath = (type: string) => {
+          switch (type) {
+            case 'cloud': return '/CloudDashboard'
+            case 'system': return '/SystemDashboard'
+            case 'live':
+            default: return '/LiveDashboard'
+          }
+        }
+
   // 如果已经登录且 URL 中有 type 参数，访问任何路径都直接跳转到对应系统页面
   if (auth.isAuthenticated && hasTypeParam) {
     const loginType = (to.query.type as string) || 'live'
     // 只有当目标路径不是对应系统页面时才跳转
-    const targetPath = loginType === 'live' ? '/LiveGuide' : loginType === 'cloud' ? '/cloud' : '/LiveGuide' // all 类型默认跳转直播中心
+    const targetPath = systemHomePath(loginType)
     if (to.path !== targetPath) {
       next({ path: targetPath })
       return
@@ -160,21 +195,21 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // 当欢迎页面且有 type 参数时，直接跳转到登录页面，不显示首页
-  if (isWelcomeRoute && hasTypeParam && !auth.isAuthenticated) {
+    if (isWelcomeRoute && hasTypeParam && !auth.isAuthenticated) {
     next({ name: 'login', query: { type: to.query.type } })
     return
   }
 
   if (isWelcomeRoute && auth.isAuthenticated) {
     const loginType = (to.query.type as string) || 'live'
-    const targetPath = loginType === 'live' ? '/LiveGuide' : loginType === 'cloud' ? '/cloud' : '/LiveGuide' // all 类型默认跳转直播中心
+    const targetPath = systemHomePath(loginType)
     next({ path: targetPath })
     return
   }
 
   if (isLoginRoute && auth.isAuthenticated) {
     const loginType = (to.query.type as string) || 'live'
-    const targetPath = loginType === 'live' ? '/LiveGuide' : loginType === 'cloud' ? '/cloud' : '/LiveGuide' // all 类型默认跳转直播中心
+    const targetPath = systemHomePath(loginType)
     next({ path: targetPath })
     return
   }
@@ -190,15 +225,15 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (!isLoginRoute && !isWelcomeRoute && auth.isAuthenticated) {
-    const menuStore = useMenuStore()
-    if (!menuStore.menus.length && !menuStore.loading) {
-      try {
-        await menuStore.loadMenus()
-      } catch (e) {
-        Message.error('加载菜单失败')
+      const menuStore = useMenuStore()
+      if (!menuStore.menus.length && !menuStore.loading) {
+        try {
+          await menuStore.loadMenus()
+        } catch {
+          Message.error('加载菜单失败')
+        }
       }
     }
-  }
 
   next()
 })

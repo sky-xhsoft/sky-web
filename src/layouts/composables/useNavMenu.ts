@@ -28,7 +28,7 @@ function mapMenu(items: any[]): NavItem[] {
       children: item.children ? mapMenu(item.children) : undefined,
     }))
     .sort((a, b) => a.order - b.order)
-    .map(({ order, ...rest }) => rest)
+    .map(({ order: _order, ...rest }) => rest)
 }
 
 /**

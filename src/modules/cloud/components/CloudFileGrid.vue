@@ -1,19 +1,14 @@
 <template>
   <div class="cloud-file-grid">
     <!-- 空状态 -->
-    <a-empty
-      v-if="items.length === 0 && !loading"
-      :description="emptyText"
-      class="cloud-file-grid__empty"
-    >
-      <template #image>
-        <icon-folder />
-      </template>
-    </a-empty>
+    <div v-if="items.length === 0 && !loading" class="cloud-file-grid__empty">
+      <span class="empty-icon"><icon-folder /></span>
+      <div class="empty-text">{{ emptyText }}</div>
+    </div>
 
     <!-- 加载状态 -->
     <div v-if="loading" class="cloud-file-grid__loading">
-      <a-spin :size="24" />
+      <a-spin :size="24" class="cloud-loading-spin" />
       <div class="loading-text">加载中...</div>
     </div>
 
@@ -74,7 +69,6 @@ function isSelected(item: GridItem): boolean {
   return result
 }
 
-
 function handleClick(item: GridItem) {
   emit('click', item)
 }
@@ -105,6 +99,19 @@ function handleContextMenu(event: MouseEvent, item: GridItem) {
 
 .cloud-file-grid__empty {
   padding: 80px 0;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.empty-icon {
+  font-size: 40px;
+  opacity: 0.5;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.empty-text {
+  font-size: 13px;
 }
 
 .cloud-file-grid__loading {
@@ -116,47 +123,45 @@ function handleContextMenu(event: MouseEvent, item: GridItem) {
   gap: 16px;
 }
 
+.cloud-loading-spin :deep(.arco-icon) {
+  color: var(--brand-blue);
+}
+
 .loading-text {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
+/* 对齐原型的 cloud-grid */
 .cloud-file-grid__container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
-  padding: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
 }
 
-/* 虚拟滚动性能优化：浏览器自动跳过不可见卡片渲染 */
 .cloud-file-grid__container :deep(.cloud-file-card) {
   content-visibility: auto;
-  contain-intrinsic-size: auto 180px;
+  contain-intrinsic-size: auto 92px;
 }
 
-/* 响应式调整 */
 @media (max-width: 768px) {
   .cloud-file-grid__container {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 12px;
-    padding: 12px;
   }
 }
 
-/* 小屏手机适配 */
 @media (max-width: 480px) {
   .cloud-file-grid__container {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
-    padding: 10px;
   }
 }
 
 @media (min-width: 1440px) {
   .cloud-file-grid__container {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 20px;
-    padding: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
   }
 }
 </style>

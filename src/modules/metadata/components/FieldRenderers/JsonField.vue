@@ -191,7 +191,7 @@ watch(
           const obj = JSON.parse(trimmed)
           textValue.value = JSON.stringify(obj, null, 2)
           parseError.value = ''
-        } catch (e) {
+        } catch {
           // 如果解析失败，显示原始字符串
           textValue.value = trimmed
           parseError.value = 'JSON 格式错误'
@@ -201,7 +201,7 @@ watch(
         textValue.value = JSON.stringify(newValue, null, 2)
         parseError.value = ''
       }
-    } catch (error) {
+    } catch {
       textValue.value = String(newValue)
       parseError.value = '数据格式错误'
     }
@@ -318,8 +318,8 @@ function handleValidate() {
 
 .json-field__view {
   padding: 8px 12px;
-  background: #f7f8fa;
-  border: 1px solid #e5e6eb;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
   border-radius: 4px;
   max-height: 400px;
   overflow: auto;
@@ -330,7 +330,7 @@ function handleValidate() {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
   font-size: 13px;
   line-height: 1.6;
-  color: #1d2129;
+  color: var(--text-primary);
   white-space: pre-wrap;
   word-break: break-all;
 }
@@ -347,10 +347,10 @@ function handleValidate() {
   gap: 6px;
   margin-top: 8px;
   padding: 8px 12px;
-  background: #ffece8;
-  border: 1px solid #f53f3f;
+  background: var(--error-bg);
+  border: 1px solid var(--error);
   border-radius: 4px;
-  color: #f53f3f;
+  color: var(--error);
   font-size: 13px;
 }
 

@@ -6,7 +6,6 @@
 
 import { ref, onMounted, onUnmounted, type Ref } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { useCloudStore } from '@/modules/cloud/stores/cloudStore'
 
 /**
  * 拖拽上传配置
@@ -95,8 +94,6 @@ export function useDragUpload(
   targetRef: Ref<HTMLElement | undefined>,
   options: DragUploadOptions = {}
 ) {
-  const store = useCloudStore()
-
   // 合并配置
   const config = { ...DEFAULT_OPTIONS, ...options }
 
@@ -228,7 +225,7 @@ export function useDragUpload(
     }
 
     // 验证文件
-    const { valid, invalid } = validateFiles(files)
+    const { valid } = validateFiles(files)
 
     if (valid.length === 0) {
       Message.error('没有符合要求的文件')

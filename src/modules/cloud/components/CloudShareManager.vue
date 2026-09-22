@@ -9,33 +9,32 @@
         </h3>
       </div>
       <div class="header-right">
-        <a-space size="small">
-          <a-input-search
-            v-model="searchKeyword"
-            :placeholder="t('cloud.searchFileName')"
-            style="width: 200px"
-            clearable
-            @search="handleSearch"
-          />
-          <a-select v-model="filterStatus" :placeholder="t('cloud.filterStatus')" style="width: 120px">
-            <a-option value="all">
-              <template #icon><icon-apps /></template>
-              {{ t('cloud.shareStatusAll') }}
-            </a-option>
-            <a-option value="active">
-              <template #icon><icon-check-circle /></template>
-              {{ t('cloud.shareStatusActive') }}
-            </a-option>
-            <a-option value="expired">
-              <template #icon><icon-close-circle /></template>
-              {{ t('cloud.shareStatusExpired') }}
-            </a-option>
-          </a-select>
-          <a-button @click="handleRefresh" :loading="loading">
-            <icon-refresh />
-            {{ t('cloud.refresh') }}
-          </a-button>
-        </a-space>
+        <V2Input
+          v-model="searchKeyword"
+          :placeholder="t('cloud.searchFileName')"
+          class="search-input"
+          allow-clear
+          @press-enter="handleSearch"
+        >
+        </V2Input>
+        <V2Select v-model="filterStatus" :placeholder="t('cloud.filterStatus')" class="status-select">
+          <a-option value="all">
+            <template #icon><icon-apps /></template>
+            {{ t('cloud.shareStatusAll') }}
+          </a-option>
+          <a-option value="active">
+            <template #icon><icon-check-circle /></template>
+            {{ t('cloud.shareStatusActive') }}
+          </a-option>
+          <a-option value="expired">
+            <template #icon><icon-close-circle /></template>
+            {{ t('cloud.shareStatusExpired') }}
+          </a-option>
+        </V2Select>
+        <V2Button type="secondary" @click="handleRefresh" :loading="loading">
+          <template #icon><icon-refresh /></template>
+          {{ t('cloud.refresh') }}
+        </V2Button>
       </div>
     </div>
 
@@ -130,29 +129,29 @@
             </span>
           </div>
           <div class="share-quick-copy">
-              <a-tag size="small" @click.stop="handleCopyShareCode(share)" :bordered="false" color="arcoblue">
-                <icon-copy />
+              <V2Button size="sm" type="text" @click.stop="handleCopyShareCode(share)">
+                <template #icon><icon-copy /></template>
                 {{ t('cloud.copyLink') }}
-              </a-tag>
-              <a-tag v-if="share.password" size="small" @click.stop="handleCopyPassword(share)" :bordered="false" color="green">
-                <icon-lock />
+              </V2Button>
+              <V2Button v-if="share.password" size="sm" type="text" @click.stop="handleCopyPassword(share)">
+                <template #icon><icon-lock /></template>
                 {{ t('cloud.copyPassword') }}
-              </a-tag>
+              </V2Button>
             </div>
         </div>
 
         <!-- 状态标签 -->
         <div class="share-item__status">
-          <a-tag v-if="isExpired(share)" color="red" size="small">
+          <V2Tag v-if="isExpired(share)" type="error">
             <icon-close-circle />
             {{ t('cloud.shareExpiredLabel') }}
-          </a-tag>
-          <a-tag v-else :color="getDaysColor(getRemainingDays(share))" size="small">
+          </V2Tag>
+          <V2Tag v-else :type="getDaysTagType(getRemainingDays(share))">
             <icon-clock-circle />
             {{ t('cloud.shareRemainingDays', {
               days: getRemainingDays(share) === 999 ? t('cloud.shareForever') : getRemainingDays(share)
             }) }}
-          </a-tag>
+          </V2Tag>
         </div>
 
         <!-- 进度条（仅有效分享显示） -->
@@ -164,10 +163,10 @@
 
         <!-- 操作按钮 -->
         <div class="share-item__actions">
-          <a-button size="small" type="text" @click="handleCopy(share)" :disabled="isExpired(share)">
-            <icon-copy />
+          <V2Button size="sm" type="text" @click="handleCopy(share)" :disabled="isExpired(share)">
+            <template #icon><icon-copy /></template>
             {{ t('cloud.copyLink') }}
-          </a-button>
+          </V2Button>
           <a-dropdown trigger="click">
             <template #content>
               <a-doption @click="handleEdit(share)" :disabled="isExpired(share)">
@@ -179,17 +178,17 @@
                 {{ t('cloud.viewStats') }}
               </a-doption>
             </template>
-            <a-button size="small" type="text">
-              <icon-more />
-            </a-button>
+            <V2Button size="sm" type="text">
+              <template #icon><icon-more /></template>
+            </V2Button>
           </a-dropdown>
-          <a-button
-            size="small"
+          <V2Button
+            size="sm"
             type="text"
-            status="danger"
+            class="danger-text-btn"
             @click="handleDelete(share)">
-            <icon-delete />
-          </a-button>
+            <template #icon><icon-delete /></template>
+          </V2Button>
         </div>
       </div>
     </div>
@@ -200,6 +199,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
+import { V2Button, V2Input, V2Select, V2Tag } from '@/components/ui'
 import {
   IconRefresh,
   IconLink,
@@ -248,7 +248,6 @@ const emit = defineEmits<Emits>()
 // 筛选状态
 const filterStatus = ref<'all' | 'active' | 'expired'>('all')
 const searchKeyword = ref('')
-const selectedShares = ref<number[]>([])
 
 function isExpired(share: ShareListItem): boolean {
   if (!share.expireTime) return false
@@ -264,12 +263,12 @@ function getRemainingDays(share: ShareListItem): number {
   return Math.ceil(diff / (1000 * 60 * 60 * 24))
 }
 
-function getDaysColor(days: number): string {
-  if (days === 999) return 'green'
-  if (days <= 1) return 'red'
-  if (days <= 3) return 'orange'
-  if (days <= 7) return 'gold'
-  return 'green'
+function getDaysTagType(days: number): 'success' | 'error' | 'warning' | 'neutral' {
+  if (days === 999) return 'success'
+  if (days <= 1) return 'error'
+  if (days <= 3) return 'warning'
+  if (days <= 7) return 'warning'
+  return 'success'
 }
 
 function getProgressPercent(share: ShareListItem): number {
@@ -371,7 +370,7 @@ function fallbackCopy(text: string, successMsg: string) {
   try {
     document.execCommand('copy')
     Message.success(successMsg)
-  } catch (err) {
+  } catch {
     Message.error(t('cloud.copyFailed'))
   } finally {
     document.body.removeChild(textarea)
@@ -401,26 +400,6 @@ function handleDelete(share: ShareListItem) {
   })
 }
 
-function handleBatchDelete() {
-  if (selectedShares.value.length === 0) return
-  Modal.confirm({
-    title: t('cloud.batchDeleteTitle'),
-    content: t('cloud.batchDeleteConfirm', { count: selectedShares.value.length }),
-    okText: t('cloud.delete'),
-    cancelText: t('cloud.cancel'),
-    okButtonProps: {
-      status: 'danger',
-    },
-    onOk: () => {
-      emit('batchDelete', selectedShares.value)
-      clearSelection()
-    },
-  })
-}
-
-function clearSelection() {
-  selectedShares.value = []
-}
 </script>
 
 <style scoped lang="scss">
@@ -443,22 +422,30 @@ function clearSelection() {
     display: flex;
     align-items: center;
     gap: 12px;
-  }
 
-  h3 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #1f2937;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
   }
 
   .header-right {
     display: flex;
     align-items: center;
     gap: 12px;
+
+    .search-input {
+      width: 200px;
+    }
+
+    .status-select {
+      width: 120px;
+    }
   }
 }
 
@@ -473,51 +460,51 @@ function clearSelection() {
     align-items: center;
     gap: 12px;
     padding: 16px 20px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    transition: all 0.2s;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--duration-base) var(--ease-out);
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-md);
     }
 
     &--total {
-      border-left: 3px solid #3b82f6;
+      border-left: 3px solid var(--brand-blue);
     }
 
     &--active {
-      border-left: 3px solid #10b981;
+      border-left: 3px solid var(--success);
     }
 
     &--expired {
-      border-left: 3px solid #ef4444;
+      border-left: 3px solid var(--error);
     }
   }
 
   .stat-icon {
     width: 40px;
     height: 40px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 20px;
 
     .stat-card--total & {
-      background: rgba(59, 130, 246, 0.1);
-      color: #3b82f6;
+      background: var(--info-bg);
+      color: var(--brand-blue);
     }
 
     .stat-card--active & {
-      background: rgba(16, 185, 129, 0.1);
-      color: #10b981;
+      background: var(--success-bg);
+      color: var(--success);
     }
 
     .stat-card--expired & {
-      background: rgba(239, 68, 68, 0.1);
-      color: #ef4444;
+      background: var(--error-bg);
+      color: var(--error);
     }
   }
 
@@ -528,13 +515,13 @@ function clearSelection() {
   .stat-value {
     font-size: 24px;
     font-weight: 700;
-    color: #1f2937;
+    color: var(--text-primary);
     line-height: 1.2;
   }
 
   .stat-label {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--text-secondary);
     margin-top: 2px;
   }
 }
@@ -557,7 +544,7 @@ function clearSelection() {
   flex: 1;
 
   span {
-    color: #6b7280;
+    color: var(--text-secondary);
     font-size: 14px;
   }
 }
@@ -576,25 +563,25 @@ function clearSelection() {
   align-items: start;
   gap: 12px;
   padding: 16px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: all var(--duration-base) var(--ease-out);
   position: relative;
 
   &:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+    border-color: var(--brand-blue);
+    box-shadow: 0 2px 8px rgba(22, 93, 255, 0.1);
   }
 }
 
 .share-item.is-expired {
   opacity: 0.6;
-  background: #f9fafb;
+  background: var(--bg-hover);
   border-style: dashed;
 
   &:hover {
-    border-color: #d1d5db;
+    border-color: var(--border);
     box-shadow: none;
   }
 }
@@ -605,10 +592,10 @@ function clearSelection() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f3f4f6;
-  border-radius: 8px;
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
   font-size: 24px;
-  color: #3b82f6;
+  color: var(--brand-blue);
 }
 
 .share-item__info {
@@ -619,7 +606,7 @@ function clearSelection() {
 .share-name {
   font-size: 14px;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -639,24 +626,24 @@ function clearSelection() {
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .meta-label {
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .meta-value {
-  color: #374151;
+  color: var(--text-primary);
   font-weight: 500;
 
   &.code {
-    color: #3b82f6;
+    color: var(--brand-blue);
     font-family: monospace;
   }
 
   &.password {
-    color: #10b981;
+    color: var(--success);
   }
 }
 
@@ -668,6 +655,9 @@ function clearSelection() {
 .share-item__status {
   flex: 0 0 auto;
   align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .share-item__progress {
@@ -677,18 +667,18 @@ function clearSelection() {
   .progress-bar {
     width: 100%;
     height: 4px;
-    background: #e5e7eb;
-    border-radius: 2px;
+    background: var(--border);
+    border-radius: 999px;
     overflow: hidden;
 
     .progress-fill {
       height: 100%;
-      background: #10b981;
-      border-radius: 2px;
-      transition: width 0.3s;
+      background: var(--brand-gradient);
+      border-radius: 999px;
+      transition: width var(--duration-base) var(--ease-out);
 
       &.is-warning {
-        background: #f59e0b;
+        background: var(--warning);
       }
     }
   }
@@ -699,6 +689,14 @@ function clearSelection() {
   display: flex;
   gap: 4px;
   align-self: center;
+
+  .danger-text-btn .arco-icon {
+    color: var(--error);
+  }
+
+  .danger-text-btn:hover {
+    color: var(--error);
+  }
 }
 
 .cloud-share-manager__batch-actions {
@@ -706,15 +704,15 @@ function clearSelection() {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-radius: 8px;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
   margin-top: 16px;
 
   .batch-info {
     flex: 1;
     font-size: 14px;
-    color: #c2410c;
+    color: var(--warning);
   }
 }
 

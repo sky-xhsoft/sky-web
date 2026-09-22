@@ -104,6 +104,6 @@ function handleEdit(record: any) {
   width: 100%;
   height: 100%;
   padding: 20px;
-  background: #fff;
+  background: var(--bg-card);
 }
 </style>

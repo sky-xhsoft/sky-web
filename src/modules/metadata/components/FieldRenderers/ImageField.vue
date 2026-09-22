@@ -272,7 +272,7 @@ function handlePreview(index: number | FileItem) {
   position: relative;
   width: 104px;
   height: 104px;
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--border);
   border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
@@ -280,7 +280,7 @@ function handlePreview(index: number | FileItem) {
 }
 
 .image-field__item:hover {
-  border-color: var(--color-primary);
+  border-color: var(--brand-blue);
 }
 
 .image-field__item:hover .image-field__mask {
@@ -321,8 +321,8 @@ function handlePreview(index: number | FileItem) {
   padding: 32px;
   color: var(--color-text-3);
   font-size: 14px;
-  background: #f7f8fa;
-  border: 1px dashed #e5e6eb;
+  background: var(--bg-hover);
+  border: 1px dashed var(--border);
   border-radius: 4px;
 }
 
@@ -337,16 +337,16 @@ function handlePreview(index: number | FileItem) {
   justify-content: center;
   width: 104px;
   height: 104px;
-  background: #f7f8fa;
-  border: 1px dashed #e5e6eb;
+  background: var(--bg-hover);
+  border: 1px dashed var(--border);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .image-field__upload-btn:hover {
-  border-color: var(--color-primary);
-  background: #f2f5ff;
+  border-color: var(--brand-blue);
+  background: var(--info-bg);
 }
 
 .image-field__upload-btn .arco-icon {

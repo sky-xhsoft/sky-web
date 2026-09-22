@@ -4,11 +4,43 @@
  */
 import { ref, reactive, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { generatePushURL } from '@/api/live'
+import { generatePushURL, getDomainAuthKey } from '@/api/live'
 
-export function useLiveStreamUrl(domainName: () => string) {
-  // 推流鉴权密钥
-  const pushAuthKey = ref('d0d87c303d4df45fd648af77ea4a9516')
+export function useLiveStreamUrl(domainName: () => string, domainType?: () => number) {
+  // 推流鉴权密钥（从腾讯云接口获取，fallback 空）
+  const pushAuthKey = ref('')
+
+  // 播放鉴权密钥
+  const playAuthKey = ref('')
+
+  // 加载鉴权KEY（keyType: push/play）
+  const loadAuthKey = async (keyType: string) => {
+    const domain = domainName()
+    if (!domain) return
+    try {
+      const response = await getDomainAuthKey(domain, keyType)
+      const data = response.data?.data
+      if (!data) return
+      if (keyType === 'play') {
+        playAuthKey.value = data.masterKey || ''
+      } else {
+        pushAuthKey.value = data.masterKey || ''
+      }
+    } catch (error: any) {
+      // 静默失败，保留空值
+      Message.error(error.response?.data?.message || `获取${keyType === 'play' ? '播放' : '推流'}鉴权配置失败`)
+    }
+  }
+
+  // 按域名类型加载对应鉴权KEY
+  const loadDomainAuthKey = async () => {
+    const type = domainType ? domainType() : 0
+    if (type === 1) {
+      await loadAuthKey('play')
+    } else {
+      await loadAuthKey('push')
+    }
+  }
 
   // 推流地址列表
   const pushUrlList = ref([
@@ -31,9 +63,7 @@ export function useLiveStreamUrl(domainName: () => string) {
   const generatedPushUrlList = ref<any[]>([])
   const pushCollapseActiveKeys = ref<string[]>(['1'])
 
-  // 播放鉴权密钥
-  const playAuthKey = ref('d0d87c303d4df45fd648aff7ea4a9516')
-
+  // 播放鉴权密钥（已在顶部声明，加载时从接口获取）
   // 播放地址列表
   const playUrlList = computed(() => {
     const domain = domainName() || '播放域名'
@@ -104,5 +134,6 @@ export function useLiveStreamUrl(domainName: () => string) {
     playAuthKey, playUrlList, playForm, generatedPlayUrl, playCollapseActiveKeys,
     transcodeTemplates, recordTemplates, snapshotTemplates,
     handleGeneratePushUrl, handleGeneratePlayUrl, copyToClipboard,
+    loadDomainAuthKey, loadAuthKey,
   }
 }

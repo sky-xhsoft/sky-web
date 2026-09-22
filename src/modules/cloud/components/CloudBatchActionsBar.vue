@@ -9,34 +9,35 @@
           </span>
         </div>
         <div class="batch-buttons">
-          <a-button size="small" :aria-label="t('cloud.selectAll')" @click="$emit('select-all')">
+          <V2Button size="sm" type="secondary" :aria-label="t('cloud.selectAll')" @click="$emit('select-all')">
             {{ t('cloud.selectAll') }}
-          </a-button>
-          <a-button size="small" :aria-label="t('cloud.deselectAll')" @click="$emit('clear-selection')">
+          </V2Button>
+          <V2Button size="sm" type="secondary" :aria-label="t('cloud.deselectAll')" @click="$emit('clear-selection')">
             {{ t('cloud.deselectAll') }}
-          </a-button>
-          <a-button
-            size="small"
+          </V2Button>
+          <V2Button
+            size="sm"
+            type="secondary"
             :disabled="!canDownload"
             :aria-label="t('cloud.download')"
             @click="$emit('download')"
           >
             <template #icon><icon-download /></template>
             {{ t('cloud.download') }}
-          </a-button>
-          <a-button size="small" :aria-label="t('cloud.move')" @click="$emit('move')">
+          </V2Button>
+          <V2Button size="sm" type="secondary" :aria-label="t('cloud.move')" @click="$emit('move')">
             <template #icon><icon-sort /></template>
             {{ t('cloud.move') }}
-          </a-button>
-          <a-button
-            size="small"
-            status="danger"
+          </V2Button>
+          <V2Button
+            size="sm"
+            type="danger"
             :aria-label="t('cloud.delete')"
             @click="$emit('delete')"
           >
             <template #icon><icon-delete /></template>
             {{ t('cloud.delete') }}
-          </a-button>
+          </V2Button>
         </div>
       </div>
     </div>
@@ -47,6 +48,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { IconDownload, IconSort, IconDelete } from '@arco-design/web-vue/es/icon'
+import { V2Button } from '@/components/ui'
 
 interface Props {
   selectedCount: number
@@ -87,9 +89,9 @@ function formatFileSize(bytes: number): string {
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   padding: 12px 20px;
   z-index: 100;
   min-width: 480px;
@@ -106,13 +108,13 @@ function formatFileSize(bytes: number): string {
 
 .batch-info {
   font-size: 14px;
-  color: #1d2129;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
 .batch-size {
   margin-left: 8px;
-  color: #86909c;
+  color: var(--text-tertiary);
   font-weight: normal;
 }
 

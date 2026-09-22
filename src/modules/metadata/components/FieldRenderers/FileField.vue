@@ -246,8 +246,8 @@ function formatFileSize(size?: number): string {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #f7f8fa;
-  border: 1px solid #e5e6eb;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
   border-radius: 4px;
 }
 
@@ -258,7 +258,7 @@ function formatFileSize(size?: number): string {
 
 .file-field__link {
   flex: 1;
-  color: var(--color-primary);
+  color: var(--brand-blue);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;

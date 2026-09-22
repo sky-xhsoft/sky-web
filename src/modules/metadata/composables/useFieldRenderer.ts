@@ -406,7 +406,7 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
           pattern: regex,
           message: errorMsg || `${displayName}格式不正确`
         })
-      } catch (error) {
+      } catch {
         console.error('Invalid regex:', regExpression)
       }
     }

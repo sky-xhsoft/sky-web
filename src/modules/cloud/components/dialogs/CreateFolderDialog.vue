@@ -1,5 +1,5 @@
 <template>
-  <a-modal
+  <V2Modal
     v-model:visible="dialogVisible"
     :title="t('cloud.createFolderTitle')"
     :ok-loading="loading"
@@ -7,7 +7,7 @@
     @cancel="handleCancel"
   >
     <a-form :model="form" @submit="handleSubmit">
-      <a-form-item
+      <V2FormItem
         field="folderName"
         :label="t('cloud.folderName')"
         :rules="[
@@ -18,22 +18,23 @@
         ]"
         :validate-trigger="['change', 'blur']"
       >
-        <a-input
+        <V2Input
           v-model="form.folderName"
           :placeholder="t('cloud.folderNamePlaceholder')"
           :max-length="100"
           allow-clear
           @keyup.enter="handleSubmit"
         />
-      </a-form-item>
+      </V2FormItem>
     </a-form>
-  </a-modal>
+  </V2Modal>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { validateFileName } from '@/modules/cloud/utils/validation'
 import { useI18n } from 'vue-i18n'
+import { V2Modal, V2Input, V2FormItem } from '@/components/ui'
 
 const { t } = useI18n()
 
@@ -64,7 +65,6 @@ watch(
   (newValue) => {
     dialogVisible.value = newValue
     if (newValue) {
-      // Reset form
       form.value.folderName = ''
     }
   }
@@ -103,7 +103,3 @@ function handleCancel() {
   dialogVisible.value = false
 }
 </script>
-
-<style scoped>
-/* Styles provided by Arco Design */
-</style>

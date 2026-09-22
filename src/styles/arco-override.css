@@ -1,0 +1,371 @@
+/* v2 统一 UI 框架 - Arco Design Vue 变量覆盖
+ * 让 Arco 全组件跟随项目的 data-theme（亮/暗），与 design/v2 tokens 完全统一。
+ * 亮色: 覆盖到品牌蓝 #165dff；暗色: 映射到 tokens.css [data-theme='dark'] 的暗色板材。
+ */
+
+:root {
+  /* 品牌色系统一 */
+  --arcoblue-1: #e8f0ff;
+  --arcoblue-2: #cddfff;
+  --arcoblue-3: #9fc2ff;
+  --arcoblue-4: #6da0ff;
+  --arcoblue-5: #3d7dff;
+  --arcoblue-6: var(--brand-blue);
+  --arcoblue-7: var(--brand-blue-hover);
+  --arcoblue-8: #1641b0;
+  --arcoblue-9: #123186;
+  --arcoblue-10: #0e245c;
+
+  --green-1: #e8f9f0;
+  --green-2: #c3f0d6;
+  --green-3: #96e4b5;
+  --green-4: #5ed58c;
+  --green-5: #34c759;
+  --green-6: var(--brand-green);
+  --green-7: #2aa24a;
+  --green-8: #1f7d38;
+  --green-9: #165927;
+  --green-10: #0e3a18;
+
+  --orange-1: #fff4e5;
+  --orange-2: #ffe4c0;
+  --orange-3: #ffcf96;
+  --orange-4: #ffb263;
+  --orange-5: #ff9500;
+  --orange-6: var(--warning);
+
+  --red-1: #ffece8;
+  --red-2: #fdcfc6;
+  --red-3: #fbaca3;
+  --red-4: #f78981;
+  --red-5: #f56560;
+  --red-6: var(--error);
+
+  /* 圆角 */
+  --border-radius-small: var(--radius-sm);
+  --border-radius-medium: var(--radius-md);
+  --border-radius-large: var(--radius-lg);
+
+  /* 光晕聚焦 */
+  --color-primary-light-1: var(--info-bg);
+}
+
+/* 亮色：确保 Arco 表面/文本走我们的亮色调色板 */
+:root,
+[data-theme='light'] {
+  --color-bg-1: var(--bg-page);
+  --color-bg-2: var(--bg-card);
+  --color-bg-3: var(--bg-card);
+  --color-bg-4: var(--bg-hover);
+  --color-bg-5: #ffffff;
+  --color-bg-white: #ffffff;
+  --color-bg-popup: #ffffff;
+  --color-fill-1: var(--bg-hover);
+  --color-fill-2: var(--gray-100);
+  --color-fill-3: var(--gray-200);
+  --color-neutral-1: var(--gray-50);
+  --color-neutral-2: var(--gray-100);
+  --color-neutral-3: var(--gray-200);
+  --color-neutral-4: var(--gray-300);
+  --color-neutral-5: var(--gray-400);
+  --color-neutral-6: var(--gray-500);
+  --color-neutral-7: var(--gray-700);
+  --color-neutral-8: var(--gray-900);
+  --color-neutral-9: #111827;
+  --color-neutral-10: #0b1220;
+  --color-border: var(--border);
+  --color-border-1: var(--border);
+  --color-border-2: var(--gray-300);
+  --color-border-3: var(--gray-400);
+  --color-border-4: var(--gray-500);
+  --color-text-1: var(--text-primary);
+  --color-text-2: var(--text-secondary);
+  --color-text-3: var(--text-tertiary);
+  --color-text-4: var(--gray-400);
+  --color-menu-light-bg: var(--bg-card);
+  --color-menu-light-hover: var(--bg-hover);
+  --color-toast-text-1: var(--text-primary);
+}
+
+/* ============================================================
+ * 暗色主题统一映射：data-theme='dark'（theme store 应用）
+ * 所有 Arco 组件（菜单/表格/表单/卡片/弹窗/下拉/分页/消息）跟随暗色板材
+ * ========================================================== */
+[data-theme='dark'],
+[data-theme='dark'].dark {
+  /* 品牌色系暗色强化 */
+  --arcoblue-1: rgba(22, 93, 255, 0.15);
+  --arcoblue-2: rgba(22, 93, 255, 0.24);
+  --arcoblue-3: rgba(22, 93, 255, 0.34);
+  --arcoblue-4: #2856d6;
+  --arcoblue-5: #3d7dff;
+  --arcoblue-6: var(--brand-blue);
+  --arcoblue-7: #5b90ff;
+
+  --green-1: rgba(52, 199, 89, 0.15);
+  --green-2: rgba(52, 199, 89, 0.25);
+  --green-3: rgba(52, 199, 89, 0.35);
+  --green-6: #34c759;
+  --green-7: #43d36c;
+
+  --orange-1: rgba(255, 149, 0, 0.15);
+  --orange-2: rgba(255, 149, 0, 0.25);
+  --orange-6: #ff9500;
+
+  --red-1: rgba(245, 63, 63, 0.15);
+  --red-2: rgba(245, 63, 63, 0.25);
+  --red-6: #f53f3f;
+
+  --color-primary-light-1: rgba(22, 93, 255, 0.12);
+
+  /* 表面 */
+  --color-bg-1: var(--bg-page);
+  --color-bg-2: var(--bg-card);
+  --color-bg-3: var(--bg-hover);
+  --color-bg-4: var(--bg-hover);
+  --color-bg-5: var(--bg-hover);
+  --color-bg-white: #1f1f1f;
+  --color-bg-popup: var(--bg-card);
+  --color-mask-bg: rgba(0, 0, 0, 0.65);
+
+  /* 填充/边框 */
+  --color-fill-1: var(--bg-hover);
+  --color-fill-2: #2a2a2a;
+  --color-fill-3: #3a3a3a;
+  --color-neutral-1: #1e1e1e;
+  --color-neutral-2: #2a2a2a;
+  --color-neutral-3: #333333;
+  --color-neutral-4: #434343;
+  --color-neutral-5: #565656;
+  --color-neutral-6: #6b7280;
+  --color-neutral-7: #9ca3af;
+  --color-neutral-8: #e5e7eb;
+  --color-neutral-9: #f3f4f6;
+  --color-neutral-10: #ffffff;
+  --color-border: #333333;
+  --color-border-1: #333333;
+  --color-border-2: #3a3a3a;
+  --color-border-3: #434343;
+  --color-border-4: #565656;
+
+  /* 文本 */
+  --color-text-1: var(--text-primary);
+  --color-text-2: var(--text-secondary);
+  --color-text-3: var(--text-tertiary);
+  --color-text-4: #6b7280;
+
+  /* 菜单（暗色增强） */
+  --color-menu-light-bg: var(--bg-card);
+  --color-menu-light-hover: var(--bg-hover);
+  --color-menu-light-active-bg: var(--info-bg);
+
+  /* 输入框占位符 */
+  --color-input-placeholder: var(--text-tertiary);
+}
+
+/* ============ 组件级统一（亮/暗通用，品牌对齐）============ */
+
+/* 卡片 */
+.arco-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: none;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+.arco-card-hoverable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.arco-card-header {
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+}
+.arco-card-header-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* 表格 */
+.arco-table-th {
+  background: var(--bg-card) !important;
+  color: var(--text-tertiary) !important;
+  font-weight: 500;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border-light) !important;
+}
+.arco-table-td {
+  background: var(--bg-card) !important;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light) !important;
+}
+.arco-table-tr:hover .arco-table-td {
+  background: var(--bg-hover) !important;
+}
+.arco-table-tr.arco-table-tr-selected .arco-table-td {
+  background: var(--info-bg) !important;
+}
+.arco-table .arco-table-container {
+  border: none;
+}
+.arco-table-th-sorter:hover,
+.arco-table-th-sorter.arco-table-th-sorter-active {
+  color: var(--brand-blue);
+}
+
+/* 分页 */
+.arco-pagination-item-active {
+  background: var(--brand-blue) !important;
+  border-color: var(--brand-blue) !important;
+  color: #fff !important;
+}
+.arco-pagination-item:hover {
+  border-color: var(--brand-blue);
+  color: var(--brand-blue);
+}
+
+/* 按钮 */
+.arco-btn-primary:not(.arco-btn-disabled),
+.arco-btn-primary.arco-btn-loading {
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
+}
+.arco-btn-primary:not(.arco-btn-disabled):hover {
+  background: var(--brand-blue-hover);
+  border-color: var(--brand-blue-hover);
+}
+.arco-btn-secondary:not(.arco-btn-disabled):hover {
+  border-color: var(--brand-blue);
+  color: var(--brand-blue);
+}
+.arco-btn {
+  border-radius: var(--radius-md);
+}
+.arco-btn-size-small {
+  border-radius: var(--radius-sm);
+}
+
+/* 输入 / 选择 */
+.arco-input,
+.arco-input-inner-wrapper,
+.arco-select-view-single,
+.arco-textarea,
+.arco-input-number,
+.arco-picker,
+.arco-select-view {
+  border-radius: var(--radius-md);
+}
+.arco-input-inner-wrapper-focus,
+.arco-input-inner-wrapper:hover,
+.arco-select-view-focused,
+.arco-picker-focused {
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px var(--color-primary-light-1);
+}
+.arco-input-inner-wrapper.arco-input-inner-wrapper-focus .arco-input,
+.arco-input-inner-wrapper:hover {
+  color: var(--text-primary);
+}
+.arco-input::placeholder,
+.arco-textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* 标签胶囊 */
+.arco-tag {
+  border-radius: 999px;
+  border: none;
+}
+.arco-tag-size-medium {
+  border-radius: 999px;
+}
+.arco-tag-checkable-checked {
+  background: var(--brand-blue);
+  border-color: var(--brand-blue);
+}
+
+/* 弹窗 / 抽屉 */
+.arco-modal {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.arco-modal-header {
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.arco-modal-footer {
+  border-top: 1px solid var(--border-light);
+}
+.arco-drawer {
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+.arco-drawer-header {
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.arco-drawer-footer {
+  border-top: 1px solid var(--border-light);
+}
+
+/* Tabs */
+.arco-tabs-nav-type-card .arco-tabs-tab {
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+.arco-tabs-nav-type-card .arco-tabs-tab-active {
+  background: var(--brand-blue);
+  color: #fff;
+}
+.arco-tabs-tab:hover {
+  color: var(--brand-blue);
+}
+.arco-tabs-nav-extra {
+  color: var(--text-secondary);
+}
+
+/* 菜单 */
+.arco-menu-inner {
+  background: transparent;
+}
+.arco-menu-light,
+.arco-menu {
+  background: transparent !important;
+}
+.arco-menu-selected-label,
+.arco-menu-light .arco-menu-item.arco-menu-selected,
+.arco-menu-light .arco-menu-item-selected {
+  background: var(--info-bg) !important;
+  color: var(--brand-blue) !important;
+  border-radius: var(--radius-md);
+}
+.arco-menu-light .arco-menu-item:hover,
+.arco-menu-light .arco-menu-inline-header:hover {
+  background: var(--bg-hover);
+  color: var(--brand-blue);
+}
+
+/* 消息 (Message/Notification) */
+.arco-message,
+.arco-notification {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+.arco-notification-title {
+  color: var(--text-primary);
+}
+
+/* 下拉菜单 */
+.arco-dropdown-menu {
+  border-radius: var(--radius-md) !important;
+}
+.arco-dropdown-menu-item:hover {
+  background: var(--bg-hover);
+  color: var(--brand-blue);
+}

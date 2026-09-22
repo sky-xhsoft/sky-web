@@ -1,5 +1,5 @@
 <template>
-  <a-modal
+  <V2Modal
     v-model:visible="dialogVisible"
     :title="t('cloud.createShareTitle')"
     :ok-loading="loading"
@@ -8,49 +8,51 @@
     @cancel="handleCancel"
   >
     <a-form :model="form" layout="vertical">
-      <a-form-item :label="t('cloud.shareItem')">
+      <V2FormItem :label="t('cloud.shareItem')">
         <div class="share-item">
           <span class="item-icon">{{ itemIcon }}</span>
           <span class="item-name">{{ itemName }}</span>
         </div>
-      </a-form-item>
+      </V2FormItem>
 
-      <a-form-item
+      <V2FormItem
         field="expirationDays"
         :label="t('cloud.expiration')"
         :rules="[{ required: true, message: t('cloud.expirationRequired') }]"
       >
-        <a-select v-model="form.expirationDays" :placeholder="t('cloud.selectExpiration')">
+        <V2Select v-model="form.expirationDays" :placeholder="t('cloud.selectExpiration')">
           <a-option :value="1">{{ t('cloud.expiration1Day') }}</a-option>
           <a-option :value="7">{{ t('cloud.expiration7Days') }}</a-option>
           <a-option :value="30">{{ t('cloud.expiration30Days') }}</a-option>
           <a-option :value="0">{{ t('cloud.expirationForever') }}</a-option>
-        </a-select>
-      </a-form-item>
+        </V2Select>
+      </V2FormItem>
 
-      <a-form-item :label="t('cloud.accessPassword')">
+      <V2FormItem :label="t('cloud.accessPassword')">
         <a-input-password
           v-model="form.password"
           :placeholder="t('cloud.passwordPlaceholder')"
           :max-length="20"
           allow-clear
+          class="v2-password-input"
         >
           <template #suffix>
-            <a-button size="mini" type="text" @click="generatePassword">
+            <V2Button size="sm" type="text" @click="generatePassword">
               {{ t('cloud.generate') }}
-            </a-button>
+            </V2Button>
           </template>
         </a-input-password>
         <div class="hint">{{ t('cloud.passwordHint') }}</div>
-      </a-form-item>
+      </V2FormItem>
     </a-form>
-  </a-modal>
+  </V2Modal>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import type { ShareCreateParams } from '@/modules/cloud/types'
 import { useI18n } from 'vue-i18n'
+import { V2Modal, V2Select, V2FormItem, V2Button } from '@/components/ui'
 
 interface Props {
   visible?: boolean
@@ -86,7 +88,6 @@ watch(
   (newValue) => {
     dialogVisible.value = newValue
     if (newValue) {
-      // 重置表单，默认生成密码
       form.value = {
         expirationDays: 7,
         password: generateRandomPassword(),
@@ -118,11 +119,10 @@ function generatePassword() {
 
 function handleOk() {
   const params: Omit<ShareCreateParams, 'fileId' | 'resourceId'> = {
-    shareType: form.value.password.trim() ? 'password' : 'public', // 根据是否有密码决定分享类型
+    shareType: form.value.password.trim() ? 'password' : 'public',
     expireDays: form.value.expirationDays,
   }
 
-  // 只在有密码时添加
   if (form.value.password.trim()) {
     params.password = form.value.password.trim()
   }
@@ -141,9 +141,9 @@ function handleCancel() {
   align-items: center;
   gap: 8px;
   padding: 12px;
-  background: #f9fafb;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
 }
 
 .item-icon {
@@ -153,12 +153,17 @@ function handleCancel() {
 .item-name {
   font-size: 14px;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .hint {
   margin-top: 4px;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
+}
+
+.v2-password-input :deep(.arco-input) {
+  height: 34px;
+  border-radius: var(--radius-md);
 }
 </style>

@@ -181,7 +181,7 @@ export const useMetadataStore = defineStore('metadata', () => {
       if (config.table.PROPS) {
         try {
           config.props = JSON.parse(config.table.PROPS)
-        } catch (e) {
+        } catch {
           config.props = {}
         }
       }

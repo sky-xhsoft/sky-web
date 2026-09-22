@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       port: 3000,
-      allowedHosts: ['c.skyzhou.cn'],
+      allowedHosts: ['c.skyzhou.cn', 'zhibo.skyzhou.cn', '.zhibo.skyzhou.cn', '1.zhibo.skyzhou.cn', '46.zhibo.skyzhou.cn'],
       proxy: {
         '/api': {
           target: apiTarget,

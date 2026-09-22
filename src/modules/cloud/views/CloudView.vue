@@ -165,15 +165,21 @@
       @download="handlePreviewDownload"
     />
 
+    <!-- 权限设置对话框 -->
+    <PermissionDialog
+      v-model:visible="dialogs.permission"
+      :item-id="currentPermissionId"
+      :item-name="currentPermissionName"
+      :item-type="currentPermissionType"
+      @changed="handleRefresh"
+    />
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
-import { IconShareAlt, IconCloudDownload, IconDownload, IconSort, IconDelete } from '@arco-design/web-vue/es/icon'
-import type { TreeNodeData } from '@arco-design/web-vue'
 import { useNavigationStore } from '@/stores/navigation'
 import { useI18n } from 'vue-i18n'
 
@@ -181,16 +187,11 @@ const { t } = useI18n()
 
 // 导入组件 - 核心组件立即加载
 import {
-  CloudBreadcrumb,
   CloudFileDisplay,
   CloudToolbar,
   CloudSearchBar,
   CloudSortDropdown,
-  CloudFileGrid,
-  CloudFileList,
-  CloudBatchActions,
   CloudUploadProgress,
-  CloudDialogManager,
 } from '@/modules/cloud/components'
 import CloudHeaderBar from '@/modules/cloud/components/CloudHeaderBar.vue'
 import CloudDragOverlay from '@/modules/cloud/components/CloudDragOverlay.vue'
@@ -207,6 +208,7 @@ const ShareStatsDialog = defineAsyncComponent(() => import('@/modules/cloud/comp
 const ConfirmDeleteDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/ConfirmDeleteDialog.vue'))
 const CloudBatchProgressDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/CloudBatchProgressDialog.vue'))
 const FilePreviewDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/FilePreviewDialog.vue'))
+const PermissionDialog = defineAsyncComponent(() => import('@/modules/cloud/components/dialogs/PermissionDialog.vue'))
 
 // 导入composables
 import {
@@ -224,7 +226,7 @@ import {
 
 // 导入store
 import { useCloudStore } from '@/modules/cloud/stores/cloudStore'
-import type { GridItem, Folder as FolderType, ShareCreateParams, ShareListItem } from '@/modules/cloud/types'
+import type { GridItem, ShareCreateParams, ShareListItem } from '@/modules/cloud/types'
 
 // ==================== 初始化 ====================
 const store = useCloudStore()
@@ -254,7 +256,6 @@ const dragUpload = useDragUpload(dropZoneRef, {
 
 // ==================== 状态 ====================
 const refreshing = ref(false)
-const router = useRouter()
 
 // 搜索关键词（双向绑定）
 const searchQuery = computed({
@@ -274,6 +275,7 @@ const dialogs = reactive({
   shareStats: false,
   delete: false,
   preview: false,
+  permission: false,
 })
 
 // 当前操作的项
@@ -283,6 +285,9 @@ const currentRenameName = ref('')
 const currentShareType = ref<'file' | 'folder'>('file')
 const currentShareName = ref('')
 const currentShare = ref<ShareListItem | null>(null)
+const currentPermissionType = ref<'file' | 'folder'>('file')
+const currentPermissionName = ref('')
+const currentPermissionId = ref<number | null>(null)
 const currentDeleteType = ref<'file' | 'folder'>('file')
 const currentDeleteName = ref('')
 const currentDeleteCount = ref(1)
@@ -290,28 +295,6 @@ const currentDeleteDetails = ref<{ fileCount?: number; folderCount?: number; tot
 
 // ==================== 计算属性 ====================
 
-// 文件夹树数据（转换为Arco Tree格式）
-const folderTreeData = computed<TreeNodeData[]>(() => {
-  const convertToTreeData = (folders: FolderType[]): TreeNodeData[] => {
-    return folders.map((f) => {
-      // 后端返回 json:"id"（小写），需要兼容 ID 和 id
-      const folderId = f.ID || f.id || 0
-      return {
-        key: folderId,
-        title: f.name,
-        children: f.Children ? convertToTreeData(f.Children) : [],
-      }
-    })
-  }
-
-  return [
-    {
-      key: 0,
-      title: t('cloud.rootDirectory'),
-      children: convertToTreeData(store.folderTree),
-    },
-  ]
-})
 // 所有选中的ID（文件+文件夹）
 // Fix: Use composite keys (type-id) to prevent ID collision between files and folders
 const allSelectedIds = computed(() => {
@@ -330,30 +313,13 @@ function handleBreadcrumbNavigate(folderId: number | null) {
   navigation.navigateTo(folderId || 0)
 }
 
-function handleTreeSelect(selectedKeys: (string | number)[]) {
-  if (selectedKeys.length > 0) {
-    // Parse the selected key to a number
-    // Arco tree may return string keys, so we need to properly convert
-    const selectedKey = selectedKeys[0]
-    const folderId = typeof selectedKey === 'number' ? selectedKey : parseInt(String(selectedKey), 10)
-
-    // Validate that we got a valid number
-    if (isNaN(folderId)) {
-      console.error("Invalid folder ID selected:", selectedKey)
-      return
-    }
-
-    navigation.navigateTo(folderId)
-  }
-}
-
 // ==================== 刷新 ====================
 async function handleRefresh() {
   refreshing.value = true
   try {
     await store.refreshAll()
     Message.success(t('cloud.refreshSuccess'))
-  } catch (e) {
+  } catch {
     // 错误已在store中处理
   } finally {
     refreshing.value = false
@@ -436,7 +402,7 @@ async function handleItemDoubleClick(item: GridItem) {
 }
 
 function handleItemSelect(payload: { item: GridItem; selected: boolean }) {
-  const { item, selected } = payload
+  const { item } = payload
   if (item.type === 'file') {
     selection.toggleFileSelection(item.id)
   } else {
@@ -505,6 +471,13 @@ async function handleItemAction(payload: { action: string; item: GridItem }) {
       currentShareType.value = item.type as 'file' | 'folder'
       currentShareName.value = item.name
       dialogs.share = true
+      break
+
+    case 'permission':
+      currentPermissionType.value = item.type as 'file' | 'folder'
+      currentPermissionName.value = item.name
+      currentPermissionId.value = item.id
+      dialogs.permission = true
       break
 
     case 'delete':
@@ -655,15 +628,6 @@ async function handleRefreshShares() {
   await share.refreshShares()
 }
 
-async function handleCopyShareLink(shareItem: ShareListItem) {
-  await share.copyShareLink(shareItem)
-}
-
-function handleOpenEditShare(shareItem: ShareListItem) {
-  currentShare.value = shareItem
-  dialogs.editShare = true
-}
-
 async function handleEditShare(params: { expirationDays: number; password?: string }) {
   if (!currentShare.value) return
 
@@ -671,18 +635,6 @@ async function handleEditShare(params: { expirationDays: number; password?: stri
   if (success) {
     dialogs.editShare = false
     currentShare.value = null
-    await handleRefreshShares()
-  }
-}
-
-function handleOpenShareStats(shareItem: ShareListItem) {
-  currentShare.value = shareItem
-  dialogs.shareStats = true
-}
-
-async function handleDeleteShare(shareItem: ShareListItem) {
-  const success = await share.removeShareWithConfirm(shareItem)
-  if (success) {
     await handleRefreshShares()
   }
 }
@@ -733,16 +685,6 @@ async function handlePreviewDownload() {
   }
 }
 
-/**
- * 格式化文件大小
- */
-function formatFileSize(size: number): string {
-  if (size < 1024) return size + ' B'
-  else if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB'
-  else if (size < 1024 * 1024 * 1024) return (size / (1024 * 1024)).toFixed(1) + ' MB'
-  else return (size / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
-}
-
 </script>
 
 <style scoped>
@@ -750,7 +692,7 @@ function formatFileSize(size: number): string {
   height: 100vh;
   overflow: hidden;
   min-height: 100vh;
-  background: linear-gradient(180deg, #f0f2f5 0%, #fafafa 100%);
+  background: linear-gradient(180deg, var(--bg-page) 0%, var(--bg-hover) 100%);
   display: flex;
   flex-direction: column;
 }
@@ -770,7 +712,7 @@ function formatFileSize(size: number): string {
   min-width: 0;
   position: relative;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.02);
   overflow: hidden;
@@ -782,8 +724,8 @@ function formatFileSize(size: number): string {
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  background: linear-gradient(to right, #f8f9ff 0%, #ffffff 100%);
-  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(to right, var(--info-bg) 0%, var(--bg-card) 100%);
+  border-bottom: 1px solid var(--border-light);
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -809,7 +751,7 @@ function formatFileSize(size: number): string {
 
 .quota-text {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   font-family: 'Consolas', monospace;
 }
 
@@ -821,8 +763,8 @@ function formatFileSize(size: number): string {
 /* 工具栏包装 */
 .cloud-view__toolbar-wrapper {
   padding: 16px 24px;
-  border-bottom: 1px solid #f5f5f5;
-  background: #fafafa;
+  border-bottom: 1px solid var(--bg-hover);
+  background: var(--bg-hover);
 }
 
 /* 文件区域包装 */
@@ -844,7 +786,7 @@ function formatFileSize(size: number): string {
 }
 
 .batch-actions__inner {
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   padding: 12px 20px;
@@ -852,7 +794,7 @@ function formatFileSize(size: number): string {
   align-items: center;
   justify-content: space-between;
   backdrop-filter: blur(8px);
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--border);
 }
 
 .batch-info {
@@ -860,17 +802,17 @@ function formatFileSize(size: number): string {
   align-items: center;
   gap: 12px;
   font-size: 14px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .batch-count {
-  color: #165dff;
+  color: var(--brand-blue);
   font-weight: 600;
   font-size: 16px;
 }
 
 .batch-size {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -898,8 +840,8 @@ function formatFileSize(size: number): string {
   justify-content: space-between;
   gap: 24px;
   padding: 16px 24px;
-  background: linear-gradient(to right, #ffffff 0%, #fafafa 100%);
-  border-bottom: 1px solid #e8e8e8;
+  background: linear-gradient(to right, var(--bg-card) 0%, var(--bg-hover) 100%);
+  border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
   min-height: 64px;
 }

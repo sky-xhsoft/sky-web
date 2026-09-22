@@ -86,6 +86,6 @@ function handleBlur() {
 
 .time-field__view {
   padding: 4px 0;
-  color: #1d2129;
+  color: var(--text-primary);
 }
 </style>

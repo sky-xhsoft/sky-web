@@ -1,6 +1,21 @@
 <!-- 动态表单组件 -->
 <template>
-  <a-spin :loading="loading" class="dynamic-form">
+  <div class="dynamic-form-wrap">
+    <a-spin :loading="loading" :tip="loading ? '正在加载表单...' : ''" class="dynamic-form">
+      <div v-if="loading" class="dynamic-form__skeleton">
+        <div class="dynamic-form__group dynamic-form__group--placeholder">
+          <div class="dynamic-form__group-header"><icon-folder /> <span>基本信息</span></div>
+          <a-row :gutter="rowGutter">
+            <a-col :span="12" v-for="i in 4" :key="i"><FieldSkeleton control-type="text" /></a-col>
+          </a-row>
+        </div>
+        <div class="dynamic-form__group dynamic-form__group--placeholder">
+          <div class="dynamic-form__group-header"><icon-folder /> <span></span></div>
+          <a-row :gutter="rowGutter">
+            <a-col :span="12" v-for="i in 2" :key="i"><FieldSkeleton control-type="text" /></a-col>
+          </a-row>
+        </div>
+      </div>
     <a-form
       ref="formRef"
       :model="formData"
@@ -77,7 +92,7 @@
       </template>
 
       <!-- 子表区域 -->
-      <template v-if="childTables.length > 0">
+            <template v-if="childTables.length > 0 && !hideInlineChildTables">
         <div class="dynamic-form__group dynamic-form__group--child-tables">
           <div class="dynamic-form__group-header">
             <icon-unordered-list />
@@ -138,16 +153,15 @@
       <!-- 隐藏的提交按钮（用于支持 Enter 键提交）-->
       <button v-show="false" type="submit" />
     </a-form>
-  </a-spin>
-</template>
+        </a-spin>
+      </div>
+    </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
 import { IconFolder, IconInfoCircle, IconUnorderedList } from '@arco-design/web-vue/es/icon'
 import DynamicFormItem from './DynamicFormItem.vue'
-import ChildTablePanel from './ChildTablePanel.vue'
-import ChildTableInlinePanel from './ChildTableInlinePanel.vue'
+import FieldSkeleton from '../FieldRenderers/FieldSkeleton.vue'
 import OneToOneChildTable from './OneToOneChildTable.vue'
 import OneToManyChildTable from './OneToManyChildTable.vue'
 import { useDynamicForm } from '../../composables'
@@ -167,8 +181,9 @@ interface Props {
   rowGutter?: number             // 行间距
   showGroupTitle?: boolean       // 显示分组标题
   showSystemFields?: boolean     // 显示系统字段
-  autoLabelWidth?: boolean       // 自动标签宽度
-}
+    autoLabelWidth?: boolean       // 自动标签宽度
+    hideInlineChildTables?: boolean  // 隐藏内嵌子表区（由父级以独立Tab渲染）
+  }
 
 const props = withDefaults(defineProps<Props>(), {
   mode: 'view',
@@ -177,9 +192,10 @@ const props = withDefaults(defineProps<Props>(), {
   layout: 'horizontal',
   rowGutter: 16,
   showGroupTitle: true,
-  showSystemFields: true,
-  autoLabelWidth: false
-})
+    showSystemFields: true,
+    autoLabelWidth: false,
+    hideInlineChildTables: false
+  })
 
 // ==================== Emits ====================
 
@@ -322,8 +338,6 @@ const oneToOneChildTableRecordIds = ref<Record<number, number | undefined>>({})
  * 1:1 子表记录数据映射（key: 子表 ID, value: 子表记录数据）
  */
 const oneToOneChildTableRecords = ref<Record<number, any>>({})
-// 存储1:1子表原始数据，用于对比变更
-const oneToOneChildTableOriginalRecords = ref<Record<number, any>>({})
 
 /**
  * 1:1 子表原始记录数据映射（用于比较变化）
@@ -440,16 +454,6 @@ async function getOneToOneChildTableRecord(childTable: any): Promise<any | undef
   } catch (error: any) {
     console.error('获取 1:1 子表记录失败:', error)
     return undefined
-  }
-}
-
-/**
- * 子表请求刷新整个表单
- */
-async function handleChildTableRefresh() {
-  if (props.recordId) {
-    await loadRecordData(props.recordId)
-    Message.success('刷新成功')
   }
 }
 
@@ -896,6 +900,22 @@ defineExpose({
   display: block;
 }
 
+/* 表单级加载骨架占位 */
+.dynamic-form__skeleton {
+  width: 100%;
+}
+.dynamic-form__group--placeholder {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.dynamic-form__group--placeholder .dynamic-form__group-header {
+  margin-bottom: 12px;
+}
+
 .dynamic-form__form {
   width: 100%;
   display: block;
@@ -904,11 +924,12 @@ defineExpose({
 .dynamic-form__group {
   width: 100% !important;
   display: block;
-  margin-bottom: 24px;
-  background: #fff;
-  border-radius: 4px;
-  border: 1px solid #e8e8e8;
+  margin-bottom: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .dynamic-form__group-header {
@@ -916,11 +937,11 @@ defineExpose({
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #fafafa;
-  border-bottom: 1px solid #e8e8e8;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border);
   font-weight: 600;
   font-size: 14px;
-  color: var(--color-text-1);
+  color: var(--text-primary);
 }
 
 .dynamic-form__group-header .arco-icon {
@@ -945,12 +966,12 @@ defineExpose({
 }
 
 .dynamic-form__group--child-tables {
-  border-color: #3370ff;
+  border-color: var(--brand-blue);
 }
 
 .dynamic-form__group--child-tables .dynamic-form__group-header {
-  background: #f2f5ff;
-  border-bottom-color: #3370ff;
+  background: var(--info-bg);
+  border-bottom-color: var(--brand-blue);
 }
 
 .dynamic-form__group--child-tables .dynamic-form__group-body {
@@ -960,18 +981,18 @@ defineExpose({
 /* 1:1 子表样式 */
 .dynamic-form__one-to-one-child-table {
   margin-bottom: 24px;
-  background: #fff;
-  border: 1px solid #e8e8e8;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 4px;
   overflow: hidden;
 
   .dynamic-form__one-to-one-child-table__header {
     padding: 12px 16px;
-    background: #f5f5f5;
-    border-bottom: 1px solid #e8e8e8;
+    background: var(--bg-hover);
+    border-bottom: 1px solid var(--border);
     font-size: 18px;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
   }
 
   .dynamic-form__one-to-one-child-table__body {
@@ -994,7 +1015,7 @@ defineExpose({
 
   .dynamic-form__one-to-one-child-table__field-label {
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
     white-space: nowrap;
     flex: 0 0 auto;
   }
@@ -1017,8 +1038,8 @@ defineExpose({
   }
 
   :deep(.dynamic-form__group-header) {
-    background: #f5f5f5;
-    border-bottom: 1px solid #e8e8e8;
+    background: var(--bg-hover);
+    border-bottom: 1px solid var(--border);
   }
 
   :deep(.dynamic-form__group-body) {
@@ -1031,7 +1052,7 @@ defineExpose({
 
   :deep(.arco-form-item-label) {
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
   }
 
   :deep(.arco-form-item-content) {
@@ -1040,12 +1061,12 @@ defineExpose({
 }
 
 .dynamic-form__group--system {
-  background: #fafafa;
-  border-color: #d9d9d9;
+  background: var(--bg-hover);
+  border-color: var(--border);
 }
 
 .dynamic-form__group--system .dynamic-form__group-header {
-  background: #f0f0f0;
+  background: var(--border-light);
 }
 
 .dynamic-form__collapse {
@@ -1059,7 +1080,7 @@ defineExpose({
 
 .dynamic-form__collapse :deep(.arco-collapse-item-header) {
   padding: 12px 16px;
-  background: #fafafa;
+  background: var(--bg-hover);
   font-weight: 600;
 }
 
@@ -1089,7 +1110,7 @@ defineExpose({
 
 /* 必填标记样式 */
 .dynamic-form__form :deep(.arco-form-item-label-required-symbol) {
-  color: #f5222d;
+  color: var(--error);
   margin-right: 4px;
 }
 
@@ -1097,13 +1118,13 @@ defineExpose({
 .dynamic-form__form :deep(.arco-form-item-message) {
   font-size: 12px;
   line-height: 1.5;
-  color: #f5222d;
+  color: var(--error);
 }
 
 /* 只读字段样式 */
 .dynamic-form__form :deep(.arco-input[readonly]),
 .dynamic-form__form :deep(.arco-textarea[readonly]) {
-  background: #f5f5f5;
+  background: var(--bg-hover);
   color: var(--color-text-2);
   cursor: not-allowed;
 }
@@ -1113,7 +1134,7 @@ defineExpose({
 .dynamic-form__form :deep(.arco-textarea[disabled]),
 .dynamic-form__form :deep(.arco-select[disabled]),
 .dynamic-form__form :deep(.arco-input-number[disabled]) {
-  background: #f5f5f5;
+  background: var(--bg-hover);
   color: var(--color-text-3);
   cursor: not-allowed;
 }
@@ -1133,5 +1154,94 @@ defineExpose({
   .dynamic-form__form :deep(.arco-form-item) {
     margin-bottom: 12px;
   }
+}
+
+  /* ═══════════════════════════════════════════════
+   单对象页字段控件统一基准
+   覆盖所有字段类型控件的 Arco 输入/选择/日期，形成一致企业表单观感
+   ═══════════════════════════════════════════════ */
+/* 输入 / 选择 / 日期：统一高度、圆角、边框 */
+.dynamic-form__form :deep(.arco-input),
+.dynamic-form__form :deep(.arco-input-inner),
+.dynamic-form__form :deep(.arco-input-number),
+.dynamic-form__form :deep(.arco-textarea),
+.dynamic-form__form :deep(.arco-select-view),
+.dynamic-form__form :deep(.arco-select-view-value),
+.dynamic-form__form :deep(.arco-date-picker),
+.dynamic-form__form :deep(.arco-input-search),
+.dynamic-form__form :deep(.arco-cascader) {
+  border-radius: 6px;
+  font-size: 13px;
+}
+/* 单行输入控件统一高度 */
+.dynamic-form__form :deep(.arco-input),
+.dynamic-form__form :deep(.arco-input-number),
+.dynamic-form__form :deep(.arco-select-view),
+.dynamic-form__form :deep(.arco-date-picker) :deep(.arco-input-inner),
+.dynamic-form__form :deep(.arco-input-search) {
+  height: 34px;
+}
+.dynamic-form__form :deep(.arco-input-text) {
+  line-height: 32px;
+}
+/* 边框统一：细、冷灰；hover 加深；focus 品牌蓝细分环 */
+.dynamic-form__form :deep(.arco-input),
+.dynamic-form__form :deep(.arco-input-number),
+.dynamic-form__form :deep(.arco-textarea),
+.dynamic-form__form :deep(.arco-select-view),
+.dynamic-form__form :deep(.arco-date-picker),
+.dynamic-form__form :deep(.arco-cascader) {
+  border: 1px solid #dcdfe6;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.dynamic-form__form :deep(.arco-input):hover,
+.dynamic-form__form :deep(.arco-input-number):hover,
+.dynamic-form__form :deep(.arco-textarea):hover,
+.dynamic-form__form :deep(.arco-select-view):hover,
+.dynamic-form__form :deep(.arco-date-picker):hover,
+.dynamic-form__form :deep(.arco-cascader:hover) {
+  border-color: #b8bfcc;
+}
+.dynamic-form__form :deep(.arco-input):focus,
+.dynamic-form__form :deep(.arco-input-number):focus,
+.dynamic-form__form :deep(.arco-textarea):focus,
+.dynamic-form__form :deep(.arco-select-view:focus),
+.dynamic-form__form :deep(.arco-date-picker):focus,
+.dynamic-form__form :deep(.arco-cascader:focus) {
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.08);
+}
+/* focus-within 兜底（Arco 部分控件焦点在内部元素上） */
+.dynamic-form__form :deep(.arco-select-view:focus-within),
+.dynamic-form__form :deep(.arco-date-picker:focus-within),
+.dynamic-form__form :deep(.arco-cascader:focus-within) {
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.08);
+}
+
+/* 只读 / 禁用字段：浅灰底 + 适中字色（区别于可编辑） */
+.dynamic-form__form :deep(.arco-input[readonly]),
+.dynamic-form__form :deep(.arco-textarea[readonly]) {
+  background: #f5f7fa;
+  color: #4e5969;
+}
+.dynamic-form__form :deep(.arco-input[disabled]),
+.dynamic-form__form :deep(.arco-textarea[disabled]),
+.dynamic-form__form :deep(.arco-select[disabled]),
+.dynamic-form__form :deep(.arco-input-number[disabled]) {
+  background: #f5f7fa;
+  color: #86909c;
+}
+
+/* 字段标签：加重深字，与已改的 MetadataFormView 标签一致 */
+.dynamic-form__form :deep(.arco-form-item-label) {
+  font-weight: 600;
+  color: #1f2329;
+}
+
+/* 字段值与占位符可读性 */
+.dynamic-form__form :deep(.arco-input::placeholder),
+.dynamic-form__form :deep(.arco-textarea::placeholder) {
+  color: #a9aeb8;
 }
 </style>

@@ -212,6 +212,38 @@ export function useDomainList(options: UseDomainListOptions = {}) {
     currentStep.value = 1
     addedDomainName.value = ''
     cnameStatus.value = 0
+    needVerify.value = false
+    verifyOwnerInfo.value = null
+  }
+
+  // 域名归属验证 (腾讯云 FailedOperation.DomainNeedVerifyOwner)
+  const needVerify = ref(false)
+  const verifying = ref(false)
+  const verifyOwnerInfo = ref<{ status: number; statusText: string; content: string; mainDomain: string } | null>(null)
+
+  async function handleVerifyOwner() {
+    if (!addForm.domainName) {
+      Message.warning('请先填写域名')
+      return
+    }
+    if (verifying.value) return
+    verifying.value = true
+    try {
+      const response = await verifyDomainOwner(addForm.domainName, 'dnsCheck')
+      const data = response.data?.data
+      verifyOwnerInfo.value = data
+      needVerify.value = false
+      // 腾讯云文档 80524: status >= 0 为已验证归属
+      if (data && data.status >= 0) {
+        Message.success('域名归属验证成功')
+      } else {
+        verifyOwnerInfo.value = data
+      }
+    } catch (error: any) {
+      Message.error(error.response?.data?.message || '查询归属验证信息失败')
+    } finally {
+      verifying.value = false
+    }
   }
 
   async function handleAddDomain() {
@@ -227,10 +259,18 @@ export function useDomainList(options: UseDomainListOptions = {}) {
       Message.success('添加成功')
       addedDomainName.value = addForm.domainName
       cnameStatus.value = 0
+      needVerify.value = false
+      verifyOwnerInfo.value = null
       currentStep.value = 2
       loadDomains()
     } catch (error: any) {
-      Message.error(error.response?.data?.message || '添加失败')
+      const msg = error.response?.data?.message || '添加失败'
+      // 腾讯云要求先验证域名归属权 -> 在输入框下方给出验证入口
+      if (msg.includes('DomainNeedVerifyOwner') || msg.includes('需要验证') || msg.includes('归属')) {
+        needVerify.value = true
+        verifyOwnerInfo.value = null
+      }
+      Message.error(msg)
     } finally {
       submitting.value = false
     }
@@ -303,5 +343,10 @@ export function useDomainList(options: UseDomainListOptions = {}) {
     handleAddDomain,
     handleFinishAdd,
     checkCnameStatus,
+    // 域名归属验证
+    needVerify,
+    verifying,
+    verifyOwnerInfo,
+    handleVerifyOwner,
   }
 }

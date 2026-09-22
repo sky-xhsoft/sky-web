@@ -15,7 +15,7 @@ const getStoredCompany = (): CompanyInfo | null => {
   if (!raw) return null
   try {
     return JSON.parse(raw) as CompanyInfo
-  } catch (e) {
+  } catch {
     return null
   }
 }
@@ -25,7 +25,7 @@ const getStoredCompanyConf = (): CompanyConf | null => {
   if (!raw) return null
   try {
     return JSON.parse(raw) as CompanyConf
-  } catch (e) {
+  } catch {
     return null
   }
 }
@@ -37,7 +37,7 @@ type AuthState = {
   deviceId: string
   company: CompanyInfo | null
   companyConf: CompanyConf | null
-  loginType: 'live' | 'cloud' | null
+  loginType: 'live' | 'cloud' | 'system' | null
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -50,19 +50,19 @@ export const useAuthStore = defineStore('auth', {
       deviceId: deviceId || getDeviceId() || fallbackDeviceId(),
       company: getStoredCompany(),
       companyConf: getStoredCompanyConf(),
-      loginType: (getLoginType() as 'live' | 'cloud' | null) || null,
+      loginType: (getLoginType() as 'live' | 'cloud' | 'system' | null) || null,
     }
   },
   getters: {
     isAuthenticated: (state) => Boolean(state.token),
   },
   actions: {
-    async login(payload: Omit<LoginRequest, 'clientType' | 'deviceId'> & { deviceName?: string; loginType?: 'live' | 'cloud' }) {
+    async login(payload: Omit<LoginRequest, 'clientType' | 'deviceId'> & { deviceName?: string; loginType?: 'live' | 'cloud' | 'system' }) {
       const ensuredDeviceId = this.deviceId || fallbackDeviceId()
       setDeviceId(ensuredDeviceId)
 
       // 根据登录类型设置客户端类型
-      const clientType = payload.loginType === 'live' ? 'live-web' : 'cloud-web'
+      const clientType = payload.loginType === 'live' ? 'live-web' : payload.loginType === 'cloud' ? 'cloud-web' : payload.loginType === 'system' ? 'system-web' : 'live-web'
 
       const res = await loginApi({
         ...payload,
@@ -92,7 +92,7 @@ export const useAuthStore = defineStore('auth', {
       if (this.deviceId) {
         try {
           await logoutApi(this.deviceId)
-        } catch (e) {
+        } catch {
           // ignore
         }
       }

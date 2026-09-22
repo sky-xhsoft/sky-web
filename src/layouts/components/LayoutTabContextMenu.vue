@@ -9,7 +9,7 @@ interface Props {
   y: number
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'action', action: string): void

@@ -14,7 +14,8 @@ import type {
   SysDict,
   TableConfig,
   FormData,
-  ForeignKeyOption
+  ForeignKeyOption,
+  SysAction
 } from '../types'
 
 // ==================== 子系统 ====================
@@ -203,8 +204,18 @@ export async function updateColumnsOrder(tableId: number, columnIds: number[]): 
  * 获取字典列表
  */
 export async function fetchDictItems(dictTableId: number): Promise<SysDict[]> {
-  const { data } = await api.get<ApiResponse<SysDict[]>>(`/metadata/dicts/${dictTableId}/items`)
-  return data.data
+  const { data } = await api.get<ApiResponse<any[]>>(`/dicts/${dictTableId}/items`)
+  // 后端返回 SysDictItem[] (displayName/value), 映射为前端 SysDict[] (DICT_NAME/DICT_VALUE)
+  return (data.data || []).map((it: any) => ({
+    ID: it.ID,
+    DICT_TABLE_ID: dictTableId,
+    DICT_CODE: '',
+    DICT_NAME: it.displayName ?? it.DISPLAY_NAME ?? '',
+    DICT_VALUE: it.value ?? it.VALUE ?? '',
+    PARENT_ID: it.PARENT_ID || 0,
+    ORDERNO: it.ORDERNO || it.orderno || 0,
+    IS_ACTIVE: it.IS_ACTIVE ?? it.isActive ?? 'Y'
+  }))
 }
 
 /**
@@ -416,7 +427,8 @@ export async function saveRecordWithDetails(params: {
 export async function exportRecords(tableName: string, filters?: Record<string, any>): Promise<Blob> {
   const params: Record<string, any> = {}
   if (filters && Object.keys(filters).length > 0) {
-    params.filters = filters
+    // 显式序列化为 JSON 字符串, 避免 axios 展开成 filters[key]=value 导致后端无法解析
+    params.filters = JSON.stringify(filters)
   }
   const { data } = await api.get(`/data/${tableName}/export`, {
     params,
@@ -434,5 +446,29 @@ export async function importRecords(tableName: string, file: File): Promise<{ im
   const { data } = await api.post<ApiResponse<{ imported: number }>>(`/data/${tableName}/import`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
+  return data.data
+}
+
+/**
+ * 下载导入模板
+ */
+export async function getImportTemplate(tableName: string): Promise<Blob> {
+  const { data } = await api.get<Blob>(`/data/${tableName}/import-template`, { responseType: 'blob' })
+  return data as Blob
+}
+
+/**
+ * 刷新元数据缓存（清空 Redis 中所有 metadata 前缀缓存并重新加载）
+ */
+export async function refreshMetadataCache(): Promise<{ message: string }> {
+  const { data } = await api.post<ApiResponse<{ message: string }>>('/metadata/refresh')
+  return data.data
+}
+
+/**
+ * 获取表的所有动作定义（动态按钮，如 list_button）
+ */
+export async function fetchTableActions(tableId: number): Promise<SysAction[]> {
+  const { data } = await api.get<ApiResponse<SysAction[]>>(`/metadata/tables/${tableId}/actions`)
   return data.data
 }

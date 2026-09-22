@@ -36,11 +36,20 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
    */
   const formColumns = computed(() => {
     if (!tableConfig.value) return []
+    // 平台默认隐藏系统审计字段：创建人/创建时间/修改人/修改时间/是否可用
+    // 这些字段统一在「操作日志」Tab 中只读展示（RecordLogPanel），不进主表数据表单
+    const HIDDEN_SYSTEM_FIELDS = ['CREATE_BY', 'CREATE_TIME', 'UPDATE_BY', 'UPDATE_TIME', 'IS_ACTIVE']
     return tableConfig.value.columns
       .filter(c => {
         // 兼容 IS_ACTIVE 和 isActive
         const isActive = c.IS_ACTIVE || (c as any).isActive
         if (isActive !== undefined && isActive !== 'Y') {
+          return false
+        }
+
+        const dbName = c.DB_NAME || (c as any).dbName
+        // 排除系统审计字段（集中到操作日志）
+        if (HIDDEN_SYSTEM_FIELDS.includes(dbName)) {
           return false
         }
 
@@ -246,7 +255,7 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
         if (!regex.test(String(value))) {
           return errorMsg || `${displayName}格式不正确`
         }
-      } catch (error) {
+      } catch {
         console.error('Invalid regex:', regExpression)
       }
     }
@@ -569,7 +578,7 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
           pattern: regex,
           message: column.ERROR_MSG || `${column.DISPLAY_NAME}格式不正确`
         })
-      } catch (error) {
+      } catch {
         console.error('Invalid regex:', column.REG_EXPRESSION)
       }
     }
@@ -627,29 +636,6 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
 
     // 基本类型比较
     return value1 === value2
-  }
-
-  /**
-   * 将对象的所有key转换为大写（递归）
-   */
-  function convertKeysToUppercase(obj: Record<string, any>): Record<string, any> {
-    const result: Record<string, any> = {}
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        const value = obj[key]
-        const upperKey = key.toUpperCase()
-        if (typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date)) {
-          result[upperKey] = convertKeysToUppercase(value)
-        } else if (Array.isArray(value)) {
-          result[upperKey] = value.map(item =>
-            typeof item === 'object' && item !== null ? convertKeysToUppercase(item) : item
-          )
-        } else {
-          result[upperKey] = value
-        }
-      }
-    }
-    return result
   }
 
   // ==================== 监听 ====================

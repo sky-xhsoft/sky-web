@@ -34,9 +34,12 @@ export function useForeignKey(column: SysColumn) {
   }) {
     if (!isForeignKey.value) return
 
+    const refTableId = column.REF_TABLE_ID || (column as any).refTableId
+    const refColumnId = column.REF_COLUMN_ID || (column as any).refColumnId
     const search = params?.search || ''
     const page = params?.page || 1
-    const cacheKey = `${search}_${page}`
+    // 缓存键必须包含关联表/字段，否则多 FK 字段会互相污染（复用了第一个字段的 options）
+    const cacheKey = `${refTableId}_${refColumnId || ''}_${search}_${page}`
     const cached = cache.getOptions(cacheKey)
     if (cached) {
       options.value = cached as ForeignKeyOption[]
@@ -45,9 +48,6 @@ export function useForeignKey(column: SysColumn) {
 
     loading.value = true
     try {
-      const refTableId = column.REF_TABLE_ID || (column as any).refTableId
-      const refColumnId = column.REF_COLUMN_ID || (column as any).refColumnId
-
       const result = await api.getForeignKeyOptions({
         tableId: refTableId!,
         columnId: refColumnId,

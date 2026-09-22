@@ -2,39 +2,41 @@
 <template>
   <div class="dynamic-table-toolbar">
     <div class="toolbar-left">
-      <a-space>
-        <!-- 新增按钮 -->
-        <a-button
-          v-if="canCreate"
-          type="primary"
-          @click="$emit('create')"
-        >
-          <template #icon><icon-plus /></template>
-          新增
-        </a-button>
+          <a-space>
+            <!-- 新增按钮 -->
+            <V2Button
+              v-if="canCreate"
+              type="gradient"
+              @click="$emit('create')"
+            >
+              <template #icon><icon-plus /></template>
+              新增
+            </V2Button>
 
-        <!-- 导入按钮 -->
-        <a-button
-          v-if="canImport"
-          @click="$emit('import')"
-        >
-          <template #icon><icon-upload /></template>
-          导入
-        </a-button>
+            <!-- 导入按钮 -->
+            <V2Button
+              v-if="canImport"
+              type="secondary"
+              @click="$emit('import')"
+            >
+              <template #icon><icon-upload /></template>
+              导入
+            </V2Button>
 
-        <!-- 导出按钮 -->
-        <a-button
-          v-if="canExport"
-          @click="$emit('export')"
-        >
-          <template #icon><icon-download /></template>
-          导出
-        </a-button>
+            <!-- 导出按钮 -->
+            <V2Button
+              v-if="canExport"
+              type="secondary"
+              @click="$emit('export')"
+            >
+              <template #icon><icon-download /></template>
+              导出
+            </V2Button>
 
-        <!-- 自定义左侧插�?-->
-        <slot name="left" />
-      </a-space>
-    </div>
+            <!-- 自定义左侧插槽 -->
+            <slot name="left" />
+          </a-space>
+        </div>
 
     <div class="toolbar-right">
       <a-space>
@@ -66,17 +68,17 @@
           刷新
         </a-button>
 
-        <!-- 列设置按�?-->
+        <!-- 列设置按�?-->
         <a-button
           v-if="showColumnSetting"
           size="small"
           @click="$emit('columnSetting')"
         >
           <template #icon><icon-setting /></template>
-          列设�?
+          列设�?
         </a-button>
 
-        <!-- 自定义右侧插�?-->
+        <!-- 自定义右侧插�?-->
         <slot name="right" />
       </a-space>
     </div>
@@ -84,7 +86,8 @@
 </template>
 
 <script setup lang="ts">
-import { IconPlus, IconUpload, IconDownload, IconList, IconApps, IconRefresh, IconSettings } from '@arco-design/web-vue/es/icon'
+import { IconPlus, IconUpload, IconDownload, IconList, IconApps, IconRefresh } from '@arco-design/web-vue/es/icon'
+import { V2Button } from '@/components/ui'
 
 interface Props {
   viewMode?: 'list' | 'grid'
@@ -124,9 +127,9 @@ defineEmits<Emits>()
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   margin-bottom: 16px;
 }
 
@@ -137,7 +140,7 @@ defineEmits<Emits>()
   gap: 8px;
 }
 
-/* 响应�?*/
+/* 响应�?*/
 @media (max-width: 768px) {
   .dynamic-table-toolbar {
     flex-direction: column;

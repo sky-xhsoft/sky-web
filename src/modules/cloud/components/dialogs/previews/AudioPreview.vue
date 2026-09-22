@@ -38,7 +38,7 @@ interface Props {
   fileName: string
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 // ==================== 状态 ====================
 const audioRef = ref<HTMLAudioElement | null>(null)
@@ -102,14 +102,14 @@ function handleAudioError() {
   margin: 0 0 8px 0;
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   word-break: break-word;
 }
 
 .audio-info p {
   margin: 0;
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .audio-container audio {
@@ -125,7 +125,7 @@ function handleAudioError() {
   padding: 12px 20px;
   background: rgba(239, 68, 68, 0.1);
   border-radius: 8px;
-  color: #ef4444;
+  color: var(--error);
   font-size: 14px;
 }
 

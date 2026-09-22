@@ -77,7 +77,7 @@ export function useCloudUpload() {
     store.uploadQueue.push(task)
 
     try {
-      await uploadFile(file, folderId, (percent, loaded, total) => {
+      await uploadFile(file, folderId, (percent, loaded) => {
         // 更新任务进度
         const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
         if (taskIndex !== -1) {

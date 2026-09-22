@@ -246,12 +246,12 @@ function handleJumpToRecord() {
 /* 跳转按钮 */
 .foreign-key-field__jump-btn {
   flex-shrink: 0;
-  color: #f53f3f;
+  color: var(--brand-blue, #165dff);
   transition: all 0.2s;
 }
 
 .foreign-key-field__jump-btn:hover {
-  color: #cb272d;
-  background-color: rgba(245, 63, 63, 0.1);
+  color: var(--brand-blue, #165dff);
+  background-color: rgba(22, 93, 255, 0.1);
 }
 </style>

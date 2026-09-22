@@ -10,6 +10,10 @@ import i18n, { changeLanguage } from './locales'
 import { createPersistPlugin } from './stores/plugins/persist'
 import vLazy from './directives/vLazy'
 import './style.css'
+import './styles/tokens.css'
+import './styles/base.css'
+import './styles/arco-override.css'
+import './styles/animations.css'
 
 const app = createApp(App)
 const pinia = createPinia()

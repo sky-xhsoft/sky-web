@@ -1,43 +1,51 @@
 <!-- 子表面板组件 -->
 <template>
   <div class="child-table-panel">
-    <div class="child-table-panel__toolbar">
-      <div class="toolbar-left">
-        <a-space>
-          <a-button
-            v-if="canAdd"
-            type="primary"
-            size="small"
-            @click="handleAdd"
-          >
-            <template #icon>
-              <icon-plus />
-            </template>
-            新增
-          </a-button>
-          <a-button
-            v-if="canDelete && selectedRowKeys.length > 0"
-            size="small"
-            status="danger"
-            @click="handleBatchDelete"
-          >
-            <template #icon>
-              <icon-delete />
-            </template>
-            批量删除
-          </a-button>
-          <a-button
-            v-if="canRefresh"
-            size="small"
-            @click="loadChildData"
-          >
-            <template #icon>
-              <icon-refresh />
-            </template>
-            刷新
-          </a-button>
-        </a-space>
+    <div class="child-panel-shell">
+      <!-- 面板头：关联类型徽标 + 子表名 -->
+      <div class="child-panel-shell__header">
+        <span class="child-panel-shell__badge">1:N</span>
+        <span class="child-panel-shell__title">{{ panelTitle }}</span>
+        <span v-if="pagination.total" class="child-panel-shell__hint">共 {{ pagination.total }} 条明细</span>
       </div>
+      <div class="child-table-panel__toolbar">
+        <div class="toolbar-left">
+          <a-space>
+            <V2Button
+              v-if="canAdd"
+              type="gradient"
+              size="sm"
+              @click="handleAdd"
+            >
+              <template #icon>
+                <icon-plus />
+              </template>
+              新增
+            </V2Button>
+            <V2Button
+              v-if="canDelete && selectedRowKeys.length > 0"
+              type="danger"
+              size="sm"
+              @click="handleBatchDelete"
+            >
+              <template #icon>
+                <icon-delete />
+              </template>
+              批量删除
+            </V2Button>
+            <V2Button
+              v-if="canRefresh"
+              type="secondary"
+              size="sm"
+              @click="loadChildData"
+            >
+              <template #icon>
+                <icon-refresh />
+              </template>
+              刷新
+            </V2Button>
+          </a-space>
+        </div>
       <div class="toolbar-right">
         <a-space>
           <a-dropdown>
@@ -98,39 +106,19 @@
       </template>
 
       <!-- 操作列 -->
-      <template #action="{ record }">
-        <a-space>
-          <a-button
-            v-if="canView"
-            type="text"
-            size="mini"
-            @click="handleView(record)"
-          >
-            查看
-          </a-button>
-          <a-button
-            v-if="canEdit"
-            type="text"
-            size="mini"
-            @click="handleEdit(record)"
-          >
-            编辑
-          </a-button>
-          <a-popconfirm
-            v-if="canDelete"
-            content="确定删除这条记录吗？"
-            @ok="handleDelete(record)"
-          >
-            <a-button
-              type="text"
-              size="mini"
-              status="danger"
-            >
-              删除
-            </a-button>
-          </a-popconfirm>
-        </a-space>
-      </template>
+            <template #action="{ record }">
+              <a-space>
+                <V2Button v-if="canView" type="text" size="sm" @click="handleView(record)">查看</V2Button>
+                <V2Button v-if="canEdit" type="text" size="sm" @click="handleEdit(record)">编辑</V2Button>
+                <a-popconfirm
+                  v-if="canDelete"
+                  content="确定删除这条记录吗？"
+                  @ok="handleDelete(record)"
+                >
+                  <V2Button type="text" size="sm" class="danger">删除</V2Button>
+                </a-popconfirm>
+              </a-space>
+            </template>
 
       <!-- 字典值翻译 -->
       <template
@@ -155,9 +143,10 @@
         </span>
       </template>
     </a-table>
+              </div><!-- /child-panel-shell -->
 
-    <!-- 子表记录编辑对话框 -->
-    <a-modal
+            <!-- 子表记录编辑对话框 -->
+            <a-modal
       v-model:visible="dialogVisible"
       :title="dialogTitle"
       :width="dialogWidth"
@@ -194,13 +183,14 @@
 import { ref, computed, onMounted, nextTick, h } from 'vue'
 import { Message, Checkbox } from '@arco-design/web-vue'
 import { IconPlus, IconRefresh, IconDelete, IconExport, IconImport, IconMore } from '@arco-design/web-vue/es/icon'
+import { V2Button } from '@/components/ui'
 import DynamicForm from './DynamicForm.vue'
 import * as metadataApi from '../../api/metadata'
 import { useForeignKey } from '../../composables/useForeignKey'
 import { useChildTableHelpers } from './useChildTableHelpers'
 import type { FormMode, SysColumn } from '../../types'
 
-const { getTableName, getColumnDbName, findRefColumn, getOrderNo } = useChildTableHelpers()
+const { getTableName, getColumnDbName, getOrderNo } = useChildTableHelpers()
 
 interface Props {
   parentTableId: number
@@ -210,6 +200,20 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+// ==================== 面板标题 ====================
+const panelTitle = computed(() => {
+  const ref = props.childTable?.ref || {}
+  const table = props.childTable?.table || {}
+  return (
+    ref.displayName ||
+    ref.DISPLAY_NAME ||
+    ref.title ||
+    table.DISPLAY_NAME ||
+    table.displayName ||
+    '明细信息'
+  )
+})
 
 // ==================== 状态 ====================
 
@@ -778,7 +782,6 @@ function handleExport() {
   const tn = childTableConfig.value?.table?.NAME
   if (!tn) { Message.warning('无法获取表名'); return }
 
-  const ref = props.childTable.ref
   const filters: Record<string, any> = {}
   if (props.parentRecordId) {
     const refColumn = props.childTable.columns.find((col: any) => {
@@ -859,10 +862,51 @@ onMounted(() => {
   width: 100%;
 }
 
+/* —— 统一子表面板外壳（1:1 与 1:N 共用同一视觉体系） —— */
+.child-panel-shell {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.child-panel-shell__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border);
+}
+
+.child-panel-shell__badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--brand-blue), rgba(22, 93, 255, 0.6));
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.child-panel-shell__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.child-panel-shell__hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
 .child-table-panel__toolbar {
   padding: 16px;
-  background: #fafafa;
-  border-bottom: 1px solid #e8e8e8;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -893,18 +937,18 @@ onMounted(() => {
 }
 
 .child-table-panel__table :deep(.row-index) {
-  color: #86909c;
+  color: var(--text-tertiary);
   font-size: 12px;
 }
 
 .child-table-panel__table :deep(.header-text) {
-  color: #1d2129;
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 600;
 }
 
 .child-table-panel__table :deep(.arco-table-th) {
-  background: #fafafa;
+  background: var(--bg-hover);
   font-weight: 600;
 }
 

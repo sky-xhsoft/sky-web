@@ -1,25 +1,21 @@
 <template>
   <div class="cloud-file-list">
     <!-- 空状态 -->
-    <a-empty
-      v-if="items.length === 0 && !loading"
-      :description="emptyText || t('cloud.folderEmpty')"
-      class="cloud-file-list__empty"
-    >
-      <template #image>
-        <icon-folder />
-      </template>
-    </a-empty>
+    <div v-if="items.length === 0 && !loading" class="cloud-file-list__empty">
+      <span class="empty-icon"><icon-folder /></span>
+      <div class="empty-text">{{ emptyText || t('cloud.folderEmpty') }}</div>
+    </div>
 
     <!-- 加载状态 -->
     <div v-if="loading" class="cloud-file-list__loading">
-      <a-spin size="large" />
+      <a-spin size="large" class="cloud-loading-spin" />
       <div class="loading-text">{{ t('cloud.loading') }}</div>
     </div>
 
-    <!-- 表格视图 -->
+    <!-- 表格视图 (dt-table 风格) -->
     <a-table
       v-else-if="items.length > 0"
+      class="cloud-dt-table"
       :data="items"
       :columns="columns"
       :pagination="false"
@@ -28,6 +24,7 @@
       row-class="cloud-file-list__row"
       :scroll="{ x: 'auto', y: 600 }"
       :virtual-list-props="{ height: 600, fixedSize: true, estimatedSize: 48 }"
+      :bordered="false"
       @row-click="handleRowClick"
       @row-dblclick="handleRowDoubleClick"
     >
@@ -36,6 +33,7 @@
         <div class="file-name-cell">
           <span
             class="file-icon"
+            :class="{ 'file-icon--folder': record.type === 'folder' }"
             :style="{ backgroundColor: record.bg, color: record.color }"
           >
             {{ record.icon }}
@@ -46,9 +44,9 @@
 
       <!-- 类型列 -->
       <template #type="{ record }">
-        <a-tag v-if="record.type === 'folder'" color="orange">
+        <V2Tag v-if="record.type === 'folder'" type="warning">
           {{ t('cloud.folder') }}
-        </a-tag>
+        </V2Tag>
         <span v-else class="file-ext">
           {{ record.file?.FileExt || '-' }}
         </span>
@@ -69,37 +67,37 @@
 
       <!-- 操作列 -->
       <template #actions="{ record }">
-        <a-space>
-          <a-button
+        <div class="row-actions">
+          <V2Button
             v-if="record.type === 'file'"
-            size="mini"
+            size="sm"
             type="text"
             @click.stop="handleAction('preview', record)"
             :title="t('cloud.preview')"
           >
-            <icon-eye />
-          </a-button>
-          <a-button
+            <template #icon><icon-eye /></template>
+          </V2Button>
+          <V2Button
             v-if="record.type === 'file'"
-            size="mini"
+            size="sm"
             type="text"
             @click.stop="handleAction('download', record)"
             :title="t('cloud.download')"
           >
-            <icon-download />
-          </a-button>
-          <a-button
-            size="mini"
+            <template #icon><icon-download /></template>
+          </V2Button>
+          <V2Button
+            size="sm"
             type="text"
             @click.stop="handleAction('rename', record)"
             :title="t('cloud.rename')"
           >
-            <icon-edit />
-          </a-button>
+            <template #icon><icon-edit /></template>
+          </V2Button>
           <a-dropdown trigger="click" @select="(v) => handleActionSelect(v, record)">
-            <a-button size="mini" type="text" @click.stop>
+            <V2Button size="sm" type="text" @click.stop>
               <icon-more />
-            </a-button>
+            </V2Button>
             <template #content>
               <a-doption value="move">
                 <icon-export />
@@ -109,13 +107,17 @@
                 <icon-share-alt />
                 {{ t('cloud.share') }}
               </a-doption>
+              <a-doption value="permission">
+                <icon-safe />
+                {{ t('cloud.permission') }}
+              </a-doption>
               <a-doption value="delete" class="danger-option">
                 <icon-delete />
                 {{ t('cloud.deleteItem') }}
               </a-doption>
             </template>
           </a-dropdown>
-        </a-space>
+        </div>
       </template>
     </a-table>
   </div>
@@ -131,12 +133,14 @@ import {
   IconMore,
   IconExport,
   IconShareAlt,
+  IconSafe,
   IconDelete,
 } from '@arco-design/web-vue/es/icon'
 import type { GridItem } from '@/modules/cloud/types'
 import type { TableRowSelection } from '@arco-design/web-vue'
 import { formatSize, formatDate } from '@/modules/cloud/utils/format'
 import { useI18n } from 'vue-i18n'
+import { V2Button, V2Tag } from '@/components/ui'
 
 const { t } = useI18n()
 
@@ -170,7 +174,6 @@ const columns = [
     slotName: 'name',
     ellipsis: true,
     tooltip: true,
-    // 不设置固定宽度，让名称列自适应填充剩余空间
   },
   {
     title: t('cloud.fileType'),
@@ -238,25 +241,52 @@ function handleActionSelect(value: string | number | Record<string, any> | undef
   overflow: hidden; /* 防止溢出 */
 }
 
-/* 表格响应式适配 */
-:deep(.arco-table-container) {
+/* dt-table 风格：白卡 + 小灰表头 + hover */
+.cloud-dt-table {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.cloud-dt-table :deep(.arco-table-container) {
   overflow-x: auto;
 }
 
-/* 表格最小宽度，更容易触发横向滚动 */
-:deep(.arco-table) {
-  min-width: 800px !important;
+.cloud-dt-table :deep(.arco-table-th) {
+  background: var(--bg-card);
+  color: var(--text-tertiary);
+  font-weight: 500;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border-light);
 }
 
-/* 小屏幕下允许横向滚动 */
-@media (max-width: 768px) {
-  :deep(.arco-table) {
-    min-width: 700px;
-  }
+.cloud-dt-table :deep(.arco-table-td) {
+  color: var(--text-primary);
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-light);
+  padding: 12px 16px;
+}
+
+.cloud-dt-table :deep(.arco-table-tr:hover .arco-table-td) {
+  background: var(--bg-hover);
 }
 
 .cloud-file-list__empty {
   padding: 80px 0;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.empty-icon {
+  font-size: 40px;
+  opacity: 0.5;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.empty-text {
+  font-size: 13px;
 }
 
 .cloud-file-list__loading {
@@ -268,9 +298,13 @@ function handleActionSelect(value: string | number | Record<string, any> | undef
   gap: 16px;
 }
 
+.cloud-loading-spin :deep(.arco-icon) {
+  color: var(--brand-blue);
+}
+
 .loading-text {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .file-name-cell {
@@ -286,7 +320,7 @@ function handleActionSelect(value: string | number | Record<string, any> | undef
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 18px;
   flex-shrink: 0;
 }
@@ -297,28 +331,32 @@ function handleActionSelect(value: string | number | Record<string, any> | undef
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .file-ext {
   text-transform: uppercase;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .text-muted {
-  color: #9ca3af;
+  color: var(--text-tertiary);
+}
+
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .danger-option {
-  color: #f53f3f;
+  color: var(--error);
 }
 
 :deep(.cloud-file-list__row) {
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-:deep(.cloud-file-list__row:hover) {
-  background-color: #f9fafb;
+  transition: background-color var(--duration-fast);
 }
 </style>

@@ -23,7 +23,7 @@
 .auto-complete-field-view {
   display: inline-block;
   padding: 4px 0;
-  color: #333;
+  color: var(--text-primary);
   line-height: 24px;
   min-height: 32px;
   display: flex;
@@ -32,7 +32,7 @@
 </style>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useFieldRendererBase } from '../../composables'
 import type { SysColumn, FieldValue, FormMode } from '../../types'
 

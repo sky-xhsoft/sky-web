@@ -1,5 +1,5 @@
 <template>
-  <a-modal
+  <V2Modal
     v-model:visible="dialogVisible"
     :title="t('cloud.editShareTitle')"
     :ok-loading="loading"
@@ -10,74 +10,75 @@
   >
     <a-form :model="form" layout="vertical" ref="formRef">
       <!-- 分享基本信息 -->
-      <a-form-item :label="t('cloud.shareInfoLabel')">
+      <V2FormItem :label="t('cloud.shareInfoLabel')">
         <div class="share-info">
           <div class="info-row">
             <span class="info-label">{{ t('cloud.shareLinkLabel') }}</span>
             <span class="info-value copyable" @click="handleCopyLink">{{ shareLink }}</span>
-            <a-button size="mini" type="text" @click="handleCopyLink">
-              <icon-copy />
+            <V2Button size="sm" type="text" @click="handleCopyLink">
+              <template #icon><icon-copy /></template>
               {{ t('cloud.copy') }}
-            </a-button>
+            </V2Button>
           </div>
           <div class="info-row" v-if="props.share?.password">
             <span class="info-label">{{ t('cloud.accessPassword') }}:</span>
             <span class="info-value copyable" @click="handleCopyPassword">{{ props.share.password }}</span>
-            <a-button size="mini" type="text" @click="handleCopyPassword">
-              <icon-copy />
+            <V2Button size="sm" type="text" @click="handleCopyPassword">
+              <template #icon><icon-copy /></template>
               {{ t('cloud.copy') }}
-            </a-button>
+            </V2Button>
           </div>
         </div>
-      </a-form-item>
+      </V2FormItem>
 
       <!-- 有效期设置 -->
-      <a-form-item
+      <V2FormItem
         field="expirationDays"
         :label="t('cloud.newExpiration')"
         :rules="[{ required: true, message: t('cloud.expirationRequired') }]"
       >
-        <a-select v-model="form.expirationDays" :placeholder="t('cloud.selectExpiration')">
+        <V2Select v-model="form.expirationDays" :placeholder="t('cloud.selectExpiration')">
           <a-option :value="1">{{ t('cloud.expiration1Day') }}</a-option>
           <a-option :value="7">{{ t('cloud.expiration7Days') }}</a-option>
           <a-option :value="30">{{ t('cloud.expiration30Days') }}</a-option>
           <a-option :value="0">{{ t('cloud.expirationForever') }}</a-option>
-        </a-select>
+        </V2Select>
         <div class="hint" v-if="form.expirationDays === 0">
           {{ t('cloud.expirationForeverWarning') }}
         </div>
         <div class="hint" v-else>
           {{ t('cloud.expireDaysHint', { days: form.expirationDays }) }}
         </div>
-      </a-form-item>
+      </V2FormItem>
 
       <!-- 访问密码 -->
-      <a-form-item :label="t('cloud.accessPassword')">
+      <V2FormItem :label="t('cloud.accessPassword')">
         <a-input-password
           v-model="form.password"
           :placeholder="t('cloud.passwordPlaceholder')"
           :max-length="20"
           allow-clear
           show-password-toggle
+          class="v2-password-input"
         >
           <template #prefix>
             <icon-lock v-if="form.password" />
             <icon-unlock v-else />
           </template>
           <template #suffix>
-            <a-button size="mini" type="text" @click="generatePassword" :disabled="generating">
+            <V2Button size="sm" type="text" @click="generatePassword" :disabled="generating">
               <icon-refresh v-if="generating" />
               {{ generating ? t('cloud.loading') : t('cloud.generate') }}
-            </a-button>
+            </V2Button>
           </template>
         </a-input-password>
         <div class="hint">
           <icon-info-circle /> {{ t('cloud.passwordChangeWarning') }}
         </div>
-      </a-form-item>
+      </V2FormItem>
 
       <!-- 分享详情信息 -->
-      <a-form-item :label="t('cloud.shareInfoLabel')">
+      <V2FormItem :label="t('cloud.shareInfoLabel')">
         <div class="share-details">
           <div class="detail-row">
             <span class="detail-label">{{ t('cloud.createTime') }}:</span>
@@ -97,9 +98,9 @@
             </span>
           </div>
         </div>
-      </a-form-item>
+      </V2FormItem>
     </a-form>
-  </a-modal>
+  </V2Modal>
 </template>
 
 <script setup lang="ts">
@@ -109,6 +110,7 @@ import { useI18n } from 'vue-i18n'
 import { IconCopy, IconLock, IconUnlock, IconRefresh, IconInfoCircle } from '@arco-design/web-vue/es/icon'
 import type { ShareListItem } from '@/modules/cloud/types'
 import { formatDate } from '@/modules/cloud/utils/format'
+import { V2Modal, V2Select, V2FormItem, V2Button } from '@/components/ui'
 
 const { t } = useI18n()
 
@@ -145,8 +147,6 @@ watch(
   (newValue) => {
     dialogVisible.value = newValue
     if (newValue && props.share) {
-      // 根据当前分享信息初始化表单
-      // expirationDays 默认为7天，用户可以修改
       form.value = {
         expirationDays: 7,
         password: props.share.password || '',
@@ -201,7 +201,6 @@ function generateRandomPassword(): string {
 
 function generatePassword() {
   generating.value = true
-  // 模拟生成动画
   setTimeout(() => {
     form.value.password = generateRandomPassword()
     generating.value = false
@@ -248,7 +247,7 @@ function fallbackCopy(text: string, successMsg: string) {
   try {
     document.execCommand('copy')
     Message.success(successMsg)
-  } catch (err) {
+  } catch {
     Message.error(t('cloud.copyFailed'))
   } finally {
     document.body.removeChild(textarea)
@@ -261,7 +260,6 @@ function handleOk() {
       expirationDays: form.value.expirationDays,
     }
 
-    // 只在有密码时添加
     if (form.value.password.trim()) {
       params.password = form.value.password.trim()
     }
@@ -276,7 +274,6 @@ function handleCancel() {
   dialogVisible.value = false
 }
 
-// 渲染 footer 额外内容
 function renderFooterExtra() {
   return h('div', { class: 'footer-extra' }, [
     h(IconInfoCircle, { style: 'margin-right: 4px;' }),
@@ -297,18 +294,18 @@ function renderFooterExtra() {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #f9fafb;
-  border-radius: 6px;
-  transition: all 0.2s;
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  transition: background var(--duration-fast);
 }
 
 .info-row:hover {
-  background: #f3f4f6;
+  background: var(--border-light);
 }
 
 .info-label {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   min-width: 50px;
   font-weight: 500;
 }
@@ -316,7 +313,7 @@ function renderFooterExtra() {
 .info-value {
   font-size: 13px;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--text-primary);
   font-family: monospace;
   overflow-x: auto;
   white-space: nowrap;
@@ -325,28 +322,20 @@ function renderFooterExtra() {
 
 .copyable {
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color var(--duration-fast);
 }
 
 .copyable:hover {
-  color: #3b82f6;
+  color: var(--brand-blue);
 }
 
 .hint {
   margin-top: 6px;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-.hint.warning {
-  color: #f59e0b;
-}
-
-.hint.danger {
-  color: #ef4444;
 }
 
 .share-details {
@@ -365,39 +354,43 @@ function renderFooterExtra() {
 
 .detail-label {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   min-width: 70px;
 }
 
 .detail-value {
   font-size: 13px;
-  color: #1f2937;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
 .detail-value.text-warning {
-  color: #f59e0b;
+  color: var(--warning);
 }
 
 .detail-value.text-danger {
-  color: #ef4444;
+  color: var(--error);
 }
 
 .expiration-warning {
   font-size: 12px;
-  color: #f59e0b;
+  color: var(--warning);
   margin-left: 4px;
 }
 
 .footer-extra {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-/* 响应式适配 */
+.v2-password-input :deep(.arco-input) {
+  height: 34px;
+  border-radius: var(--radius-md);
+}
+
 @media (max-width: 640px) {
   .info-label,
   .detail-label {

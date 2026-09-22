@@ -1,5 +1,5 @@
 <template>
-  <a-modal
+  <V2Modal
     v-model:visible="dialogVisible"
     :title="t('cloud.renameTitle', { type: itemType === 'folder' ? t('cloud.folder') : t('cloud.file') })"
     :ok-loading="loading"
@@ -7,7 +7,7 @@
     @cancel="handleCancel"
   >
     <a-form :model="form" @submit="handleSubmit">
-      <a-form-item
+      <V2FormItem
         field="newName"
         :label="t('cloud.newName')"
         :rules="[
@@ -18,25 +18,26 @@
         ]"
         :validate-trigger="['change', 'blur']"
       >
-        <a-input
+        <V2Input
           v-model="form.newName"
           :placeholder="t('cloud.enterNewName')"
           :max-length="255"
           allow-clear
           @keyup.enter="handleSubmit"
         />
-      </a-form-item>
+      </V2FormItem>
       <div class="hint">
         {{ t('cloud.originalName') }}：<span class="old-name">{{ oldName }}</span>
       </div>
     </a-form>
-  </a-modal>
+  </V2Modal>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { validateFileName } from '@/modules/cloud/utils/validation'
 import { useI18n } from 'vue-i18n'
+import { V2Modal, V2Input, V2FormItem } from '@/components/ui'
 
 interface Props {
   visible?: boolean
@@ -113,12 +114,12 @@ function handleCancel() {
 <style scoped>
 .hint {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-top: 8px;
 }
 
 .old-name {
-  color: #1f2937;
+  color: var(--text-primary);
   font-weight: 500;
 }
 </style>

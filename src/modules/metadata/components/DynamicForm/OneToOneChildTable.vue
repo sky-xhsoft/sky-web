@@ -1,29 +1,48 @@
 <!-- 1:1 子表组件 -->
 <template>
   <div class="one-to-one-child-table">
-    <a-row :gutter="rowGutter">
-      <template v-for="column in visibleFields" :key="column.ID || column.id">
-        <a-col
-          :span="getFieldColSpan(column)"
-          class="one-to-one-child-table__field"
+    <div class="child-panel-shell">
+      <!-- 面板头：关联类型徽标 + 子表名 + 记录摘要 -->
+      <div class="child-panel-shell__header">
+        <span class="child-panel-shell__badge">1:1</span>
+        <span class="child-panel-shell__title">{{ panelTitle }}</span>
+        <span v-if="record && Object.keys(record).length" class="child-panel-shell__hint">关联记录</span>
+      </div>
+      <div class="child-panel-shell__body">
+        <a-empty
+          v-if="!record || Object.keys(record).length === 0"
+          description="暂无关联的一对一记录"
+          class="one-to-one-child-table__empty"
+        />
+        <a-row
+          v-else
+          :gutter="rowGutter"
+          class="one-to-one-child-table__row"
         >
-          <DynamicFormItem
-            :column="column"
-            :model-value="getFieldValue(column)"
-            :mode="mode"
-            :record="record"
-            @update:model-value="(value) => handleFieldChange(column, value)"
-          />
-        </a-col>
-      </template>
-    </a-row>
+          <template v-for="column in visibleFields" :key="column.ID || column.id">
+            <a-col
+              :span="getFieldColSpan(column)"
+              class="one-to-one-child-table__field"
+            >
+              <DynamicFormItem
+                :column="column"
+                :model-value="getFieldValue(column)"
+                :mode="mode"
+                :record="record"
+                @update:model-value="(value) => handleFieldChange(column, value)"
+              />
+            </a-col>
+          </template>
+        </a-row>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import DynamicFormItem from './DynamicFormItem.vue'
-import type { SysColumn, FormMode } from '../../types'
+import type { FormMode } from '../../types'
 
 // ==================== Props ====================
 interface Props {
@@ -44,6 +63,18 @@ const emit = defineEmits<{
 }>()
 
 // ==================== 计算属性 ====================
+/** 面板标题：优先子表显示名 */
+const panelTitle = computed(() => {
+  const ref = props.childTable?.ref || {}
+  return (
+    ref.displayName ||
+    ref.DISPLAY_NAME ||
+    ref.title ||
+    props.childTable?.table?.DISPLAY_NAME ||
+    props.childTable?.table?.displayName ||
+    '关联记录'
+  )
+})
 /**
  * 获取可见字段
  */
@@ -160,7 +191,56 @@ function handleFieldChange(column: any, value: any) {
   width: 100%;
 }
 
+/* —— 统一子表面板外壳（1:1 与 1:N 共用同一视觉体系） —— */
+.child-panel-shell {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.child-panel-shell__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border);
+}
+
+.child-panel-shell__badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--brand-blue), rgba(22, 93, 255, 0.6));
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.child-panel-shell__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.child-panel-shell__hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.child-panel-shell__body {
+  padding: 16px;
+}
+
 .one-to-one-child-table__field {
   margin-bottom: 16px;
+}
+
+.one-to-one-child-table__empty {
+  padding: 24px 0;
 }
 </style>

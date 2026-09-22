@@ -16,7 +16,7 @@ type StoredAuth = {
   deviceId: string
   company: CompanyInfo | null
   companyConf: CompanyConf | null
-  loginType: 'live' | 'cloud' | null
+  loginType: 'live' | 'cloud' | 'system' | null
 }
 
 const storage = window.localStorage
@@ -30,14 +30,14 @@ export function setDeviceId(id: string) {
   storage.setItem(DEVICE_ID_STORAGE_KEY, id)
 }
 
-export function getLoginType(): 'live' | 'cloud' | null {
+export function getLoginType(): 'live' | 'cloud' | 'system' | null {
   const raw = storage.getItem(LOGIN_TYPE_STORAGE_KEY)
   if (!raw) return null
-  const type = raw as 'live' | 'cloud'
-  return ['live', 'cloud'].includes(type) ? type : null
+  const type = raw as 'live' | 'cloud' | 'system'
+  return ['live', 'cloud', 'system'].includes(type) ? type : null
 }
 
-export function setLoginType(type: 'live' | 'cloud' | null) {
+export function setLoginType(type: 'live' | 'cloud' | 'system' | null) {
   if (type) {
     storage.setItem(LOGIN_TYPE_STORAGE_KEY, type)
   } else {
@@ -87,7 +87,7 @@ export function getStoredUser(): { user: StoredUser | null; deviceId: string | n
   try {
     const parsed = JSON.parse(raw) as { user: StoredUser | null; deviceId?: string }
     return { user: parsed.user ?? null, deviceId: parsed.deviceId ?? getDeviceId() }
-  } catch (e) {
+  } catch {
     return { user: null, deviceId: getDeviceId() }
   }
 }

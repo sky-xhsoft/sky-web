@@ -5,6 +5,7 @@
       :placeholder="computedPlaceholder"
       :loading="searching"
       allow-clear
+      class="cloud-search-bar__input"
       @search="handleSearch"
       @clear="handleClear"
     >
@@ -15,7 +16,7 @@
 
     <!-- Search stats -->
     <div v-if="showStats && hasResults" class="cloud-search-bar__stats">
-      {{ t('cloud.searchResults', { count: resultCount }) }}
+      <strong>{{ resultCount }}</strong> {{ t('cloud.searchResults', { count: resultCount }) }}
     </div>
   </div>
 </template>
@@ -88,41 +89,45 @@ export default {
   width: 320px;
 }
 
-.cloud-search-bar :deep(.arco-input-wrapper) {
-  border-radius: 20px;
-  background: #ffffff;
-  border: 1.5px solid #e5e7eb;
-  padding: 2px 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+.cloud-search-bar__input :deep(.arco-input-wrapper) {
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  height: 34px;
+  transition: border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
-.cloud-search-bar :deep(.arco-input-wrapper:hover) {
-  border-color: rgb(var(--primary-5));
-  box-shadow: 0 2px 6px rgba(var(--primary-2), 0.3);
+.cloud-search-bar__input :deep(.arco-input-wrapper:hover) {
+  border-color: var(--brand-blue);
 }
 
-.cloud-search-bar :deep(.arco-input-wrapper.arco-input-focus) {
-  border-color: rgb(var(--primary-6));
-  box-shadow: 0 0 0 3px rgba(var(--primary-1), 0.5);
+.cloud-search-bar__input :deep(.arco-input-wrapper.arco-input-focus) {
+  border-color: var(--brand-blue);
+  box-shadow: 0 0 0 3px var(--info-bg);
 }
 
-.cloud-search-bar :deep(.arco-input) {
-  font-size: 14px;
+.cloud-search-bar__input :deep(.arco-input) {
+  font-size: 13px;
 }
 
-.cloud-search-bar :deep(.arco-input::placeholder) {
-  color: #9ca3af;
+.cloud-search-bar__input :deep(.arco-input::placeholder) {
+  color: var(--text-tertiary);
 }
 
-.cloud-search-bar :deep(.arco-icon-search) {
-  color: rgb(var(--primary-6));
+.cloud-search-bar__input :deep(.arco-input-search-btn) {
+  background: var(--brand-blue);
+  color: #fff;
+}
+
+.cloud-search-bar__input :deep(.arco-icon-search) {
+  color: var(--brand-blue);
 }
 
 .cloud-search-bar__stats {
   margin-top: 8px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-align: right;
   animation: slideIn 0.3s ease;
 }
@@ -139,11 +144,10 @@ export default {
 }
 
 .cloud-search-bar__stats strong {
-  color: rgb(var(--primary-6));
+  color: var(--brand-blue);
   font-weight: 600;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .cloud-search-bar {
     width: 100%;

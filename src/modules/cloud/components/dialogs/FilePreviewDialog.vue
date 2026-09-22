@@ -1,5 +1,5 @@
 <template>
-  <a-modal
+  <V2Modal
     :visible="visible"
     @update:visible="emit('update:visible', $event)"
     :title="modalTitle"
@@ -7,7 +7,7 @@
     :footer="false"
     :mask-closable="true"
     :esc-to-close="true"
-    class="file-preview-modal"
+    class="v2 preview-modal file-preview-modal modal-full"
     @cancel="handleClose"
   >
     <template #title>
@@ -17,8 +17,8 @@
           <span class="file-name">{{ fileName }}</span>
         </div>
         <div class="preview-actions">
-          <a-button
-            size="small"
+          <V2Button
+            size="sm"
             type="text"
             @click="handleDownload"
             :loading="downloading"
@@ -27,10 +27,10 @@
               <icon-download />
             </template>
             下载
-          </a-button>
-          <a-button
+          </V2Button>
+          <V2Button
             v-if="canNavigate"
-            size="small"
+            size="sm"
             type="text"
             @click="handlePrevious"
             :disabled="!hasPrevious"
@@ -39,10 +39,10 @@
               <icon-left />
             </template>
             上一个
-          </a-button>
-          <a-button
+          </V2Button>
+          <V2Button
             v-if="canNavigate"
-            size="small"
+            size="sm"
             type="text"
             @click="handleNext"
             :disabled="!hasNext"
@@ -51,7 +51,7 @@
               <icon-right />
             </template>
             下一个
-          </a-button>
+          </V2Button>
         </div>
       </div>
     </template>
@@ -125,12 +125,12 @@
       <div v-else class="preview-unsupported">
         <icon-file />
         <p>暂不支持预览此类型文件</p>
-        <a-button type="primary" @click="handleDownload">
+        <V2Button type="primary" @click="handleDownload">
           <template #icon>
             <icon-download />
           </template>
           下载文件
-        </a-button>
+        </V2Button>
       </div>
     </div>
 
@@ -149,11 +149,11 @@
         <span class="info-value">{{ createTime }}</span>
       </div>
     </div>
-  </a-modal>
+  </V2Modal>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+      import { ref, computed, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import {
   IconDownload,
@@ -166,6 +166,7 @@ import { useCloudFile } from '@/modules/cloud/composables'
 import { formatSize as formatFileSize, formatDate } from '@/modules/cloud/utils/format'
 import type { FileItem } from '@/modules/cloud/types'
 import type { FileCategory } from '@/modules/cloud/composables/useCloudPreview'
+import { V2Modal, V2Button } from '@/components/ui'
 
 // 导入预览子组件
 import ImagePreview from './previews/ImagePreview.vue'
@@ -394,7 +395,7 @@ async function handleDownload() {
   try {
     await download(props.file)
     emit('download')
-  } catch (error) {
+  } catch {
     // 错误已在 download 方法中处理
   } finally {
     downloading.value = false
@@ -424,11 +425,15 @@ function handleNext() {
 </script>
 
 <style scoped>
-.file-preview-modal :deep(.arco-modal) {
+.modal-full :deep(.arco-modal) {
   max-width: 95vw;
 }
 
-.file-preview-modal :deep(.arco-modal-body) {
+.modal-full :deep(.arco-modal-header) {
+  border-bottom: 1px solid var(--border-light);
+}
+
+.modal-full :deep(.arco-modal-body) {
   padding: 0;
   max-height: 75vh;
   overflow: auto;
@@ -458,7 +463,7 @@ function handleNext() {
 .file-name {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -481,7 +486,7 @@ function handleNext() {
 
 .preview-loading p {
   margin: 0;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -500,12 +505,12 @@ function handleNext() {
 
 .preview-unsupported :deep(.arco-icon) {
   font-size: 64px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .preview-unsupported p {
   margin: 0;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 16px;
 }
 
@@ -513,8 +518,8 @@ function handleNext() {
   display: flex;
   gap: 24px;
   padding: 16px 24px;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
+  background: var(--bg-hover);
+  border-top: 1px solid var(--border);
 }
 
 .info-item {
@@ -524,12 +529,12 @@ function handleNext() {
 }
 
 .info-label {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .info-value {
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 /* 响应式 */

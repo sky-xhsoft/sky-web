@@ -1,10 +1,10 @@
 <template>
   <a-dropdown trigger="click" @select="handleSelect">
-    <a-button>
+    <V2Button type="secondary">
       <icon-sort />
       {{ currentLabel }}
       <span class="sort-order-icon">{{ sortOrderIcon }}</span>
-    </a-button>
+    </V2Button>
     <template #content>
       <a-doption
         v-for="option in sortOptions"
@@ -29,13 +29,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import {
   IconSort,
   IconCheck,
   IconSwap,
 } from '@arco-design/web-vue/es/icon'
 import { useI18n } from 'vue-i18n'
+import { V2Button } from '@/components/ui'
 import type { FileSortBy, SortOrder } from '@/modules/cloud/types'
 
 interface SortOption {
@@ -108,7 +109,7 @@ function handleSelect(value: string | number | Record<string, any> | undefined) 
 .sort-order-icon {
   margin-left: 4px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .option-icon {
@@ -118,12 +119,12 @@ function handleSelect(value: string | number | Record<string, any> | undefined) 
 
 .check-icon {
   margin-left: auto;
-  color: #3b82f6;
+  color: var(--brand-blue);
 }
 
 .order-label {
   margin-left: auto;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 </style>

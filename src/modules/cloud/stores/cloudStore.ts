@@ -19,19 +19,13 @@ import type {
   SortOrder,
 } from '@/modules/cloud/types'
 import {
-  fetchFolderTree,
   fetchFolders,
-  fetchFolderContent,
-  fetchFiles,
-  fetchItems,  // 新增：统一获取 folders + files
+  fetchItems,  // 统一获取 folders + files
   getQuota,
-  createItem as createItemApi,  // 使用新的统一接口
-  deleteItem as deleteItemApi,  // 使用新的统一接口
-  renameItem as renameItemApi,  // 使用新的统一接口
-  moveItem as moveItemApi,  // 使用新的统一接口
-  deleteFile as deleteFileApi,  // 保留用于兼容
-  moveFile as moveFileApi,  // 保留用于兼容
-  renameFile as renameFileApi,  // 保留用于兼容
+  createItem as createItemApi,
+  deleteItem as deleteItemApi,
+  renameItem as renameItemApi,
+  moveItem as moveItemApi,
   getMyShares,
 } from '@/modules/cloud/api'
 import { getFileIconConfig } from '@/modules/cloud/composables/useFileIcon'
@@ -307,20 +301,6 @@ export const useCloudStore = defineStore('cloud', () => {
     } finally {
       loading.value.files = false
       loading.value.tree = false
-    }
-  }
-
-  /**
-   * 刷新当前文件夹内容
-   * 根据当前所在目录选择合适的刷新方法
-   */
-  async function refreshCurrentFolder() {
-    if (currentFolderId.value === 0) {
-      // 根目录只需要刷新文件列表
-      await loadFiles(0)
-    } else {
-      // 非根目录刷新子文件夹和文件
-      await loadFolderContent(currentFolderId.value)
     }
   }
 

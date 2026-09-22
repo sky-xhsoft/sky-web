@@ -30,12 +30,12 @@
 .slider-value {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .slider-unit {
   font-size: 14px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .slider-field-edit {

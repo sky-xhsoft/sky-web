@@ -13,7 +13,6 @@ import type {
   FolderCreateParams,
   FolderRenameParams,
   FileItem,
-  FileUploadParams,
   FileRenameParams,
   FileMoveParams,
   FileSearchParams,
@@ -30,7 +29,7 @@ import type {
   GetUploadedChunksResponse,
   CompleteUploadResponse,
 } from '@/modules/cloud/types'
-import { normalizeFolder, normalizeFile } from '@/modules/cloud/utils/normalizers'
+import { normalizeFolder } from '@/modules/cloud/utils/normalizers'
 
 // ==================== 文件夹操作 ====================
 
@@ -685,7 +684,7 @@ export async function checkFileHash(params: CheckHashRequest): Promise<CheckHash
       message: 'success',
       data: { exists: false },
     }
-  } catch (e) {
+  } catch {
     return {
       code: 200,
       message: 'not implemented',
@@ -1003,5 +1002,85 @@ export async function batchDeleteItems(params: any): Promise<any> {
   }
 
   return data.data
+}
+
+// ==================== 权限管理 ====================
+
+/** 云盘项目权限记录 */
+export interface ItemPermission {
+  id: number
+  itemId: number
+  targetType: 'user' | 'group' | 'role'
+  targetId: number
+  permRead: string // 'Y' | 'N'
+  permWrite: string // 'Y' | 'N'
+  sysCompanyId: number
+  createBy: string
+  createTime: string
+  targetName?: string // 前端补充：对象名称
+}
+
+/**
+ * 获取项目权限列表
+ * 对应后端: GET /api/v1/cloud/items/:id/permissions
+ */
+export async function getItemPermissions(itemId: number): Promise<ItemPermission[]> {
+  try {
+    const { data } = await api.get<ApiResponse<any>>(`/cloud/items/${itemId}/permissions`)
+    const list = data?.data?.permissions || []
+    return Array.isArray(list) ? list : []
+  } catch (e) {
+    console.warn('获取项目权限失败:', e)
+    return []
+  }
+}
+
+/**
+ * 设置项目权限
+ * 对应后端: POST /api/v1/cloud/items/:id/permissions
+ */
+export async function setItemPermission(
+  itemId: number,
+  params: { targetType: string; targetId: number; permRead?: boolean; permWrite?: boolean }
+): Promise<void> {
+  await api.post(`/cloud/items/${itemId}/permissions`, {
+    targetType: params.targetType,
+    targetId: params.targetId,
+    permRead: params.permRead ?? false,
+    permWrite: params.permWrite ?? false,
+  })
+}
+
+/**
+ * 删除项目权限
+ * 对应后端: DELETE /api/v1/cloud/items/:id/permissions/:permissionId
+ */
+export async function removeItemPermission(itemId: number, permissionId: number): Promise<void> {
+  await api.delete(`/cloud/items/${itemId}/permissions/${permissionId}`)
+}
+
+/**
+ * 获取本公司用户列表（授权对象候选）
+ * 使用通用 CRUD 接口按公司查询 sys_user
+ */
+export async function fetchCompanyUsers(): Promise<{ id: number; username: string; name?: string }[]> {
+  try {
+    const { data } = await api.post('/data/sys_user/search', {
+      page: 1,
+      size: 100,
+    } as any)
+    // 通用 CRUD 分页：data.data 是数组（大驼峰字段），total 在同级
+    const payload = data?.data || {}
+    const list = Array.isArray(payload) ? payload : (payload?.data || payload?.list || [])
+    if (!Array.isArray(list)) return []
+    return list.map((u: any) => ({
+      id: u.ID ?? u.id ?? 0,
+      username: u.USERNAME ?? u.username ?? '',
+      name: u.TRUE_NAME ?? u.trueName ?? u.username ?? '',
+    }))
+  } catch (e) {
+    console.warn('获取用户列表失败:', e)
+    return []
+  }
 }
 

@@ -1,5 +1,5 @@
 <template>
-  <a-modal
+  <V2Modal
     v-model:visible="dialogVisible"
     :title="t('cloud.deleteConfirmTitle')"
     :ok-loading="loading"
@@ -37,7 +37,7 @@
         </a-descriptions>
       </div>
     </div>
-  </a-modal>
+  </V2Modal>
 </template>
 
 <script setup lang="ts">
@@ -45,6 +45,7 @@ import { ref, watch } from 'vue'
 import { IconExclamationCircleFill } from '@arco-design/web-vue/es/icon'
 import { formatSize } from '@/modules/cloud/utils/format'
 import { useI18n } from 'vue-i18n'
+import { V2Modal } from '@/components/ui'
 
 interface DeleteDetails {
   fileCount?: number
@@ -105,7 +106,7 @@ function handleCancel() {
 .warning-icon {
   text-align: center;
   font-size: 48px;
-  color: #f53f3f;
+  color: var(--error);
   margin-bottom: 16px;
 }
 
@@ -117,22 +118,22 @@ function handleCancel() {
 .warning-message p {
   margin: 8px 0;
   font-size: 14px;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .warning-message strong {
-  color: #f53f3f;
+  color: var(--error);
   font-weight: 600;
 }
 
 .danger-text {
-  color: #f53f3f;
+  color: var(--error);
   font-weight: 500;
 }
 
 .details {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
 }
 </style>

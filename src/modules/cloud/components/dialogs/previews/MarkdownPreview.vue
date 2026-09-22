@@ -3,19 +3,19 @@
     <div class="markdown-header">
       <span class="file-name">{{ fileName }}</span>
       <div class="header-actions">
-        <a-button size="small" @click="toggleMode">
+        <V2Button size="sm" @click="toggleMode">
           <template #icon>
             <icon-eye v-if="mode === 'source'" />
             <icon-code v-else />
           </template>
           {{ mode === 'source' ? '预览' : '源码' }}
-        </a-button>
-        <a-button size="small" @click="copyContent">
+        </V2Button>
+        <V2Button size="sm" @click="copyContent">
           <template #icon>
             <icon-copy />
           </template>
           复制
-        </a-button>
+        </V2Button>
       </div>
     </div>
     <div class="markdown-content">
@@ -28,10 +28,12 @@
 </template>
 
 <script setup lang="ts">
+import { V2Button } from '@/components/ui'
 import { ref, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { IconCopy, IconEye, IconCode } from '@arco-design/web-vue/es/icon'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 interface Props {
   content: string
@@ -52,7 +54,25 @@ marked.setOptions({
 // ==================== 计算属性 ====================
 const renderedHtml = computed(() => {
   try {
-    return marked.parse(props.content)
+    const rawHtml = marked.parse(props.content) as string
+    // Sanitize HTML to prevent XSS attacks
+    return DOMPurify.sanitize(rawHtml, {
+      ALLOWED_TAGS: [
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'p', 'br', 'hr',
+        'ul', 'ol', 'li',
+        'blockquote',
+        'strong', 'em', 'b', 'i',
+        'code', 'pre',
+        'a', 'img',
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'div', 'span',
+      ],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class'],
+      ALLOW_DATA_ATTR: false,
+      ALLOW_URI_AUTO_LINKS: true,
+      FORCE_BODY: true,
+    })
   } catch (error) {
     console.error('Markdown 渲染失败:', error)
     return '<p>Markdown 渲染失败</p>'
@@ -68,7 +88,7 @@ async function copyContent() {
   try {
     await navigator.clipboard.writeText(props.content)
     Message.success('已复制到剪贴板')
-  } catch (error) {
+  } catch {
     Message.error('复制失败')
   }
 }
@@ -76,7 +96,7 @@ async function copyContent() {
 
 <style scoped>
 .markdown-preview {
-  background: #fff;
+  background: var(--bg-card);
 }
 
 .markdown-header {
@@ -84,14 +104,14 @@ async function copyContent() {
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-hover);
 }
 
 .file-name {
   font-size: 14px;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .header-actions {
@@ -110,7 +130,7 @@ async function copyContent() {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 1.6;
-  color: #1f2937;
+  color: var(--text-primary);
   word-wrap: break-word;
 }
 
@@ -128,13 +148,13 @@ async function copyContent() {
 
 .markdown-body :deep(h1) {
   font-size: 2em;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border);
   padding-bottom: 0.3em;
 }
 
 .markdown-body :deep(h2) {
   font-size: 1.5em;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border);
   padding-bottom: 0.3em;
 }
 
@@ -152,7 +172,7 @@ async function copyContent() {
 
 .markdown-body :deep(h6) {
   font-size: 0.85em;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .markdown-body :deep(p) {
@@ -161,7 +181,7 @@ async function copyContent() {
 }
 
 .markdown-body :deep(a) {
-  color: #3b82f6;
+  color: var(--brand-blue);
   text-decoration: none;
 }
 
@@ -183,15 +203,15 @@ async function copyContent() {
 .markdown-body :deep(blockquote) {
   margin: 0 0 16px 0;
   padding: 0 1em;
-  color: #6b7280;
-  border-left: 4px solid #e5e7eb;
+  color: var(--text-secondary);
+  border-left: 4px solid var(--border);
 }
 
 .markdown-body :deep(code) {
   padding: 0.2em 0.4em;
   margin: 0;
   font-size: 85%;
-  background-color: #f3f4f6;
+  background-color: var(--bg-hover);
   border-radius: 3px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
 }
@@ -201,7 +221,7 @@ async function copyContent() {
   overflow: auto;
   font-size: 85%;
   line-height: 1.45;
-  background-color: #f6f8fa;
+  background-color: var(--bg-hover);
   border-radius: 6px;
   margin-bottom: 16px;
 }
@@ -227,21 +247,21 @@ async function copyContent() {
 .markdown-body :deep(table th),
 .markdown-body :deep(table td) {
   padding: 6px 13px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
 }
 
 .markdown-body :deep(table th) {
   font-weight: 600;
-  background-color: #f9fafb;
+  background-color: var(--bg-hover);
 }
 
 .markdown-body :deep(table tr) {
-  background-color: #fff;
-  border-top: 1px solid #e5e7eb;
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border);
 }
 
 .markdown-body :deep(table tr:nth-child(2n)) {
-  background-color: #f9fafb;
+  background-color: var(--bg-hover);
 }
 
 .markdown-body :deep(img) {
@@ -253,7 +273,7 @@ async function copyContent() {
   height: 0.25em;
   padding: 0;
   margin: 24px 0;
-  background-color: #e5e7eb;
+  background-color: var(--border);
   border: 0;
 }
 
@@ -263,7 +283,7 @@ async function copyContent() {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
   font-size: 13px;
   line-height: 1.6;
-  color: #1f2937;
+  color: var(--text-primary);
   white-space: pre-wrap;
   word-break: break-word;
 }

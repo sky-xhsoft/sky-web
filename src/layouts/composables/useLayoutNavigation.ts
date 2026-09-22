@@ -1,10 +1,6 @@
 
-import { ref, computed, watch, h, type Component, nextTick } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { h, type Component } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { useI18n } from 'vue-i18n'
-import { useMenuStore } from '../../stores/menu'
-import { useAuthStore } from '../../stores/auth'
 import { useNavigationStore } from '../../stores/navigation'
 import { getTabTitle } from './tabTitleMap'
 import { findMenuTitle, type NavItem } from './menuUtils'
@@ -16,7 +12,6 @@ import { componentRegistry } from './componentRegistry'
 const ROUTE_CONFIG = {
   '/cloud': { component: 'Cloud', titleKey: 'layout.cloud' },
   '/system-management': { component: 'SystemManagement', titleKey: 'layout.systemManagement' },
-  '/LiveGuide': { component: 'LiveGuide', titleKey: 'layout.liveGuide' },
   '/live/domains': { component: 'LiveDomain', titleKey: 'layout.liveDomain' },
   '/live/push-domains': { component: 'PushDomain', titleKey: 'layout.pushDomains' },
   '/live/play-domains': { component: 'PlayDomain', titleKey: 'layout.playDomains' },
@@ -68,7 +63,7 @@ export async function loadComponentByPath(
 
     // 处理动态表单路由
     if (path.startsWith('/tables/')) {
-      const TableView = (await import('../../pages/TableView.vue')).default
+      const TableView = (await import('@/pages/system/TableView.vue')).default
       currentComponent.value = TableView
       let title = '表单'
       const foundTitle = findMenuTitle(navItems, path)
@@ -137,9 +132,12 @@ export async function loadComponentByPath(
  */
 export function getDefaultComponent(loginType: string | null): Component {
   if (loginType === 'cloud') {
-    return componentRegistry.Cloud
+    return componentRegistry.CloudDashboard
   }
-  return componentRegistry.LiveGuide
+  if (loginType === 'system') {
+    return componentRegistry.SystemDashboard
+  }
+  return componentRegistry.LiveDashboard
 }
 
 /**
@@ -147,9 +145,12 @@ export function getDefaultComponent(loginType: string | null): Component {
  */
 export function getDefaultComponentName(loginType: string | null): string {
   if (loginType === 'cloud') {
-    return 'Cloud'
+    return 'CloudDashboard'
   }
-  return 'LiveGuide'
+  if (loginType === 'system') {
+    return 'SystemDashboard'
+  }
+  return 'LiveDashboard'
 }
 
 /**
@@ -157,9 +158,12 @@ export function getDefaultComponentName(loginType: string | null): string {
  */
 export function getDefaultTitle(loginType: string | null, t: (key: string) => string): string {
   if (loginType === 'cloud') {
-    return t('layout.cloud')
+    return t('cloudDash.title')
   }
-  return t('layout.liveGuide')
+  if (loginType === 'system') {
+    return t('sysDash.title')
+  }
+  return t('dashboard.title')
 }
 
 /**
@@ -170,7 +174,7 @@ export function isTabMatchingLoginType(
   loginType: string | null
 ): boolean {
   if (tabs.length === 0) return false
-  const targetComponent = loginType === 'cloud' ? 'Cloud' : 'LiveGuide'
+  const targetComponent = loginType === 'cloud' ? 'Cloud' : loginType === 'system' ? 'SystemCenter' : 'LiveDashboard'
   return tabs.some(tab => tab.componentName === targetComponent)
 }
 
@@ -180,7 +184,7 @@ export function isTabMatchingLoginType(
 export async function loadComponentByName(
   componentName: string,
   currentComponent: ReturnType<typeof import('vue').shallowRef>,
-  t: (key: string) => string
+  _t: (key: string) => string
 ): Promise<void> {
   if (!componentName) {
     return

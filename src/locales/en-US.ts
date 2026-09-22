@@ -1,8 +1,57 @@
 export default {
   dashboard: {
+    title: 'Dashboard',
     welcomeBack: 'Welcome back, Administrator',
     haveANiceDay: 'Have a nice day at work!',
     createLiveRoom: 'Create Live Room',
+    stats: {
+      totalRooms: 'Total Live Rooms',
+      totalRoomsDesc: 'Cumulative created live rooms',
+      todayLiveSessions: 'Today\'s Live Sessions',
+      todayLiveSessionsDesc: 'Live sessions started today',
+      usedStorage: 'Used Storage',
+      usedStorageDesc: 'Cloud storage used',
+      recordingStorage: 'Recording Storage Used',
+      recordingStorageDesc: 'Recordings & clips',
+      groupCount: 'Permission Groups',
+      groupCountDesc: 'Total company permission groups'
+    },
+    quickStart: 'Quick Start',
+    quickStartSteps: {
+      domainConfig: 'Configure Live Domains',
+      domainConfigDesc: 'Add push and playback domains',
+      createRoom: 'Create Live Room',
+      createRoomDesc: 'Fill in basic info to create a room',
+      startStreaming: 'Start Streaming',
+      startStreamingDesc: 'Get stream URL and start streaming',
+      contentManage: 'Content Management',
+      contentManageDesc: 'Manage recordings, clips and cloud files'
+    },
+    trendTitle: 'Last 7 Days Trend',
+    trend: {
+      liveSessions: 'Live Sessions',
+      recordings: 'Recordings'
+    },
+    recentLive: 'Recent Live Rooms',
+    latestActivity: 'Latest Activity',
+    table: {
+      room: 'Live Room',
+      status: 'Status',
+      startTime: 'Start Time',
+      ops: 'Actions'
+    },
+    moduleFeatures: {
+          createRoom: 'Create Room',
+          manageRoom: 'Manage Rooms',
+          uploadFile: 'Upload Files',
+          shareFile: 'Share Files',
+          pushDomain: 'Push Domain',
+          playDomain: 'Play Domain',
+          userPermission: 'User Permissions',
+          systemConfig: 'System Config',
+          recordingList: 'Recording List',
+          recordingManage: 'Recording Manage'
+        },
     liveRooms: 'Active Live Rooms',
     cloudStorage: 'Cloud Storage Usage',
     viewCount: 'Today\'s Views',
@@ -19,6 +68,8 @@ export default {
     domainManagementDesc: 'Configure live stream push and play domains',
     socialDistribution: 'Social Media Distribution',
     socialDistributionDesc: 'Manage cross-platform live stream distribution tasks',
+    liveRecording: 'Live Recording',
+    liveRecordingDesc: 'Auto-record live streams',
     systemSettings: 'System Settings',
     systemSettingsDesc: 'Configure system parameters and user permissions',
     userGuide: 'User Guide',
@@ -68,6 +119,100 @@ export default {
       'View file details and storage space'
     ]
   },
+  cloudDash: {
+    title: 'Cloud Overview',
+    subtitle: 'Welcome back to your cloud drive workspace',
+    upload: 'Upload',
+    quickStart: 'Quick Start',
+    trendTitle: '7-Day Storage Trend',
+    recentFiles: 'Recent Files',
+    latestActivity: 'Latest Activity',
+    stats: {
+      usedStorage: 'Storage Used',
+      usedStorageDesc: 'of 500 GB',
+      fileCount: 'Files',
+      fileCountDesc: '+186 this month',
+      folderCount: 'Folders',
+      folderCountDesc: '+5 this month',
+      shareCount: 'Shares',
+      shareCountDesc: '15 active',
+    },
+    quick: {
+      upload: 'Upload Files',
+      uploadDesc: 'Resumable large-file upload',
+      folder: 'New Folder',
+      folderDesc: 'Organize drive content',
+      share: 'Create Share',
+      shareDesc: 'Generate share link',
+      manage: 'Manage Drive',
+      manageDesc: 'Go to cloud drive home',
+    },
+    modules: {
+      files: 'File Manage',
+      filesDesc: 'Browse in grid/list',
+      share: 'Share Center',
+      shareDesc: 'Manage links & permissions',
+      type: 'File Types',
+      typeDesc: 'Video/Image/Doc categories',
+      recycle: 'Recycle Bin',
+      recycleDesc: 'Restore or purge files',
+    },
+    feat: { upload: 'Upload', folder: 'Folder', shareLink: 'Share', permission: 'Access', video: 'Video', image: 'Image', restore: 'Restore', clear: 'Purge' },
+    fileType: { video: 'Video', image: 'Image' },
+    fileTable: { name: 'Name', type: 'Type', size: 'Size' },
+    activity: { '10m': '10 min ago', '1h': '1 hour ago', '2h': '2 hours ago', yesterday: 'Yesterday', uploaded: 'uploaded to drive', createdShare: 'created a share link', autoRecording: 'auto-stored a recording', createdFolder: 'created a folder' },
+    trend: { uploads: 'Uploads', files: 'New files' },
+  },
+  sysDash: {
+    title: 'System Center',
+    subtitle: 'Welcome back to the system management workspace',
+    managePermission: 'Permissions',
+    quickActions: 'Quick Actions',
+    trendTitle: '7-Day System Access',
+    recentOps: 'Recent Operations',
+    systemNotice: 'System Notices',
+    important: 'Important',
+    stats: {
+      users: 'Users',
+      usersDesc: 'with roles',
+      groups: 'Groups',
+      groupsDesc: 'RBAC grants',
+      tables: 'Metadata Tables',
+      tablesDesc: 'data-driven config',
+      companies: 'Companies',
+      companiesDesc: 'multi-tenant',
+    },
+    quick: {
+      users: 'System Users',
+      usersDesc: 'Accounts & roles',
+      groups: 'Permission Groups',
+      groupsDesc: 'Groups & security level',
+      companies: 'Company Config',
+      companiesDesc: 'Tenants & credentials',
+      tables: 'Metadata Tables',
+      tablesDesc: 'Forms & dictionaries',
+    },
+    modules: {
+      users: 'User Manage',
+      usersDesc: 'Accounts, roles, positions',
+      permission: 'Permission Manage',
+      permissionDesc: 'Groups & permission matrix',
+      metadata: 'Metadata',
+      metadataDesc: 'Tables, dicts & columns',
+      company: 'Company Config',
+      companyDesc: 'Multi-tenant & cloud creds',
+    },
+    feat: { account: 'Account', bind: 'Role bind', group: 'Group', permMatrix: 'Matrix', dict: 'Dict', columns: 'Columns', tenant: 'Tenant', credential: 'Credential' },
+    op: { createUser: 'created user', updateGroup: 'updated group', updatePermission: 'updated permission', updateDict: 'updated dictionary' },
+    opTable: { user: 'User', action: 'Action', target: 'Target', time: 'Time' },
+    noticeMaintenance: 'Maintenance Notice',
+    noticeMaintenanceDesc: 'Upgrade scheduled this Saturday',
+    noticeFeature: 'New Feature',
+    noticeFeatureDesc: 'Metadata batch edit is live',
+    noticeStorage: 'Storage Offer',
+    noticeStorageDesc: 'Enterprise plan 20% off',
+    trend: { logins: 'Logins', ops: 'Operations' },
+  },
   language: {
     zhCN: '简体中文',
     enUS: 'English',
@@ -79,6 +224,8 @@ export default {
     close: 'Close',
     closeOther: 'Close Other',
     closeAll: 'Close All',
+    lightMode: 'Light Mode',
+    darkMode: 'Dark Mode',
     expandSidebar: 'Expand Sidebar',
     collapseSidebar: 'Collapse Sidebar',
     cloud: 'Cloud Storage',
@@ -86,6 +233,8 @@ export default {
     mainNav: 'Main Navigation',
     logout: 'Logout',
     systemManagement: 'System Management',
+    systemCenter: 'System Center',
+    permissionManagement: 'Permission Management',
     liveGuide: 'Live Streaming Guide',
     liveDomain: 'Live Domain Management',
     pushDomains: 'Push Domains',
@@ -114,9 +263,27 @@ export default {
   },
 
   common: {
-    copy: 'Copy'
+    copy: 'Copy',
+    detail: 'Detail'
   },
 
+  roomStatus: {
+    draft: 'Not Started',
+    scheduled: 'Scheduled',
+    live: 'Live',
+    ended: 'Ended',
+    archived: 'Archived'
+  },
+
+  userCenter: {
+    profile: 'Profile',
+    companyConfig: 'Company Config',
+    admin: 'Administrator',
+    member: 'Member',
+    company: 'Company',
+    phone: 'Phone',
+    email: 'Email',
+  },
   userProfile: {
     title: 'User Profile',
     personalInfo: 'Personal Information',
@@ -176,7 +343,8 @@ export default {
 
   cloud: {
     // CloudView.vue
-    dropFiles: 'Release to upload',
+    breadcrumb: 'File Navigation',
+    dropFiles: 'Drop files to upload',
     dropFilesHint: 'Supports multiple files at once',
     myShares: 'My Shares',
     selectedItems: 'Selected {count} items',
@@ -192,6 +360,7 @@ export default {
     previewNotSupported: 'Preview not supported for this file type',
     rootDirectory: 'Root Directory',
     myCloud: 'My Cloud',
+    permission: 'Permission',
 
     // Toolbar
     upload: 'Upload',
@@ -386,6 +555,29 @@ export default {
     typeOther: 'Other'
   },
 
+  cloudItemPermission: {
+    title: 'Permission',
+    existing: 'Existing grants',
+    grant: 'Add grant',
+    loading: 'Loading...',
+    noPerms: 'No permissions yet',
+    read: 'Read',
+    write: 'Write',
+    none: 'None',
+    targetType: 'Type',
+    typeUser: 'User',
+    typeRole: 'Role',
+    typeGroup: 'Group',
+    selectUser: 'Select user',
+    selectUserFirst: 'Please select a user first',
+    readHint: 'Read = view/preview/download, Write = upload/delete/rename/move',
+    add: 'Add',
+    addSuccess: 'Permission added',
+    addFailed: 'Failed to add permission',
+    removeSuccess: 'Permission removed',
+    removeFailed: 'Failed to remove permission',
+  },
+
   company: {
     logo: 'Company Logo',
     address: 'Address',
@@ -480,16 +672,20 @@ export default {
   },
   login: {
     backButton: 'Back',
+    welcomeBack: 'Welcome Back',
+    signInHint: 'Sign in to {system}',
+    enterSystem: 'Enter {system}',
     platforms: {
-      live: 'Live Streaming Center',
-      cloud: 'Cloud Storage Center',
-      all: 'Comprehensive Center'
+      live: 'Video System',
+      cloud: 'Cloud Storage System',
+      system: 'System Center',
+      all: 'All Platforms'
     },
     fields: {
-      username: 'Username',
+      username: 'Username / Phone',
       password: 'Password',
       placeholder: {
-        username: 'Please enter username',
+        username: 'Enter username or phone',
         password: 'Please enter password'
       }
     },
@@ -497,6 +693,9 @@ export default {
     noAccount: 'No account yet?',
     register: 'Register',
     success: 'Login successful',
+    remember: 'Remember me',
+    forgot: 'Forgot password?',
+    or: 'or',
     error: 'Login failed, please check your account information'
   },
   register: {
@@ -522,6 +721,10 @@ export default {
       codeSent: 'Verification code sent (simulated)',
       codeRequired: 'Please enter company email first',
       codeInvalid: 'Please enter 6-digit verification code',
+      codeSendFailed: 'Failed to send verification code',
+      phoneRequired: 'Please enter your phone number first',
+      getSmsCode: 'Send SMS Code',
+      smsVerifyCode: 'SMS Code',
       contact: 'Contact Person',
       contactPlaceholder: 'Name',
       phone: 'Contact Phone',
@@ -583,7 +786,7 @@ export default {
     enterManage: 'Enter Management'
   },
   welcome: {
-    brandTitle: 'AI Live',
+    brandTitle: 'Zigebo',
     brandSubtitle: 'AI Video Platform',
     navLinks: {
       features: 'Features',
@@ -613,11 +816,17 @@ export default {
         features: ['File upload and download', 'Folder management', 'File sharing'],
         button: 'Enter Cloud Storage Center'
       },
+      systemCenter: {
+        title: 'System Center',
+        description: 'System configuration & metadata-driven management',
+        features: ['Metadata management', 'Permission system', 'System config'],
+        button: 'Enter System Center'
+      },
       allCenter: {
-        title: 'Comprehensive Center',
-        description: 'Use all features, including live streaming, cloud storage, social media distribution, and all modules',
-        features: ['All live streaming features', 'All cloud storage features', 'Social media distribution'],
-        button: 'Enter Comprehensive Center'
+        title: 'All-in-One Center',
+        description: 'One-stop access to live, cloud storage, and system management',
+        features: ['Live Center', 'Cloud Center', 'System Center'],
+        button: 'Enter All-in-One Center'
       }
     },
     features: {
@@ -668,7 +877,7 @@ export default {
       companyLinks: ['About Us', 'News', 'Join Us', 'Contact'],
       supportTitle: 'Support',
       supportLinks: ['Help Center', 'Tutorials', 'Service Status', 'Submit Ticket'],
-      copyright: '© 2024 AI Live AI Video Platform. All rights reserved.'
+      copyright: '© 2024 Zigebo AI Video Platform. All rights reserved.'
     }
   },
   systemManagement: {
@@ -705,6 +914,21 @@ export default {
       SYS_USER_GROUPS: 'Assign users to permission groups',
       SYS_GROUP_PREM: 'Configure detailed permissions for permission groups'
     }
+  },
+  systemCenter: {
+    title: 'System Center',
+    subtitle: 'Metadata-driven · Permission control · System config',
+    platformName: 'System Center',
+    bannerDesc: 'Centralized system configuration, metadata and permission management',
+    moduleTitle: 'Modules',
+    tables: 'tables',
+    quickTitle: 'Quick Access',
+    quickCompanies: 'Companies',
+    quickUsers: 'Users',
+    quickGroups: 'Permission Groups',
+    quickDict: 'Data Dictionary',
+    quickTables: 'System Tables',
+    quickSubsystems: 'Subsystems',
   },
   liveDomain: {
     pageTitle: 'Live Domain Management',
@@ -767,7 +991,8 @@ export default {
       enable: 'Enable',
       forbid: 'Disable',
       tip: 'Tip',
-      warning: 'Warning'
+      warning: 'Warning',
+      complete: 'Complete'
     },
     cname: {
       status: {
@@ -786,6 +1011,20 @@ export default {
         value: 'Record Value'
       }
     },
+    ownerVerify: {
+      tip: 'This domain needs ownership verification. Please complete domain ownership verification and try again.',
+      verifyBtn: 'Verify',
+      modalTitle: 'Verify Domain Ownership',
+      verified: 'Domain ownership verified successfully. You can continue to add.',
+      notVerified: 'This domain has not passed ownership verification. Please add the DNS record below at your DNS provider.',
+      dnsTip: 'Please add the following DNS record at your DNS provider (e.g. Aliyun, Tencent Cloud, DNSPod, etc.):',
+      domain: 'Domain',
+      hostRecord: 'Host Record',
+      recordType: 'Record Type',
+      verifyContent: 'Verification Record Value',
+      recheckBtn: 'Re-verify',
+      howTo: 'After configuration, wait for DNS resolution to take effect, then resubmit to add the domain.'
+    },
     messages: {
       addSuccess: 'Domain added successfully',
       enableSuccess: 'Domain enabled successfully',
@@ -798,9 +1037,33 @@ export default {
       domainNotExists: 'Domain information does not exist'
     }
   },
+  liveTranslation: {
+    title: 'Simultaneous Translation / Subtitles',
+    desc: 'Configure live interpretation and subtitle transcoding tasks',
+    return: 'Back to Detail',
+    save: 'Save Config',
+    saved: 'Config saved',
+    saveFailed: 'Save failed',
+    fetchFailed: 'Failed to load live room info'
+  },
   liveRoomDetail: {
     return: 'Return',
+    desc: 'View live room info and push/pull addresses',
+    nav: {
+      info: 'Live Room Info',
+      history: 'Live History',
+      address: 'Push / Playback Addresses',
+      group1: 'Live',
+      group2: 'Distribution'
+    },
     pullStreamTask: 'Social Distribution',
+    subtitle: 'Translation/Subtitles',
+    subtitleDialogTitle: 'Translation & Subtitle Config',
+    subtitleEnabled: 'Enable Translation/Subtitles',
+    subtitleSourceLang: 'Source Language',
+    subtitleTargetLangs: 'Target Languages',
+    subtitleSaved: 'Subtitles config saved',
+    subtitleSaveFailed: 'Failed to save subtitles config',
     highlightClips: 'Live Clipping',
     recordings: 'Live Recordings',
     edit: 'Edit',
@@ -826,6 +1089,7 @@ export default {
     },
     coverImage: 'Live Room Cover',
     settings: {
+      addrInfo: 'Push / Playback Addresses',
       pushInfo: 'Push Information',
       pullInfo: 'Pull Information',
       copy: 'Copy',
@@ -852,13 +1116,109 @@ export default {
       deleteFailed: 'Delete failed',
       fetchFailed: 'Failed to fetch live room information'
     },
-    shareFeature: 'Share feature in development'
+    related: {
+      title: 'Related Data',
+      history: 'Live History',
+      historyTitle: 'Live History',
+      recordings: 'Live Recordings',
+      clips: 'Live Clips',
+      tasks: 'Social Distribution',
+      copy: 'Copy',
+      preview: 'Play Preview',
+      empty: 'No data'
+    },
+    shareFeature: 'Share feature in development',
+    subtitleButton: 'Add Interpretation/Subtitle',
+    subtitleDialogTitle: 'New Task',
+    subtitleDialogDesc: 'Enable live interpretation for real-time subtitles and multi-language translation',
+    subtitleEnabled: 'Enable Subtitles',
+    subtitleEnabledTip: 'When enabled, viewers can see real-time subtitles in the live room',
+    subtitleLanguage: 'Target Language',
+    subtitleLanguageTip: 'Select the target language for real-time translation',
+    subtitleLangOptions: {
+      zh: 'Chinese (Simplified)',
+      en: 'English',
+      ja: 'Japanese',
+      ko: 'Korean',
+      es: 'Spanish',
+      ar: 'Arabic'
+    },
+    subtitleSave: 'Create',
+    subtitleCancel: 'Cancel',
+    subtitleSaved: 'Interpretation/Subtitle configuration saved',
+    subtitleError: 'Failed to save interpretation/subtitle configuration',
+    subtitleConfigured: 'Interpretation/Subtitle configured',
+    translation: {
+      basicTitle: 'Basic Configuration',
+      taskTitle: 'Title',
+      taskTitlePlaceholder: 'Please enter title',
+      taskTitleTip: 'Supports Chinese, letters, numbers, -, _, up to 20 characters',
+      relayTime: 'Relay Time',
+      liveAddress: 'Live Address',
+      sourceUrl: 'Source URL',
+      sourceUrlPlaceholder: 'Please enter source stream URL',
+      sourceUrlTip: 'Original stream URL to pull, supports RTMP and FLV, or generate via',
+      targetUrl: 'Target URL',
+      targetUrlPlaceholder: 'Please enter relay push URL',
+      targetUrlTip: 'Relay push URL after interpretation, supports RTMP, or generate via',
+      urlGenerator: 'URL Generator',
+      mode: 'Mode',
+      delay: 'Broadcast Delay',
+      delayTip1: 'Processing delay for sync interpretation, supports 1-60s;',
+      delayTip2: 'Lips, voice, subtitles recommended 20s;',
+      delayTip3: 'Voice and subtitles recommended 12s;',
+      delayTip4: 'Subtitles only recommended 8s;',
+      language: 'Translation Language',
+      languageTip: 'Select input and output language for the live stream',
+      digitalLips: 'Digital Lipsync',
+      translationVoice: 'Interpretation Voice',
+      voiceConfig: 'Voice Configuration',
+      voiceAuto: 'Auto Clone',
+      voiceFixed: 'Fixed Voice',
+      noiseReduction: 'Noise Reduction',
+      volumeBalance: 'Volume Balance',
+      subtitleTitle: 'Subtitle Configuration',
+      subtitleEnabled: 'Enable Subtitle Configuration',
+      subtitleFormat: 'Subtitle Format',
+      formatBoth: 'Source + Target',
+      formatTarget: 'Target',
+      subtitleLines: 'Subtitle Lines',
+      lines1: '1 Line',
+      lines2: '2 Lines',
+      linesAuto: 'Auto',
+      subtitleOrder: 'Subtitle Order',
+      orderSourceTop: 'Source on Top',
+      orderTargetTop: 'Target on Top',
+      sideMargin: 'Side Margin',
+      bottomMargin: 'Bottom Margin',
+      targetStyleTitle: 'Target Subtitle Style',
+      charsPerLine: 'Chars per Line',
+      fontSize: 'Font Size',
+      fontFamily: 'Font Family',
+      keywordLibrary: 'Keyword Library',
+      keywordLibraryPlaceholder: 'Use "source:target" format separated by commas, e.g. "Volcano Engine:Volcengine,Live Streaming:Live"',
+      errorWords: 'Error Corrections',
+      errorWordsTip: 'Force correction based on target keywords, max 50 chars each, up to 500 entries.',
+      errorWordSource: 'Target',
+      errorWordTarget: 'Correction',
+      addErrorWord: 'Add Correction',
+      errorWordRemaining: '{count} remaining',
+      previewTitle: 'Preview',
+      previewTip: 'Select source resolution, subtitles scale proportionally',
+      uploadBackground: 'Upload Background',
+      previewPlaceholder: 'Upload a background image',
+      previewOverflowTip: 'Content will be truncated if it exceeds display area',
+      fullscreenTip: 'Fullscreen preview not available inside modal'
+    }
   },
   liveRoomForm: {
+    sectionBasic: 'Basic Info',
+    sectionCoverRec: 'Cover & Recording',
+    sectionDesc: 'Description',
     return: 'Back',
     submit: 'Create Now',
     edit: 'Update',
-    compliance: 'Please comply with relevant national regulations. It is prohibited to publish live content containing illegal, non-compliant, vulgar, violent, pornographic, or false promotional content. AI Live will monitor live content and may take actions such as removing or banning live content if violations are found.',
+    compliance: 'Please comply with relevant national regulations. It is prohibited to publish live content containing illegal, non-compliant, vulgar, violent, pornographic, or false promotional content. Zigebo will monitor live content and may take actions such as removing or banning live content if violations are found.',
     broadcastFormat: 'Broadcast Format',
     broadcastFormatOptions: {
       live: 'Live',
@@ -872,6 +1232,13 @@ export default {
     roomNamePlaceholder: 'Please enter live room name, up to 100 characters',
     roomNameMaxLength: 'Live room name cannot exceed 100 characters',
     startTime: 'Start Time',
+    endTime: 'End Time',
+    viewingPassword: 'Viewing Password',
+    viewingPrice: 'Viewing Price (CNY)',
+    playbackMethod: 'Playback Method',
+    playbackValidity: 'Playback Validity',
+    description: 'Room Description',
+    descriptionPlaceholder: 'Enter room description',
     coverImage: 'Live Cover',
     coverImageTips: 'Recommended image size: 1000*562, supports JPG and PNG formats',
     upload: 'Select Image',
@@ -884,6 +1251,35 @@ export default {
     deleteCoverSuccess: 'Cover deleted',
     uploadSuccess: 'Upload successful',
     uploadError: 'Upload failed',
+    isRecord: 'Enable Recording',
+    isClip: 'Enable Clipping',
+    isRecordTips: 'When enabled, the live stream will be automatically recorded and available for replay after it ends',
+    isClipTips: 'When enabled, live content is automatically clipped into highlight moments',
+    subtitleButton: 'Add Interpretation/Subtitle',
+    subtitleDialogTitle: 'Add Interpretation/Subtitle',
+    subtitleDialogDesc: 'Enable live interpretation for real-time subtitles and multi-language translation',
+    subtitleEnabled: 'Enable Subtitles',
+    subtitleEnabledTip: 'When enabled, viewers can see real-time subtitles in the live room',
+    subtitleLanguage: 'Target Language',
+    subtitleLanguageTip: 'Select the target language for real-time translation',
+    subtitleLangOptions: {
+      zh: 'Chinese (Simplified)',
+      en: 'English',
+      ja: 'Japanese',
+      ko: 'Korean',
+      es: 'Spanish',
+      ar: 'Arabic'
+    },
+    subtitleSave: 'Save Configuration',
+    subtitleSaved: 'Interpretation/Subtitle configuration saved',
+    subtitleConfigured: 'Interpretation/Subtitle configured',
+    subtitleSourceLang: 'Source Language',
+    subtitleConfirm: 'Confirm',
+    subtitleCancel: 'Cancel',
+    displayMode: 'Display Mode',
+    displayModePortrait: 'Portrait',
+    displayModeLandscape: 'Landscape',
+    displayModeTip: 'Live cover scales to the selected aspect ratio',
     validation: {
       required: 'Please select',
       roomName: 'Please enter live room name',
@@ -891,6 +1287,8 @@ export default {
     }
   },
   liveRoomList: {
+    title: 'Live Room Management',
+    desc: 'Create and manage live rooms',
     createLiveRoom: 'Create Live Room',
     refresh: 'Refresh',
     batchDelete: 'Batch Delete',

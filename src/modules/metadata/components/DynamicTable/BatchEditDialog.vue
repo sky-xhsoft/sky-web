@@ -80,15 +80,6 @@ function handleHelp() {
   Message.info('帮助功能待实现')
 }
 
-function getDefaultValue(col: SysColumn): any {
-  switch (col.DISPLAY_TYPE) {
-    case 'number': return 0
-    case 'select':
-    case 'text': return ''
-    default: return ''
-  }
-}
-
 const title = computed(() => {
   if (props.mode === 'selected') {
     return `批量修改选中行（共 ${props.selectedCount} 条）`
@@ -204,7 +195,7 @@ const title = computed(() => {
 
 <style scoped>
 .batch-edit-container {
-  border: 1px solid #66c2f0;
+  border: 1px solid var(--brand-blue);
   border-radius: 0;
   padding: 0;
 }
@@ -214,8 +205,8 @@ const title = computed(() => {
   justify-content: space-between;
   align-items: center;
   padding: 8px 16px;
-  background: linear-gradient(90deg, #e8f4fc 0%, #ffffff 100%);
-  border-bottom: 1px solid #66c2f0;
+  background: linear-gradient(90deg, var(--info-bg) 0%, var(--bg-card) 100%);
+  border-bottom: 1px solid var(--brand-blue);
 }
 
 .header-right {
@@ -229,7 +220,7 @@ const title = computed(() => {
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #cc0000;
+  color: var(--error);
 }
 
 .form-area {
@@ -253,11 +244,11 @@ const title = computed(() => {
   align-items: center;
   white-space: nowrap;
   font-size: 13px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .field-label .required {
-  color: #cc0000;
+  color: var(--error);
   margin-left: 2px;
 }
 
@@ -273,22 +264,22 @@ const title = computed(() => {
 .input-placeholder {
   width: 100%;
   height: 32px;
-  border-bottom: 1px solid #999;
+  border-bottom: 1px solid var(--text-tertiary);
 }
 
 :deep(.arco-input) {
   border: none;
-  border-bottom: 1px solid #999;
+  border-bottom: 1px solid var(--text-tertiary);
   border-radius: 0;
   padding: 2px 4px;
 }
 
 :deep(.arco-input:hover) {
-  border-color: #66c2f0;
+  border-color: var(--brand-blue);
 }
 
 :deep(.arco-input:focus) {
-  border-color: #66c2f0;
+  border-color: var(--brand-blue);
   box-shadow: none;
 }
 
@@ -298,19 +289,19 @@ const title = computed(() => {
 
 :deep(.arco-input-number-input-wrapper) {
   border: none;
-  border-bottom: 1px solid #999;
+  border-bottom: 1px solid var(--text-tertiary);
   border-radius: 0;
 }
 
 :deep(.arco-select-view) {
   border: none;
-  border-bottom: 1px solid #999;
+  border-bottom: 1px solid var(--text-tertiary);
   border-radius: 0;
 }
 
 :deep(.arco-picker) {
   border: none;
-  border-bottom: 1px solid #999;
+  border-bottom: 1px solid var(--text-tertiary);
   border-radius: 0;
   width: 100%;
 }

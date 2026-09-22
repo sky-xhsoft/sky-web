@@ -191,7 +191,7 @@ export function useCloudFolder() {
    */
   function getFolderItemCount(folder: Folder): { folders: number; files: number } {
     let folderCount = 0
-    let fileCount = 0
+    const fileCount = 0
 
     function countRecursive(f: Folder) {
       if (f.Children && f.Children.length > 0) {

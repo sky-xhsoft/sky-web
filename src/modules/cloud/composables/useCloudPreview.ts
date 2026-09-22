@@ -229,7 +229,6 @@ export function useCloudPreview() {
    * @param file 文件对象
    */
   function getFileEmoji(file: FileItem): string {
-    const category = getFileCategory(file)
     const ext = file.FileExt?.toLowerCase() || ''
 
     const emojiMap: Record<string, string> = {

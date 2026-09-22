@@ -18,40 +18,43 @@
       </div>
 
       <div class="cloud-batch-actions__operations">
-        <a-space>
-          <a-button
-            size="small"
+        <div class="op-grid">
+          <V2Button
+            type="secondary"
+            size="sm"
             @click="handleDownload"
             :disabled="!hasSelectedFiles"
           >
-            <icon-download />
+            <template #icon><icon-download /></template>
             下载
-          </a-button>
-          <a-button
-            size="small"
+          </V2Button>
+          <V2Button
+            type="secondary"
+            size="sm"
             @click="handleMove"
             :disabled="selectedCount === 0"
           >
-            <icon-export />
+            <template #icon><icon-export /></template>
             移动
-          </a-button>
-          <a-button
-            size="small"
-            status="danger"
+          </V2Button>
+          <V2Button
+            type="danger"
+            size="sm"
             @click="handleDelete"
             :disabled="selectedCount === 0"
           >
-            <icon-delete />
+            <template #icon><icon-delete /></template>
             删除
-          </a-button>
-          <a-button
-            size="small"
+          </V2Button>
+          <V2Button
+            size="sm"
             type="text"
+            class="op-clear"
             @click="handleClear"
           >
             取消选择
-          </a-button>
-        </a-space>
+          </V2Button>
+        </div>
       </div>
     </div>
   </transition>
@@ -65,6 +68,7 @@ import {
   IconDelete,
 } from '@arco-design/web-vue/es/icon'
 import { formatFileSize } from '@/utils/format'
+import { V2Button } from '@/components/ui'
 
 interface Props {
   visible?: boolean
@@ -100,7 +104,7 @@ const isIndeterminate = computed(() => {
   return props.selectedCount > 0 && props.selectedCount < props.totalCount
 })
 
-function handleSelectAll(value: boolean | (string | number | boolean)[]) {
+function handleSelectAll(_value: boolean | (string | number | boolean)[]) {
   emit('selectAll')
 }
 
@@ -127,16 +131,15 @@ function handleDelete() {
   flex-direction: column;
   gap: 16px;
   padding: 20px;
-  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-  border-radius: 12px;
-  border: 2px solid #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--brand-blue);
+  box-shadow: var(--shadow-menu, 0 4px 12px rgba(0, 0, 0, 0.06));
+  transition: box-shadow var(--duration-base) var(--ease-out);
 }
 
 .cloud-batch-actions:hover {
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22, 93, 255, 0.18);
 }
 
 .cloud-batch-actions__info {
@@ -147,18 +150,18 @@ function handleDelete() {
 
 .selected-count {
   font-size: 14px;
-  color: #1f2937;
+  color: var(--text-primary);
   padding-left: 28px; /* 对齐复选框 */
 }
 
 .selected-count strong {
-  color: #3b82f6;
+  color: var(--brand-blue);
   font-weight: 600;
 }
 
 .selected-size {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   padding-left: 28px; /* 对齐复选框 */
 }
 
@@ -166,20 +169,17 @@ function handleDelete() {
   width: 100%;
 }
 
-.cloud-batch-actions__operations :deep(.arco-space) {
-  width: 100%;
+.op-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
-.cloud-batch-actions__operations :deep(.arco-btn) {
+.op-grid :deep(.v2-button) {
   width: 100%;
-  justify-content: center;
 }
 
-/* 取消选择按钮占满整行 */
-.cloud-batch-actions__operations :deep(.arco-btn-text) {
+.op-grid :deep(.op-clear) {
   grid-column: 1 / -1;
 }
 
@@ -201,7 +201,7 @@ function handleDelete() {
     padding: 16px;
   }
 
-  .cloud-batch-actions__operations :deep(.arco-space) {
+  .op-grid {
     grid-template-columns: 1fr;
   }
 }

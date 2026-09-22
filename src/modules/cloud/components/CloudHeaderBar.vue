@@ -1,42 +1,39 @@
 <template>
-  <div class="cloud-header-bar">
-    <div class="header-left">
-      <CloudBreadcrumb
-        :items="breadcrumbs"
-        :current-id="currentFolderId"
-        @navigate="$emit('navigate', $event.id)"
-      />
-    </div>
-    <div class="header-right">
-      <!-- 配额显示 -->
-      <div v-if="quota" class="quota-simple">
-        <div class="quota-info">
-          <span class="quota-text" :aria-label="quotaLabel">
-            {{ formatFileSize(quota.usedSpace || 0) }} /
-            {{ formatFileSize(quota.totalQuota || 0) }}
-          </span>
-        </div>
-        <a-progress
-          :percent="usagePercent"
-          :show-text="false"
-          :stroke-width="6"
-          :status="usageStatus"
-          class="quota-progress"
-          :aria-label="t('cloud.storageUsage')"
+  <V2Card class="cloud-header-bar" :padding="true">
+    <div class="cloud-header-bar__inner">
+      <div class="header-left">
+        <CloudBreadcrumb
+          :items="breadcrumbs"
+          :current-id="currentFolderId"
+          @navigate="$emit('navigate', $event.id)"
         />
       </div>
-      <a-button type="text" :aria-label="t('cloud.myShares')" @click="$emit('open-shares')">
-        <template #icon><icon-share-alt /></template>
-        {{ t('cloud.myShares') }}
-      </a-button>
+      <div class="header-right">
+        <!-- 配额显示 -->
+        <div v-if="quota" class="quota-simple" :title="quotaLabel">
+          <div class="quota-bar">
+            <i :style="{ width: usagePercent * 100 + '%' }" />
+          </div>
+          <span class="quota-text">
+            {{ formatFileSize(quota.usedSpace || 0) }} /
+            {{ formatFileSize(quota.totalQuota || 0) }}
+            （{{ Math.round(usagePercent * 100) }}%）
+          </span>
+        </div>
+        <V2Button type="secondary" size="sm" :aria-label="t('cloud.myShares')" @click="$emit('open-shares')">
+          <template #icon><icon-share-alt /></template>
+          {{ t('cloud.myShares') }}
+        </V2Button>
+      </div>
     </div>
-  </div>
+  </V2Card>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { IconShareAlt } from '@arco-design/web-vue/es/icon'
+import { V2Button, V2Card } from '@/components/ui'
 import CloudBreadcrumb from './CloudBreadcrumb.vue'
 
 interface Quota {
@@ -66,14 +63,9 @@ const { t } = useI18n()
 
 const usagePercent = computed(() => {
   if (!props.quota) return 0
-  return (props.quota.usedSpace || 0) / (props.quota.totalQuota || 1)
-})
-
-const usageStatus = computed<'success' | 'warning' | 'danger'>(() => {
-  const p = usagePercent.value
-  if (p > 0.9) return 'danger'
-  if (p > 0.7) return 'warning'
-  return 'success'
+  const total = props.quota.totalQuota || 0
+  if (total <= 0) return 0
+  return Math.min(1, Math.max(0, (props.quota.usedSpace || 0) / total))
 })
 
 const quotaLabel = computed(() => {
@@ -97,12 +89,17 @@ function formatFileSize(bytes: number): string {
 
 <style scoped>
 .cloud-header-bar {
+  margin-bottom: 14px;
+}
+
+.cloud-header-bar :deep(.v2-card--pad) {
+  padding: 14px 18px;
+}
+
+.cloud-header-bar__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
   gap: 16px;
   flex-wrap: wrap;
 }
@@ -127,30 +124,35 @@ function formatFileSize(bytes: number): string {
   min-width: 200px;
 }
 
-.quota-info {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+/* 配额条 (对齐 drive.html 的 quota-bar) */
+.quota-bar {
+  width: 200px;
+  height: 8px;
+  background: var(--bg-hover);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 2px 0;
+}
+
+.quota-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--brand-gradient);
+  border-radius: 999px;
+  transition: width var(--duration-base) var(--ease-out);
 }
 
 .quota-text {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
-.quota-progress {
-  width: 200px;
-}
-
 @media (max-width: 768px) {
-  .cloud-header-bar {
-    padding: 12px 16px;
-  }
   .quota-simple {
     min-width: 150px;
   }
-  .quota-progress {
+  .quota-bar {
     width: 150px;
   }
 }

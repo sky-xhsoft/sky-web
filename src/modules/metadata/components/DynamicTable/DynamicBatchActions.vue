@@ -85,7 +85,7 @@ defineEmits<Emits>()
 }
 
 .batch-actions-inner {
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   padding: 12px 20px;
@@ -93,7 +93,7 @@ defineEmits<Emits>()
   align-items: center;
   justify-content: space-between;
   backdrop-filter: blur(8px);
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--border);
 }
 
 .batch-info {
@@ -101,17 +101,17 @@ defineEmits<Emits>()
   align-items: center;
   gap: 12px;
   font-size: 14px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .batch-count {
-  color: #165dff;
+  color: var(--brand-blue);
   font-weight: 600;
   font-size: 16px;
 }
 
 .batch-size {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 

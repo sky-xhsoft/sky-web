@@ -107,22 +107,22 @@
           </div>
 
           <!-- 查询按钮区域 -->
-          <div v-if="queryColumns.length > 0" class="query-actions">
-            <a-space>
-              <a-button @click="handleReset">
-                <template #icon><icon-refresh /></template>
-                重置
-              </a-button>
-              <a-button
-                type="primary"
-                html-type="submit"
-                :loading="loading"
-              >
-                <template #icon><icon-search /></template>
-                查询
-              </a-button>
-            </a-space>
-          </div>
+                    <div v-if="queryColumns.length > 0" class="query-actions">
+                      <a-space>
+                        <V2Button type="secondary" @click="handleReset">
+                          <template #icon><icon-refresh /></template>
+                          重置
+                        </V2Button>
+                        <a-button
+                          type="primary"
+                          html-type="submit"
+                          :loading="loading"
+                        >
+                          <template #icon><icon-search /></template>
+                          查询
+                        </a-button>
+                      </a-space>
+                    </div>
         </a-form>
       </div>
     </transition>
@@ -132,6 +132,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { IconSearch, IconDown, IconUp, IconRefresh } from '@arco-design/web-vue/es/icon'
+import { V2Button } from '@/components/ui'
 import FkQueryInput from './FkQueryInput.vue'
 
 interface Props {
@@ -202,9 +203,9 @@ function getDictOptions(column: any): any[] {
 
 <style scoped>
 .dynamic-query-area {
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   margin-bottom: 16px;
   overflow: hidden;
 }
@@ -214,9 +215,9 @@ function getDictOptions(column: any): any[] {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #f9fafb;
+  background: var(--bg-hover);
   cursor: pointer;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border);
 }
 
 .query-header-left {
@@ -226,13 +227,13 @@ function getDictOptions(column: any): any[] {
 }
 
 .query-icon {
-  color: #165dff;
+  color: var(--brand-blue);
   font-size: 16px;
 }
 
 .query-title {
   font-weight: 500;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .query-content {
@@ -263,7 +264,7 @@ function getDictOptions(column: any): any[] {
   width: 100%;
   text-align: center;
   padding: 24px 0;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 /* 折叠动画 */

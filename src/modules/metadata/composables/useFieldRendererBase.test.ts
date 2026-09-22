@@ -11,19 +11,19 @@ describe('useFieldRendererBase', () => {
     it('获取显示名称', () => {
       const column = { DISPLAY_NAME: '用户名称' } as SysColumn
       const { displayName } = useFieldRendererBase({ column })
-      expect(displayName).toBe('用户名称')
+      expect(displayName.value).toBe('用户名称')
     })
 
     it('获取占位符', () => {
       const column = { DISPLAY_NAME: '用户名称' } as SysColumn
       const { placeholder } = useFieldRendererBase({ column })
-      expect(placeholder).toContain('用户名称')
+      expect(placeholder.value).toContain('用户名称')
     })
 
     it('使用自定义占位符', () => {
       const column = { DISPLAY_NAME: '用户名称', PLACEHOLDER: '请输入姓名' } as SysColumn
       const { placeholder } = useFieldRendererBase({ column })
-      expect(placeholder).toBe('请输入姓名')
+      expect(placeholder.value).toBe('请输入姓名')
     })
   })
 
@@ -31,31 +31,31 @@ describe('useFieldRendererBase', () => {
     it('view 模式下为只读', () => {
       const column = {} as SysColumn
       const { isReadonly } = useFieldRendererBase({ column, mode: 'view' })
-      expect(isReadonly).toBe(true)
+      expect(isReadonly.value).toBe(true)
     })
 
     it('disabled prop 强制禁用', () => {
       const column = {} as SysColumn
       const { isDisabled } = useFieldRendererBase({ column, disabled: true, mode: 'edit' })
-      expect(isDisabled).toBe(true)
+      expect(isDisabled.value).toBe(true)
     })
 
     it('readonly prop 强制只读', () => {
       const column = {} as SysColumn
       const { isReadonly } = useFieldRendererBase({ column, readonly: true, mode: 'edit' })
-      expect(isReadonly).toBe(true)
+      expect(isReadonly.value).toBe(true)
     })
 
     it('识别必填字段', () => {
       const column = { NULL_ABLE: 'N' } as SysColumn
       const { isRequired } = useFieldRendererBase({ column })
-      expect(isRequired).toBe(true)
+      expect(isRequired.value).toBe(true)
     })
 
     it('识别非必填字段', () => {
       const column = { NULL_ABLE: 'Y' } as SysColumn
       const { isRequired } = useFieldRendererBase({ column })
-      expect(isRequired).toBe(false)
+      expect(isRequired.value).toBe(false)
     })
   })
 
@@ -63,13 +63,13 @@ describe('useFieldRendererBase', () => {
     it('识别选择类型字段', () => {
       const column = { SET_VALUE_TYPE: 'select' } as SysColumn
       const { isSelect } = useFieldRendererBase({ column })
-      expect(isSelect).toBe(true)
+      expect(isSelect.value).toBe(true)
     })
 
     it('识别外键类型字段', () => {
       const column = { SET_VALUE_TYPE: 'fk', REF_TABLE_ID: 123 } as SysColumn
       const { isForeignKey } = useFieldRendererBase({ column })
-      expect(isForeignKey).toBe(true)
+      expect(isForeignKey.value).toBe(true)
     })
   })
 
@@ -77,7 +77,7 @@ describe('useFieldRendererBase', () => {
     it('为必填字段生成验证规则', () => {
       const column = { NULL_ABLE: 'N', DISPLAY_NAME: '用户名称' } as SysColumn
       const { validationRules } = useFieldRendererBase({ column })
-      expect(validationRules).toEqual([
+      expect(validationRules.value).toEqual([
         { required: true, message: '用户名称不能为空' }
       ])
     })
@@ -85,7 +85,7 @@ describe('useFieldRendererBase', () => {
     it('使用自定义错误消息', () => {
       const column = { NULL_ABLE: 'N', ERR_MSG: '姓名不能为空' } as SysColumn
       const { validationRules } = useFieldRendererBase({ column })
-      expect(validationRules).toEqual([
+      expect(validationRules.value).toEqual([
         { required: true, message: '姓名不能为空' }
       ])
     })
@@ -93,7 +93,7 @@ describe('useFieldRendererBase', () => {
     it('非必填字段无验证规则', () => {
       const column = { NULL_ABLE: 'Y' } as SysColumn
       const { validationRules } = useFieldRendererBase({ column })
-      expect(validationRules).toEqual([])
+      expect(validationRules.value).toEqual([])
     })
   })
 

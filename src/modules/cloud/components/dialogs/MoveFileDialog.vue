@@ -1,5 +1,5 @@
 <template>
-  <a-modal
+  <V2Modal
     v-model:visible="dialogVisible"
     :title="t('cloud.moveTitle')"
     :ok-loading="loading"
@@ -34,7 +34,7 @@
         {{ t('cloud.targetLocation') }}：<strong>{{ targetFolderPath }}</strong>
       </div>
     </div>
-  </a-modal>
+  </V2Modal>
 </template>
 
 <script setup lang="ts">
@@ -43,6 +43,7 @@ import { fetchFolders } from '@/modules/cloud/api'
 import type { Folder } from '@/modules/cloud/types'
 import type { TreeNodeData } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'
+import { V2Modal } from '@/components/ui'
 
 const { t } = useI18n()
 
@@ -103,7 +104,6 @@ const targetFolderPath = computed(() => {
   return folderPathMap.value.get(targetFolder.value) || `/${t('cloud.rootDirectory')}`
 })
 
-// 加载根目录的子文件夹
 async function loadRootFolders() {
   try {
     const folders = await fetchFolders(0)
@@ -118,7 +118,6 @@ async function loadRootFolders() {
   }
 }
 
-// 懒加载子文件夹
 async function loadMore(node: TreeNodeData): Promise<void> {
   const folderId = node.key as number
 
@@ -133,7 +132,6 @@ async function loadMore(node: TreeNodeData): Promise<void> {
   }
 }
 
-// 将 Folder 转换为 TreeNodeData
 function convertFolderToTreeNode(folder: Folder, parentPath: string): TreeNodeData {
   const folderId = folder.ID || folder.id || 0
   const folderPath = `${parentPath}/${folder.name}`
@@ -149,7 +147,7 @@ function convertFolderToTreeNode(folder: Folder, parentPath: string): TreeNodeDa
   }
 }
 
-function handleSelect(selectedKeysList: (string | number)[], data: { node?: TreeNodeData }) {
+function handleSelect(selectedKeysList: (string | number)[], _data: { node?: TreeNodeData }) {
   if (selectedKeysList.length > 0) {
     const key = selectedKeysList[0]
     if (typeof key === 'number') {
@@ -177,26 +175,35 @@ function handleCancel() {
 
 .current-selection {
   font-size: 14px;
-  color: #1f2937;
+  color: var(--text-primary);
 }
 
 .current-selection strong {
-  color: #3b82f6;
+  color: var(--brand-blue);
 }
 
 .folder-tree-container {
   max-height: 400px;
   overflow-y: auto;
   padding: 12px;
-  background: #f9fafb;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.folder-tree-container :deep(.arco-tree-node-title:hover) {
+  background: var(--info-bg);
+}
+
+.folder-tree-container :deep(.arco-tree-node-selected .arco-tree-node-title) {
+  background: var(--info-bg);
+  color: var(--brand-blue);
 }
 
 .folder-tree-header {
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 12px;
 }
 
@@ -208,10 +215,10 @@ function handleCancel() {
 .target-info {
   margin-top: 12px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .target-info strong {
-  color: #1f2937;
+  color: var(--text-primary);
 }
 </style>

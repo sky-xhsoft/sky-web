@@ -70,7 +70,7 @@ export function changeLanguage(locale: string, router?: Router) {
       try {
         const menuStore = useMenuStore()
         menuStore.updateMenuLanguage(locale, router)
-      } catch (e) {
+      } catch {
         // 忽略错误，可能 store 还未初始化
       }
     }

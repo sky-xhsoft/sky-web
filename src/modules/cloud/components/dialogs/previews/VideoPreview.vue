@@ -29,7 +29,7 @@ interface Props {
   fileName: string
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 // ==================== 状态 ====================
 const videoRef = ref<HTMLVideoElement | null>(null)
@@ -73,17 +73,17 @@ function handleVideoError() {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  background: #1f2937;
+  background: var(--text-primary);
 }
 
 .error-overlay :deep(.arco-icon) {
   font-size: 64px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .error-overlay p {
   margin: 0;
-  color: #e5e7eb;
+  color: var(--border);
   font-size: 14px;
 }
 </style>

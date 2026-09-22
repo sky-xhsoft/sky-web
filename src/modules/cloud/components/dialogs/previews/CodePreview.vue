@@ -5,12 +5,12 @@
         <span class="language-badge">{{ language }}</span>
         <span class="file-name">{{ fileName }}</span>
       </div>
-      <a-button size="small" @click="copyContent">
+      <V2Button size="sm" @click="copyContent">
         <template #icon>
           <icon-copy />
         </template>
         复制
-      </a-button>
+      </V2Button>
     </div>
     <div class="code-content">
       <pre><code :class="`language-${language}`" v-html="highlightedCode"></code></pre>
@@ -19,6 +19,7 @@
 </template>
 
 <script setup lang="ts">
+import { V2Button } from '@/components/ui'
 import { computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { IconCopy } from '@arco-design/web-vue/es/icon'
@@ -88,7 +89,7 @@ async function copyContent() {
   try {
     await navigator.clipboard.writeText(props.content)
     Message.success('已复制到剪贴板')
-  } catch (error) {
+  } catch {
     Message.error('复制失败')
   }
 }

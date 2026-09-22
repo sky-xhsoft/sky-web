@@ -1,0 +1,82 @@
+:root {
+  /* 品牌色 */
+  --brand-blue: #165dff;
+  --brand-blue-hover: #0e4bdb;
+  --brand-green: #34c759;
+  --brand-gradient: linear-gradient(135deg, #165dff, #34c759);
+  --brand-gradient-soft: linear-gradient(90deg, rgba(22, 93, 255, 0.1), transparent);
+
+  /* 中性色 */
+  --gray-50: #f9fafb;
+  --gray-100: #f5f6fa;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-900: #1f2937;
+
+  /* 功能色 */
+  --success: #34c759;
+  --warning: #ff9500;
+  --error: #f53f3f;
+  --info: #165dff;
+  --success-bg: #e8f9f0;
+  --warning-bg: #fff4e5;
+  --error-bg: #ffece8;
+  --info-bg: #e8f0ff;
+
+  /* 语义令牌 */
+  --bg-page: var(--gray-100);
+  --bg-card: #ffffff;
+  --bg-hover: var(--gray-50);
+  --border: #e4e7ed;
+  --border-light: #eceff3;
+  --text-primary: #1f2329;
+  --text-secondary: #4e5969;
+  --text-tertiary: #86909c;
+
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  /* 动效 */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* 字体 */
+  --font-family: Inter, 'PingFang SC', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* 布局尺寸 */
+  --sidebar-w: 220px;
+  --tabbar-h: 44px;
+  --logo-h: 44px;
+}
+
+[data-theme='dark'] {
+  --bg-page: #141414;
+  --bg-card: #1f1f1f;
+  --bg-hover: #2a2a2a;
+  --border: #333333;
+  --border-light: #2a2a2a;
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --success-bg: rgba(52, 199, 89, 0.15);
+  --warning-bg: rgba(255, 149, 0, 0.15);
+  --error-bg: rgba(245, 63, 63, 0.15);
+  --info-bg: rgba(22, 93, 255, 0.15);
+  --brand-gradient-soft: linear-gradient(90deg, rgba(22, 93, 255, 0.25), transparent);
+}

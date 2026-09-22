@@ -171,9 +171,9 @@ export const useNavigationStore = defineStore('navigation', () => {
     tabs.value.push(newTab)
 
     // 添加到keep-alive缓存（某些组件不需要缓存）
-    if (!keepAliveIncludes.value.includes(componentName) && componentName !== 'LivePreview' && componentName !== 'BatchEditPage' && componentName !== 'MetadataFormView') {
-      keepAliveIncludes.value.push(componentName)
-    }
+        if (!keepAliveIncludes.value.includes(componentName) && componentName !== 'LivePreview' && componentName !== 'BatchEditPage' && componentName !== 'MetadataFormView' && componentName !== 'UserCenterPage') {
+          keepAliveIncludes.value.push(componentName)
+        }
 
     // 切换到新标签
     switchTab(key)

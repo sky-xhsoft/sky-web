@@ -61,6 +61,13 @@ export const verifyDomainOwner = (domainName: string, verifyType: string = 'dnsC
   })
 }
 
+// 查询域名鉴权配置（keyType: push-推流, play-播放）
+export const getDomainAuthKey = (domainName: string, keyType: string = 'push') => {
+  return api.get(`/live/domains/${domainName}/auth`, {
+    params: { keyType }
+  })
+}
+
 // ==================== 直播流管理 ====================
 
 // 查询在线流列表
@@ -75,6 +82,16 @@ export const getOnlineStreams = (params: {
 }
 
 // 查询历史流列表
+export interface StreamHistoryInfo {
+  domainName?: string
+  appName?: string
+  streamName: string
+  streamStartTime?: string
+  streamEndTime?: string
+  stopReason?: string
+  duration?: number
+  resolution?: string
+}
 export const getHistoryStreams = (params: {
   domainName?: string
   appName?: string
@@ -137,11 +154,14 @@ export interface PullStreamTaskInfo {
   operator?: string
   comment?: string
   pushArgs?: string
+  taskName?: string // 前端字段（同 comment）
+  platform?: string // 前端字段（同 sourceType）
 }
 
 // 创建拉流任务请求
 export interface CreatePullStreamTaskRequest {
-  sourceType: string
+  sourceType?: string
+  platform?: string // 前端字段（映射到 sourceType）
   sourceUrls: string[]
   domainName?: string
   appName?: string
@@ -151,6 +171,7 @@ export interface CreatePullStreamTaskRequest {
   endTime: string
   operator: string
   comment?: string
+  taskName?: string // 前端字段（映射到 comment）
   region?: string
   pushArgs?: string
 }
@@ -163,6 +184,7 @@ export interface UpdatePullStreamTaskRequest {
   endTime?: string
   operator: string
   comment?: string
+  taskName?: string // 前端字段（映射到 comment）
   status?: string
 }
 
@@ -350,4 +372,74 @@ export const deleteCallbackEvent = (id: number) => {
 // 批量删除回调事件
 export const batchDeleteCallbackEvents = (ids: number[]) => {
   return api.delete(`/live/callback/events/batch`, { data: ids })
+}
+
+// ==================== 直播流实时指标 ====================
+
+export interface StreamMetrics {
+  streamName: string
+  domainName: string
+  appName: string
+  onlineUsers: number
+  bitrate: number
+  fps: number
+  bandwidth: number
+  timestamp: string
+}
+
+export const getStreamMetrics = (streamName: string, params?: { domainName?: string; appName?: string }) => {
+  return api.get(`/live/streams/${streamName}/metrics`, { params }).then(res => res.data.data as StreamMetrics)
+}
+
+// ==================== 直播切片/录制 ====================
+
+export interface LiveClip {
+  id: number
+  sysCompanyId: number
+  roomId?: number
+  streamId: string
+  clipName: string
+  clipUrl: string
+  startTime: number
+  endTime: number
+  duration: number
+  thumbnail: string
+  fileSize: number
+  status: string
+  description: string
+  createTime: string
+}
+
+export interface LiveRecording {
+  id: number
+  sysCompanyId: number
+  roomId?: number
+  streamId: string
+  recordUrl: string
+  recordType: string
+  fileSize: number
+  duration: number
+  startTime: number
+  endTime: number
+  status: string
+  description: string
+  createTime: string
+}
+
+export interface ListClipsParams {
+  roomId?: string
+  status?: string
+  keyword?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface ListRecordingsParams extends ListClipsParams {}
+
+export const listClips = (params?: ListClipsParams) => {
+  return api.get('/live/clips', { params }).then(res => res.data.data as { list: LiveClip[]; pagination: { total: number; page: number; pageSize: number; totalPages: number } })
+}
+
+export const listRecordings = (params?: ListRecordingsParams) => {
+  return api.get('/live/recordings', { params }).then(res => res.data.data as { list: LiveRecording[]; pagination: { total: number; page: number; pageSize: number; totalPages: number } })
 }

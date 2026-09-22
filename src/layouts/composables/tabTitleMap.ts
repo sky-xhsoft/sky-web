@@ -5,7 +5,6 @@
 type TitleResolver = (t: any, params?: Record<string, any>) => string
 
 const componentTitleMap: Record<string, string | TitleResolver> = {
-  LiveGuide:          'layout.liveGuide',
   Cloud:              'layout.cloud',
   SystemManagement:   'layout.systemManagement',
   LiveDomain:         'layout.liveDomain',

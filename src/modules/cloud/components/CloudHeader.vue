@@ -32,8 +32,8 @@ withDefaults(defineProps<Props>(), {
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
 }
 
 .cloud-header__left {
@@ -44,7 +44,7 @@ withDefaults(defineProps<Props>(), {
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 8px;

@@ -22,7 +22,7 @@
 .text-field-view {
   display: inline-block;
   padding: 4px 0;
-  color: #333;
+  color: var(--text-primary);
   line-height: 24px;
   min-height: 32px;
   display: flex;

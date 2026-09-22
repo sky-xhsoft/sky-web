@@ -24,7 +24,7 @@
 .telephone-field-view {
   display: inline-block;
   padding: 4px 0;
-  color: #333;
+  color: var(--text-primary);
   line-height: 24px;
   min-height: 32px;
   display: flex;
@@ -32,7 +32,7 @@
 }
 
 .telephone-link {
-  color: var(--color-primary);
+  color: var(--brand-blue);
   text-decoration: none;
 }
 

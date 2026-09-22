@@ -12,36 +12,36 @@
 
     <!-- 缩放控制 -->
     <div class="zoom-controls">
-      <a-button-group>
-        <a-button size="small" @click="zoomOut" :disabled="scale <= minScale">
+      <div class="zoom-btn-group">
+        <V2Button size="sm" type="secondary" @click="zoomOut" :disabled="scale <= minScale">
           <template #icon>
             <icon-minus />
           </template>
-        </a-button>
-        <a-button size="small" disabled>
+        </V2Button>
+        <V2Button size="sm" type="secondary" disabled>
           {{ Math.round(scale * 100) }}%
-        </a-button>
-        <a-button size="small" @click="zoomIn" :disabled="scale >= maxScale">
+        </V2Button>
+        <V2Button size="sm" type="secondary" @click="zoomIn" :disabled="scale >= maxScale">
           <template #icon>
             <icon-plus />
           </template>
-        </a-button>
-        <a-button size="small" @click="resetZoom">
+        </V2Button>
+        <V2Button size="sm" type="secondary" @click="resetZoom">
           <template #icon>
             <icon-refresh />
           </template>
-        </a-button>
-        <a-button size="small" @click="rotateLeft">
+        </V2Button>
+        <V2Button size="sm" type="secondary" @click="rotateLeft">
           <template #icon>
             <icon-rotate-left />
           </template>
-        </a-button>
-        <a-button size="small" @click="rotateRight">
+        </V2Button>
+        <V2Button size="sm" type="secondary" @click="rotateRight">
           <template #icon>
             <icon-rotate-right />
           </template>
-        </a-button>
-      </a-button-group>
+        </V2Button>
+      </div>
     </div>
 
     <!-- 加载状态 -->
@@ -59,6 +59,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { V2Button } from '@/components/ui'
 import {
   IconMinus,
   IconPlus,
@@ -73,7 +74,7 @@ interface Props {
   fileName: string
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 // ==================== 状态 ====================
 const loading = ref(true)
@@ -137,7 +138,7 @@ function rotateRight() {
   position: relative;
   width: 100%;
   min-height: 400px;
-  background: #f9fafb;
+  background: var(--bg-hover);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -159,15 +160,20 @@ function rotateRight() {
   object-fit: contain;
 }
 
+.zoom-btn-group {
+  display: flex;
+  gap: 4px;
+}
+
 .zoom-controls {
   position: absolute;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-card);
   padding: 8px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
 }
 
 .loading-overlay,
@@ -182,17 +188,17 @@ function rotateRight() {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  background: #f9fafb;
+  background: var(--bg-hover);
 }
 
 .error-overlay :deep(.arco-icon) {
   font-size: 64px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .error-overlay p {
   margin: 0;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 </style>

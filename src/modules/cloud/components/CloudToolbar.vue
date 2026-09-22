@@ -6,26 +6,27 @@
         :custom-request="handleUpload"
         :show-file-list="false"
         multiple
+        class="cloud-toolbar__upload"
       >
         <template #upload-button>
-          <a-button type="primary">
-            <icon-upload />
+          <V2Button type="gradient">
+            <template #icon><icon-upload /></template>
             {{ t('cloud.upload') }}
-          </a-button>
+          </V2Button>
         </template>
       </a-upload>
 
       <!-- New folder -->
-      <a-button @click="handleCreateFolder">
-        <icon-folder-add />
+      <V2Button type="secondary" @click="handleCreateFolder">
+        <template #icon><icon-folder-add /></template>
         {{ t('cloud.createFolder') }}
-      </a-button>
+      </V2Button>
 
       <!-- Refresh -->
-      <a-button @click="handleRefresh" :loading="refreshing">
-        <icon-refresh />
+      <V2Button type="secondary" @click="handleRefresh" :loading="refreshing">
+        <template #icon><icon-refresh /></template>
         {{ t('cloud.refresh') }}
-      </a-button>
+      </V2Button>
     </div>
 
     <div class="cloud-toolbar__right">
@@ -35,22 +36,27 @@
       <!-- Sort slot -->
       <slot name="sort"></slot>
 
-      <!-- View toggle -->
-      <a-radio-group
-        :model-value="viewMode"
-        type="button"
-        size="small"
-        @change="handleViewModeChange"
-      >
-        <a-radio value="grid">
+      <!-- View toggle (对齐 drive.html 网格/列表 btn-primary / btn-secondary) -->
+      <div class="view-toggle">
+        <button
+          type="button"
+          class="view-toggle__btn"
+          :class="{ 'view-toggle__btn--active': viewMode === 'grid' }"
+          @click="handleViewModeChange('grid')"
+        >
           <icon-apps />
           {{ t('cloud.gridView') }}
-        </a-radio>
-        <a-radio value="list">
+        </button>
+        <button
+          type="button"
+          class="view-toggle__btn"
+          :class="{ 'view-toggle__btn--active': viewMode === 'list' }"
+          @click="handleViewModeChange('list')"
+        >
           <icon-list />
           {{ t('cloud.listView') }}
-        </a-radio>
-      </a-radio-group>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -65,6 +71,7 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import type { RequestOption } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'
+import { V2Button } from '@/components/ui'
 
 const { t } = useI18n()
 
@@ -103,8 +110,8 @@ function handleRefresh() {
   emit('refresh')
 }
 
-function handleViewModeChange(value: string | number | boolean) {
-  emit('viewModeChange', value as 'grid' | 'list')
+function handleViewModeChange(value: 'grid' | 'list') {
+  emit('viewModeChange', value)
 }
 </script>
 
@@ -113,70 +120,80 @@ function handleViewModeChange(value: string | number | boolean) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
-  background: linear-gradient(to bottom, #ffffff 0%, #fafafa 100%);
-  border-bottom: 2px solid #e8e8e8;
-  gap: 20px;
+  gap: 16px;
   flex-wrap: wrap;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  margin-bottom: 14px;
 }
 
 .cloud-toolbar__left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
   min-width: 0;
-}
-
-.cloud-toolbar__left :deep(.arco-btn) {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.cloud-toolbar__left :deep(.arco-btn:hover) {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.cloud-toolbar__left :deep(.arco-btn-primary) {
-  background: linear-gradient(135deg, rgb(var(--primary-6)) 0%, rgb(var(--primary-5)) 100%);
-  border: none;
-  font-weight: 500;
 }
 
 .cloud-toolbar__right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  margin-left: auto;
 }
 
-.cloud-toolbar__right :deep(.arco-radio-group) {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 2px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+/* 网格/列表切换 (对齐原型 btn-sm btn-primary / btn-secondary) */
+.view-toggle {
+  display: inline-flex;
+  gap: 6px;
+  padding: 3px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Responsive adjustments */
+.view-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.view-toggle__btn:hover {
+  color: var(--brand-blue);
+}
+
+.view-toggle__btn--active {
+  background: var(--brand-blue);
+  color: #fff;
+}
+
+.view-toggle__btn--active:hover {
+  color: #fff;
+}
+
 @media (max-width: 768px) {
   .cloud-toolbar {
-    padding: 16px;
-    gap: 16px;
+    padding: 0;
+    gap: 12px;
   }
-
   .cloud-toolbar__left,
   .cloud-toolbar__right {
     width: 100%;
     justify-content: space-between;
   }
-
-  .cloud-toolbar__left {
-    order: 2;
-  }
-
   .cloud-toolbar__right {
-    order: 1;
+    margin-left: 0;
   }
 }
 </style>

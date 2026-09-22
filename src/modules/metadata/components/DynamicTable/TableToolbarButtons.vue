@@ -2,26 +2,53 @@
   <div v-if="showToolbar" class="dynamic-table__toolbar">
     <div class="toolbar-left">
       <a-space>
-        <a-button type="primary" @click="$emit('query')">
+        <V2Button type="primary" size="sm" @click="$emit('query')">
           <template #icon><icon-search /></template>
           查询
-        </a-button>
-        <a-button @click="$emit('reset')">
+        </V2Button>
+        <V2Button type="secondary" size="sm" @click="$emit('reset')">
           <template #icon><icon-refresh /></template>
           重置
-        </a-button>
+        </V2Button>
         <slot name="toolbar-left" />
       </a-space>
     </div>
 
     <div class="toolbar-right">
       <a-space>
-        <a-button v-if="canCreate" type="primary" @click="$emit('create')">
+        <!-- 选中批量快捷操作条 -->
+        <transition name="batch-fade">
+          <div v-if="hasSelection && selectedCount > 0" class="batch-quick-bar">
+            <span class="batch-quick-count">已选 <b>{{ selectedCount }}</b> 项</span>
+            <V2Button v-if="canEdit" type="text" size="sm" @click="$emit('batchEdit')">
+              <template #icon><icon-edit /></template>
+              修改选中行
+            </V2Button>
+            <V2Button type="text" size="sm" class="danger" @click="$emit('batchDelete')">
+              <template #icon><icon-delete /></template>
+              删除选中
+            </V2Button>
+          </div>
+        </transition>
+
+        <V2Button v-if="canCreate" type="gradient" size="sm" @click="$emit('create')">
           <template #icon><icon-plus /></template>
           新增
-        </a-button>
-        <a-button v-if="canSubmit" type="primary" @click="$emit('submit')">提交</a-button>
-        <a-button v-if="canUnsubmit" @click="$emit('unsubmit')">反提交</a-button>
+        </V2Button>
+        <!-- 动作定义动态按钮（list_button） -->
+        <V2Button
+          v-for="act in listActions"
+          :key="act.id"
+          type="primary"
+          size="sm"
+          :loading="executingAction === act.id"
+          @click="$emit('action', act)"
+        >
+          <template #icon><icon-thunderbolt /></template>
+          {{ act.displayName || act.name }}
+        </V2Button>
+        <V2Button v-if="canSubmit" type="primary" size="sm" @click="$emit('submit')">提交</V2Button>
+        <V2Button v-if="canUnsubmit" type="secondary" size="sm" @click="$emit('unsubmit')">反提交</V2Button>
         <slot name="toolbar-right" />
 
         <a-dropdown :popup-max-height="false">
@@ -100,9 +127,11 @@ import { ref } from 'vue'
 import {
   IconSearch, IconRefresh, IconPlus, IconMore,
   IconDelete, IconUpload, IconDownload, IconPrinter,
-  IconCopy, IconEdit, IconSettings, IconDragDotVertical
+  IconCopy, IconEdit, IconSettings, IconDragDotVertical, IconThunderbolt
 } from '@arco-design/web-vue/es/icon'
+import { V2Button } from '@/components/ui'
 import type { TableColumnData } from '@arco-design/web-vue'
+import type { SysAction } from '../../types'
 
 interface Props {
   showToolbar?: boolean
@@ -115,15 +144,22 @@ interface Props {
   canExport?: boolean
   canPrint?: boolean
   loading?: boolean
+  hasSelection?: boolean
+  selectedCount?: number
   allColumns: TableColumnData[]
   selectedColumnKeys: string[]
+  listActions?: SysAction[]
+  executingAction?: number | null
 }
 
 withDefaults(defineProps<Props>(), {
-  showToolbar: true
+  showToolbar: true,
+  hasSelection: false,
+  selectedCount: 0,
+  listActions: () => []
 })
 
-defineEmits<{
+const emit = defineEmits<{
   query: []
   reset: []
   create: []
@@ -141,7 +177,43 @@ defineEmits<{
   drop: [index: number]
   resetColumns: []
   refresh: []
+  action: [action: SysAction]
 }>()
 
 const showColumnSettings = ref(false)
 </script>
+
+<style scoped>
+/* 选中批量快捷操作条 */
+.batch-quick-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  margin-right: 4px;
+  background: rgba(22, 93, 255, 0.08);
+  border: 1px solid rgba(22, 93, 255, 0.2);
+  border-radius: 8px;
+}
+.batch-quick-count {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.batch-quick-count b {
+  color: var(--brand-blue);
+  font-size: 14px;
+}
+.batch-quick-bar .danger {
+  color: var(--error) !important;
+}
+.batch-fade-enter-active,
+.batch-fade-leave-active {
+  transition: all 0.25s ease;
+}
+.batch-fade-enter-from,
+.batch-fade-leave-to {
+  opacity: 0;
+  transform: translateX(10px);
+}
+</style>

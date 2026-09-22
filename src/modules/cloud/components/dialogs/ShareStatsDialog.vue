@@ -1,5 +1,5 @@
 <template>
-  <a-modal
+  <V2Modal
     v-model:visible="dialogVisible"
     :title="t('cloud.shareStatsTitle')"
     :footer="false"
@@ -45,7 +45,7 @@
         <span>{{ t('cloud.statsNote') }}</span>
       </div>
     </div>
-  </a-modal>
+  </V2Modal>
 </template>
 
 <script setup lang="ts">
@@ -53,6 +53,7 @@ import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { IconLink, IconLock, IconInfoCircle } from '@arco-design/web-vue/es/icon'
 import type { ShareListItem } from '@/modules/cloud/types'
+import { V2Modal } from '@/components/ui'
 
 const { t } = useI18n()
 
@@ -110,9 +111,9 @@ function handleCancel() {
   flex-direction: column;
   gap: 16px;
   padding: 16px;
-  background: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-hover);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
 }
 
 .share-item {
@@ -134,7 +135,7 @@ function handleCancel() {
 .item-name {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -153,14 +154,14 @@ function handleCancel() {
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .stats-summary {
   display: flex;
   gap: 48px;
   padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
   justify-content: center;
 }
 
@@ -171,13 +172,13 @@ function handleCancel() {
 .stat-value {
   font-size: 32px;
   font-weight: 600;
-  color: #3b82f6;
+  color: var(--brand-blue);
   margin-bottom: 8px;
 }
 
 .stat-label {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .stats-note {
@@ -185,11 +186,11 @@ function handleCancel() {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 6px;
+  background: var(--info-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   font-size: 13px;
-  color: #0369a1;
+  color: var(--info);
 }
 
 .stats-note svg {
