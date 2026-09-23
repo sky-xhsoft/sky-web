@@ -207,7 +207,7 @@ import { Message, Modal } from '@arco-design/web-vue'
 import { useNavigationStore } from '../../stores/navigation'
 import api from '../../api/http'
 import dayjs from 'dayjs'
-import { generatePushURL, generatePlayURL } from '../../api/live'
+import { generatePushURLByRoom, generatePullURLByRoom } from '../../api/live'
 import { IconArrowLeft, IconEdit, IconDelete, IconCopy } from '@arco-design/web-vue/es/icon'
 import config from '../../config/index'
 import { useI18n } from 'vue-i18n'
@@ -242,27 +242,26 @@ const pullUrls = ref({
   hls: ''
 })
 
-// 生成推流地址
+// 生成推流地址（由后端根据直播间ID取推流域名、鉴权主KEY、开始时间生成带txSecret地址）
 const generatePushUrls = async () => {
   try {
-    const expireTime = dayjs().add(7, 'day').unix()
-    const pushDomain = roomInfo.value.pushDomain || config.live.defaultPushDomain
-    const pushApp = roomInfo.value.pushApp || config.live.defaultApp
-    const streamName = String(roomInfo.value.streamName || roomInfo.value.id)
-    const response = await generatePushURL({
-      domainName: pushDomain,
-      appName: pushApp,
-      streamName: streamName,
-      streamKey: config.live.defaultStreamKey,
-      expireTime: expireTime
-    })
-    if (response.data?.data) {
-      const data = response.data.data
-      pushUrls.value.rtmp = data.pushUrl || ''
-      pushUrls.value.webrtc = data.pushUrlWebRtc || ''
-      pushUrls.value.srt = data.pushUrlSrt || ''
-      pushUrls.value.obsServer = `rtmp://${pushDomain}/${pushApp}/`
-      pushUrls.value.obsStreamKey = streamName + '?' + new URLSearchParams(new URL(data.pushUrl || '').search)
+    const roomId = String(roomInfo.value.id || '')
+    const response = await generatePushURLByRoom(roomId)
+    const data = response.data?.data || response.data
+    const pushUrl = data?.pushUrl || ''
+    if (pushUrl) {
+      // 直接使用后端返回的三种协议地址，保证 OBS/srt/webrtc 域名一致
+      pushUrls.value.rtmp = pushUrl
+      pushUrls.value.webrtc = data?.pushUrlWebRtc || pushUrl.replace(/^rtmp:\/\//, 'webrtc://')
+      pushUrls.value.srt = data?.pushUrlSrt || ''
+      // OBS 服务器前缀 = 推流地址的域名 + app
+            const u = new URL(pushUrl)
+            const obsHost = u.hostname // 例如 tl.skyzhou.cn
+            const app = u.pathname.split('/').filter(Boolean)[0] || 'live'
+            pushUrls.value.obsServer = `rtmp://${obsHost}/${app}/`
+            // OBS 推流码 = 流名 + 鉴权参数（不含 app，避免与 OBS 服务器里的 live/ 重复）
+            const streamPart = u.pathname.split('/').filter(Boolean).slice(1).join('/')
+            pushUrls.value.obsStreamKey = streamPart + (u.search ? u.search : '')
     }
   } catch (error: any) {
     console.error('生成推流地址失败:', error)
@@ -278,26 +277,15 @@ const generatePushUrls = async () => {
   }
 }
 
-// 生成拉流地址
+// 生成拉流地址（由后端取当前公司播放域名、鉴权主KEY、直播间开始时间）
 const generatePullUrls = async () => {
   try {
-    const expireTime = dayjs().add(7, 'day').unix()
-    const playDomain = roomInfo.value.playDomain || config.live.defaultPlayDomain
-    const playApp = roomInfo.value.playApp || config.live.defaultApp
-    const streamName = String(roomInfo.value.streamName || roomInfo.value.id)
-    const response = await generatePlayURL({
-      playDomain: playDomain,
-      appName: playApp,
-      streamName: streamName,
-      playKey: '',
-      expireTime: expireTime
-    })
-    if (response.data?.data) {
-      const data = response.data.data
-      pullUrls.value.rtmp = data.rtmp || ''
-      pullUrls.value.flv = data.flv || ''
-      pullUrls.value.hls = data.hls || ''
-    }
+    const roomId = String(roomInfo.value.id || '')
+    const response = await generatePullURLByRoom(roomId)
+    const data = response.data?.data || response.data
+    pullUrls.value.rtmp = data?.rtmp || ''
+    pullUrls.value.flv = data?.flv || ''
+    pullUrls.value.hls = data?.hls || ''
   } catch (error: any) {
     console.error('生成拉流地址失败:', error)
     // 使用默认地址

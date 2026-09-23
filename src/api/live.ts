@@ -313,6 +313,11 @@ export const generatePlayURL = (data: GeneratePlayURLRequest) => {
   return api.post('/live/play-url/generate', data)
 }
 
+// 根据直播间ID获取播放地址（由后端取当前公司播放域名、鉴权主KEY、直播间开始时间）
+export const generatePullURLByRoom = (roomId: number | string) => {
+  return api.post('/live/pull-url/by-room', { roomId })
+}
+
 // ==================== 直播间管理 ====================
 
 // 直播间详情

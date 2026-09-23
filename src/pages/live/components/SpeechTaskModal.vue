@@ -54,12 +54,13 @@
             <div class="form-tip">{{ t('speechTask.delayTip') }}</div>
           </a-form-item>
 
-          <a-form-item v-if="form.mode !== 'mix'" :label="t('speechTask.inputLang')">
-            <a-select v-model="form.inputLang">
-              <a-option v-for="o in LANG_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</a-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item v-if="form.mode !== 'mix'" :label="t('speechTask.outputLangs')">
+          <a-form-item :label="t('speechTask.inputLang')" required>
+                      <a-select v-model="form.inputLang">
+                        <a-option v-for="o in LANG_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</a-option>
+                      </a-select>
+                    </a-form-item>
+
+                    <a-form-item v-if="form.mode !== 'mix'" :label="t('speechTask.outputLangs')">
             <a-select v-model="form.outputLangs" multiple :max-tag-count="3" allow-clear>
               <a-option v-for="o in otherLangs" :key="o.value" :value="o.value">{{ o.label }}</a-option>
             </a-select>
@@ -552,7 +553,7 @@ const buildPayload = () => {
     roomId: props.record?.id,
     roomName: props.record?.roomName,
     rule: {
-      pipe: form.mode,
+      pipe: form.mode === 'mix' && form.outWordMode === 'realtime' ? 'realtime' : form.mode,
       delay: form.delay,
       source: { url: form.sourceUrl },
       startTime: start ? dayjs(start).format('YYYY-MM-DDTHH:mm:ss+08:00') : '',
@@ -578,15 +579,15 @@ const buildPayload = () => {
               showPriority: form.subtitleOrder === 'originalTop' ? 1 : 2,
               box: hasSubBg ? { color: form.fontBGColor } : undefined
             },
-            translation: (form.outputLangs || []).map((lang: string, idx: number) => ({
-              language: lang,
-              fontSize: form.fontSize,
-              fontColor: form.fontColor,
-              font: form.fontFamily,
-              maxRowNumber: form.subtitleRows,
-              maxCharNumber: form.maxCharNumber,
-              showPriority: form.subtitleOrder === 'originalTop' ? idx + 2 : idx + 1
-            }))
+            translation: form.mode !== 'mix' ? (form.outputLangs || []).map((lang: string, idx: number) => ({
+                          language: lang,
+                          fontSize: form.fontSize,
+                          fontColor: form.fontColor,
+                          font: form.fontFamily,
+                          maxRowNumber: form.subtitleRows,
+                          maxCharNumber: form.maxCharNumber,
+                          showPriority: form.subtitleOrder === 'originalTop' ? idx + 2 : idx + 1
+                        })) : undefined
           }
         : undefined,
       glossaryMap: parseGlossary(form.glossaryMap),
