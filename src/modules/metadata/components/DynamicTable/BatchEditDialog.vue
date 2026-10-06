@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import type { SysColumn } from '@/modules/metadata/types'
+import { getColumnDictOptions } from '@/modules/metadata/composables/useDictOptions'
 
 interface Props {
   visible: boolean
@@ -134,7 +135,7 @@ const title = computed(() => {
             <div class="field-label">
               <a-checkbox v-model="edit.enabled">
                 {{ edit.column.DISPLAY_NAME }}
-                <span v-if="edit.column.IS_REQUIRED === 'Y'" class="required">*</span>
+                <span v-if="edit.column.NULL_ABLE === 'N'" class="required">*</span>
               </a-checkbox>
             </div>
             <div class="field-input">
@@ -159,7 +160,7 @@ const title = computed(() => {
                   <a-option v-if="edit.column.DB_NAME === 'IS_ACTIVE'" value="Y">是</a-option>
                   <a-option v-if="edit.column.DB_NAME === 'IS_ACTIVE'" value="N">否</a-option>
                   <a-option
-                    v-for="opt in edit.column.DICT_OPTIONS"
+                    v-for="opt in getColumnDictOptions(edit.column)"
                     :key="opt.value"
                     :value="opt.value"
                   >{{ opt.label }}</a-option>

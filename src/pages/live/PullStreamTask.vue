@@ -210,7 +210,7 @@ let videoRateChartInstance: echarts.ECharts | null = null
 let audioRateChartInstance: echarts.ECharts | null = null
 
 const currentTaskId = ref<string>('')
-const statusDateRange = ref<[string, string]>([])
+const statusDateRange = ref<[string, string] | []>([])
 
 const initStatusDateRange = () => {
   const now = new Date()

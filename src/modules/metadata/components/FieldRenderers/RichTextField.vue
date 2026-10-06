@@ -80,9 +80,7 @@ const sanitizedHtml = computed(() => {
 
 	// 使用 DOMPurify 安全清理 HTML
 	return DOMPurify.sanitize(props.modelValue, {
-		ADD_ATTR: ['target', 'rel'],
-		ALLOW_DATA_ATTR_BOOLS: true,
-		ALLOW_URI_SAFE_ATTR: true
+		ADD_ATTR: ['target', 'rel']
 	})
 })
 

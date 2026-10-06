@@ -16,6 +16,36 @@ export interface SelectOption {
   [key: string]: any
 }
 
+/**
+ * 取字段绑定的数据字典选项：优先表配置下发的 dictData，降级到字典 store
+ * （后端不下发 DICT_OPTIONS，各组件统一用此函数取选项）
+ */
+export function getColumnDictOptions(column: SysColumn): SelectOption[] {
+  const dictId = column.SYS_DICT_ID || (column as any).sysDictId || column.DICT_TABLE_ID || (column as any).dictTableId
+  if (!dictId) {
+    return []
+  }
+
+  const tableId = (column as any).TABLE_ID || (column as any).tableId || (column as any).sysTableId
+  if (tableId) {
+    const tableConfig = useMetadataStore().getTableConfig(tableId)
+    const dictIDNum = typeof dictId === 'string' ? parseInt(dictId, 10) : dictId
+    const dictItems = tableConfig?.dictData?.[dictIDNum]
+    if (dictItems && dictItems.length > 0) {
+      return dictItems.map(item => ({
+        value: item.VALUE || (item as any).value,
+        label: String(item.DISPLAY_NAME || (item as any).displayName || ''),
+        color: (item as any).CSS_CLASS || (item as any).cssClass,
+      }))
+    }
+  }
+
+  if (column.DICT_TABLE_ID) {
+    return useDictStore().toSelectOptions(column.DICT_TABLE_ID)
+  }
+  return []
+}
+
 export interface UseDictOptionsOptions {
   column: SysColumn
   loadOnMount?: boolean
@@ -38,43 +68,14 @@ export function useDictOptions({
 
   // 获取表格ID
   const tableId = computed(() => {
-    return column.TABLE_ID || (column as any).tableId || (column as any).sysTableId
+    return (column as any).TABLE_ID || (column as any).tableId || (column as any).sysTableId
   })
 
   // 检查是否有字典配置
   const hasDictConfig = computed(() => !!dictId.value)
 
   // 优先从 tableConfig.dictData 中获取字典项
-  const dictOptions = computed<SelectOption[]>(() => {
-    if (!dictId.value) {
-      return []
-    }
-
-    // 从 metadataStore 获取 tableConfig
-    if (tableId.value) {
-      const tableConfig = metadataStore.getTableConfig(tableId.value)
-      const dictIDNum = typeof dictId.value === 'string' ? parseInt(dictId.value, 10) : dictId.value
-
-      if (tableConfig?.dictData) {
-        const dictItems = tableConfig.dictData[dictIDNum]
-
-        if (dictItems && dictItems.length > 0) {
-          return dictItems.map(item => ({
-            value: item.VALUE || (item as any).value,
-            label: String(item.DISPLAY_NAME || (item as any).displayName || ''),
-            color: (item as any).CSS_CLASS || (item as any).cssClass,
-          }))
-        }
-      }
-    }
-
-    // 降级：从 dictStore 获取
-    if (column.DICT_TABLE_ID) {
-      return dictStore.toSelectOptions(column.DICT_TABLE_ID)
-    }
-
-    return []
-  })
+  const dictOptions = computed<SelectOption[]>(() => getColumnDictOptions(column))
 
   // 检查是否已加载字典数据
   const hasDictData = computed(() => dictOptions.value.length > 0)

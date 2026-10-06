@@ -688,7 +688,7 @@ function handleImport() {
     try {
       const r = await metadataApi.importRecords(tn, file)
       Message.success(`导入 ${r.imported} 条`)
-      await loadRecords()
+      await loadChildData()
     } catch (e: any) { Message.error(e?.message || '导入失败') }
   }
   input.click()

@@ -187,7 +187,7 @@ export const useMetadataStore = defineStore('metadata', () => {
       }
 
       // 映射字段名：兼容后端返回的小写驼峰格式
-      config.columns = config.columns.map(adaptColumn)
+      config.columns = config.columns.map(adaptColumn) as SysColumn[]
 
       // 处理子表配置的字段名映射
       if (config.childTables) {

@@ -201,7 +201,7 @@ const componentRegistry: Record<string, Component> = {
     }
 
 // 当前显示的组件（使用 shallowRef 提高性能）
-const currentComponent = shallowRef(HomeDashboard)
+const currentComponent = shallowRef<Component>(HomeDashboard)
 
 type NavItem = {
   key: string

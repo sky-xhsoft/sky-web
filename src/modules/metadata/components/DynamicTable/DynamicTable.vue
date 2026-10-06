@@ -1286,7 +1286,7 @@ watch(
 
       // 同时清空 store 的 filters（因为可能之前点过查询按钮）
       const tableStore = useDynamicTableStore()
-      tableStore.filters = {}
+      tableStore.clearFilters(tableName.value)
 
       // 重新加载该表的动作按钮
       loadListActions()

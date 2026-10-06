@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useFieldRendererBase } from '../../composables'
+import { getColumnDictOptions } from '../../composables/useDictOptions'
 import type { SysColumn, FieldValue, FormMode } from '../../types'
 
 interface TagItem {
@@ -94,7 +95,7 @@ const config = computed(() => {
 })
 
 const options = computed<TagItem[]>(() => {
-  const dictOptions = props.column.DICT_OPTIONS || []
+  const dictOptions = getColumnDictOptions(props.column)
   if (dictOptions.length > 0) {
     return dictOptions.map(opt => ({
       value: opt.value,
@@ -151,7 +152,7 @@ watch(
         selectedTags.value = newValue.split(',').map(s => s.trim()).filter(Boolean)
       }
     } else {
-      selectedTags.value = [newValue]
+      selectedTags.value = [newValue as string | number]
     }
   },
   { immediate: true }

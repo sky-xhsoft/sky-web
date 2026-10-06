@@ -104,7 +104,7 @@ export const useAuthStore = defineStore('auth', {
       // 不清除 loginType，这样用户退出登录后还能记住之前的登录模式
       clearAuth()
     },
-    applyLogin(res: LoginResponse, deviceId: string, loginType: 'live' | 'cloud' | null = null) {
+    applyLogin(res: LoginResponse, deviceId: string, loginType: 'live' | 'cloud' | 'system' | null = null) {
       this.token = res.token
       this.refreshToken = res.refreshToken
       this.user = res.user

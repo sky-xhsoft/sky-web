@@ -172,6 +172,7 @@ const navigationStore = useNavigationStore()
 const stats = ref<DashboardStats>({
   totalRooms: 0,
   todayLiveSessions: 0,
+  recordingStorage: 0,
   usedStorage: 0,
   groupCount: 0,
 })

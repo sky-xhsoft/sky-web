@@ -52,8 +52,8 @@ withDefaults(defineProps<Props>(), {
 })
 
 defineEmits<{
-  ok: [event: MouseEvent]
-  cancel: [event: MouseEvent]
+  ok: [event?: Event]
+  cancel: [event?: Event]
   'update:visible': [visible: boolean]
 }>()
 </script>

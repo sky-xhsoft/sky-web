@@ -85,10 +85,10 @@
         <!-- 数据表格 -->
         <a-table
           :columns="tableColumns"
-          :data="tableData"
+          :data="tableRows"
           :loading="loading"
           :pagination="pagination"
-          :row-key="getRowKey"
+          row-key="__rowKey"
           @page-change="handlePageChange"
           @page-size-change="handlePageSizeChange"
           @row-dblclick="handleRowDoubleClick"
@@ -263,6 +263,9 @@ const isIndeterminate = computed(() => {
 function getRowKey(row: any): string | number {
   return row.ID || row.id || row.value || row.__id || 0
 }
+
+// 表格数据附加计算出的行键字段
+const tableRows = computed(() => tableData.value.map(row => ({ ...row, __rowKey: getRowKey(row) })))
 
 function getRowId(row: any): string | number {
   return row.ID || row.id || row.value

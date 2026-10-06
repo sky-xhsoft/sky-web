@@ -779,7 +779,7 @@ async function handleBatchDelete() {
  * 导出
  */
 function handleExport() {
-  const tn = childTableConfig.value?.table?.NAME
+  const tn = props.childTable.table?.NAME || props.childTable.table?.name
   if (!tn) { Message.warning('无法获取表名'); return }
 
   const filters: Record<string, any> = {}
@@ -804,7 +804,7 @@ function handleExport() {
 }
 
 function handleImport() {
-  const tn = childTableConfig.value?.table?.NAME
+  const tn = props.childTable.table?.NAME || props.childTable.table?.name
   if (!tn) { Message.warning('无法获取表名'); return }
   const input = document.createElement('input')
   input.type = 'file'; input.accept = '.xlsx,.xls'

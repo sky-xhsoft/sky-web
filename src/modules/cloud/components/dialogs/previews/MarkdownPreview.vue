@@ -70,7 +70,6 @@ const renderedHtml = computed(() => {
       ],
       ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class'],
       ALLOW_DATA_ATTR: false,
-      ALLOW_URI_AUTO_LINKS: true,
       FORCE_BODY: true,
     })
   } catch (error) {

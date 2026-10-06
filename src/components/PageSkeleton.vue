@@ -4,7 +4,7 @@
     <div class="skeleton-header">
       <a-skeleton :animation="true">
         <a-skeleton-shape shape="circle" size="40px" />
-        <a-skeleton-line :rows="1" :widths="['200px']" style="margin-top: 12px" />
+        <div style="margin-top: 12px"><a-skeleton-line :rows="1" :widths="['200px']" /></div>
       </a-skeleton>
     </div>
 

@@ -354,7 +354,7 @@ function getResourceName(): string {
 
 function getFileSize(): number {
   if (!shareInfo.value || shareInfo.value.resourceType !== 'file') return 0
-  return shareInfo.value.file?.size || 0
+  return shareInfo.value.file?.fileSize || 0
 }
 
 function initVideoLazyLoad() {

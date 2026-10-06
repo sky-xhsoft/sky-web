@@ -3,7 +3,7 @@
  * 提取所有字段渲染器的公共逻辑
  */
 
-import { computed } from 'vue'
+import { computed, type ComputedRef } from 'vue'
 import type { SysColumn, FormMode, FieldValue } from '../types'
 import {
   getColumnDisplayName,
@@ -21,22 +21,22 @@ export interface UseFieldRendererBaseOptions {
 }
 
 export interface UseFieldRendererBaseReturn {
-  displayName: string
-  placeholder: string
-  helpText: string
-  isReadonly: boolean
-  isDisabled: boolean
-  isRequired: boolean
-  isSelect: boolean
-  isForeignKey: boolean
-  validationRules: { required?: boolean; message?: string }[]
+  displayName: ComputedRef<string>
+  placeholder: ComputedRef<string>
+  helpText: ComputedRef<string>
+  isReadonly: ComputedRef<boolean>
+  isDisabled: ComputedRef<boolean>
+  isRequired: ComputedRef<boolean>
+  isSelect: ComputedRef<boolean>
+  isForeignKey: ComputedRef<boolean>
+  validationRules: ComputedRef<{ required?: boolean; message?: string }[]>
   formatValue: (value: FieldValue) => string
-  fieldProps: Record<string, any>
-  allowClear: boolean
-  maxLength?: number
-  displayRows?: number
-  displayCols?: number
-  defaultValue?: any
+  fieldProps: ComputedRef<Record<string, any>>
+  allowClear: ComputedRef<boolean>
+  maxLength: ComputedRef<number | undefined>
+  displayRows: ComputedRef<number | undefined>
+  displayCols: ComputedRef<number | undefined>
+  defaultValue: ComputedRef<any>
 }
 
 export function useFieldRendererBase({
@@ -154,9 +154,7 @@ export function useFieldRendererBase({
 
   // 最大长度
   const maxLength = computed(() => {
-    const colLength = column.COL_LENGTH || (column as any).colLength
-    const length = column.LENGTH || (column as any).LENGTH
-    return colLength || length || undefined
+    return column.COL_LENGTH || (column as any).colLength || undefined
   })
 
   // 显示行数

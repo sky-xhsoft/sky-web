@@ -156,6 +156,7 @@ export interface PullStreamTaskInfo {
   pushArgs?: string
   taskName?: string // 前端字段（同 comment）
   platform?: string // 前端字段（同 sourceType）
+  runningStatus?: 'active' | 'inactive' // 前端字段：实际推流运行状态（轮询获得）
 }
 
 // 创建拉流任务请求
@@ -361,6 +362,7 @@ export const deleteLiveRoom = (id: number) => {
 
 // 查询回调事件列表
 export const queryCallbackEvents = (params: {
+  id?: number | string
   eventType?: string
   streamId?: string
   domainName?: string

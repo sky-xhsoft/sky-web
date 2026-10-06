@@ -46,9 +46,11 @@ const label = computed(() => {
 // 值变化处理
 function handleChange(value: boolean) {
   // 根据数据类型返回对应格式
-  if (props.column.DATA_TYPE === 'char') {
+  // 元数据列类型字段为 COL_TYPE：char 列（如 IS_ACTIVE）提交 Y/N，int 列提交 1/0
+  const colType = props.column.COL_TYPE || (props.column as any).colType
+  if (colType === 'char') {
     emit('update:modelValue', value ? 'Y' : 'N')
-  } else if (props.column.DATA_TYPE === 'int') {
+  } else if (colType === 'int' || colType === 'tinyint') {
     emit('update:modelValue', value ? 1 : 0)
   } else {
     emit('update:modelValue', value)

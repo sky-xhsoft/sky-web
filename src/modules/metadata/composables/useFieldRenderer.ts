@@ -208,7 +208,7 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
     }
 
     // 根据 MASK 检查是否可编辑（兼容大小写）
-    const mask = column.MASK || column.mask || ''
+    const mask = column.MASK || (column as any).mask || ''
     if (mask && mask.length >= 4) {
       // MASK 位说明：
       // 位 2 (索引 1): 新增可编辑
@@ -254,7 +254,7 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
     const controlType = displayType || column.CONTROL_TYPE || (column as any).controlType
 
     // 根据控件类型生成默认占位符
-    const displayName = column.DISPLAY_NAME || column.displayName || ''
+    const displayName = column.DISPLAY_NAME || (column as any).displayName || ''
     switch (controlType?.toLowerCase()) {
       case 'text':
       case 'textarea':
@@ -321,16 +321,16 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
     // 根据控件类型添加特定属性
     switch (controlType) {
       case 'number':
-        if (column.DECIMAL_PLACES !== undefined) {
-          props.precision = column.DECIMAL_PLACES
+        if (column.COL_PRECISION !== undefined && column.COL_PRECISION !== null) {
+          props.precision = column.COL_PRECISION
         }
         break
 
       case 'textarea':
       case 'clob':
         props.rows = column.DISPLAY_ROWS || 4
-        if (column.LENGTH) {
-          props.maxLength = column.LENGTH
+        if (column.COL_LENGTH) {
+          props.maxLength = column.COL_LENGTH
           props.showWordLimit = true
         }
         break
@@ -339,8 +339,8 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
       case 'password':
       case 'email':
       case 'url':
-        if (column.LENGTH) {
-          props.maxLength = column.LENGTH
+        if (column.COL_LENGTH) {
+          props.maxLength = column.COL_LENGTH
         }
         break
 
@@ -382,9 +382,9 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
     // 兼容大小写字段名
     const nullAble = column.NULL_ABLE || (column as any).nullAble
     const displayName = column.DISPLAY_NAME || (column as any).displayName || column.DB_NAME
-    const errorMsg = column.ERROR_MSG || (column as any).errorMsg
+    const errorMsg = column.ERR_MSG || (column as any).errMsg
     const regExpression = column.REG_EXPRESSION || (column as any).regExpression
-    const length = column.LENGTH || (column as any).length
+    const length = column.COL_LENGTH || (column as any).colLength
 
     // 获取控件类型（优先 DISPLAY_TYPE）
     const displayType = column.DISPLAY_TYPE || (column as any).displayType
@@ -461,8 +461,8 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
         return value
 
       case 'number':
-        if (column.DECIMAL_PLACES !== undefined) {
-          return Number(value).toFixed(column.DECIMAL_PLACES)
+        if (column.COL_PRECISION !== undefined && column.COL_PRECISION !== null) {
+          return Number(value).toFixed(column.COL_PRECISION)
         }
         return String(value)
 
@@ -501,7 +501,7 @@ export function useFieldRenderer(column: SysColumn, mode: FormMode = 'view') {
   function parseValue(value: string): any {
     if (!value) return null
 
-    switch (column.DATA_TYPE) {
+    switch (column.COL_TYPE) {
       case 'int':
         return parseInt(value, 10)
 

@@ -64,7 +64,7 @@ const COLUMN_FIELD_MAPPINGS: FieldMapping[] = [
   ['REF_ON_DELETE', 'refOnDelete'],
   ['SYS_DICT_ID', 'sysDictId'],
   ['SEQ', 'seq'],
-  ['NULLABLE', 'nullable'],
+  ['NULL_ABLE', 'nullAble'],
   ['REG_EXPRESSION', 'regExpression'],
   ['ERR_MSG', 'errMsg'],
   ['DEFAULT_VALUE', 'defaultValue'],

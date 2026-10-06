@@ -139,7 +139,7 @@ const arrayValue = computed((): Array<string | number> => {
     }
   }
 
-  return [props.modelValue]
+  return [props.modelValue as string | number]
 })
 
 // 显示的标签文本

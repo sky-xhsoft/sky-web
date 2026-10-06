@@ -69,7 +69,8 @@
     </div>
 
     <!-- 直播间卡片列表 -->
-    <div class="room-card-grid" v-loading="loading">
+    <a-spin :loading="loading" class="room-card-spin">
+    <div class="room-card-grid">
       <a-empty v-if="tableData.length === 0 && !loading" :description="t('liveRoomList.empty')" />
       <a-grid :cols="{ xs: 1, sm: 2, md: 3, lg: 4, xl: 4, xxl: 6 }" :col-gap="16" :row-gap="16">
         <a-grid-item v-for="record in tableData" :key="record.id">
@@ -122,6 +123,7 @@
         />
       </div>
     </div>
+    </a-spin>
 
     <!-- 新增字幕同传任务弹窗 -->
     <SpeechTaskModal
@@ -632,6 +634,11 @@ onUnmounted(() => {
     }
   }
 
+
+  .room-card-spin {
+    display: block;
+    width: 100%;
+  }
 
   .room-card-grid {
     .room-card {

@@ -78,10 +78,6 @@ const precision = computed(() => {
   if (colPrecision !== undefined) {
     return colPrecision
   }
-  const decimalPlaces = props.column.DECIMAL_PLACES || (props.column as any).DECIMAL_PLACES
-  if (decimalPlaces !== undefined) {
-    return decimalPlaces
-  }
   return undefined
 })
 

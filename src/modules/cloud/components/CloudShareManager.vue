@@ -89,7 +89,7 @@
 
     <!-- 加载状态 -->
     <div v-else-if="loading" class="cloud-share-manager__loading">
-      <a-spin size="large" />
+      <a-spin :size="32" />
       <span>{{ t('cloud.loading') }}</span>
     </div>
 

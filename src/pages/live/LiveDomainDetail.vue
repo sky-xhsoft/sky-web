@@ -454,7 +454,7 @@ const generatePushUrl = async () => {
     }
 
     // 生成地址后折叠格式说明
-    collapseActiveKeys.value = []
+    pushCollapseActiveKeys.value = []
 
     Message.success('推流地址生成成功')
   } catch (error: any) {

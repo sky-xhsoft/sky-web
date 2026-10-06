@@ -101,7 +101,7 @@
 
       <!-- 加载状态 -->
       <div v-else-if="loading" class="cloud-share-manager__loading">
-        <a-spin size="large" />
+        <a-spin :size="32" />
         <span>{{ t('cloud.loading') }}</span>
       </div>
 
@@ -197,13 +197,13 @@
     <EditShareDialog
       v-model:visible="dialogs.editShare"
       :share="currentShare"
-      :loading="loading.editShare"
+      :loading="loadingLocal.editShare"
       @confirm="handleEditShare"
     />
     <ShareStatsDialog
       v-model:visible="dialogs.shareStats"
       :share="currentShare"
-      :loading="loading.shareStats"
+      :loading="loadingLocal.shareStats"
     />
   </div>
 </template>

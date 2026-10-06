@@ -219,9 +219,9 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
     // 兼容大小写字段名
     const nullAble = column.NULL_ABLE || (column as any).nullAble
     const displayName = column.DISPLAY_NAME || (column as any).displayName || column.DB_NAME
-    const errorMsg = column.ERROR_MSG || (column as any).errorMsg
+    const errorMsg = column.ERR_MSG || (column as any).errMsg
     const regExpression = column.REG_EXPRESSION || (column as any).regExpression
-    const length = column.LENGTH || (column as any).length
+    const length = column.COL_LENGTH || (column as any).colLength
     const colType = column.COL_TYPE || (column as any).colType
     const colLength = column.COL_LENGTH || (column as any).colLength
 
@@ -472,7 +472,7 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
         tableName,
         mainRecord,
         details,
-        mode: mode === 'edit' ? 'update' : mode, // 后端期望mode是update而不是edit
+        mode: (mode === 'edit' ? 'update' : mode) as 'create' | 'update', // 后端期望mode是update而不是edit；查看模式不会提交
         mainRecordId: mode === 'edit' ? (formData.value[pkField] as number) : undefined
       })
 
@@ -566,7 +566,7 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
     if (column.NULL_ABLE === 'N') {
       rules.push({
         required: true,
-        message: column.ERROR_MSG || `${column.DISPLAY_NAME}不能为空`
+        message: column.ERR_MSG || `${column.DISPLAY_NAME}不能为空`
       })
     }
 
@@ -576,7 +576,7 @@ export function useDynamicForm(tableId: number, mode: FormMode = 'view') {
         const regex = new RegExp(column.REG_EXPRESSION)
         rules.push({
           pattern: regex,
-          message: column.ERROR_MSG || `${column.DISPLAY_NAME}格式不正确`
+          message: column.ERR_MSG || `${column.DISPLAY_NAME}格式不正确`
         })
       } catch {
         console.error('Invalid regex:', column.REG_EXPRESSION)

@@ -351,7 +351,7 @@ export function useDynamicList(tableId: number) {
     }
 
     try {
-      const filters = tableStore.getFilters(tableName.value).value || {}
+      const filters = tableStore.getFilters(tableName).value || {}
       const blob = await exportRecords(tableName, filters)
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -412,8 +412,8 @@ export function useDynamicList(tableId: number) {
 
       case 'number':
         // 格式化数字
-        if (column.DECIMAL_PLACES) {
-          return Number(value).toFixed(column.DECIMAL_PLACES)
+        if (column.COL_PRECISION) {
+          return Number(value).toFixed(column.COL_PRECISION)
         }
         break
 

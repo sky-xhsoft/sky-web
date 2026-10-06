@@ -134,6 +134,7 @@ import { ref, computed } from 'vue'
 import { IconSearch, IconDown, IconUp, IconRefresh } from '@arco-design/web-vue/es/icon'
 import { V2Button } from '@/components/ui'
 import FkQueryInput from './FkQueryInput.vue'
+import { getColumnDictOptions } from '../../composables/useDictOptions'
 
 interface Props {
   queryColumns: any[]
@@ -197,7 +198,7 @@ function isForeignKeyColumn(column: any): boolean {
 
 // 获取字典选项
 function getDictOptions(column: any): any[] {
-  return column.DICT_OPTIONS || column.dictOptions || []
+  return getColumnDictOptions(column)
 }
 </script>
 

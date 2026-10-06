@@ -140,7 +140,7 @@ watch(
         arrayValue.value = newValue.split(',').map(s => s.trim()).filter(Boolean)
       }
     } else {
-      arrayValue.value = [newValue]
+      arrayValue.value = [newValue as string | number]
     }
   },
   { immediate: true }

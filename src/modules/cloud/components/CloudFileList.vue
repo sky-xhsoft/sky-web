@@ -8,7 +8,7 @@
 
     <!-- 加载状态 -->
     <div v-if="loading" class="cloud-file-list__loading">
-      <a-spin size="large" class="cloud-loading-spin" />
+      <a-spin :size="32" class="cloud-loading-spin" />
       <div class="loading-text">{{ t('cloud.loading') }}</div>
     </div>
 

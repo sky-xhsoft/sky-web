@@ -93,6 +93,10 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     st.pagination.page = 1
     return loadRecords(tableName)
   }
+  // 只清空筛选条件，不重新加载（切换表时由调用方负责加载）
+  function clearFilters(tableName: string) {
+    getState(tableName).filters = {}
+  }
   async function resetFilters(tableName: string) {
     const st = getState(tableName)
     st.filters = {}
@@ -185,7 +189,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     pagination,
     filters,
     loadRecords, refresh, changePage, changePageSize,
-    updateFilters, resetFilters, updateSorter, updateSorters,
+    updateFilters, resetFilters, clearFilters, updateSorter, updateSorters,
     selectRows, toggleSelectAll, clearSelection, getSelectedRecords,
     getRecords, getPagination, getFilters, getSorters,
     getSelectedRowKeys, getLoading, getHasSelection, getSelectedCount,

@@ -34,6 +34,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useFieldRendererBase } from '../../composables'
+import { getColumnDictOptions } from '../../composables/useDictOptions'
 import type { SysColumn, FieldValue, FormMode } from '../../types'
 
 interface AutoCompleteOption {
@@ -72,7 +73,7 @@ const config = computed(() => {
 })
 
 const options = computed<AutoCompleteOption[] | string[]>(() => {
-  const dictOptions = props.column.DICT_OPTIONS || []
+  const dictOptions = getColumnDictOptions(props.column)
   if (dictOptions.length > 0) {
     return dictOptions.map(opt => ({
       value: String(opt.value),

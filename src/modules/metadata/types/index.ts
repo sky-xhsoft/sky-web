@@ -222,7 +222,7 @@ export type FormMode = 'create' | 'edit' | 'view'
 /**
  * 字段值类型
  */
-export type FieldValue = string | number | boolean | Date | null | undefined
+export type FieldValue = string | number | boolean | Date | (string | number)[] | null | undefined
 
 /**
  * 表单数据
@@ -426,7 +426,7 @@ export const TableMaskIndex = {
  * 检查字段在指定模式下是否应该显示
  */
 export function shouldShowColumnInMode(column: Partial<SysColumn>, mode: FormMode): boolean {
-  const mask = column.MASK || column.mask || ''
+  const mask = column.MASK || (column as any).mask || ''
 
   let bitIndex: number
   switch (mode) {
@@ -459,7 +459,7 @@ export function shouldEditColumnInMode(column: Partial<SysColumn>, mode: FormMod
   const modifiAble = column.MODIFI_ABLE || (column as any).modifiAble
   if (modifiAble === 'N') return false
 
-  const mask = column.MASK || column.mask || ''
+  const mask = column.MASK || (column as any).mask || ''
 
   let bitIndex: number
   switch (mode) {
@@ -485,7 +485,7 @@ export function shouldEditColumnInMode(column: Partial<SysColumn>, mode: FormMod
  * 检查表是否有指定权限
  */
 export function hasTablePermission(table: Partial<SysTable>, permission: string): boolean {
-  const mask = table.MASK || table.mask || ''
+  const mask = table.MASK || (table as any).mask || ''
   return mask.includes(permission)
 }
 

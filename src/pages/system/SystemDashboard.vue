@@ -84,7 +84,7 @@
             <div class="activity-item__body">
               <div class="activity-item__text">
                 <b>{{ n.title }}</b>
-                <V2Tag v-if="n.important" type="danger" size="small">{{ t('sysDash.important') }}</V2Tag>
+                <V2Tag v-if="n.important" type="error" size="small">{{ t('sysDash.important') }}</V2Tag>
               </div>
               <div class="activity-item__time">{{ n.time }} · {{ n.desc }}</div>
             </div>
