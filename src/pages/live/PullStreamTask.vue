@@ -146,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, onUnmounted, watch, onActivated } from 'vue'
+import { ref, reactive, onMounted, computed, onUnmounted, watch, onActivated, onDeactivated } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { IconPlus, IconRefresh } from '@arco-design/web-vue/es/icon'
 import { formatDateTime } from '@/utils/date'
@@ -538,6 +538,8 @@ const viewTaskStatus = async (task: PullStreamTaskInfo) => {
 
 let runningStatusTimer: any = null
 const updateRunningStatus = async () => {
+  // 浏览器窗口在后台时不轮询
+  if (document.hidden) return
   const tasksToUpdate = allTaskList.value.filter(task => task.status === 'enable' && (!task.runningStatus || task.runningStatus === 'inactive'))
   if (tasksToUpdate.length === 0) return
   for (const task of tasksToUpdate) {
@@ -574,7 +576,12 @@ onMounted(() => {
   })
 })
 
-onActivated(() => loadTaskList())
+// 页面在 KeepAlive 中：切到其他标签页时停止轮询，回来时恢复（原先离开后定时器仍持续请求）
+onActivated(() => {
+  loadTaskList()
+  startRunningStatusTimer()
+})
+onDeactivated(() => stopRunningStatusTimer())
 </script>
 
 <style scoped>
