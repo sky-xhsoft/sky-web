@@ -51,3 +51,34 @@ export async function getActivities(limit = 10): Promise<Activity[]> {
   const res = await api.get<ApiResponse<Activity[]>>('/dashboard/activities', { params: { limit } })
   return res.data.data
 }
+
+/** 系统中心概览（当前公司） */
+export interface SystemOverview {
+  users: number
+  groups: number
+  tables: number
+  companies: number
+  trend: { dates: string[]; logins: number[]; ops: number[] }
+  recentOps: { id: number; user: string; action: string; target: string; time: string }[]
+}
+
+/** 云盘概览（当前用户） */
+export interface CloudOverview {
+  usedStorage: number
+  fileCount: number
+  folderCount: number
+  shareCount: number
+  trend: { dates: string[]; uploads: number[]; files: number[] }
+  recentFiles: { id: number; name: string; fileType: string; fileExt: string; size: number; time: string }[]
+  activities: { action: 'uploaded' | 'createdFolder' | 'createdShare'; target: string; time: string }[]
+}
+
+export async function getSystemOverview(): Promise<SystemOverview> {
+  const res = await api.get<ApiResponse<SystemOverview>>('/dashboard/system')
+  return res.data.data
+}
+
+export async function getCloudOverview(): Promise<CloudOverview> {
+  const res = await api.get<ApiResponse<CloudOverview>>('/dashboard/cloud')
+  return res.data.data
+}

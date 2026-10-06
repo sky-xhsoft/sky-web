@@ -466,6 +466,13 @@ export async function refreshMetadataCache(): Promise<{ message: string }> {
 }
 
 /**
+ * 刷新数据字典缓存
+ */
+export async function refreshDictCache(): Promise<void> {
+  await api.post('/dicts/refresh')
+}
+
+/**
  * 获取表的所有动作定义（动态按钮，如 list_button）
  */
 export async function fetchTableActions(tableId: number): Promise<SysAction[]> {

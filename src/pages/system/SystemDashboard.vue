@@ -6,6 +6,10 @@
           <template #icon><IconRefresh /></template>
           {{ t('layout.refresh') }}
         </V2Button>
+        <V2Button type="secondary" :loading="refreshingCache" @click="refreshCaches">
+          <template #icon><IconRefresh /></template>
+          {{ zh ? '刷新元数据缓存' : 'Refresh metadata cache' }}
+        </V2Button>
         <V2Button type="gradient" @click="goPermission">
           <template #icon><IconSafe /></template>
           {{ t('sysDash.managePermission') }}
@@ -106,17 +110,50 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import { V2PageHeader, V2Card, V2Button, V2Tag } from '@/components/ui'
 import { useNavigationStore } from '@/stores/navigation'
+import { Message } from '@arco-design/web-vue'
+import { getSystemOverview, type SystemOverview } from '@/api/dashboard'
+import { refreshMetadataCache, refreshDictCache } from '@/modules/metadata/api/metadata'
+import { useMetadataStore } from '@/modules/metadata/stores/useMetadataStore'
+import { formatDateTime } from '@/utils/format'
 
 const { t, locale } = useI18n()
 const navigationStore = useNavigationStore()
 
-// ===== 模拟数据 =====
+const zh = computed(() => locale.value === 'zh-CN')
+
+// ===== 概览数据（后端 /dashboard/system，按当前公司统计） =====
+const overview = ref<SystemOverview | null>(null)
+
+async function loadOverview() {
+  try {
+    overview.value = await getSystemOverview()
+  } catch (e: any) {
+    Message.error(e?.message || (zh.value ? '加载概览失败' : 'Failed to load overview'))
+  }
+}
+
 const statCards = computed(() => [
-  { label: t('sysDash.stats.users'), value: 128, trend: t('sysDash.stats.usersDesc'), icon: IconUser },
-  { label: t('sysDash.stats.groups'), value: 16, trend: t('sysDash.stats.groupsDesc'), icon: IconSafe },
-  { label: t('sysDash.stats.tables'), value: 54, trend: t('sysDash.stats.tablesDesc'), icon: IconDesktop },
-  { label: t('sysDash.stats.companies'), value: 3, trend: t('sysDash.stats.companiesDesc'), icon: IconIdcard },
+  { label: t('sysDash.stats.users'), value: overview.value?.users ?? '-', trend: t('sysDash.stats.usersDesc'), icon: IconUser },
+  { label: t('sysDash.stats.groups'), value: overview.value?.groups ?? '-', trend: t('sysDash.stats.groupsDesc'), icon: IconSafe },
+  { label: t('sysDash.stats.tables'), value: overview.value?.tables ?? '-', trend: t('sysDash.stats.tablesDesc'), icon: IconDesktop },
+  { label: t('sysDash.stats.companies'), value: overview.value?.companies ?? '-', trend: t('sysDash.stats.companiesDesc'), icon: IconIdcard },
 ])
+
+// 刷新后端元数据与字典缓存，并清空前端已缓存的表配置（直接改库后需要）
+const metadataStore = useMetadataStore()
+const refreshingCache = ref(false)
+async function refreshCaches() {
+  refreshingCache.value = true
+  try {
+    await Promise.all([refreshMetadataCache(), refreshDictCache()])
+    metadataStore.clearCache()
+    Message.success(zh.value ? '元数据与字典缓存已刷新' : 'Metadata and dictionary caches refreshed')
+  } catch (e: any) {
+    Message.error(e?.message || (zh.value ? '刷新缓存失败' : 'Failed to refresh caches'))
+  } finally {
+    refreshingCache.value = false
+  }
+}
 
 const quickActions = computed(() => [
   { title: t('sysDash.quick.users'), desc: t('sysDash.quick.usersDesc'), icon: IconUser, component: 'UserProfile' },
@@ -132,12 +169,19 @@ const modules = computed(() => [
   { title: t('sysDash.modules.company'), desc: t('sysDash.modules.companyDesc'), icon: IconIdcard, features: [t('sysDash.feat.tenant'), t('sysDash.feat.credential')], component: 'CompanyConfig' },
 ])
 
-const recentOps = [
-  { id: 1, user: '管理员', action: t('sysDash.op.createUser'), target: '运营专员-小李', time: '2026-09-06 14:20' },
-  { id: 2, user: '管理员', action: t('sysDash.op.updateGroup'), target: '直播运营组', time: '2026-09-06 10:00' },
-  { id: 3, user: '张晓', action: t('sysDash.op.updatePermission'), target: '仪表盘查看权限', time: '2026-09-05 17:40' },
-  { id: 4, user: '系统', action: t('sysDash.op.updateDict'), target: 'room_type', time: '2026-09-05 09:10' },
-] as { id: number; user: string; action: string; target: string; time: string }[]
+// 审计动作代码 → 显示文字
+const actionLabels: Record<string, [string, string]> = {
+  create: ['新增', 'Create'],
+  update: ['修改', 'Update'],
+  delete: ['删除', 'Delete'],
+  execute: ['执行动作', 'Run action'],
+  start_process: ['发起流程', 'Start process'],
+  complete_task: ['完成任务', 'Complete task'],
+}
+const recentOps = computed(() => (overview.value?.recentOps || []).map(op => {
+  const label = actionLabels[op.action]
+  return { ...op, action: label ? (zh.value ? label[0] : label[1]) : op.action, time: formatDateTime(op.time) }
+}))
 
 const opColumns = computed(() => [
   { title: t('sysDash.opTable.user'), dataIndex: 'user', slotName: 'user', width: 90 },
@@ -155,11 +199,11 @@ const notices = computed(() => [
 // ===== 趋势图 =====
 const chartEl = ref<HTMLDivElement | null>(null)
 let chart: echarts.ECharts | null = null
-const trend = {
-  dates: ['09-01', '09-02', '09-03', '09-04', '09-05', '09-06', '09-07'],
-  logins: [86, 92, 78, 105, 118, 96, 132],
-  ops: [320, 380, 350, 420, 500, 460, 560],
-}
+const trend = computed(() => ({
+  dates: (overview.value?.trend.dates || []).map(d => d.slice(5)),
+  logins: overview.value?.trend.logins || [],
+  ops: overview.value?.trend.ops || [],
+}))
 
 function initChart() {
   if (!chartEl.value) return
@@ -173,24 +217,27 @@ function initChart() {
     grid: { left: 40, right: 40, top: 30, bottom: 25 },
     tooltip: { trigger: 'axis' },
     legend: { data: [t('sysDash.trend.logins'), t('sysDash.trend.ops')], top: 0, textStyle: { fontSize: 11, color: ts } },
-    xAxis: { type: 'category', data: trend.dates, axisLine: { lineStyle: { color: bd } }, axisLabel: { color: ts } },
+    xAxis: { type: 'category', data: trend.value.dates, axisLine: { lineStyle: { color: bd } }, axisLabel: { color: ts } },
     yAxis: [
       { type: 'value', splitLine: { lineStyle: { color: bdl } }, axisLabel: { color: ts } },
       { type: 'value', splitLine: { show: false }, axisLabel: { color: ts } },
     ],
     series: [
-      { name: t('sysDash.trend.ops'), type: 'bar', data: trend.ops, itemStyle: { color: blue, borderRadius: [4, 4, 0, 0] }, barWidth: 12 },
-      { name: t('sysDash.trend.logins'), type: 'line', yAxisIndex: 1, smooth: true, data: trend.logins, lineStyle: { color: green }, itemStyle: { color: green } },
+      { name: t('sysDash.trend.ops'), type: 'bar', data: trend.value.ops, itemStyle: { color: blue, borderRadius: [4, 4, 0, 0] }, barWidth: 12 },
+      { name: t('sysDash.trend.logins'), type: 'line', yAxisIndex: 1, smooth: true, data: trend.value.logins, lineStyle: { color: green }, itemStyle: { color: green } },
     ],
   })
 }
 
 function handleResize() { chart?.resize() }
-function refresh() { nextTick(() => initChart()) }
+async function refresh() {
+  await loadOverview()
+  nextTick(() => initChart())
+}
 function navigateTo(component: string, title: string) { navigationStore.navigateTo(component, title, {}) }
 function goPermission() { navigationStore.navigateTo('PermissionManagement', t('layout.permissionManagement'), {}) }
 
-onMounted(() => { nextTick(() => initChart()) })
+onMounted(() => { refresh() })
 onUnmounted(() => { window.removeEventListener('resize', handleResize); chart?.dispose(); chart = null })
 watch(locale, () => nextTick(() => initChart()))
 </script>

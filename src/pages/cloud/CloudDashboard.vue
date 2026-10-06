@@ -86,7 +86,7 @@
       <V2Card class="activity-card">
         <div class="card-section-title">{{ t('cloudDash.latestActivity') }}</div>
         <div class="activity-list">
-          <div v-for="item in activities" :key="item.time" class="activity-item">
+          <div v-for="(item, idx) in activities" :key="idx" class="activity-item">
             <IconCloud class="activity-item__icon" />
             <div class="activity-item__body">
               <div class="activity-item__text">
@@ -112,17 +112,32 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import { V2PageHeader, V2Card, V2Button, V2Tag } from '@/components/ui'
 import { useNavigationStore } from '@/stores/navigation'
-import { formatFileSize } from '@/utils/format'
+import { formatFileSize, formatRelativeTime } from '@/utils/format'
+import { Message } from '@arco-design/web-vue'
+import { getCloudOverview, type CloudOverview } from '@/api/dashboard'
+import { useAuthStore } from '@/stores/auth'
 
 const { t, locale } = useI18n()
 const navigationStore = useNavigationStore()
 
-// ===== 模拟数据 =====
+const authStore = useAuthStore()
+
+// ===== 概览数据（后端 /dashboard/cloud，当前用户自己的网盘） =====
+const overview = ref<CloudOverview | null>(null)
+
+async function loadOverview() {
+  try {
+    overview.value = await getCloudOverview()
+  } catch (e: any) {
+    Message.error(e?.message || (locale.value === 'zh-CN' ? '加载概览失败' : 'Failed to load overview'))
+  }
+}
+
 const statCards = computed(() => [
-  { label: t('cloudDash.stats.usedStorage'), value: '128.5 GB', trend: t('cloudDash.stats.usedStorageDesc'), icon: IconStorage },
-  { label: t('cloudDash.stats.fileCount'), value: 1864, trend: t('cloudDash.stats.fileCountDesc'), icon: IconFile },
-  { label: t('cloudDash.stats.folderCount'), value: 42, trend: t('cloudDash.stats.folderCountDesc'), icon: IconFolder },
-  { label: t('cloudDash.stats.shareCount'), value: 18, trend: t('cloudDash.stats.shareCountDesc'), icon: IconShareAlt },
+  { label: t('cloudDash.stats.usedStorage'), value: overview.value ? formatFileSize(overview.value.usedStorage, 1) : '-', trend: t('cloudDash.stats.usedStorageDesc'), icon: IconStorage },
+  { label: t('cloudDash.stats.fileCount'), value: overview.value?.fileCount ?? '-', trend: t('cloudDash.stats.fileCountDesc'), icon: IconFile },
+  { label: t('cloudDash.stats.folderCount'), value: overview.value?.folderCount ?? '-', trend: t('cloudDash.stats.folderCountDesc'), icon: IconFolder },
+  { label: t('cloudDash.stats.shareCount'), value: overview.value?.shareCount ?? '-', trend: t('cloudDash.stats.shareCountDesc'), icon: IconShareAlt },
 ])
 
 const quickSteps = computed(() => [
@@ -139,12 +154,14 @@ const modules = computed(() => [
   { title: t('cloudDash.modules.recycle'), desc: t('cloudDash.modules.recycleDesc'), icon: IconSafe, features: [t('cloudDash.feat.restore'), t('cloudDash.feat.clear')] },
 ])
 
-const recentFiles = [
-  { id: 1, name: '产品白皮书-v3.pdf', type: 'pdf', size: 8.4 * 1024 * 1024, time: '2026-09-06 14:00' },
-  { id: 2, name: '发布会切片合集.mp4', type: 'video', size: 256 * 1024 * 1024, time: '2026-09-06 09:30' },
-  { id: 3, name: '宣传海报.jpg', type: 'image', size: 3.2 * 1024 * 1024, time: '2026-09-05 17:20' },
-  { id: 4, name: '直播录制-产品周会.mp4', type: 'video', size: 1800 * 1024 * 1024, time: '2026-09-05 10:10' },
-] as { id: number; name: string; type: string; size: number; time: string }[]
+const recentFiles = computed(() => (overview.value?.recentFiles || []).map(f => ({
+  id: f.id,
+  name: f.name,
+  // PDF 单独标记，其余按文件类型（video / image / ...）
+  type: (f.fileExt || '').toLowerCase() === 'pdf' ? 'pdf' : f.fileType,
+  size: f.size,
+  time: f.time,
+})))
 
 const fileTypeMap = computed(() => ({
   pdf: { type: 'warning' as const, label: 'PDF' },
@@ -158,21 +175,24 @@ const fileColumns = computed(() => [
   { title: t('cloudDash.fileTable.size'), dataIndex: 'size', slotName: 'size', width: 110 },
 ])
 
-const activities = computed(() => [
-  { time: t('cloudDash.activity.10m'), user: '李工', action: t('cloudDash.activity.uploaded'), target: '产品白皮书-v3.pdf' },
-  { time: t('cloudDash.activity.1h'), user: '张晓', action: t('cloudDash.activity.createdShare'), target: '发布会切片合集' },
-  { time: t('cloudDash.activity.2h'), user: '系统', action: t('cloudDash.activity.autoRecording'), target: '产品周会 · 第 38 期' },
-  { time: t('cloudDash.activity.yesterday'), user: '王产品', action: t('cloudDash.activity.createdFolder'), target: '2026-09-市场素材' },
-])
+const activities = computed(() => {
+  const me = authStore.user?.trueName || authStore.user?.username || ''
+  return (overview.value?.activities || []).map(a => ({
+    user: me,
+    action: t(`cloudDash.activity.${a.action}`),
+    target: a.target,
+    time: formatRelativeTime(a.time),
+  }))
+})
 
 // ===== 趋势图 =====
 const chartEl = ref<HTMLDivElement | null>(null)
 let chart: echarts.ECharts | null = null
-const trend = {
-  dates: ['09-01', '09-02', '09-03', '09-04', '09-05', '09-06', '09-07'],
-  uploads: [12, 15, 14, 18, 22, 17, 26],
-  files: [103, 121, 98, 145, 162, 138, 190],
-}
+const trend = computed(() => ({
+  dates: (overview.value?.trend.dates || []).map(d => d.slice(5)),
+  uploads: overview.value?.trend.uploads || [],
+  files: overview.value?.trend.files || [],
+}))
 
 function initChart() {
   if (!chartEl.value) return
@@ -189,25 +209,28 @@ function initChart() {
     grid: { left: 40, right: 20, top: 30, bottom: 25 },
     tooltip: { trigger: 'axis' },
     legend: { data: [t('cloudDash.trend.uploads'), t('cloudDash.trend.files')], top: 0, textStyle: { fontSize: 11, color: ts } },
-    xAxis: { type: 'category', data: trend.dates, axisLine: { lineStyle: { color: bd } }, axisLabel: { color: ts } },
+    xAxis: { type: 'category', data: trend.value.dates, axisLine: { lineStyle: { color: bd } }, axisLabel: { color: ts } },
     yAxis: [
       { type: 'value', splitLine: { lineStyle: { color: bdl } }, axisLabel: { color: ts } },
       { type: 'value', splitLine: { show: false }, axisLabel: { color: ts } },
     ],
     series: [
-      { name: t('cloudDash.trend.uploads'), type: 'bar', data: trend.uploads, itemStyle: { color: blue, borderRadius: [4, 4, 0, 0] }, barWidth: 12 },
-      { name: t('cloudDash.trend.files'), type: 'line', yAxisIndex: 1, smooth: true, data: trend.files, lineStyle: { color: green }, itemStyle: { color: green } },
+      { name: t('cloudDash.trend.uploads'), type: 'bar', data: trend.value.uploads, itemStyle: { color: blue, borderRadius: [4, 4, 0, 0] }, barWidth: 12 },
+      { name: t('cloudDash.trend.files'), type: 'line', yAxisIndex: 1, smooth: true, data: trend.value.files, lineStyle: { color: green }, itemStyle: { color: green } },
     ],
   })
 }
 
 function handleResize() { chart?.resize() }
 
-function refresh() { nextTick(() => initChart()) }
+async function refresh() {
+  await loadOverview()
+  nextTick(() => initChart())
+}
 function goCloud() { navigationStore.navigateTo('Cloud', t('layout.cloud'), {}) }
 function formatSize(n: number) { return formatFileSize(n, 1) }
 
-onMounted(() => { nextTick(() => initChart()) })
+onMounted(() => { refresh() })
 onUnmounted(() => { window.removeEventListener('resize', handleResize); chart?.dispose(); chart = null })
 watch(locale, () => nextTick(() => initChart()))
 </script>
