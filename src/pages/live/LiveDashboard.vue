@@ -103,7 +103,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import * as echarts from 'echarts'
+import * as echarts from '@/utils/echarts'
 import {
   IconRefresh, IconPlus, IconLink, IconVideoCamera, IconLiveBroadcast,
   IconCloud, IconCamera, IconHistory, IconPlayCircle, IconFile,

@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { computed, onMounted, ref, watch, shallowRef, nextTick, h, onBeforeUnmount, type Component } from 'vue'
+import { computed, onMounted, ref, watch, shallowRef, nextTick, h, onBeforeUnmount, defineAsyncComponent, type Component } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'
@@ -15,39 +15,41 @@ import LayoutSidebar from './components/LayoutSidebar.vue'
 
 // 导入常用组件
 import HomeDashboard from '@/pages/common/HomeDashboard.vue'
-import Dashboard from '@/pages/common/Dashboard.vue'
-import Cloud from '@/pages/cloud/Cloud.vue'
-import CloudShareManager from '@/pages/cloud/CloudShareManager.vue'
-import SystemManagement from '@/pages/system/SystemManagement.vue'
-import SystemCenter from '@/pages/system/SystemCenter.vue'
-import CloudDashboard from '@/pages/cloud/CloudDashboard.vue'
-import SystemDashboard from '@/pages/system/SystemDashboard.vue'
-import LiveDashboard from '@/pages/live/LiveDashboard.vue'
-import TableView from '@/pages/system/TableView.vue'
-import LiveDomain from '@/pages/live/LiveDomain.vue'
-import PushDomain from '@/pages/live/PushDomain.vue'
-import PlayDomain from '@/pages/live/PlayDomain.vue'
-import LiveDomainDetail from '@/pages/live/LiveDomainDetail.vue'
-import LiveStream from '@/pages/live/LiveStream.vue'
-import LivePreview from '@/pages/live/LivePreview.vue'
-import PullStreamTask from '@/pages/live/PullStreamTask.vue'
-import PullStreamTaskForm from '@/pages/live/PullStreamTaskForm.vue'
-import LiveHighlightClips from '@/pages/live/LiveHighlightClips.vue'
-import LiveHighlightClipPreview from '@/pages/live/LiveHighlightClipPreview.vue'
-import LiveRecordings from '@/pages/live/LiveRecordings.vue'
-import LiveRecordingPreview from '@/pages/live/LiveRecordingPreview.vue'
-import LiveRoomList from '@/pages/live/LiveRoomList.vue'
-import LiveRoomForm from '@/pages/live/LiveRoomForm.vue'
-import LiveRoomDetail from '@/pages/live/LiveRoomDetail.vue'
-import LiveTranslation from '@/pages/live/LiveTranslation.vue'
-import UserProfile from '@/pages/system/UserProfile.vue'
-import CompanyConfig from '@/pages/system/CompanyConfig.vue'
-import UserCenterPage from '@/pages/system/UserCenterPage.vue'
-import PermissionManagement from '@/pages/system/PermissionManagement.vue'
-import BatchEditPage from '../modules/metadata/components/DynamicTable/BatchEditPage.vue'
 // 元数据视图静态导入：避免异步加载期间旧组件被挂载上新标签页的参数（刷新后 tableId=NaN）
 import MetadataListView from '../modules/metadata/views/MetadataListView.vue'
 import MetadataFormView from '../modules/metadata/views/MetadataFormView.vue'
+
+// 页面按需加载：首次打开时才下载对应代码（异步包装组件本身同步可用，不影响标签页切换）
+const Dashboard = defineAsyncComponent(() => import('@/pages/common/Dashboard.vue'))
+const Cloud = defineAsyncComponent(() => import('@/pages/cloud/Cloud.vue'))
+const CloudShareManager = defineAsyncComponent(() => import('@/pages/cloud/CloudShareManager.vue'))
+const SystemManagement = defineAsyncComponent(() => import('@/pages/system/SystemManagement.vue'))
+const SystemCenter = defineAsyncComponent(() => import('@/pages/system/SystemCenter.vue'))
+const CloudDashboard = defineAsyncComponent(() => import('@/pages/cloud/CloudDashboard.vue'))
+const SystemDashboard = defineAsyncComponent(() => import('@/pages/system/SystemDashboard.vue'))
+const LiveDashboard = defineAsyncComponent(() => import('@/pages/live/LiveDashboard.vue'))
+const TableView = defineAsyncComponent(() => import('@/pages/system/TableView.vue'))
+const LiveDomain = defineAsyncComponent(() => import('@/pages/live/LiveDomain.vue'))
+const PushDomain = defineAsyncComponent(() => import('@/pages/live/PushDomain.vue'))
+const PlayDomain = defineAsyncComponent(() => import('@/pages/live/PlayDomain.vue'))
+const LiveDomainDetail = defineAsyncComponent(() => import('@/pages/live/LiveDomainDetail.vue'))
+const LiveStream = defineAsyncComponent(() => import('@/pages/live/LiveStream.vue'))
+const LivePreview = defineAsyncComponent(() => import('@/pages/live/LivePreview.vue'))
+const PullStreamTask = defineAsyncComponent(() => import('@/pages/live/PullStreamTask.vue'))
+const PullStreamTaskForm = defineAsyncComponent(() => import('@/pages/live/PullStreamTaskForm.vue'))
+const LiveHighlightClips = defineAsyncComponent(() => import('@/pages/live/LiveHighlightClips.vue'))
+const LiveHighlightClipPreview = defineAsyncComponent(() => import('@/pages/live/LiveHighlightClipPreview.vue'))
+const LiveRecordings = defineAsyncComponent(() => import('@/pages/live/LiveRecordings.vue'))
+const LiveRecordingPreview = defineAsyncComponent(() => import('@/pages/live/LiveRecordingPreview.vue'))
+const LiveRoomList = defineAsyncComponent(() => import('@/pages/live/LiveRoomList.vue'))
+const LiveRoomForm = defineAsyncComponent(() => import('@/pages/live/LiveRoomForm.vue'))
+const LiveRoomDetail = defineAsyncComponent(() => import('@/pages/live/LiveRoomDetail.vue'))
+const LiveTranslation = defineAsyncComponent(() => import('@/pages/live/LiveTranslation.vue'))
+const UserProfile = defineAsyncComponent(() => import('@/pages/system/UserProfile.vue'))
+const CompanyConfig = defineAsyncComponent(() => import('@/pages/system/CompanyConfig.vue'))
+const UserCenterPage = defineAsyncComponent(() => import('@/pages/system/UserCenterPage.vue'))
+const PermissionManagement = defineAsyncComponent(() => import('@/pages/system/PermissionManagement.vue'))
+const BatchEditPage = defineAsyncComponent(() => import('../modules/metadata/components/DynamicTable/BatchEditPage.vue'))
 
 const router = useRouter()
 const route = useRoute()

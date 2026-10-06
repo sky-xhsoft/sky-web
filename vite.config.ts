@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             'vendor-vue': ['vue', 'vue-router', 'pinia'],
             'vendor-arco': ['@arco-design/web-vue'],
-            'vendor-arco-icons': ['@arco-design/web-vue/es/icon'],
+            // 图标不强制单独成块：首屏只带全局注册的少量图标，动态按名称渲染图标的 ButtonField 懒加载完整图标集
             'vendor-echarts': ['echarts'],
             'vendor-editor': ['@wangeditor/editor'],
             'vendor-utils': ['lodash-es', 'axios', 'dompurify', 'marked', 'fuse.js'],

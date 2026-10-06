@@ -92,7 +92,11 @@ onMounted(async () => {
 
   try {
     // 动态导入 WangEditor（按需加载）
-    const { createEditor, createToolbar } = await import('@wangeditor/editor')
+    // 编辑器及其样式随富文本字段按需加载，不进入首屏
+    const [{ createEditor, createToolbar }] = await Promise.all([
+      import('@wangeditor/editor'),
+      import('@wangeditor/editor/dist/css/style.css'),
+    ])
 
     if (!editorRef.value || !toolbarRef.value) return
 

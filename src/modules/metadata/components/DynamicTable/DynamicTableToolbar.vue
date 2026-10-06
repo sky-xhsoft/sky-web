@@ -74,7 +74,7 @@
           size="small"
           @click="$emit('columnSetting')"
         >
-          <template #icon><icon-setting /></template>
+          <template #icon><icon-settings /></template>
           列设�?
         </a-button>
 

@@ -162,7 +162,7 @@ import {
 } from '@/api/live'
 import type { PullStreamTaskInfo, DescribePullTransformPushInfoListResponse } from '@/api/live'
 import { V2PageHeader, V2Card, V2Button, V2Tag } from '@/components/ui'
-import * as echarts from 'echarts'
+import * as echarts from '@/utils/echarts'
 
 const authStore = useAuthStore()
 const navigationStore = useNavigationStore()
