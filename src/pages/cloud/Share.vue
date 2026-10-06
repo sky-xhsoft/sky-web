@@ -17,7 +17,7 @@
         <div class="cover-gradient"></div>
       </div>
 
-      <div v-if="!notFound" class="content-section" :class="{ 'verified-mode': verified }">
+      <div v-if="!notFound && !restricted" class="content-section" :class="{ 'verified-mode': verified }">
         <!-- 密码验证表单 -->
         <div v-if="!verified" id="passwordPage">
           <div class="resource-card" v-if="shareInfo">
@@ -193,6 +193,19 @@
           <p>{{ t('share.notFound.desc') }}</p>
         </div>
       </div>
+      <!-- 私密分享：未登录或非同公司成员 -->
+      <div v-if="restricted" id="restrictedPage" class="content-section">
+        <div class="error-state">
+          <div class="error-icon">
+            <icon-exclamation-circle :size="80" />
+          </div>
+          <h2>{{ currentLang === 'zh' ? '私密分享' : 'Private share' }}</h2>
+          <p>{{ restrictedMessage }}</p>
+          <a-button v-if="restricted === 'login'" type="primary" @click="goLogin">
+            {{ currentLang === 'zh' ? '登录后访问' : 'Sign in to view' }}
+          </a-button>
+        </div>
+      </div>
     </div>
 
     <!-- 文件预览对话框 -->
@@ -265,7 +278,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'
 import {
@@ -282,11 +295,14 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import { getShareInfo, accessShare, downloadShareFile, getShareFolderContent } from '@/modules/cloud/api/share'
 import type { ShareInfo } from '@/modules/cloud/types'
+import { useAuthStore } from '@/stores/auth'
 import { formatFileSize, formatDate } from '@/utils/format'
 import { getFileType, canPreview, hasAccessUrl, getAccessUrl, getFilePreviewUrl, getFileDownloadUrl } from '@/composables/useShareFileUtils'
 
 const { t, locale } = useI18n()
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 const shareCode = ref(route.params.code as string)
 
 // 语言切换
@@ -303,6 +319,9 @@ const accessToken = ref('')
 const loadingFiles = ref(false)
 const verified = ref(false)
 const notFound = ref(false)
+// 私密分享受限：login = 需要登录，deny = 已登录但不是分享者所在公司的成员
+const restricted = ref<'' | 'login' | 'deny'>('')
+const restrictedMessage = ref('')
 const error = ref('')
 const showFolderContent = ref(false)
 
@@ -380,8 +399,10 @@ async function loadShareInfo() {
     const info = await getShareInfo(shareCode.value)
     shareInfo.value = info
 
-    if (info.share.shareType === 'public') {
+    // 公开分享直接可看；私密分享能取到信息即说明已通过同公司校验，并已签发访问凭证
+    if (info.share.shareType === 'public' || info.share.shareType === 'private') {
       verified.value = true
+      accessToken.value = info.accessToken || ''
       if (info.resourceType === 'folder') {
         showFolderContent.value = true
         folderPath.value = [{ id: undefined, name: info.folder?.name || (currentLang.value === 'zh' ? '根目录' : 'Root') }]
@@ -393,6 +414,11 @@ async function loadShareInfo() {
     console.error('获取分享信息失败:', e)
     // 判断是否是分享不存在或已失效的错误（无论状态码）
     const errorMessage = e?.message || ''
+    if (e?.response?.status === 403) {
+      restricted.value = authStore.isAuthenticated ? 'deny' : 'login'
+      restrictedMessage.value = errorMessage
+      return
+    }
     if (e?.response?.status === 404 || errorMessage.includes('分享不存在') || errorMessage.includes('已失效') || errorMessage.includes('30001')) {
       notFound.value = true
     } else {
@@ -404,11 +430,23 @@ async function loadShareInfo() {
 }
 
 /**
+ * 跳转登录，登录后回到本分享页
+ */
+function goLogin() {
+  router.push({ path: '/login', query: { redirect: route.fullPath } })
+}
+
+/**
  * 访问凭证缺失或过期（后端返回 403）：回到密码输入界面重新验证
  */
 function handleAccessExpired(e: any): boolean {
   if (e?.status !== 403 && e?.response?.status !== 403) return false
   accessToken.value = ''
+  // 私密分享无需密码：重新获取分享信息即可重新签发凭证
+  if (shareInfo.value?.share.shareType === 'private') {
+    loadShareInfo()
+    return true
+  }
   verified.value = false
   showFolderContent.value = false
   error.value = e?.response?.data?.message || e?.message || t('share.password.error')
