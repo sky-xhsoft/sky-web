@@ -159,7 +159,7 @@ withDefaults(defineProps<Props>(), {
   listActions: () => []
 })
 
-const emit = defineEmits<{
+defineEmits<{
   query: []
   reset: []
   create: []

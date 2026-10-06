@@ -56,7 +56,6 @@ export function useDictOptions({
   loadOnMount = true,
 }: UseDictOptionsOptions) {
   const dictStore = useDictStore()
-  const metadataStore = useMetadataStore()
   const loading = ref(false)
 
   // 获取字典ID

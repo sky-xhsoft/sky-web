@@ -80,7 +80,6 @@ import { Message } from '@arco-design/web-vue'
 import {
   IconUser,
   IconDelete,
-  IconSafe,
 } from '@arco-design/web-vue/es/icon'
 import { useI18n } from 'vue-i18n'
 import { V2Modal, V2Button } from '@/components/ui'

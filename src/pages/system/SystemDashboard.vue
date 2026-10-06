@@ -104,9 +104,13 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as echarts from '@/utils/echarts'
 import {
-  IconRefresh, IconSafe, IconUser, IconIdcard,
-  IconSettings, IconApps, IconBook, IconCommand, IconDesktop,
-  IconInfoCircle, IconFile,
+  IconRefresh,
+  IconSafe,
+  IconUser,
+  IconIdcard,
+  IconApps,
+  IconDesktop,
+  IconInfoCircle,
 } from '@arco-design/web-vue/es/icon'
 import { V2PageHeader, V2Card, V2Button, V2Tag } from '@/components/ui'
 import { useNavigationStore } from '@/stores/navigation'

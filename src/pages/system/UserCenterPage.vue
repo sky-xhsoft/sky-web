@@ -60,7 +60,6 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
-import { V2PageHeader } from '../../components/ui'
 import UserProfile from '../../pages/system/UserProfile.vue'
 import CompanyConfig from '../../pages/system/CompanyConfig.vue'
 

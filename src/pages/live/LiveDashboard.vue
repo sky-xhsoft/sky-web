@@ -129,11 +129,6 @@ const mockStats = () => ({
   todayLiveSessions: 12,
   recordingStorage: 137710093112 + 22222222222,
 })
-const mockTrend = () => ({
-  dates: ['09-01', '09-02', '09-03', '09-04', '09-05', '09-06', '09-07'],
-  liveSessions: [12, 15, 14, 18, 22, 17, 26],
-  recordings: [3200, 4100, 3800, 5200, 6100, 4800, 5600],
-})
 const mockRecentRooms: ApiRecentRoom[] = [
   { id: 101, roomName: '2026 秋季新品发布会', status: 'living', viewerCount: 1286, startTime: '2026-09-06 14:00' as any },
   { id: 102, roomName: '前端技术分享会', status: 'living', viewerCount: 862, startTime: '2026-09-06 15:30' as any },

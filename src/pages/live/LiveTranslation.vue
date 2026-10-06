@@ -414,7 +414,7 @@ const loadRoomProps = async () => {
         translationForm.outputLang = props.subtitle.targetLang || 'en'
       }
     }
-  } catch (e) { /* 忽略 */ }
+  } catch { /* 忽略 */ }
 }
 
 const fetchRoomInfo = async () => {
@@ -435,7 +435,7 @@ const saveConfig = async () => {
     if (roomInfo.props) {
       try {
         props = typeof roomInfo.props === 'string' ? JSON.parse(roomInfo.props) : roomInfo.props
-      } catch (e) { /* 忽略 */ }
+      } catch { /* 忽略 */ }
     }
     props.translation = {
       title: translationForm.title,

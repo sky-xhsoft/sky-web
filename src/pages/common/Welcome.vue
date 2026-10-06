@@ -31,9 +31,6 @@ const goToRegister = () => {
   router.push('/company-register')
 }
 
-const selectPlatform = (platform: string) => {
-  selectedPlatform = platform
-}
 </script>
 
 <template>

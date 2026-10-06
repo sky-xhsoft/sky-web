@@ -147,7 +147,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'
 import {
@@ -165,7 +164,6 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import { useNavigationStore } from '../../stores/navigation'
 
-const router = useRouter()
 const navigationStore = useNavigationStore()
 const { t, locale } = useI18n()
 

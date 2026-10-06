@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { IconStorage, IconFile, IconFolder, IconDashboard } from '@arco-design/web-vue/es/icon'
+import { IconFile, IconFolder, IconDashboard } from '@arco-design/web-vue/es/icon'
 import type { QuotaInfo } from '@/modules/cloud/types'
 import { formatSize } from '@/modules/cloud/utils/format'
 import { useI18n } from 'vue-i18n'

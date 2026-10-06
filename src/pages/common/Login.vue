@@ -2,7 +2,7 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
-import { IconVideoCamera, IconCloud, IconHome } from '@arco-design/web-vue/es/icon'
+import { IconVideoCamera } from '@arco-design/web-vue/es/icon'
 import { useAuthStore } from '../../stores/auth'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '../../components/LanguageSwitcher.vue'
@@ -31,7 +31,7 @@ const platformSubtitle = computed(() =>
     : t('welcome.brandSubtitle')
 )
 
-const handleSubmit = async (data: any) => {
+const handleSubmit = async (_data: any) => {
   submitting.value = true
   try {
     await authStore.login({

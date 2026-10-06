@@ -202,75 +202,6 @@ const pagination = reactive({
   showPageSize: true
 })
 
-// 行选择配置
-const rowSelection = reactive({
-  type: 'checkbox',
-  showCheckedAll: true,
-  selectable: (record: any) => record.status !== 'live'
-})
-
-// 处理选择变化
-const handleSelectionChange = (rowKeys: any[]) => {
-  // 根据选中的行 keys 找到对应的记录
-  selectedRows.value = tableData.value.filter(record => rowKeys.includes(record.id))
-}
-
-// 处理全选
-const handleSelectAll = (checked: boolean) => {
-  if (checked) {
-    // 全选时，只选中非直播状态的记录
-    selectedRows.value = tableData.value.filter(record => record.status !== 'live')
-  } else {
-    // 取消全选时，清空选中数据
-    selectedRows.value = []
-  }
-}
-
-const columns = [
-  {
-    title: t('liveRoomList.id'),
-    dataIndex: 'id',
-    width: 50
-  },
-  {
-    title: t('liveRoomList.liveRoom'),
-    slotName: 'roomInfo',
-    width: 180
-  },
-  {
-    title: t('liveRoomList.broadcastFormat'),
-    slotName: 'broadcastFormat',
-    width: 80
-  },
-  {
-    title: t('liveRoomList.liveStatus'),
-    slotName: 'status',
-    width: 80
-  },
-  {
-    title: t('liveRoomList.startTime'),
-    slotName: 'startTime',
-    width: 180
-  },
-  {
-    title: t('liveRoomList.operations'),
-    slotName: 'actions',
-    width: 280,
-    fixed: 'right'
-  }
-]
-
-const getRoomTypeText = (type: string) => {
-  const map: Record<string, string> = {
-    video: t('liveRoomList.roomTypes.video'),
-    image: t('liveRoomList.roomTypes.image'),
-    vr: t('liveRoomList.roomTypes.vr'),
-    audio: t('liveRoomList.roomTypes.audio'),
-    graphic: t('liveRoomList.roomTypes.graphic')
-  }
-  return map[type] || type
-}
-
 const getBroadcastFormatText = (format: string) => {
   const map: Record<string, string> = {
     live: t('liveRoomList.broadcastFormats.live'),
@@ -428,68 +359,6 @@ const handleRecycle = (record: any) => {
   })
 }
 
-// 其他处理函数（保持不变）
-const handleShare = (record: any) => {
-  Message.info(t('liveRoomList.messages.share'))
-}
-
-const handleRecommend = (record: any) => {
-  Message.info(t('liveRoomList.messages.recommend'))
-}
-
-const handleTag = (record: any) => {
-  Message.info(t('liveRoomList.messages.tag'))
-}
-
-const handleDataAnalysis = (record: any) => {
-  Message.info(t('liveRoomList.messages.dataAnalysis'))
-}
-
-const handleOperationRecommend = (record: any) => {
-  Message.info(t('liveRoomList.messages.operationRecommend'))
-}
-
-const handleScreenInteraction = (record: any) => {
-  Message.info(t('liveRoomList.messages.screenInteraction'))
-}
-
-const handleDownloadPlayback = (record: any) => {
-  Message.info(t('liveRoomList.messages.downloadPlayback'))
-}
-
-const handleRefreshPassword = (record: any) => {
-  Modal.confirm({
-    title: t('liveRoomList.messages.refreshPassword.title'),
-    content: t('liveRoomList.messages.refreshPassword.content'),
-    onOk: async () => {
-      try {
-        const newPassword = Math.random().toString(36).slice(-8)
-        const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
-        if (!getResponse.data?.data) {
-          Message.error(t('liveRoomList.messages.fetchData'))
-          return
-        }
-        await api.put(`/data/LIVE_ROOM/${record.id}`, {
-          ...getResponse.data.data,
-          VIEWING_PASSWORD: newPassword
-        })
-        Message.success(t('liveRoomList.messages.refreshPassword.success', { password: newPassword }))
-        fetchData()
-      } catch (error: any) {
-        Message.error(error.message || t('liveRoomList.messages.refreshPassword.failed'))
-      }
-    }
-  })
-}
-
-const handleSetChannel = (record: any) => {
-  Message.info(t('liveRoomList.messages.setChannel'))
-}
-
-const handleAdminMonitor = (record: any) => {
-  Message.info(t('liveRoomList.messages.adminMonitor'))
-}
-
 const handlePullStreamTask = (record: any) => {
   navigationStore.navigateTo('PullStreamTask', t('liveRoomList.socialDistribution'), { roomId: record.id }, false)
 }
@@ -520,53 +389,6 @@ const handlePreview = async (record: any) => {
     console.error('预览失败:', error)
     Message.error(t('liveRoomList.messages.preview.failed'))
   }
-}
-
-const handleCopy = async (record: any) => {
-  try {
-    const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
-    if (!getResponse.data?.data) {
-      Message.error(t('liveRoomList.messages.fetchData'))
-      return
-    }
-    const originalData = getResponse.data.data
-    const copyData = {
-      ...originalData,
-      ID: undefined,
-      ROOM_NAME: `${originalData.ROOM_NAME} - ${t('common.copy')}`
-    }
-    await api.post('/data/LIVE_ROOM', copyData)
-    Message.success(t('liveRoomList.messages.copySuccess'))
-    fetchData()
-  } catch (error: any) {
-    console.error('复制失败:', error)
-    Message.error(error.message || t('liveRoomList.messages.copyFailed'))
-  }
-}
-
-const handleStartLive = async (record: any) => {
-  try {
-    const getResponse = await api.get(`/data/LIVE_ROOM/${record.id}`)
-    if (!getResponse.data?.data) {
-      Message.error(t('liveRoomList.messages.fetchData'))
-      return
-    }
-    const originalData = getResponse.data.data
-    await api.put(`/data/LIVE_ROOM/${record.id}`, {
-      ...originalData,
-      STATUS: 'live',
-      START_TIME: dayjs().format('YYYY-MM-DD HH:mm:ss')
-    })
-    Message.success(t('liveRoomList.messages.liveStarted'))
-    fetchData()
-  } catch (error: any) {
-    console.error('操作失败:', error)
-    Message.error(error.message || t('liveRoomList.messages.operationFailed'))
-  }
-}
-
-const handleBackToSite = () => {
-  Message.info(t('liveRoomList.messages.recycle'))
 }
 
 onMounted(() => {

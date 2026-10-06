@@ -114,7 +114,7 @@ const navigationStore = useNavigationStore()
 const {
   loading, filteredDomains, pagination, searchKeyword, handleSearch,
   handleEnable, handleForbid, handleDelete, getCnameStatusTooltip, copyToClipboard, formatDateTime,
-  addDialogVisible, submitting, currentStep, cnameStatusText, cnameStatusColor, cnameStatusClass, cnameRecords,
+  addDialogVisible, submitting, currentStep, cnameStatusText, cnameStatusClass, cnameRecords,
   addFormRef, addForm, addFormRules, showAddDialog, handleCancelAdd, handleAddDomain, handleFinishAdd, checkCnameStatus,
 } = useDomainList({ defaultType: 1 })
 

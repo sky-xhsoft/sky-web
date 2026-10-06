@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch, shallowRef, nextTick, h, onBeforeUnmou
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import { useI18n } from 'vue-i18n'
-import { IconMenuFold, IconMenuUnfold, IconClose, IconCloseCircle, IconMoon, IconSun, IconUser, IconExport } from '@arco-design/web-vue/es/icon'
+import { IconClose, IconCloseCircle, IconMoon, IconSun, IconExport } from '@arco-design/web-vue/es/icon'
 import { useMenuStore } from '../stores/menu'
 import { useThemeStore } from '../stores/theme'
 import { useAuthStore } from '../stores/auth'
@@ -254,10 +254,6 @@ const selectedKeys = ref<string[]>(['dashboard'])
 
 const rootMenus = computed(() => navItems.value)
 const selectedRootKey = ref<string | null>(null)
-const rootSelectedKeys = computed(() => {
-  if (selectedRootKey.value) return [selectedRootKey.value]
-  return rootMenus.value.length ? [rootMenus.value[0].key] : []
-})
 const sidebarItems = computed(() => {
   const currentRoot =
     rootMenus.value.find((item) => item.key === selectedRootKey.value) || rootMenus.value[0]
@@ -478,21 +474,6 @@ const onMenuClick = async (key: string) => {
   // 确保父菜单保持展开状态
   if (parentKey && !openKeys.value.includes(parentKey)) {
     openKeys.value = [...openKeys.value, parentKey]
-  }
-}
-
-const onRootClick = async (key: string) => {
-  // 如果切换了根菜单，重置展开状态
-  if (selectedRootKey.value !== key) {
-    selectedRootKey.value = key
-    openKeys.value = defaultOpenKeys.value
-  }
-  currentMenuKey.value = key
-  selectedKeys.value = [key]
-  const targetPath = keyPathMap.value.get(key)
-  if (targetPath) {
-    // 不使用路由跳转，而是动态加载组件
-    await loadComponent(targetPath)
   }
 }
 

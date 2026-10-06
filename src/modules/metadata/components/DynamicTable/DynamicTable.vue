@@ -453,7 +453,7 @@ async function loadListActions() {
   try {
     const all = await fetchTableActions(Number(props.tableId))
     listActions.value = (all || []).filter(a => (a.displayType || '').toLowerCase() === 'list_button')
-  } catch (e) {
+  } catch {
     listActions.value = []
   }
 }
@@ -466,7 +466,12 @@ async function handleListAction(action: SysAction) {
     const { data } = await api.post(`/actions/${action.id}/execute`, {})
     const res = data?.data || data
     const ok = data?.code === 200 || res?.success
-    Message.success(action.displayName || action.name + ' 执行成功')
+    const label = action.displayName || action.name
+    if (!ok) {
+      Message.error(res?.message || data?.message || `动作「${label}」执行失败`)
+      return
+    }
+    Message.success(`${label} 执行成功`)
     await refresh()
   } catch (error: any) {
     Message.error(error?.message || `动作「${action.displayName || action.name}」执行失败`)
@@ -722,13 +727,6 @@ async function handleReset() {
  */
 function handleCreate() {
   emit('create')
-}
-
-/**
- * 查看
- */
-function handleView(record: FormData) {
-  emit('view', record)
 }
 
 /**

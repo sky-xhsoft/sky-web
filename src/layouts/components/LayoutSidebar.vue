@@ -78,7 +78,7 @@ interface Props {
   mobileShow: boolean
 }
 const props = defineProps<Props>()
-const emit = defineEmits<{
+defineEmits<{
   (e: 'update:openKeys', keys: string[]): void
   (e: 'update:selectedKeys', keys: string[]): void
   (e: 'click', key: string): void

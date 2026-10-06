@@ -48,11 +48,6 @@ function getOptions(col: SysColumn) {
 function handleQuery() {
   emit('query', { ...queryForm.value })
 }
-function handleReset() {
-  queryForm.value = {}
-  emit('reset')
-}
-
 defineExpose({ queryForm, handleQuery })
 </script>
 
