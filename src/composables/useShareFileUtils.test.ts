@@ -86,11 +86,19 @@ describe('useShareFileUtils', () => {
     it('generates correct preview URL', () => {
       expect(getFilePreviewUrl('abc123', 42)).toBe('/api/v1/cloud/shares/abc123/files/42/preview')
     })
+
+    it('appends encoded access token', () => {
+      expect(getFilePreviewUrl('abc123', 42, 'a-b_c+/=')).toBe('/api/v1/cloud/shares/abc123/files/42/preview?token=a-b_c%2B%2F%3D')
+    })
   })
 
   describe('getFileDownloadUrl', () => {
     it('generates correct download URL', () => {
       expect(getFileDownloadUrl('abc123', 42)).toBe('/api/v1/cloud/shares/abc123/files/42/download')
+    })
+
+    it('appends encoded access token', () => {
+      expect(getFileDownloadUrl('abc123', 42, 'tok')).toBe('/api/v1/cloud/shares/abc123/files/42/download?token=tok')
     })
   })
 })

@@ -298,6 +298,8 @@ function toggleLanguage() {
 
 const loading = ref(false)
 const downloading = ref(false)
+// 加密分享验证密码后签发的访问凭证（有效期 2 小时），下载/预览/浏览文件夹时携带
+const accessToken = ref('')
 const loadingFiles = ref(false)
 const verified = ref(false)
 const notFound = ref(false)
@@ -401,6 +403,18 @@ async function loadShareInfo() {
   }
 }
 
+/**
+ * 访问凭证缺失或过期（后端返回 403）：回到密码输入界面重新验证
+ */
+function handleAccessExpired(e: any): boolean {
+  if (e?.status !== 403 && e?.response?.status !== 403) return false
+  accessToken.value = ''
+  verified.value = false
+  showFolderContent.value = false
+  error.value = e?.response?.data?.message || e?.message || t('share.password.error')
+  return true
+}
+
 async function handleVerify() {
   if (!form.value.password.trim()) {
     error.value = t('share.error.passwordRequired')
@@ -412,6 +426,7 @@ async function handleVerify() {
   try {
     const info = await accessShare(shareCode.value, form.value.password)
     shareInfo.value = info
+    accessToken.value = info.accessToken || ''
     verified.value = true
     Message.success(t('share.verifyingSuccess'))
 
@@ -454,11 +469,13 @@ async function handleDownload() {
   try {
     await downloadShareFile(
         shareCode.value,
-        shareInfo.value.file?.name || `file-${Date.now()}`
+        shareInfo.value.file?.name || `file-${Date.now()}`,
+        accessToken.value
     )
     Message.success('开始下载')
   } catch (e: any) {
     console.error('下载失败:', e)
+    if (handleAccessExpired(e)) return
     Message.error(e?.message || '下载失败')
   } finally {
     downloading.value = false
@@ -468,7 +485,7 @@ async function handleDownload() {
 async function loadFolderContent(parentId?: number) {
   loadingFiles.value = true
   try {
-    const content = await getShareFolderContent(shareCode.value, parentId)
+    const content = await getShareFolderContent(shareCode.value, parentId, accessToken.value)
     const items: any[] = []
 
     if (content.folders && content.folders.length > 0) {
@@ -514,6 +531,7 @@ async function loadFolderContent(parentId?: number) {
     })
   } catch (e: any) {
     console.error('加载文件夹内容失败:', e)
+    if (handleAccessExpired(e)) return
     Message.error(e?.message || t('share.getShareInfoFailed'))
   } finally {
     loadingFiles.value = false
@@ -548,7 +566,7 @@ function handlePreviewFile(file: any) {
   if (accessUrl && (accessUrl.startsWith('http://') || accessUrl.startsWith('https://'))) {
     previewUrl.value = accessUrl
   } else {
-    previewUrl.value = getFilePreviewUrl(shareCode.value, file.id)
+    previewUrl.value = getFilePreviewUrl(shareCode.value, file.id, accessToken.value)
   }
 
   previewVisible.value = true
@@ -605,7 +623,7 @@ function handleDownloadFile(file: any) {
     Message.success('开始下载')
     return
   }
-  const downloadUrl = getFileDownloadUrl(shareCode.value, file.id)
+  const downloadUrl = getFileDownloadUrl(shareCode.value, file.id, accessToken.value)
   const link = document.createElement('a')
   link.href = downloadUrl
   link.download = file.name

@@ -8,6 +8,11 @@ import api from '@/api/http'
 import { API_BASE_URL } from '@/config'
 import type { ShareInfo, ApiResponse } from '@/modules/cloud/types'
 
+/** 加密分享访问凭证请求头（凭证由 accessShare 验证密码后返回） */
+function shareTokenHeaders(accessToken?: string): Record<string, string> {
+  return accessToken ? { 'X-Share-Token': accessToken } : {}
+}
+
 /**
  * 获取分享信息（不需要认证）
  * @param code 分享码
@@ -43,8 +48,9 @@ export async function accessShare(code: string, password: string): Promise<Share
  * 下载分享的文件
  * @param code 分享码
  * @param filename 文件名
+ * @param accessToken 加密分享访问凭证
  */
-export async function downloadShareFile(code: string, filename: string): Promise<void> {
+export async function downloadShareFile(code: string, filename: string, accessToken?: string): Promise<void> {
   const baseUrl = (API_BASE_URL || '').replace(/\/$/, '')
   const url = `${baseUrl}/api/v1/cloud/shares/${code}/download`
 
@@ -53,10 +59,13 @@ export async function downloadShareFile(code: string, filename: string): Promise
     const response = await fetch(url, {
       method: 'GET',
       credentials: 'include',
+      headers: shareTokenHeaders(accessToken),
     })
 
     if (!response.ok) {
-      throw new Error(`下载失败，状态码 ${response.status}`)
+      // 带上状态码与后端提示，便于调用方识别凭证过期（403）等情况
+      const body = await response.json().catch(() => null)
+      throw Object.assign(new Error(body?.message || `下载失败，状态码 ${response.status}`), { status: response.status })
     }
 
     const blob = await response.blob()
@@ -76,6 +85,7 @@ export async function downloadShareFile(code: string, filename: string): Promise
     document.body.removeChild(link)
     window.URL.revokeObjectURL(blobUrl)
   } catch (e: any) {
+    if (e?.status) throw e
     throw new Error(e?.message || '下载失败，请稍后重试')
   }
 }
@@ -84,15 +94,17 @@ export async function downloadShareFile(code: string, filename: string): Promise
  * 获取分享文件夹的内容
  * @param code 分享码
  * @param parentId 父文件夹ID（可选）
+ * @param accessToken 加密分享访问凭证
  */
 export async function getShareFolderContent(
   code: string,
-  parentId?: number
+  parentId?: number,
+  accessToken?: string
 ): Promise<{ folders: any[]; files: any[] }> {
   const params = parentId ? { parentId } : {}
   const { data } = await api.get<ApiResponse<{ folders: any[]; files: any[] }>>(
     `/cloud/shares/${code}/content`,
-    { params }
+    { params, headers: shareTokenHeaders(accessToken) }
   )
 
   if (!data?.data) {

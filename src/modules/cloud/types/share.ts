@@ -45,6 +45,7 @@ export interface ShareInfo {
     createTime: string
   }
   sharer: string                       // 分享者名称
+  accessToken?: string                 // 加密分享验证通过后签发的访问凭证（下载/预览/浏览需携带）
 }
 
 /**

@@ -109,7 +109,7 @@ export interface SysColumn {
   ORDERNO?: number            // 字段排序号
   MASK?: string               // 字段级操作掩码
   MODIFI_ABLE?: 'Y' | 'N'     // 是否可修改
-  SET_VALUE_TYPE?: string     // 赋值策略 (pk/docno/fk/byPage/select/createBy/sysdate/operator/password/ignore)
+  SET_VALUE_TYPE?: string     // 赋值策略 (pk/docno/fk/byPage/select/createBy/sysdate/operator/password/encrypt/ignore)
   REF_TABLE_ID?: number       // FK 关联目标表ID
   REF_COLUMN_ID?: number      // FK 关联目标列ID
   REF_ON_DELETE?: string      // FK 删除策略 (restrict/cascade/setNull/noAction)

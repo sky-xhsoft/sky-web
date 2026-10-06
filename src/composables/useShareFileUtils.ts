@@ -49,15 +49,22 @@ export function getAccessUrl(item: any): string {
 }
 
 /**
+ * 追加加密分享访问凭证（<img>/<video>/<a> 无法设置请求头，只能走查询参数）
+ */
+function withShareToken(url: string, accessToken?: string): string {
+  return accessToken ? `${url}?token=${encodeURIComponent(accessToken)}` : url
+}
+
+/**
  * 生成文件预览 URL
  */
-export function getFilePreviewUrl(shareCode: string, fileId: number): string {
-  return `/api/v1/cloud/shares/${shareCode}/files/${fileId}/preview`
+export function getFilePreviewUrl(shareCode: string, fileId: number, accessToken?: string): string {
+  return withShareToken(`/api/v1/cloud/shares/${shareCode}/files/${fileId}/preview`, accessToken)
 }
 
 /**
  * 生成文件下载 URL
  */
-export function getFileDownloadUrl(shareCode: string, fileId: number): string {
-  return `/api/v1/cloud/shares/${shareCode}/files/${fileId}/download`
+export function getFileDownloadUrl(shareCode: string, fileId: number, accessToken?: string): string {
+  return withShareToken(`/api/v1/cloud/shares/${shareCode}/files/${fileId}/download`, accessToken)
 }

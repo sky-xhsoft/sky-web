@@ -45,6 +45,9 @@ import CompanyConfig from '@/pages/system/CompanyConfig.vue'
 import UserCenterPage from '@/pages/system/UserCenterPage.vue'
 import PermissionManagement from '@/pages/system/PermissionManagement.vue'
 import BatchEditPage from '../modules/metadata/components/DynamicTable/BatchEditPage.vue'
+// 元数据视图静态导入：避免异步加载期间旧组件被挂载上新标签页的参数（刷新后 tableId=NaN）
+import MetadataListView from '../modules/metadata/views/MetadataListView.vue'
+import MetadataFormView from '../modules/metadata/views/MetadataFormView.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -294,7 +297,6 @@ async function loadComponent(path: string) {
         const foundTitle = findMenuTitle(navItems.value, path)
         if (foundTitle) title = foundTitle
 
-        const MetadataListView = (await import('../modules/metadata/views/MetadataListView.vue')).default
         currentComponent.value = MetadataListView
         navigationStore.navigateTo('MetadataListView', title, { tableId: Number(tableId) }, false)
         return
@@ -650,15 +652,17 @@ watch(
     try {
       let comp: Component | null = null
       if (componentName === 'MetadataFormView') {
-        comp = (await import('../modules/metadata/views/MetadataFormView.vue')).default
+        comp = MetadataFormView
       } else if (componentName === 'MetadataListView') {
-        comp = (await import('../modules/metadata/views/MetadataListView.vue')).default
+        comp = MetadataListView
       } else if (componentRegistry[componentName]) {
         comp = componentRegistry[componentName]
       } else {
         console.warn(`未知组件名: ${componentName}，已显示空白页`)
         comp = { render: () => h('div', { class: 'empty-page' }, '') }
       }
+      // 期间若已切换到其他标签页，丢弃过期结果，避免组件与参数错配
+      if (componentName !== navigationStore.current.componentName) return
       if (comp) currentComponent.value = comp
     } catch (e) {
       console.error(`组件 ${componentName} 加载失败:`, e)
