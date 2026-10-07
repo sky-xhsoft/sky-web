@@ -1287,7 +1287,6 @@ export default {
       ar: 'العربية（阿拉伯文）'
     },
     subtitleSave: '保存配置',
-    subtitleSaved: '同传/字幕配置已保存',
     subtitleConfigured: '已配置同传/字幕',
     subtitleSourceLang: '源语言',
     subtitleConfirm: '确定',

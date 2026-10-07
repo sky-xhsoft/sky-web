@@ -1279,7 +1279,6 @@ export default {
       ar: 'Arabic'
     },
     subtitleSave: 'Save Configuration',
-    subtitleSaved: 'Interpretation/Subtitle configuration saved',
     subtitleConfigured: 'Interpretation/Subtitle configured',
     subtitleSourceLang: 'Source Language',
     subtitleConfirm: 'Confirm',
