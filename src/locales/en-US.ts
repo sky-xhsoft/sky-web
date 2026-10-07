@@ -796,6 +796,10 @@ export default {
     },
     enterManage: 'Enter Management'
   },
+  liveStream: {
+    title: 'Live Stream Management',
+    desc: 'View online and historical streams'
+  },
   welcome: {
     brandTitle: 'Zigebo',
     brandSubtitle: 'AI Video Platform',
@@ -942,6 +946,8 @@ export default {
     quickSubsystems: 'Subsystems',
   },
   liveDomain: {
+    title: 'Domain Management',
+    desc: 'Manage push/play domains and CNAME configuration',
     pageTitle: 'Live Domain Management',
     pageNotice: {
       pushDomain: 'About push domain: The push domain provided by the system is for testing only. There are many limitations. We recommend that you add your own domain as soon as possible.',
@@ -1071,7 +1077,6 @@ export default {
     subtitle: 'Translation/Subtitles',
     subtitleSourceLang: 'Source Language',
     subtitleTargetLangs: 'Target Languages',
-    subtitleSaveFailed: 'Failed to save subtitles config',
     highlightClips: 'Live Clipping',
     recordings: 'Live Recordings',
     edit: 'Edit',
@@ -1153,7 +1158,6 @@ export default {
     },
     subtitleSave: 'Create',
     subtitleCancel: 'Cancel',
-    subtitleSaved: 'Interpretation/Subtitle configuration saved',
     subtitleError: 'Failed to save interpretation/subtitle configuration',
     subtitleConfigured: 'Interpretation/Subtitle configured',
     translation: {
@@ -1255,6 +1259,9 @@ export default {
     submitSuccess: 'Create successful',
     editSuccess: 'Update successful',
     submitError: 'Create failed',
+    domainNotConfiguredTitle: 'Domain not configured',
+    domainNotConfigured: 'Domain not configured, please configure it first',
+    configureDomain: 'Configure now',
     editError: 'Update failed',
     deleteCoverSuccess: 'Cover deleted',
     uploadSuccess: 'Upload successful',
@@ -1296,6 +1303,11 @@ export default {
   liveRoomList: {
     title: 'Live Room Management',
     desc: 'Create and manage live rooms',
+    empty: 'No live room data yet',
+    viewingMethod: 'Viewing Method',
+    addSpeechTask: 'Add Subtitle/Interpretation Task',
+    createSpeechTask: 'Create Task',
+    speechSubtitle: 'Subtitle/Interpretation',
     createLiveRoom: 'Create Live Room',
     refresh: 'Refresh',
     batchDelete: 'Batch Delete',
@@ -1309,14 +1321,10 @@ export default {
     id: 'ID',
     liveRoom: 'Live Room',
     broadcastFormat: 'Broadcast Format',
-    viewingMethod: 'Viewing Method',
     liveStatus: 'Live Status',
     startTime: 'Start',
     operations: 'Operations',
     manage: 'Manage',
-    speechSubtitle: 'Simulcast/Subtitle',
-    addSpeechTask: 'New Simulcast & Subtitle Task',
-    createSpeechTask: 'Create Task',
     preview: 'Preview',
     socialDistribution: 'Social Distribution',
     highlightClips: 'Highlight Clips',

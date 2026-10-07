@@ -112,7 +112,7 @@ const submitting = ref(false)
 const taskFormRef = ref()
 const taskForm = reactive({
   comment: '',
-  timeRange: [] as [string, string],
+  timeRange: [] as string[], // 未选择时为空，选择后为 [开始, 结束]
   callbackUrl: '',
   region: '',
   sourceType: 'PullLivePushLive',
@@ -301,12 +301,13 @@ const submitTask = async () => {
     }
     // 直接调用 loadTaskList 可能不够，因为我们需要刷新整个列表
     goBack()
-  } catch (error) {
-    console.error('提交任务失败:', error)
-    Message.error('操作失败')
-  } finally {
-    submitting.value = false
-  }
+  } catch (error: any) {
+      console.error('提交任务失败:', error)
+      // 透传后端/腾讯云具体错误信息，避免笼统的"操作失败"掩盖原因
+      Message.error(error?.message || '操作失败')
+    } finally {
+      submitting.value = false
+    }
 }
 
 onMounted(() => {

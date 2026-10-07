@@ -201,13 +201,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeMount } from 'vue'
+import { ref, onMounted, onBeforeMount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useNavigationStore } from '../../stores/navigation'
 import api from '../../api/http'
 import dayjs from 'dayjs'
-import { generatePushURLByRoom, generatePullURLByRoom } from '../../api/live'
+import { generatePushURLByRoom, generatePullURLByRoom, type LiveRoomDetail } from '../../api/live'
 import { IconArrowLeft, IconEdit, IconDelete, IconCopy } from '@arco-design/web-vue/es/icon'
 import config from '../../config/index'
 import { useI18n } from 'vue-i18n'
@@ -223,7 +223,14 @@ const router = useRouter()
 const navigationStore = useNavigationStore()
 
 const activeKey = ref('basic')
-const roomInfo = ref({})
+// 接口返回的直播间信息；推/拉流域名与 app 仅在生成地址失败时作为兜底使用
+type RoomInfo = Partial<LiveRoomDetail> & {
+  pushDomain?: string
+  pushApp?: string
+  playDomain?: string
+  playApp?: string
+}
+const roomInfo = ref<RoomInfo>({})
 const settingsActiveKey = ref(['push'])
 
 // 推流地址数据
@@ -397,45 +404,6 @@ const handleEdit = () => {
   router.push(`/live/rooms/edit/${route.params.id}`)
 }
 
-// 同传/字幕 配置数据
-const subtitleEnabled = ref(false)
-const subtitleSaving = ref(false)
-const subtitleConfig = reactive({
-  sourceLang: 'zh',
-  targetLangs: ['en'] as string[]
-})
-const LANG_OPTIONS = [
-  { label: '中文', value: 'zh' },
-  { label: '英文', value: 'en' },
-  { label: '日文', value: 'ja' },
-  { label: '韩文', value: 'ko' },
-  { label: '法文', value: 'fr' },
-  { label: '德文', value: 'de' },
-  { label: '西班牙文', value: 'es' },
-  { label: '俄文', value: 'ru' }
-]
-
-const saveSubtitle = async () => {
-  subtitleSaving.value = true
-  try {
-    const id = roomInfo.value?.id || route.params.id
-    const props = {
-      ...(roomInfo.value?.props || roomInfo.value?.PROPS || {}),
-      subtitleEnabled: subtitleEnabled.value,
-      subtitleConfig: {
-        sourceLang: subtitleConfig.sourceLang,
-        targetLangs: [...subtitleConfig.targetLangs]
-      }
-    }
-    await api.put(`/live/rooms/${id}`, { props })
-    Message.success(t('liveRoomDetail.subtitleSaved'))
-  } catch (error: any) {
-    Message.error(error.message || t('liveRoomDetail.subtitleSaveFailed'))
-  } finally {
-    subtitleSaving.value = false
-  }
-}
-
 const handleDelete = () => {
   Modal.confirm({
     title: t('liveRoomDetail.messages.deleteConfirm.title'),
@@ -514,12 +482,16 @@ onBeforeMount(() => {
   }
 
   .content {
-    margin-top: 20px;
-  }
+      margin-top: 20px;
+    }
 
-  :deep(.detail-left-tabs .arco-tabs-content) {
-    padding: 0 8px 0 20px;
-  }
+    .detail-content {
+      margin-left: 50px;
+    }
+
+    :deep(.detail-left-tabs .arco-tabs-content) {
+      padding: 0 8px 0 20px;
+    }
 
   :deep(.arco-form-item) {
     margin-bottom: 12px;

@@ -50,7 +50,7 @@
           </a-form-item>
 
           <a-form-item v-if="form.mode === 'si'" :label="t('speechTask.delay')">
-            <a-input-number v-model="form.delay" :min="1" :max="300" style="width: 120px"><template #suffix>s</template></a-input-number>
+            <a-input-number v-model="form.delay" :min="1" :max="300" style="width: 120px" @change="delayStroked = true"><template #suffix>s</template></a-input-number>
             <div class="form-tip">{{ t('speechTask.delayTip') }}</div>
           </a-form-item>
 
@@ -61,10 +61,10 @@
                     </a-form-item>
 
                     <a-form-item v-if="form.mode !== 'mix'" :label="t('speechTask.outputLangs')">
-            <a-select v-model="form.outputLangs" multiple :max-tag-count="3" allow-clear>
-              <a-option v-for="o in otherLangs" :key="o.value" :value="o.value">{{ o.label }}</a-option>
-            </a-select>
-            <div class="form-tip">{{ t('speechTask.outputLangsTip') }}</div>
+            <a-select v-model="form.outputLang" allow-clear>
+                          <a-option v-for="o in otherLangs" :key="o.value" :value="o.value">{{ o.label }}</a-option>
+                        </a-select>
+                        <div class="form-tip">{{ t('speechTask.outputLangsTip') }}</div>
           </a-form-item>
 
           <a-form-item :label="t('speechTask.subtitleEnabled')">
@@ -317,7 +317,7 @@ const defaultForm = () => ({
   targetUrl: '',
   delay: 12,
   inputLang: 'zh',
-  outputLangs: ['en'] as string[],
+    outputLang: 'en' as string,
   subtitleEnabled: true,
   // ---- 字幕配置 ----
   subtitleFormat: 'both',
@@ -443,15 +443,13 @@ const drawSubs = (ctx: CanvasRenderingContext2D, W: number, H: number) => {
   } else if (form.subtitleFormat === 'both') {
     const origY = form.subtitleOrder === 'originalTop' ? bottomY - lineH : bottomY
     const transY = form.subtitleOrder === 'originalTop' ? bottomY : bottomY - lineH
-    drawLine(previewOriginal, origY, false)
-    const langs = (form.outputLangs || ['en'])
-    ctx.font = `${Math.round(form.fontSize * 0.9 * px)}px ${form.fontFamily || 'arial'}`
-    drawLine(langs.map((l: string) => previewTranslation(l)).join('  '), transY, false)
-  } else {
-    // 仅译文
-    const langs = (form.outputLangs || ['en'])
-    ctx.font = `${Math.round(form.fontSize * px)}px ${form.fontFamily || 'arial'}`
-    drawLine(langs.map((l: string) => previewTranslation(l)).join('  '), bottomY, false)
+        drawLine(previewOriginal, origY, false)
+        ctx.font = `${Math.round(form.fontSize * 0.9 * px)}px ${form.fontFamily || 'arial'}`
+        drawLine(form.outputLang ? previewTranslation(form.outputLang) : '', transY, false)
+      } else {
+        // 仅译文
+        ctx.font = `${Math.round(form.fontSize * px)}px ${form.fontFamily || 'arial'}`
+        drawLine(form.outputLang ? previewTranslation(form.outputLang) : '', bottomY, false)
   }
 }
 const roundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
@@ -466,7 +464,7 @@ const roundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 watch(
   () => [form.mode, form.subtitleFormat, form.subtitleOrder, form.sourceResolution, form.bgImage,
     form.outWordMode, form.fontBGColor, form.fontColor, form.fontBold, form.fontShadow,
-    form.fontSize, form.fontFamily, form.marginLr, form.marginTb, JSON.stringify(form.outputLangs)],
+    form.fontSize, form.fontFamily, form.marginLr, form.marginTb, JSON.stringify(form.outputLang)],
   () => { nextTick(drawPreview) },
   { deep: false }
 )
@@ -545,6 +543,26 @@ watch(
   }
 )
 
+// 字幕颜色: 火山要求 #FFFFFF@0.8(带透明度), 若用户未带透明度则补默认 @1.0
+const subColor = (c: string): string | undefined => {
+  if (!c || c === 'transparent') return undefined
+  const t = c.trim()
+  if (t.includes('@')) return t
+  return `${t}@1.0`
+}
+
+// 按最终 Pipe 返回建议的播出延迟(火山文档建议值), 用户显式设置过(delayStroked)则用其值
+const delayStroked = ref(false)
+const effectiveDelay = (): number => {
+  if (delayStroked.value) return form.delay
+  const pipe = form.mode === 'mix' && form.outWordMode === 'realtime' ? 'realtime' : form.mode
+  // si:数字人+声音+字幕=20, 声音+字幕=12; mix整句=15; 字幕翻译=8; realtime=2
+  if (pipe === 'si') return form.delay >= 20 ? form.delay : 20
+  if (pipe === 'realtime') return 2
+  if (form.outputLang) return 8 // mix 字幕翻译
+  return 15 // mix 整句原文ASR
+}
+
 const buildPayload = () => {
   const [start, end] = form.timeRange || []
   const hasSubBg = form.fontBGColor && form.fontBGColor !== '#000000' && form.fontBGColor !== 'transparent'
@@ -554,42 +572,42 @@ const buildPayload = () => {
     roomName: props.record?.roomName,
     rule: {
       pipe: form.mode === 'mix' && form.outWordMode === 'realtime' ? 'realtime' : form.mode,
-      delay: form.delay,
-      source: { url: form.sourceUrl },
-      startTime: start ? dayjs(start).format('YYYY-MM-DDTHH:mm:ss+08:00') : '',
-      endTime: end ? dayjs(end).format('YYYY-MM-DDTHH:mm:ss+08:00') : '',
-      output: { url: Array.isArray(form.targetUrl) ? form.targetUrl.filter(Boolean) : form.targetUrl ? [form.targetUrl] : [] },
-      si: form.mode === 'si' ? { lipSync: true } : undefined,
-      realTime: form.mode === 'realtime' ? { voiceShow: true } : undefined,
-      subtitle: form.subtitleEnabled
-        ? {
-            position: {
-              relative: form.marginTb >= 50 ? 'top' : 'bottom',
-              marginTb: form.marginTb / 100,
-              marginLr: form.marginLr / 100
-            },
-            original: {
-              language: form.inputLang,
-              fontSize: form.fontSize,
-              fontColor: form.fontColor,
-              font: form.fontFamily,
-              maxRowNumber: form.subtitleRows,
-              maxCharNumber: form.maxCharNumber,
-              hidden: form.subtitleFormat === 'translation',
-              showPriority: form.subtitleOrder === 'originalTop' ? 1 : 2,
-              box: hasSubBg ? { color: form.fontBGColor } : undefined
-            },
-            translation: form.mode !== 'mix' ? (form.outputLangs || []).map((lang: string, idx: number) => ({
-                          language: lang,
-                          fontSize: form.fontSize,
-                          fontColor: form.fontColor,
-                          font: form.fontFamily,
-                          maxRowNumber: form.subtitleRows,
-                          maxCharNumber: form.maxCharNumber,
-                          showPriority: form.subtitleOrder === 'originalTop' ? idx + 2 : idx + 1
-                        })) : undefined
-          }
-        : undefined,
+            delay: effectiveDelay(),
+            source: { url: form.sourceUrl },
+            startTime: start ? dayjs(start).format('YYYY-MM-DDTHH:mm:ss+08:00') : '',
+            endTime: end ? dayjs(end).format('YYYY-MM-DDTHH:mm:ss+08:00') : '',
+            output: { url: Array.isArray(form.targetUrl) ? form.targetUrl.filter(Boolean) : form.targetUrl ? [form.targetUrl] : [] },
+            si: form.mode === 'si' ? { lipSync: true } : undefined,
+            realTime: form.mode === 'realtime' ? { voiceShow: true } : undefined,
+            subtitle: form.subtitleEnabled
+              ? {
+                  position: {
+                    relative: form.marginTb >= 50 ? 'top' : 'bottom',
+                    marginTb: form.marginTb / 100,
+                    marginLr: form.marginLr / 100
+                  },
+                  original: {
+                    language: form.inputLang,
+                    fontSize: form.fontSize,
+                    fontColor: subColor(form.fontColor),
+                    font: form.fontFamily,
+                    maxRowNumber: form.subtitleRows,
+                    maxCharNumber: form.maxCharNumber,
+                    hidden: false,
+                    showPriority: form.subtitleOrder === 'originalTop' ? 1 : 2,
+                    box: hasSubBg ? { W: 1, color: form.fontBGColor } : undefined
+                  },
+                  translation: form.mode !== 'mix' && form.outputLang ? [{
+                    language: form.outputLang,
+                    fontSize: form.fontSize,
+                    fontColor: subColor(form.fontColor),
+                    font: form.fontFamily,
+                    maxRowNumber: form.subtitleRows,
+                    maxCharNumber: form.maxCharNumber,
+                    showPriority: form.subtitleOrder === 'originalTop' ? 2 : 1
+                  }] : undefined
+                }
+              : undefined,
       glossaryMap: parseGlossary(form.glossaryMap),
       replaceMap: parseGlossary(form.replaceMap)
     }

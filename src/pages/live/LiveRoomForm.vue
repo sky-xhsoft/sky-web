@@ -147,12 +147,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import { ref, reactive, computed, onMounted, onActivated } from 'vue'
+import { Message, Modal } from '@arco-design/web-vue'
 import { useNavigationStore } from '../../stores/navigation'
 import api from '../../api/http'
 import dayjs from 'dayjs'
 import { useI18n } from 'vue-i18n'
+import { listDomains } from '../../api/live'
 
 const { t } = useI18n()
 
@@ -174,7 +175,6 @@ const formData = reactive({
   roomType: 'video',
   broadcastFormat: 'live',
   displayMode: 'landscape',
-  roomType: 'video',
   roomStage: 'formal',
   viewingMethod: 'public',
   playbackMethod: 'post_end',
@@ -268,6 +268,14 @@ const handleUpload = async (option: any) => {
 const handleSubmit = async () => {
   try {
     await formRef.value?.validate()
+    // 新增模式：提交前兜底校验域名是否已配置，防止绕过弹窗直接创建
+    if (!isEditMode.value) {
+      const configured = await checkDomainConfigured()
+      if (!configured) {
+        promptConfigureDomain()
+        return
+      }
+    }
     submitting.value = true
 
     const formatDateTime = (dateTime: string) => {
@@ -320,8 +328,49 @@ const handleCancel = () => {
   navigationStore.goBack()
 }
 
+// 检查当前公司是否已配置直播域名
+// 同时查推流域名(type=0)和播放域名(type=1)，任一存在即视为已配置
+const checkDomainConfigured = async (): Promise<boolean> => {
+  try {
+    const [pushRes, playRes] = await Promise.all([listDomains(0), listDomains(1)])
+    const pushDomains = pushRes?.data?.data?.domains || []
+    const playDomains = playRes?.data?.data?.domains || []
+    return pushDomains.length > 0 || playDomains.length > 0
+  } catch (error: any) {
+      console.error('检查域名配置失败:', error)
+      // 查询失败（如公司未配置腾讯云/域名拉取报错）同样视为"未配置域名"，引导先配置
+      return false
+    }
+}
+
+// 未配置域名时的提示 + 引导跳转域名配置页
+const promptConfigureDomain = () => {
+  Modal.warning({
+    title: t('liveRoomForm.domainNotConfiguredTitle'),
+    content: t('liveRoomForm.domainNotConfigured'),
+    okText: t('liveRoomForm.configureDomain'),
+    cancelText: t('common.cancel') || '取消',
+    onOk: () => {
+      navigationStore.navigateTo('LiveDomain', '域名管理')
+    },
+  })
+}
+
+// keep-alive 下 onActivated 每次激活都会触发（含首次挂载）；
+// 仅新增模式且尚未提示过才检查域名配置
+let domainChecked = false
 onMounted(() => {
   loadRoomData()
+})
+
+onActivated(async () => {
+  // 新增模式：进入表单时检查是否已配置域名（keep-alive 缓存复用下也会触发）
+  if (!isEditMode.value && !domainChecked) {
+    domainChecked = true
+    if (!(await checkDomainConfigured())) {
+      promptConfigureDomain()
+    }
+  }
 })
 </script>
 

@@ -798,6 +798,10 @@ export default {
     },
     enterManage: '进入管理'
   },
+  liveStream: {
+    title: '直播流管理',
+    desc: '查看在线流和历史流'
+  },
   welcome: {
     brandTitle: 'Zigebo',
     brandSubtitle: 'AI视频平台',
@@ -944,6 +948,8 @@ export default {
     quickSubsystems: '子系统',
   },
   liveDomain: {
+    title: '域名管理',
+    desc: '管理推流/播放域名及 CNAME 配置',
     pageTitle: '直播域名管理',
     pageNotice: {
       pushDomain: '关于推流域名：系统提供的推流域名仅供测试使用，使用上有诸多限制，建议您尽快添加自有域名。',
@@ -1080,7 +1086,6 @@ export default {
     subtitle: '同传/字幕',
     subtitleSourceLang: '源语言',
     subtitleTargetLangs: '目标语言',
-    subtitleSaveFailed: '保存同传/字幕配置失败',
     highlightClips: '直播切片',
     recordings: '直播录制',
     edit: '编辑',
@@ -1161,7 +1166,6 @@ export default {
     },
     subtitleSave: '创建',
     subtitleCancel: '取消',
-    subtitleSaved: '同传/字幕配置已保存',
     subtitleError: '保存同传/字幕配置失败',
     subtitleConfigured: '已配置同传/字幕',
     translation: {
@@ -1263,6 +1267,9 @@ export default {
     submitSuccess: '创建成功',
     editSuccess: '更新成功',
     submitError: '创建失败',
+    domainNotConfiguredTitle: '还未配置域名',
+    domainNotConfigured: '还未配置域名，请先进行配置',
+    configureDomain: '去配置',
     editError: '更新失败',
     deleteCoverSuccess: '已删除封面',
     uploadSuccess: '上传成功',
@@ -1304,6 +1311,11 @@ export default {
   liveRoomList: {
     title: '直播间管理',
     desc: '创建和管理直播间',
+    empty: '暂无直播数据',
+    viewingMethod: '观看方式',
+    addSpeechTask: '添加字幕/同传任务',
+    createSpeechTask: '创建任务',
+    speechSubtitle: '字幕/同传',
     createLiveRoom: '创建直播',
     refresh: '刷新',
     batchDelete: '批量删除',
