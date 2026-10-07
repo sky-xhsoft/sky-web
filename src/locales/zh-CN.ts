@@ -1073,6 +1073,110 @@ export default {
     fetchFailed: '加载直播间信息失败'
   },
   liveRoomDetail: {
+    page: {
+      breadcrumb: '直播间管理',
+      title: '直播间详情',
+      meta: 'ID {id} · 流名称 {stream}',
+      liveHint: '直播中不可删除；结束直播后录制文件会自动归档到云盘',
+      deleteDisabledTip: '直播中不可删除，请先结束直播',
+      actions: { preview: '预览直播', start: '开始直播', end: '结束直播' },
+      confirm: {
+        startTitle: '开始直播',
+        startContent: '确定将直播间标记为直播中吗？推流软件开始推流时也会自动开始。',
+        startSuccess: '已开始直播',
+        endTitle: '结束直播',
+        endContent: '确定结束直播吗？结束后录制文件会自动归档到云盘。',
+        endSuccess: '已结束直播'
+      },
+      kpi: {
+        plannedStart: '计划开播',
+        actualStart: '实际开播',
+        elapsed: '已直播',
+        duration: '直播时长',
+        notStarted: '尚未开播',
+        liveTiming: '持续计时中',
+        endedAt: '{time} 结束',
+        viewers: '观看人数',
+        peak: '峰值 {n}',
+        afterStart: '开播后统计',
+        count: '{n} 个',
+        recordingNow: '录制中',
+        archived: '已归档到云盘',
+        archiveAfterEnd: '结束后自动归档',
+        auto: '自动生成'
+      },
+      tabs: { overview: '概览' },
+      push: {
+        title: '推流设置',
+        hint: '在 OBS「设置 › 直播」中填写以下两项即可开播',
+        server: '服务器',
+        streamKey: '推流码',
+        show: '显示',
+        hide: '隐藏',
+        keyNote: '推流码包含鉴权签名，请勿外传',
+        moreShow: '展开其他推流协议（RTMP 完整地址 / WebRTC / SRT）',
+        moreHide: '收起其他推流协议',
+        rtmpFull: 'RTMP 完整地址',
+        failTitle: '推流地址生成失败',
+        failReason: '原因：{reason}',
+        failNote: '为避免误用，这里不显示示例地址。',
+        emptyReason: '未返回地址，请检查直播域名配置',
+        goDomain: '去配置域名',
+        retry: '重试'
+      },
+      play: {
+        title: '播放地址',
+        hint: '供观看页、播放器或第三方平台拉流',
+        copyAll: '全部复制',
+        failTitle: '播放地址生成失败'
+      },
+      metrics: {
+        title: '实时流指标',
+        hint: '每 10 秒自动刷新 · 来自腾讯云直播',
+        bitrate: '码率',
+        fps: '帧率',
+        resolution: '分辨率',
+        viewers: '在线人数',
+        unavailable: '暂未获取到推流数据（推流软件尚未推流或数据有延迟）'
+      },
+      progress: {
+        title: '直播进度',
+        created: '创建直播间',
+        configured: '配置推流',
+        configuredOk: '已生成带鉴权的推流地址',
+        configuredFail: '推流地址生成失败，需先配置域名',
+        live: '直播中',
+        liveWaiting: '推流软件开始推流后自动进入',
+        liveStarted: '{time} 开始',
+        ended: '结束与归档',
+        endedWaiting: '结束后录制自动归档到云盘',
+        endedDone: '{time} 结束，录制已归档'
+      },
+      info: {
+        title: '直播信息',
+        noCover: '未设置封面',
+        roomType: '直播类型',
+        displayMode: '显示方式',
+        plannedTime: '计划时间',
+        viewingMethod: '观看方式',
+        playback: '回放',
+        record: '自动录制',
+        clip: '智能切片',
+        description: '描述',
+        noDescription: '暂无描述',
+        on: '开启',
+        off: '关闭',
+        to: '至'
+      },
+      options: {
+        stage: { formal: '正式直播', test: '测试直播' },
+        roomType: { video: '视频直播', image: '图片直播', vr: 'VR 直播', audio: '语音直播', graphic: '图文直播' },
+        displayMode: { landscape: '横屏', portrait: '竖屏', three_screen: '三分屏' },
+        viewing: { public: '公开', encrypted: '密码观看', paid: '付费观看', ticket: '购票观看', enterprise: '企业成员观看', custom: '自建成员观看' },
+        playback: { post_end: '结束后回放', real_time: '实时回放', no_playback: '不回放' },
+        validity: { unlimited: '不限期', all_day: '全天', partial: '部分时段' }
+      }
+    },
     return: '返回',
     desc: '查看直播间信息和推流/播放地址',
     nav: {

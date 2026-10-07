@@ -1064,6 +1064,110 @@ export default {
     fetchFailed: 'Failed to load live room info'
   },
   liveRoomDetail: {
+    page: {
+      breadcrumb: 'Live Rooms',
+      title: 'Live Room Details',
+      meta: 'ID {id} · Stream {stream}',
+      liveHint: 'A live room cannot be deleted while live; recordings are archived to Cloud Drive after it ends',
+      deleteDisabledTip: 'End the live stream before deleting',
+      actions: { preview: 'Preview', start: 'Go Live', end: 'End Live' },
+      confirm: {
+        startTitle: 'Go Live',
+        startContent: 'Mark this room as live? It also goes live automatically when your encoder starts pushing.',
+        startSuccess: 'Live started',
+        endTitle: 'End Live',
+        endContent: 'End this live stream? Recordings will be archived to Cloud Drive automatically.',
+        endSuccess: 'Live ended'
+      },
+      kpi: {
+        plannedStart: 'Scheduled',
+        actualStart: 'Actual start',
+        elapsed: 'Live for',
+        duration: 'Duration',
+        notStarted: 'Not started',
+        liveTiming: 'Counting',
+        endedAt: 'Ended {time}',
+        viewers: 'Viewers',
+        peak: 'Peak {n}',
+        afterStart: 'Counted after going live',
+        count: '{n}',
+        recordingNow: 'Recording',
+        archived: 'Archived to Cloud Drive',
+        archiveAfterEnd: 'Archived after the stream ends',
+        auto: 'Auto-generated'
+      },
+      tabs: { overview: 'Overview' },
+      push: {
+        title: 'Streaming Setup',
+        hint: 'Enter these two values in OBS Settings › Stream to go live',
+        server: 'Server',
+        streamKey: 'Stream key',
+        show: 'Show',
+        hide: 'Hide',
+        keyNote: 'The stream key contains an auth signature. Keep it private.',
+        moreShow: 'Show other protocols (full RTMP / WebRTC / SRT)',
+        moreHide: 'Hide other protocols',
+        rtmpFull: 'Full RTMP URL',
+        failTitle: 'Failed to generate the push URL',
+        failReason: 'Reason: {reason}',
+        failNote: 'No sample URL is shown to avoid misuse.',
+        emptyReason: 'No URL returned. Check the live domain settings.',
+        goDomain: 'Configure domains',
+        retry: 'Retry'
+      },
+      play: {
+        title: 'Playback URLs',
+        hint: 'For the viewer page, players or third-party platforms',
+        copyAll: 'Copy all',
+        failTitle: 'Failed to generate playback URLs'
+      },
+      metrics: {
+        title: 'Live Stream Metrics',
+        hint: 'Refreshes every 10 s · from Tencent Cloud Live',
+        bitrate: 'Bitrate',
+        fps: 'Frame rate',
+        resolution: 'Resolution',
+        viewers: 'Online viewers',
+        unavailable: 'No stream data yet (the encoder has not started or data is delayed)'
+      },
+      progress: {
+        title: 'Progress',
+        created: 'Room created',
+        configured: 'Streaming set up',
+        configuredOk: 'Signed push URL generated',
+        configuredFail: 'Push URL failed; configure a domain first',
+        live: 'Live',
+        liveWaiting: 'Starts automatically when the encoder pushes',
+        liveStarted: 'Started {time}',
+        ended: 'Ended and archived',
+        endedWaiting: 'Recordings are archived to Cloud Drive after ending',
+        endedDone: 'Ended {time}, recordings archived'
+      },
+      info: {
+        title: 'Live Info',
+        noCover: 'No cover',
+        roomType: 'Room type',
+        displayMode: 'Display mode',
+        plannedTime: 'Schedule',
+        viewingMethod: 'Access',
+        playback: 'Playback',
+        record: 'Auto recording',
+        clip: 'Smart clips',
+        description: 'Description',
+        noDescription: 'No description',
+        on: 'On',
+        off: 'Off',
+        to: 'to'
+      },
+      options: {
+        stage: { formal: 'Production', test: 'Test' },
+        roomType: { video: 'Video', image: 'Image', vr: 'VR', audio: 'Audio', graphic: 'Graphic' },
+        displayMode: { landscape: 'Landscape', portrait: 'Portrait', three_screen: 'Three-panel' },
+        viewing: { public: 'Public', encrypted: 'Password', paid: 'Paid', ticket: 'Ticketed', enterprise: 'Company members', custom: 'Custom members' },
+        playback: { post_end: 'After the stream', real_time: 'Real-time', no_playback: 'No playback' },
+        validity: { unlimited: 'Unlimited', all_day: 'All day', partial: 'Partial' }
+      }
+    },
     return: 'Return',
     desc: 'View live room info and push/pull addresses',
     nav: {
