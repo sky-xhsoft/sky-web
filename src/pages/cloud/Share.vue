@@ -293,7 +293,7 @@ import {
   IconFilePdf,
   IconPlayCircle
 } from '@arco-design/web-vue/es/icon'
-import { getShareInfo, accessShare, downloadShareFile, getShareFolderContent } from '@/modules/cloud/api/share'
+import { getShareInfo, accessShare, downloadShareFile, getShareDownloadUrl, getShareFolderContent } from '@/modules/cloud/api/share'
 import type { ShareInfo } from '@/modules/cloud/types'
 import { useAuthStore } from '@/stores/auth'
 import { formatFileSize, formatDate } from '@/utils/format'
@@ -485,31 +485,18 @@ async function handleVerify() {
 async function handleDownload() {
   if (!shareInfo.value || shareInfo.value.resourceType !== 'file') return
 
-  const file = shareInfo.value.file
-  if (file) {
-    const accessUrl = getAccessUrl(file)
-    // 只要有完整的访问URL（http/https开头），就直接使用，不依赖 storageType 判断
-    if (accessUrl && (accessUrl.startsWith('http://') || accessUrl.startsWith('https://'))) {
-      const link = document.createElement('a')
-      link.href = accessUrl
-      link.download = file.name || `file-${Date.now()}`
-      link.rel = 'noopener'
-      link.target = '_blank'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+  downloading.value = true
+  try {
+    // 先由后端校验并计入下载次数（达到上限会报错），再用返回的直链下载
+    const { url } = await getShareDownloadUrl(shareCode.value, accessToken.value)
+    const filename = shareInfo.value.file?.name || `file-${Date.now()}`
+    if (url) {
+      clickDownloadLink(url, filename, true)
       Message.success(t('share.actions.startDownload'))
       return
     }
-  }
-
-  downloading.value = true
-  try {
-    await downloadShareFile(
-        shareCode.value,
-        shareInfo.value.file?.name || `file-${Date.now()}`,
-        accessToken.value
-    )
+    // 没有直链：走后端流式下载（该接口自己计数）
+    await downloadShareFile(shareCode.value, filename, accessToken.value)
     Message.success('开始下载')
   } catch (e: any) {
     console.error('下载失败:', e)
@@ -518,6 +505,21 @@ async function handleDownload() {
   } finally {
     downloading.value = false
   }
+}
+
+function clickDownloadLink(href: string, filename: string, newTab: boolean) {
+  const link = document.createElement('a')
+  link.href = href
+  link.download = filename
+  if (newTab) {
+    link.rel = 'noopener'
+    link.target = '_blank'
+  } else {
+    link.style.display = 'none'
+  }
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
 async function loadFolderContent(parentId?: number) {
@@ -646,30 +648,22 @@ function handleFileClick(file: any) {
   }
 }
 
-function handleDownloadFile(file: any) {
-  const accessUrl = getAccessUrl(file)
-  // 只要有完整的访问URL（http/https开头），就直接使用，不依赖 storageType 判断
-  if (accessUrl && (accessUrl.startsWith('http://') || accessUrl.startsWith('https://'))) {
-    const link = document.createElement('a')
-    link.href = accessUrl
-    link.download = file.name
-    link.rel = 'noopener'
-    link.target = '_blank'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+async function handleDownloadFile(file: any) {
+  try {
+    // 先由后端校验并计入下载次数（达到上限会报错），有直链则直接下载
+    const { url } = await getShareDownloadUrl(shareCode.value, accessToken.value, file.id)
+    if (url) {
+      clickDownloadLink(url, file.name, true)
+    } else {
+      // 没有直链：走后端流式下载（该接口自己计数）
+      clickDownloadLink(getFileDownloadUrl(shareCode.value, file.id, accessToken.value), file.name, false)
+    }
     Message.success('开始下载')
-    return
+  } catch (e: any) {
+    console.error('下载失败:', e)
+    if (handleAccessExpired(e)) return
+    Message.error(e?.message || '下载失败')
   }
-  const downloadUrl = getFileDownloadUrl(shareCode.value, file.id, accessToken.value)
-  const link = document.createElement('a')
-  link.href = downloadUrl
-  link.download = file.name
-  link.style.display = 'none'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  Message.success('开始下载')
 }
 
 onMounted(() => {

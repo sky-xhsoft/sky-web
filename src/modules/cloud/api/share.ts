@@ -45,6 +45,26 @@ export async function accessShare(code: string, password: string): Promise<Share
 }
 
 /**
+ * 点击下载时获取下载地址：后端校验并计入下载次数（达到上限会报错）后返回文件直链；
+ * url 为空表示文件没有直链，需走流式下载接口
+ * @param code 分享码
+ * @param accessToken 加密/私密分享访问凭证
+ * @param fileId 文件夹分享中的文件ID
+ */
+export async function getShareDownloadUrl(
+  code: string,
+  accessToken?: string,
+  fileId?: number
+): Promise<{ url: string; name: string }> {
+  const { data } = await api.post<ApiResponse<{ url: string; name: string }>>(
+    `/cloud/shares/${code}/download-url`,
+    {},
+    { params: fileId ? { fileId } : undefined, headers: shareTokenHeaders(accessToken) }
+  )
+  return data?.data || { url: '', name: '' }
+}
+
+/**
  * 下载分享的文件
  * @param code 分享码
  * @param filename 文件名
