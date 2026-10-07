@@ -1,6 +1,6 @@
 import axios, { type AxiosError, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { API_BASE_URL } from '../config'
-import { clearAuth, getAccessToken, getDeviceId, getRefreshToken, getStoredUser, saveAuth } from '../utils/token'
+import { clearAuth, getAccessToken, getRefreshToken, updateAccessToken } from '../utils/token'
 import { refreshAccessToken } from './auth'
 import { ApiError, type ApiResponse } from './types'
 
@@ -53,17 +53,8 @@ async function getNewToken(): Promise<string | null> {
   refreshing = refreshAccessToken(refreshToken)
     .then((data) => {
       if (!data) return null
-      const { user, deviceId } = getStoredUser()
-      const ensuredDeviceId = deviceId || getDeviceId() || ''
-      saveAuth({
-        token: data.token,
-        refreshToken,
-        user,
-        deviceId: ensuredDeviceId,
-        company: null,
-        companyConf: null,
-        loginType: null,
-      })
+      // 只更新访问令牌，保留登录类型、公司信息等（原先整份重写会把它们清空）
+      updateAccessToken(data.token)
       return data.token
     })
     .catch(() => null)

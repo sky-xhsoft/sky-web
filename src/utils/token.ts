@@ -63,6 +63,12 @@ export function saveAuth(payload: StoredAuth) {
   setLoginType(payload.loginType)
 }
 
+// 刷新令牌后只更新访问令牌：不能用 saveAuth 重写整份登录信息，
+// 否则登录类型、公司信息会被清空，刷新页面后菜单不再按子系统过滤
+export function updateAccessToken(token: string) {
+  storage.setItem(TOKEN_STORAGE_KEY, token)
+}
+
 export function clearAuth() {
   storage.removeItem(TOKEN_STORAGE_KEY)
   storage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
