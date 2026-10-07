@@ -201,7 +201,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeMount } from 'vue'
+import { ref, onBeforeMount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useNavigationStore } from '../../stores/navigation'
@@ -231,7 +231,6 @@ type RoomInfo = Partial<LiveRoomDetail> & {
   playApp?: string
 }
 const roomInfo = ref<RoomInfo>({})
-const settingsActiveKey = ref(['push'])
 
 // 推流地址数据
 const pushUrls = ref({
@@ -353,7 +352,7 @@ const fallbackCopy = (text: string) => {
   try {
     document.execCommand('copy')
     Message.success(t('liveRoomDetail.messages.copySuccess'))
-  } catch (err) {
+  } catch {
     Message.error(t('liveRoomDetail.messages.copyFailed'))
   } finally {
     document.body.removeChild(textarea)

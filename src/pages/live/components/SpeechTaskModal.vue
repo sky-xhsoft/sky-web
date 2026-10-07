@@ -263,13 +263,6 @@ const loadLiveRooms = async () => {
     console.error('加载直播间失败:', error)
   }
 }
-const roomRtmp = (r: any) => {
-  if (!r.streamName) return ''
-  return `rtmp://${playDomain.value || 'play.local'}/live/${r.streamName}`
-}
-const onSourcePicked = (v: string) => {
-  // 用户可从下游选源, 不留空
-}
 const notEndedRooms = computed(() => {
   const curId = props.record?.id
   return liveRooms.value.filter(r => r.status !== 'ended' && Number(r.id) !== Number(curId))
@@ -357,27 +350,6 @@ const previewClock = computed(() => {
 })
 const previewTranslation = (lang: string) => previewTransPrefix[lang] || `[${lang}] live subtitle sample text`
 
-const videoBgStyle = computed(() => {
-  if (form.bgImage) {
-    return { backgroundImage: `url(${form.bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-  }
-  return { background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' }
-})
-// 预览画布按源流尺寸变化: 固定宽度, 高度按比例
-const previewCanvasW = computed(() => {
-  const [w, h] = (form.sourceResolution || '1920x1080').split('x')
-  const ratio = Number(h) / Number(w)
-  // 高度控制在 150~320px 之间, 宽度自适应
-  const maxH = 320
-  const wpx = ratio >= 1 ? 190 : 320  // 竖屏窄, 横屏宽
-  return wpx + 'px'
-})
-const RES_OPTIONS = [
-  { label: '1920×1080 (16:9)', value: '1920x1080' },
-  { label: '1280×720 (16:9)', value: '1280x720' },
-  { label: '720×1280 (9:16)', value: '720x1280' },
-  { label: '1080×1920 (9:16)', value: '1080x1920' }
-]
 const srcDims = computed(() => {
   const [w, h] = (form.sourceResolution || '1920x1080').split('x')
   return { w: Number(w) || 1920, h: Number(h) || 1080 }
@@ -417,9 +389,8 @@ const drawSubs = (ctx: CanvasRenderingContext2D, W: number, H: number) => {
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   const lineH = form.fontSize * px * 1.5
-  const offX = (form.marginLr / 100) * W
   const bottomY = H - (form.marginTb / 100) * H - lineH / 2
-  const drawLine = (text: string, yy: number, translate: boolean) => {
+  const drawLine = (text: string, yy: number) => {
     if (hasBg) {
       const tw = ctx.measureText(text).width
       const pad = 12 * px
@@ -436,20 +407,19 @@ const drawSubs = (ctx: CanvasRenderingContext2D, W: number, H: number) => {
   }
   if (form.mode === 'mix') {
     // 仅字幕: 单条原文字幕居中大字号
-    const yy = form.outWordMode === 'realtime' ? Math.max(H * 0.08, H * 0.92 - bottomY) : bottomY
     ctx.font = `${form.fontBold ? '700' : '400'} ${Math.round(form.fontSize * 1.2 * px)}px ${form.fontFamily || 'arial'}`
     const yyFinal = form.outWordMode === 'realtime' ? H * 0.15 : bottomY
-    drawLine(previewOriginal, yyFinal, false)
+    drawLine(previewOriginal, yyFinal)
   } else if (form.subtitleFormat === 'both') {
     const origY = form.subtitleOrder === 'originalTop' ? bottomY - lineH : bottomY
     const transY = form.subtitleOrder === 'originalTop' ? bottomY : bottomY - lineH
-        drawLine(previewOriginal, origY, false)
+        drawLine(previewOriginal, origY)
         ctx.font = `${Math.round(form.fontSize * 0.9 * px)}px ${form.fontFamily || 'arial'}`
-        drawLine(form.outputLang ? previewTranslation(form.outputLang) : '', transY, false)
+        drawLine(form.outputLang ? previewTranslation(form.outputLang) : '', transY)
       } else {
         // 仅译文
         ctx.font = `${Math.round(form.fontSize * px)}px ${form.fontFamily || 'arial'}`
-        drawLine(form.outputLang ? previewTranslation(form.outputLang) : '', bottomY, false)
+        drawLine(form.outputLang ? previewTranslation(form.outputLang) : '', bottomY)
   }
 }
 const roundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
@@ -483,44 +453,6 @@ const stageStyle = computed(() => {
   const bh = Math.round(bw * ratio)
   return { width: bw + 'px', height: bh + 'px', margin: '0 auto' }
 })
-const subtitleBase = (fontK: number) => {
-  const hasBg = form.fontBGColor && form.fontBGColor !== '#000000' && form.fontBGColor !== 'transparent'
-  return {
-    fontSize: fontK + 'px',
-    color: form.fontColor || '#FFFFFF',
-    fontFamily: form.fontFamily || 'arial',
-    fontWeight: form.fontBold ? 700 : 400,
-    textShadow: form.fontShadow ? '0 0 6px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.9)' : 'none',
-    background: hasBg ? form.fontBGColor : 'transparent',
-    padding: hasBg ? '1px 8px' : '0',
-    borderRadius: '4px',
-    lineHeight: '1.3'
-  } as Record<string, any>
-}
-const subLineStyle = (kind: 'orig' | 'trans') => {
-  const sizeBase = kind === 'orig' ? Math.max(10, Math.min(20, form.fontSize / 2.4)) : Math.max(9, Math.min(18, form.fontSize / 2.8))
-  const fs = Math.round(sizeBase)
-  const topPos = form.marginTb >= 50
-  return {
-    ...subtitleBase(fs),
-    marginLeft: form.marginLr + '%',
-    marginRight: form.marginLr + '%',
-    [topPos ? 'top' : 'bottom']: (topPos ? 90 - form.marginTb : form.marginTb) + '%',
-    maxHeight: '1.6em',
-    overflow: 'hidden'
-  } as Record<string, any>
-}
-const mixLineStyle = computed(() => {
-  const fs = Math.round(Math.max(16, Math.min(34, form.fontSize * 0.95)))
-  return { ...subtitleBase(fs) } as Record<string, any>
-})
-const mixLinePos = computed(() => {
-  if (form.outWordMode === 'realtime') {
-    return { top: `${Math.max(5, 90 - form.marginTb)}%`, transform: 'translateY(0)' }
-  }
-  return { bottom: `${Math.max(5, form.marginTb)}%`, transform: 'translateY(0)' }
-})
-
 const otherLangs = computed(() => LANG_OPTIONS.filter(o => o.value !== form.inputLang))
 
 watch(
