@@ -154,7 +154,8 @@ const passwordRules = computed(() => ({
   ],
   newPassword: [
     { required: true, message: t('userProfile.changePasswordModal.validation.newPasswordRequired'), trigger: 'blur' },
-    { min: 6, message: t('userProfile.changePasswordModal.validation.newPasswordMinLength'), trigger: 'blur' }
+    // 与后端 validatePasswordStrength 一致：至少 8 位，含大写、小写字母和数字
+    { match: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/, message: t('userProfile.changePasswordModal.validation.newPasswordMinLength'), trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, message: t('userProfile.changePasswordModal.validation.confirmPasswordRequired'), trigger: 'blur' },

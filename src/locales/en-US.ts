@@ -318,7 +318,7 @@ export default {
       oldPassword: 'Old Password',
       oldPasswordPlaceholder: 'Please enter your old password',
       newPassword: 'New Password',
-      newPasswordPlaceholder: 'Please enter new password (at least 6 characters)',
+      newPasswordPlaceholder: 'At least 8 characters with uppercase, lowercase and a digit',
       confirmPassword: 'Confirm Password',
       confirmPasswordPlaceholder: 'Please confirm your new password',
       okButton: 'Confirm',
@@ -330,7 +330,7 @@ export default {
       validation: {
         oldPasswordRequired: 'Please enter your old password',
         newPasswordRequired: 'Please enter your new password',
-        newPasswordMinLength: 'Password must be at least 6 characters',
+        newPasswordMinLength: 'Password must be at least 8 characters and include uppercase, lowercase letters and a digit',
         confirmPasswordRequired: 'Please confirm your new password',
         confirmPasswordMatch: 'Passwords do not match'
       }

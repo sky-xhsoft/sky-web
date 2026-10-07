@@ -318,7 +318,7 @@ export default {
       oldPassword: '旧密码',
       oldPasswordPlaceholder: '请输入旧密码',
       newPassword: '新密码',
-      newPasswordPlaceholder: '请输入新密码（至少6位）',
+      newPasswordPlaceholder: '至少8位，需包含大写字母、小写字母和数字',
       confirmPassword: '确认密码',
       confirmPasswordPlaceholder: '请确认新密码',
       okButton: '确认修改',
@@ -330,7 +330,7 @@ export default {
       validation: {
         oldPasswordRequired: '请输入旧密码',
         newPasswordRequired: '请输入新密码',
-        newPasswordMinLength: '密码长度至少6位',
+        newPasswordMinLength: '密码至少8位，且需包含大写字母、小写字母和数字',
         confirmPasswordRequired: '请确认新密码',
         confirmPasswordMatch: '两次输入的密码不一致'
       }
