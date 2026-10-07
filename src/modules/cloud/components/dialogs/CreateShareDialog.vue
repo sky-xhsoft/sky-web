@@ -30,12 +30,14 @@
       </V2FormItem>
 
       <V2FormItem :label="t('cloud.shareMode')">
-        <a-radio-group v-model="form.shareType" type="button">
-          <a-radio value="password">{{ t('cloud.shareModePassword') }}</a-radio>
-          <a-radio value="public">{{ t('cloud.shareModePublic') }}</a-radio>
-          <a-radio value="private">{{ t('cloud.shareModePrivate') }}</a-radio>
-        </a-radio-group>
-        <div class="hint">{{ shareModeHint }}</div>
+        <div class="field-stack">
+          <a-radio-group v-model="form.shareType" type="button">
+            <a-radio value="password">{{ t('cloud.shareModePassword') }}</a-radio>
+            <a-radio value="public">{{ t('cloud.shareModePublic') }}</a-radio>
+            <a-radio value="private">{{ t('cloud.shareModePrivate') }}</a-radio>
+          </a-radio-group>
+          <div class="hint">{{ shareModeHint }}</div>
+        </div>
       </V2FormItem>
 
       <V2FormItem
@@ -46,7 +48,7 @@
       >
         <a-input-password
           v-model="form.password"
-          :placeholder="t('cloud.passwordPlaceholder')"
+          :placeholder="t('cloud.sharePasswordRequired')"
           :max-length="20"
           allow-clear
           class="v2-password-input"
@@ -60,8 +62,10 @@
       </V2FormItem>
 
       <V2FormItem :label="t('cloud.maxDownloads')">
-        <a-input-number v-model="form.maxDownloads" :min="0" :precision="0" :step="1" style="width: 160px" />
-        <div class="hint">{{ t('cloud.maxDownloadsHint') }}</div>
+        <div class="field-stack">
+          <a-input-number v-model="form.maxDownloads" :min="0" :precision="0" :step="1" style="width: 160px" />
+          <div class="hint">{{ t('cloud.maxDownloadsHint') }}</div>
+        </div>
       </V2FormItem>
     </a-form>
   </V2Modal>
@@ -198,6 +202,13 @@ function handleCancel() {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
+}
+
+.field-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .hint {
