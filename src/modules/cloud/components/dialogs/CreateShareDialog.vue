@@ -4,10 +4,11 @@
     :title="t('cloud.createShareTitle')"
     :ok-loading="loading"
     width="500px"
+    :on-before-ok="validateForm"
     @ok="handleOk"
     @cancel="handleCancel"
   >
-    <a-form :model="form" layout="vertical">
+    <a-form ref="formRef" :model="form" layout="vertical">
       <V2FormItem :label="t('cloud.shareItem')">
         <div class="share-item">
           <span class="item-icon">{{ itemIcon }}</span>
@@ -28,7 +29,21 @@
         </V2Select>
       </V2FormItem>
 
-      <V2FormItem :label="t('cloud.accessPassword')">
+      <V2FormItem :label="t('cloud.shareMode')">
+        <a-radio-group v-model="form.shareType" type="button">
+          <a-radio value="password">{{ t('cloud.shareModePassword') }}</a-radio>
+          <a-radio value="public">{{ t('cloud.shareModePublic') }}</a-radio>
+          <a-radio value="private">{{ t('cloud.shareModePrivate') }}</a-radio>
+        </a-radio-group>
+        <div class="hint">{{ shareModeHint }}</div>
+      </V2FormItem>
+
+      <V2FormItem
+        v-if="form.shareType === 'password'"
+        field="password"
+        :label="t('cloud.accessPassword')"
+        :rules="[{ required: true, message: t('cloud.sharePasswordRequired') }]"
+      >
         <a-input-password
           v-model="form.password"
           :placeholder="t('cloud.passwordPlaceholder')"
@@ -42,7 +57,11 @@
             </V2Button>
           </template>
         </a-input-password>
-        <div class="hint">{{ t('cloud.passwordHint') }}</div>
+      </V2FormItem>
+
+      <V2FormItem :label="t('cloud.maxDownloads')">
+        <a-input-number v-model="form.maxDownloads" :min="0" :precision="0" :step="1" style="width: 160px" />
+        <div class="hint">{{ t('cloud.maxDownloadsHint') }}</div>
       </V2FormItem>
     </a-form>
   </V2Modal>
@@ -75,13 +94,29 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
+type ShareMode = 'password' | 'public' | 'private'
+
 const dialogVisible = ref(props.visible)
+const formRef = ref()
 const form = ref({
+  shareType: 'password' as ShareMode,
   expirationDays: 7,
   password: '',
+  maxDownloads: 0,
 })
 
 const { t } = useI18n()
+
+const shareModeHint = computed(() => {
+  switch (form.value.shareType) {
+    case 'public':
+      return t('cloud.shareModePublicHint')
+    case 'private':
+      return t('cloud.shareModePrivateHint')
+    default:
+      return t('cloud.passwordHint')
+  }
+})
 
 watch(
   () => props.visible,
@@ -89,8 +124,10 @@ watch(
     dialogVisible.value = newValue
     if (newValue) {
       form.value = {
+        shareType: 'password',
         expirationDays: 7,
         password: generateRandomPassword(),
+        maxDownloads: 0,
       }
     }
   }
@@ -117,14 +154,21 @@ function generatePassword() {
   form.value.password = generateRandomPassword()
 }
 
+// 校验不通过时返回 false，阻止弹窗关闭
+async function validateForm(): Promise<boolean> {
+  form.value.password = form.value.password.trim()
+  return !(await formRef.value?.validate())
+}
+
 function handleOk() {
   const params: Omit<ShareCreateParams, 'fileId' | 'resourceId'> = {
-    shareType: form.value.password.trim() ? 'password' : 'public',
+    shareType: form.value.shareType,
     expireDays: form.value.expirationDays,
+    maxDownloads: form.value.maxDownloads || 0,
   }
 
-  if (form.value.password.trim()) {
-    params.password = form.value.password.trim()
+  if (form.value.shareType === 'password') {
+    params.password = form.value.password
   }
 
   emit('confirm', params)
