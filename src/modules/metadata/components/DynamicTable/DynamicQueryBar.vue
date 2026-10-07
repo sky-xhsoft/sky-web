@@ -48,7 +48,14 @@ function getOptions(col: SysColumn) {
 function handleQuery() {
   emit('query', { ...queryForm.value })
 }
-defineExpose({ queryForm, handleQuery })
+
+// 重置时递增以重新挂载查询表单，确保各类输入控件不残留旧值
+const formKey = ref(0)
+function reset() {
+  queryForm.value = {}
+  formKey.value++
+}
+defineExpose({ queryForm, handleQuery, reset })
 </script>
 
 <template>
@@ -77,7 +84,7 @@ defineExpose({ queryForm, handleQuery })
 
     <!-- 折叠面板体 -->
     <div v-show="expanded" class="query-panel-body">
-      <a-form :model="queryForm" layout="inline" class="query-form" @submit.prevent="handleQuery">
+      <a-form :key="formKey" :model="queryForm" layout="inline" class="query-form" @submit.prevent="handleQuery">
         <template v-if="columns.length > 0">
           <a-form-item
             v-for="(col, idx) in visibleColumns"

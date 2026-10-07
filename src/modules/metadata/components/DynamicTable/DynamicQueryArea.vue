@@ -180,14 +180,9 @@ function handleQuery(e: Event) {
   emit('query', queryForm.value)
 }
 
-// 处理重置：逐个字段置空，而不是换成 {}——输入框 v-model 变为 undefined 时会成为非受控组件，
-// 界面仍显示旧条件，再次查询又会带上旧值
+// 处理重置
 function handleReset() {
-  const cleared: Record<string, any> = {}
-  for (const [key, value] of Object.entries(queryForm.value)) {
-    cleared[key] = Array.isArray(value) ? [] : ''
-  }
-  queryForm.value = cleared
+  queryForm.value = {}
   emit('reset')
 }
 
