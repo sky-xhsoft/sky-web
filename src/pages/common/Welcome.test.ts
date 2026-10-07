@@ -35,7 +35,7 @@ describe('Welcome (页面组件挂载)', () => {
   it('渲染 Hero 区域', async () => {
     const wrapper = mountPage()
     await flushPromises()
-    expect(wrapper.find('.hero').exists()).toBe(true)
+    expect(wrapper.find('.hero-section').exists()).toBe(true)
     expect(wrapper.text()).toContain('welcome.brandTitle')
   })
 
@@ -49,6 +49,6 @@ describe('Welcome (页面组件挂载)', () => {
   it('渲染导航栏', async () => {
     const wrapper = mountPage()
     await flushPromises()
-    expect(wrapper.find('.top-nav').exists()).toBe(true)
+    expect(wrapper.find('.nav-bar').exists()).toBe(true)
   })
 })

@@ -34,20 +34,20 @@ describe('Login (页面组件挂载)', () => {
   it('挂载后渲染页面根节点', async () => {
     const wrapper = mountPage()
     await flushPromises()
-    expect(wrapper.find('.auth-wrap').exists()).toBe(true)
+    expect(wrapper.find('.login-page').exists()).toBe(true)
     expect(wrapper.text()).not.toBe('')
   })
 
   it('渲染登录卡片与品牌标题', async () => {
     const wrapper = mountPage()
     await flushPromises()
-    expect(wrapper.find('.auth-card').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Zigebo')
+    expect(wrapper.find('.login-card').exists()).toBe(true)
+    expect(wrapper.text()).toContain('ZiGeBo')
   })
 
   it('渲染品牌面板', async () => {
     const wrapper = mountPage()
     await flushPromises()
-    expect(wrapper.find('.brand-panel').exists()).toBe(true)
+    expect(wrapper.find('.deco-side').exists()).toBe(true)
   })
 })

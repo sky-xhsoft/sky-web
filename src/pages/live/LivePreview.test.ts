@@ -66,7 +66,7 @@ describe('LivePreview (页面组件挂载)', () => {
   it('渲染流信息与播放器区域', async () => {
     const wrapper = mountPage()
     await flushPromises()
-    expect(wrapper.find('.player-wrapper').exists()).toBe(true)
+    expect(wrapper.find('.player-box').exists()).toBe(true)
     expect(wrapper.find('.stream-info').exists()).toBe(true)
     wrapper.unmount()
   })

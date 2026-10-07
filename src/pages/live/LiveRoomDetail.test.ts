@@ -3,11 +3,12 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 
 // Mock 页面依赖的 API 层，避免真实 HTTP 请求
+// 页面按直播间ID由后端生成推流/拉流地址
 vi.mock('@/api/live', () => ({
-  generatePushURL: vi.fn().mockResolvedValue({
+  generatePushURLByRoom: vi.fn().mockResolvedValue({
     data: { code: 200, data: { pushUrl: 'rtmp://push.test/live/stream', pushUrlWebRtc: 'webrtc://push.test/live/stream', pushUrlSrt: 'srt://push.test:9000/stream' } },
   }),
-  generatePlayURL: vi.fn().mockResolvedValue({
+  generatePullURLByRoom: vi.fn().mockResolvedValue({
     data: { code: 200, data: { rtmp: 'rtmp://play.test/live/stream', flv: 'http://play.test/live/stream.flv', hls: 'http://play.test/live/stream.m3u8' } },
   }),
 }))
@@ -16,7 +17,7 @@ vi.mock('@/api/live', () => ({
 vi.mock('@/api/http', () => ({
   default: {
     get: vi.fn().mockResolvedValue({
-      data: { code: 200, data: { ID: 'room-1', ROOM_NAME: '测试直播间', BROADCAST_FORMAT: 'live', STATUS: 'live' } },
+      data: { code: 200, data: { id: 'room-1', roomName: '测试直播间', broadcastFormat: 'live', status: 'live' } },
     }),
     put: vi.fn().mockResolvedValue({ data: { code: 200 } }),
     delete: vi.fn().mockResolvedValue({ data: { code: 200 } }),
@@ -34,7 +35,8 @@ const pageStubs = {
 
 import LiveRoomDetail from './LiveRoomDetail.vue'
 import api from '@/api/http'
-import { generatePushURL, generatePlayURL } from '@/api/live'
+import { generatePushURLByRoom, generatePullURLByRoom } from '@/api/live'
+import { useNavigationStore } from '@/stores/navigation'
 
 function mountPage() {
   return mount(LiveRoomDetail, {
@@ -51,6 +53,8 @@ describe('LiveRoomDetail (页面组件挂载)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    // 直播间ID来自当前标签页参数（setup.ts 中的 useRoute 没有 params）
+    useNavigationStore().current = { componentName: 'LiveRoomDetail', title: '', params: { id: 'room-1' } }
   })
 
   it('挂载后渲染页面根节点', async () => {
@@ -62,13 +66,13 @@ describe('LiveRoomDetail (页面组件挂载)', () => {
   it('onBeforeMount 触发推流/拉流地址生成', async () => {
     mountPage()
     await flushPromises()
-    expect(generatePushURL).toHaveBeenCalled()
-    expect(generatePlayURL).toHaveBeenCalled()
+    expect(generatePushURLByRoom).toHaveBeenCalledWith('room-1')
+    expect(generatePullURLByRoom).toHaveBeenCalledWith('room-1')
   })
 
   it('拉取直播间信息接口被调用', async () => {
     mountPage()
     await flushPromises()
-    expect(api.get).toHaveBeenCalled()
+    expect(api.get).toHaveBeenCalledWith('/live/rooms/room-1')
   })
 })

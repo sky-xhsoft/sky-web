@@ -52,7 +52,7 @@ describe('LiveDomainDetail (页面组件挂载)', () => {
     const wrapper = mountPage()
     await flushPromises()
     expect(wrapper.find('.live-domain-detail-page').exists()).toBe(true)
-    expect(wrapper.find('.page-header').exists()).toBe(true)
+    expect(wrapper.find('.v2-page-header').exists()).toBe(true)
   })
 
   it('onMounted 触发域名信息加载(带入参)', async () => {

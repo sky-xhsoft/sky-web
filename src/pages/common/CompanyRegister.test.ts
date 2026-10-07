@@ -32,7 +32,7 @@ describe('CompanyRegister (页面组件挂载)', () => {
   it('挂载后渲染注册页根节点与卡片', async () => {
     const wrapper = mountPage()
     await flushPromises()
-    expect(wrapper.find('.register-page').exists()).toBe(true)
+    expect(wrapper.find('.auth-wrap').exists()).toBe(true)
     expect(wrapper.find('.register-card').exists()).toBe(true)
   })
 
