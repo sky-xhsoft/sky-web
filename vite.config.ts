@@ -26,6 +26,11 @@ export default defineConfig(({ mode }) => {
           target: apiTarget,
           changeOrigin: true,
         },
+        // 本地存储模式下的云盘文件访问地址
+        '/files': {
+          target: apiTarget,
+          changeOrigin: true,
+        },
       },
     },
     build: {

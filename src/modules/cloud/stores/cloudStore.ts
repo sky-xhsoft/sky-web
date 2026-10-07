@@ -113,8 +113,10 @@ export const useCloudStore = defineStore('cloud', () => {
     const items: GridItem[] = []
 
 
-    // 添加文件夹
+    // 添加文件夹（与文件一样按搜索词过滤，原先搜索时文件夹始终显示）
+    const query = searchQuery.value.trim().toLowerCase()
     currentFolderChildren.value.forEach((folder) => {
+      if (query && !String(folder.name || '').toLowerCase().includes(query)) return
       items.push({
         type: 'folder',
         id: folder.ID || folder.id || 0,

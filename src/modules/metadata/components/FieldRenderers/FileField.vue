@@ -92,7 +92,7 @@ const config = computed(() => {
 
 // 上传地址
 const uploadUrl = computed(() => {
-  return config.value.uploadUrl || '/api/v1/file/upload'
+  return config.value.uploadUrl || '/api/v1/files/upload'
 })
 
 // 上传请求头

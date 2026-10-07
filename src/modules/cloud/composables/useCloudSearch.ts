@@ -226,9 +226,10 @@ export function useCloudSearch() {
       .slice(0, limit)
   }
 
+  // 结果数与列表实际显示的条目（文件夹 + 文件）一致
   const resultCount = computed(() => {
     if (!searchQuery.value) return 0
-    return searchLocal(searchQuery.value).length
+    return store.gridItems.length
   })
 
   const hasResults = computed(() => resultCount.value > 0)

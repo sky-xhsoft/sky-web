@@ -31,7 +31,14 @@ const platformSubtitle = computed(() =>
     : t('welcome.brandSubtitle')
 )
 
-const handleSubmit = async (_data: any) => {
+// 必填校验：用户名/密码为空时不发请求
+const rules = computed(() => ({
+  username: [{ required: true, message: t('login.fields.placeholder.username') }],
+  password: [{ required: true, message: t('login.fields.placeholder.password') }],
+}))
+
+const handleSubmit = async ({ errors }: { errors?: Record<string, any> }) => {
+  if (errors) return
   submitting.value = true
   try {
     await authStore.login({
@@ -100,7 +107,7 @@ onMounted(() => {
           <div class="subtitle">{{ platformSubtitle }}</div>
         </div>
 
-        <a-form :model="form" layout="vertical" @submit="handleSubmit">
+        <a-form :model="form" :rules="rules" layout="vertical" @submit="handleSubmit">
           <a-form-item field="username" :label="t('login.fields.username')">
             <a-input v-model="form.username" :placeholder="t('login.fields.placeholder.username')" />
           </a-form-item>

@@ -52,7 +52,8 @@ export async function accessShare(code: string, password: string): Promise<Share
  */
 export async function downloadShareFile(code: string, filename: string, accessToken?: string): Promise<void> {
   const baseUrl = (API_BASE_URL || '').replace(/\/$/, '')
-  const url = `${baseUrl}/api/v1/cloud/shares/${code}/download`
+  // API_BASE_URL 已包含 /api/v1，不能再拼一次（原先请求 /api/v1/api/v1/... 返回 404）
+  const url = `${baseUrl}/cloud/shares/${code}/download`
 
   // 使用 fetch 下载文件
   try {

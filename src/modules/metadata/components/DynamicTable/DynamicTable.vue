@@ -710,8 +710,10 @@ async function handleQuery(form?: Record<string, any>) {
  * 重置查询条件
  */
 async function handleReset() {
-  // 清空查询表单
-  queryForm.value = {}
+  // 清空查询表单（逐个字段置空，避免输入框变为非受控后仍显示旧值）
+  queryForm.value = Object.fromEntries(
+    Object.entries(queryForm.value).map(([key, value]) => [key, Array.isArray(value) ? [] : '']),
+  )
 
   try {
     const tableStore = useDynamicTableStore()

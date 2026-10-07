@@ -86,7 +86,7 @@ export const useDynamicTableStore = defineStore('dynamicTable', () => {
     st.filters = {}
     for (const key in newFilters) {
       const val = newFilters[key]
-      if (val !== '' && val !== null && val !== undefined) {
+      if (val !== '' && val !== null && val !== undefined && !(Array.isArray(val) && val.length === 0)) {
         st.filters[key] = val
       }
     }
