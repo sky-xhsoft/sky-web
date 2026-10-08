@@ -217,8 +217,9 @@ const parseTargetUrl = (url: string) => {
 const submitTask = async () => {
   if (!taskFormRef.value) return
 
+  // Arco 的 validate() 校验失败时返回错误对象而不是抛异常，必须检查返回值
   try {
-    await taskFormRef.value.validate()
+    if (await taskFormRef.value.validate()) return
   } catch {
     return
   }

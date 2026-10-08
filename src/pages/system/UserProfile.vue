@@ -71,7 +71,7 @@
     <a-modal
       v-model:visible="changePasswordVisible"
       :title="t('userProfile.changePasswordModal.title')"
-      @ok="handleConfirmChangePassword"
+      :on-before-ok="handleConfirmChangePassword"
       @cancel="handleCancelChangePassword"
       :ok-button-props="{ type: 'primary' }"
     >
@@ -179,11 +179,13 @@ const handleChangePassword = () => {
   changePasswordVisible.value = true
 }
 
-const handleConfirmChangePassword = async () => {
-  if (!passwordFormRef.value) return
+// 作为弹窗的 on-before-ok：返回 false 时弹窗保持打开（校验不通过或修改失败）
+const handleConfirmChangePassword = async (): Promise<boolean> => {
+  if (!passwordFormRef.value) return false
 
   try {
-    await passwordFormRef.value.validate()
+    // Arco 的 validate() 校验失败时返回错误对象而不是抛异常
+    if (await passwordFormRef.value.validate()) return false
     await changePassword({
       oldPassword: passwordForm.oldPassword,
       newPassword: passwordForm.newPassword
@@ -193,9 +195,11 @@ const handleConfirmChangePassword = async () => {
     changePasswordVisible.value = false
     await authStore.logout()
     router.push('/login')
+    return true
   } catch (error: any) {
     console.error('Failed to change password:', error)
     Message.error(error.message || t('userProfile.changePasswordModal.messages.error'))
+    return false
   }
 }
 

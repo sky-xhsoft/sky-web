@@ -4,6 +4,7 @@
     :title="t('cloud.editShareTitle')"
     :ok-loading="loading"
     width="600px"
+    :on-before-ok="validateForm"
     @ok="handleOk"
     @cancel="handleCancel"
     :footer-extra="renderFooterExtra"
@@ -254,20 +255,21 @@ function fallbackCopy(text: string, successMsg: string) {
   }
 }
 
+// 校验不通过时返回 false，阻止弹窗关闭（Arco 的 validate() 失败时返回错误对象而不是抛异常）
+async function validateForm(): Promise<boolean> {
+  return !(await formRef.value?.validate())
+}
+
 function handleOk() {
-  formRef.value?.validate().then(() => {
-    const params: { expirationDays: number; password?: string } = {
-      expirationDays: form.value.expirationDays,
-    }
+  const params: { expirationDays: number; password?: string } = {
+    expirationDays: form.value.expirationDays,
+  }
 
-    if (form.value.password.trim()) {
-      params.password = form.value.password.trim()
-    }
+  if (form.value.password.trim()) {
+    params.password = form.value.password.trim()
+  }
 
-    emit('confirm', params)
-  }).catch(() => {
-    // 验证失败，不提交
-  })
+  emit('confirm', params)
 }
 
 function handleCancel() {

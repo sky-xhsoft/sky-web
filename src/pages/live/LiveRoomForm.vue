@@ -267,7 +267,8 @@ const handleUpload = async (option: any) => {
 
 const handleSubmit = async () => {
   try {
-    await formRef.value?.validate()
+    // Arco 的 validate() 校验失败时返回错误对象而不是抛异常，必须检查返回值
+    if (await formRef.value?.validate()) return
     // 新增模式：提交前兜底校验域名是否已配置，防止绕过弹窗直接创建
     if (!isEditMode.value) {
       const configured = await checkDomainConfigured()
