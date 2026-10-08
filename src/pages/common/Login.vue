@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import { IconVideoCamera } from '@arco-design/web-vue/es/icon'
 import { useAuthStore } from '../../stores/auth'
+import { getLoginType } from '../../utils/token'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '../../components/LanguageSwitcher.vue'
 
@@ -74,6 +75,9 @@ onMounted(() => {
   const typeParam = route.query.type as string
   if (typeParam === 'live' || typeParam === 'cloud' || typeParam === 'system') {
     loginType.value = typeParam as 'live' | 'cloud' | 'system'
+  } else {
+    // 未指定系统时沿用上次登录的系统（登录过期被带回登录页时不丢失所在系统）
+    loginType.value = getLoginType()
   }
 })
 </script>

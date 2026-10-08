@@ -1,6 +1,6 @@
 import axios, { type AxiosError, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import { API_BASE_URL } from '../config'
-import { clearAuth, getAccessToken, getRefreshToken, updateAccessToken } from '../utils/token'
+import { clearAuth, getAccessToken, getLoginType, getRefreshToken, updateAccessToken } from '../utils/token'
 import { refreshAccessToken } from './auth'
 import { ApiError, type ApiResponse } from './types'
 
@@ -21,11 +21,13 @@ const redirectToLogin = () => {
   if (typeof window !== 'undefined' && window.location) {
     const { pathname, search, hash } = window.location
     const current = `${pathname}${search}${hash}`
-    const target =
-      current && !pathname.startsWith('/login')
-        ? `/login?redirect=${encodeURIComponent(current)}`
-        : '/login'
-    window.location.replace(target)
+    // 带上当前所在系统，重新登录后回到同一个系统（否则默认进入直播系统）
+    const params = new URLSearchParams()
+    const loginType = getLoginType()
+    if (loginType) params.set('type', loginType)
+    if (current && !pathname.startsWith('/login')) params.set('redirect', current)
+    const query = params.toString()
+    window.location.replace(query ? `/login?${query}` : '/login')
   }
 }
 

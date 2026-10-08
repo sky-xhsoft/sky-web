@@ -50,4 +50,12 @@ describe('Login (页面组件挂载)', () => {
     await flushPromises()
     expect(wrapper.find('.deco-side').exists()).toBe(true)
   })
+
+  it('地址中未指定系统时沿用上次登录的系统（登录过期被带回登录页时不丢失）', async () => {
+    localStorage.setItem('sky-web:login-type', 'system')
+    const wrapper = mountPage()
+    await flushPromises()
+    expect(wrapper.text()).toContain('login.platforms.system')
+    localStorage.removeItem('sky-web:login-type')
+  })
 })
