@@ -1,6 +1,6 @@
 <template>
   <div class="highlight-clips-page">
-    <V2PageHeader title="直播高光切片" description="管理直播精彩片段与高光切片">
+    <V2PageHeader v-if="!embedded" title="直播高光切片" description="管理直播精彩片段与高光切片">
       <template #actions>
         <V2Button type="secondary" @click="handleRefresh">
           <template #icon><icon-refresh /></template>
@@ -8,8 +8,15 @@
         </V2Button>
       </template>
     </V2PageHeader>
+    <!-- 嵌入直播间详情页时只保留操作按钮，不显示页头与汇总 -->
+    <div v-else class="embedded-toolbar">
+      <V2Button type="secondary" @click="handleRefresh">
+        <template #icon><icon-refresh /></template>
+        刷新
+      </V2Button>
+    </div>
 
-    <div class="stats-grid">
+    <div v-if="!embedded" class="stats-grid">
       <V2Card v-for="(stat, idx) in statCards" :key="idx" hover>
         <div class="stat-card">
           <div class="stat-label">{{ stat.label }}</div>
@@ -144,6 +151,8 @@ import { V2PageHeader, V2Card, V2Button, V2Tag } from '@/components/ui'
 
 const props = defineProps<{
   roomId?: string
+  /** 嵌入直播间详情页的标签页：不显示页头和汇总卡片，直接展示列表 */
+  embedded?: boolean
 }>()
 
 const loading = ref(false)
@@ -321,5 +330,12 @@ onMounted(() => loadData())
   .stats-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.embedded-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 </style>

@@ -21,8 +21,9 @@ const pageStubs = {
 import LiveRecordings from './LiveRecordings.vue'
 import { listRecordings } from '@/api/live'
 
-function mountPage() {
+function mountPage(props: Record<string, unknown> = {}) {
   return mount(LiveRecordings, {
+    props,
     global: {
       stubs: pageStubs,
       config: {
@@ -55,5 +56,21 @@ describe('LiveRecordings (页面组件挂载)', () => {
     await flushPromises()
     expect(wrapper.find('.v2-page-header').exists()).toBe(true)
     expect(wrapper.text()).toContain('直播录制列表')
+  })
+
+  it('嵌入直播间详情时不显示页头和汇总卡片，只保留操作按钮与列表', async () => {
+    const wrapper = mountPage({ embedded: true, roomId: '66' })
+    await flushPromises()
+    expect(wrapper.find('.stats-grid').exists()).toBe(false)
+    expect(wrapper.find('.v2-page-header').exists()).toBe(false)
+    expect(wrapper.find('.embedded-toolbar').exists()).toBe(true)
+    expect(listRecordings).toHaveBeenCalledWith(expect.objectContaining({ roomId: '66' }))
+  })
+
+  it('独立页面仍显示页头和汇总卡片', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+    expect(wrapper.find('.stats-grid').exists()).toBe(true)
+    expect(wrapper.find('.embedded-toolbar').exists()).toBe(false)
   })
 })

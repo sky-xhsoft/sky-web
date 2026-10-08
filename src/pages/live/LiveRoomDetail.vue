@@ -194,9 +194,9 @@
           :rtmp-pull-url="pullUrls.rtmp"
           :room-name="roomInfo.roomName"
         />
-        <PullStreamTask v-if="roomInfo.id && activeTab === 'dispatch'" :room-id="String(roomInfo.id)" />
-        <LiveHighlightClips v-if="roomInfo.id && activeTab === 'clips'" :room-id="String(roomInfo.id)" />
-        <LiveRecordings v-if="roomInfo.id && activeTab === 'recordings'" :room-id="String(roomInfo.id)" />
+        <PullStreamTask embedded v-if="roomInfo.id && activeTab === 'dispatch'" :room-id="String(roomInfo.id)" />
+        <LiveHighlightClips embedded v-if="roomInfo.id && activeTab === 'clips'" :room-id="String(roomInfo.id)" />
+        <LiveRecordings embedded v-if="roomInfo.id && activeTab === 'recordings'" :room-id="String(roomInfo.id)" />
       </div>
     </section>
   </div>
