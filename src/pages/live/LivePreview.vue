@@ -1,56 +1,74 @@
 <template>
   <div class="live-preview-page">
-    <V2PageHeader title="直播预览" :description="streamInfo.streamName">
-      <template #actions>
-        <V2Tag type="success"><span class="live-dot" /> LIVE</V2Tag>
+    <div class="preview-wrap">
+      <!-- 页头：与直播间详情一致 -->
+      <div class="preview-head">
+        <div class="head-main">
+          <div class="head-crumb">
+            <span class="head-link" @click="goBack">直播间管理</span>
+            <span>/</span>
+            <span>直播预览</span>
+          </div>
+          <div class="head-title-row">
+            <h1 class="head-title">{{ title }}</h1>
+            <span class="live-status"><span class="live-dot" />直播中</span>
+          </div>
+        </div>
         <V2Button type="secondary" @click="goBack">
           <template #icon>
             <icon-left />
           </template>
           返回
         </V2Button>
-      </template>
-    </V2PageHeader>
-
-    <div class="preview-content">
-      <div class="player-box">
-        <video
-          :key="playerKey"
-          id="player-container-id"
-          class="player-video"
-          preload="auto"
-          playsinline
-          webkit-playsinline
-        ></video>
       </div>
 
-      <V2Card class="stream-info">
-        <div class="stream-title">流信息</div>
-        <div class="detail-rows">
-          <span class="dt-label">流名称</span>
-          <span>{{ streamInfo.streamName }}</span>
-          <span class="dt-label">应用名称</span>
-          <span>{{ streamInfo.appName }}</span>
-          <span class="dt-label">播放域名</span>
-          <span>{{ streamInfo.playDomain }}</span>
-          <span class="dt-label">播放地址</span>
-          <span class="play-url">
-            <span class="url-text">{{ playUrl }}</span>
-            <icon-copy class="copy-icon" @click="copyToClipboard(playUrl)" />
-          </span>
+      <!-- 左侧播放器（16:9），右侧流信息面板，两侧等高；窄屏上下排列 -->
+      <div class="preview-content">
+        <div class="player-box">
+          <video
+            :key="playerKey"
+            id="player-container-id"
+            class="player-video"
+            preload="auto"
+            playsinline
+            webkit-playsinline
+          ></video>
         </div>
-      </V2Card>
+
+        <div class="stream-info">
+          <div class="info-title">流信息</div>
+          <div class="detail-rows">
+            <span class="dt-label">流名称</span>
+            <span class="dt-value">{{ streamInfo.streamName }}</span>
+            <span class="dt-label">应用名称</span>
+            <span class="dt-value">{{ streamInfo.appName }}</span>
+            <span class="dt-label">播放域名</span>
+            <span class="dt-value">{{ streamInfo.playDomain }}</span>
+          </div>
+
+          <div class="info-divider" />
+
+          <div class="info-title">播放地址</div>
+          <div class="url-list">
+            <div v-for="item in urlItems" :key="item.label" class="url-item">
+              <span class="url-label">{{ item.label }}</span>
+              <span :class="item.primary ? 'url-text' : 'url-value'" :title="item.url">{{ item.url || '-' }}</span>
+              <icon-copy v-if="item.url" class="copy-icon" @click="copyToClipboard(item.url)" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { IconLeft, IconCopy } from '@arco-design/web-vue/es/icon'
 import { useNavigationStore } from '@/stores/navigation'
 import { generatePlayURL } from '@/api/live'
-import { V2PageHeader, V2Button, V2Card, V2Tag } from '@/components/ui'
+import { V2Button } from '@/components/ui'
 import dayjs from 'dayjs'
 
 const navigationStore = useNavigationStore()
@@ -60,6 +78,8 @@ const props = defineProps<{
   streamName: string
   appName: string
   playDomain: string
+  /** 直播间名称（从直播间页面进入时传入），用作页面标题 */
+  roomName?: string
 }>()
 
 // 播放器实例
@@ -75,8 +95,18 @@ const streamInfo = ref({
   playDomain: props.playDomain || ''
 })
 
-// 播放地址
+// 播放地址（播放器使用 FLV）
 const playUrl = ref('')
+const hlsUrl = ref('')
+const rtmpUrl = ref('')
+
+const title = computed(() => props.roomName || `流 ${streamInfo.value.streamName}`)
+
+const urlItems = computed(() => [
+  { label: 'HTTP-FLV', url: playUrl.value, primary: true },
+  { label: 'HLS', url: hlsUrl.value, primary: false },
+  { label: 'RTMP', url: rtmpUrl.value, primary: false },
+])
 
 // 生成播放地址
 const generatePlayUrl = async () => {
@@ -93,6 +123,8 @@ const generatePlayUrl = async () => {
     if (response.data?.data) {
       // 使用 flv 地址
       playUrl.value = response.data.data.flv || ''
+      hlsUrl.value = response.data.data.hls || ''
+      rtmpUrl.value = response.data.data.rtmp || ''
     } else {
       Message.error('获取播放地址失败')
       // 使用默认地址
@@ -179,7 +211,8 @@ const initPlayer = () => {
         controls: true,
         width: '100%',
         height: '100%',
-        fluid: true,
+        // 不按宽度自适应高度，由 .player-box 控制高度
+        fluid: false,
         language: 'zh-CN',
         plugins: {
           ContinuePlay: {
@@ -262,37 +295,76 @@ onBeforeUnmount(() => {
   padding: 8px;
   height: 100%;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
 }
 
-.preview-content {
+.preview-wrap {
+  max-width: 1200px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
 }
 
-.player-box {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: rgba(0, 0, 0, 0.92);
+.preview-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--bg-card);
   border-radius: var(--radius-lg);
-  overflow: hidden;
 }
 
-.player-box video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.head-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.head-crumb {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.head-link {
+  color: var(--brand-blue);
+  cursor: pointer;
+}
+
+.head-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.head-title {
+  margin: 0;
+  overflow: hidden;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.live-status {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--error-bg);
+  color: var(--error);
 }
 
 .live-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--error);
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: currentColor;
   animation: v2-pulse 1.6s infinite;
 }
 
@@ -301,46 +373,117 @@ onBeforeUnmount(() => {
   50% { opacity: 0.35; }
 }
 
-.stream-info {
-  padding: 20px;
+.preview-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 12px;
+  align-items: stretch;
 }
 
-.stream-title {
+.player-box {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.player-box video,
+.player-box :deep(.video-js) {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.player-box video {
+  object-fit: contain;
+}
+
+.stream-info {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+}
+
+.info-title {
+  margin-bottom: 12px;
+  font-size: 14px;
   font-weight: 600;
-  margin-bottom: 14px;
   color: var(--text-primary);
 }
 
 .detail-rows {
   display: grid;
-  grid-template-columns: 110px 1fr;
-  gap: 10px 14px;
-  font-size: 13px;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 8px 12px;
 }
 
 .dt-label {
   color: var(--text-tertiary);
 }
 
-.play-url {
+.dt-value {
+  min-width: 0;
+  word-break: break-all;
+  color: var(--text-primary);
+}
+
+.info-divider {
+  height: 1px;
+  margin: 14px 0;
+  background: var(--border-light);
+}
+
+.url-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.url-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 0;
+  padding: 8px 10px;
+  background: var(--bg-page);
+  border-radius: var(--radius-md);
 }
 
-.url-text {
-  word-break: break-all;
+.url-label {
+  flex-shrink: 0;
+  width: 60px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.url-text,
+.url-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
 }
 
 .copy-icon {
+  flex-shrink: 0;
   cursor: pointer;
   color: var(--text-tertiary);
   font-size: 14px;
-  flex-shrink: 0;
 }
 
 .copy-icon:hover {
   color: var(--brand-blue);
+}
+
+@media (max-width: 1000px) {
+  .preview-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

@@ -526,7 +526,7 @@ const handlePreview = () => {
     Message.warning(t('liveRoomDetail.page.play.failTitle'))
     return
   }
-  navigationStore.navigateTo('LivePreview', t('liveRoomList.preview'), { streamName: streamName.value, appName: 'live', playDomain })
+  navigationStore.navigateTo('LivePreview', t('liveRoomList.preview'), { streamName: streamName.value, appName: 'live', playDomain, roomName: roomInfo.value.roomName })
 }
 
 const changeLiveState = (action: 'start' | 'end') => {

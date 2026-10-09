@@ -383,7 +383,8 @@ const handlePreview = async (record: any) => {
     navigationStore.navigateTo('LivePreview', t('liveRoomList.preview'), {
       streamName,
       appName,
-      playDomain: playDomain.name
+      playDomain: playDomain.name,
+      roomName: record.roomName
     })
   } catch (error: any) {
     console.error('预览失败:', error)
