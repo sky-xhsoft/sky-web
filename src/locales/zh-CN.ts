@@ -277,6 +277,7 @@ export default {
   },
 
   userCenter: {
+    account: '账号',
     profile: '个人资料',
     companyConfig: '公司配置',
     admin: '管理员',

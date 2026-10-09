@@ -277,6 +277,7 @@ export default {
   },
 
   userCenter: {
+    account: 'Account',
     profile: 'Profile',
     companyConfig: 'Company Config',
     admin: 'Administrator',

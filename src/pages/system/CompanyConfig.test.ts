@@ -1,61 +1,98 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
+import { useAuthStore } from '@/stores/auth'
 
-// Mock 公司配置 API，避免 onMounted 触发真实 HTTP
+// 公司 50 的实际情况：存储类型为空、COS 地址已填但区域为空，直播密钥已设置，未配置火山引擎
+const conf50 = {
+  storageType: '',
+  tencentCosBucketUrl: 'https://skyyihan-1497211701.cos.ap-guangzhou.myqcloud.com',
+  tencentCosBucketName: 'skyyihan-1497211701',
+  tencentCosRegion: '',
+  tencentCosSecretId: '',
+  tencentCosSecretKey: '',
+  tencentCloudSecretId: 'AKID****Q2mA',
+  tencentCloudSecretKey: 'abcd****wxyz',
+  tencentCloudRegion: 'ap-guangzhou',
+  tencentCloudCallbackKey: '',
+  volcengineAccessKeyId: '',
+  volcengineAccessKeySecret: '',
+  volcengineRegion: '',
+}
+
 vi.mock('@/api/company', () => ({
-  getCompanyConfig: vi.fn().mockResolvedValue({
-    defaultLanguage: 'zh-CN',
-    timezone: 'Asia/Shanghai',
-    storageType: 'local',
-  }),
+  getCompanyConfig: vi.fn(),
   updateCompanyConfig: vi.fn().mockResolvedValue({}),
 }))
 
 import CompanyConfig from './CompanyConfig.vue'
 import { getCompanyConfig } from '@/api/company'
 
-// 补上本页用到、setup.ts 未 stub 的 Arco 组件
 const pageStubs = {
-  'a-row': true,
-  'a-col': true,
   'a-radio-group': true,
   'a-radio': true,
-  'a-divider': true,
-  'a-input-number': true,
   'a-input-password': true,
+  'a-link': true,
+  'a-spin': { template: '<div><slot /></div>' },
+  // 全局 setup 把 a-input 存根为空节点，这里渲染成可输入的 input
+  'a-input': {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template: `<input :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" />`,
+  },
 }
 
-function mountPage() {
-  return mount(CompanyConfig, {
-    global: {
-      stubs: pageStubs,
-      config: { globalProperties: { t: (key: string) => key } },
-    },
-  })
+function mountPage(isAdmin: 'Y' | 'N') {
+  useAuthStore().user = { id: 30, username: 'CLX', isAdmin } as any
+  return mount(CompanyConfig, { global: { stubs: pageStubs } })
 }
 
-describe('CompanyConfig (页面组件挂载)', () => {
+describe('CompanyConfig（公司配置折叠面板）', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    vi.mocked(getCompanyConfig).mockResolvedValue({ ...conf50 } as any)
   })
 
-  it('挂载后渲染页面根节点与页头', async () => {
-    const wrapper = mountPage()
+  it('按与后端一致的规则计算各项状态：存储类型为空按 COS，区域从地址识别', async () => {
+    const wrapper = mountPage('Y')
     await flushPromises()
-    expect(wrapper.find('.company-config-page').exists()).toBe(true)
-    expect(wrapper.text()).toContain('公司配置')
+    const heads = wrapper.findAll('.cc-item-head').map((h) => h.text().replace(/\s+/g, ' '))
+    expect(heads[0]).toContain('腾讯云直播')
+    expect(heads[0]).toContain('已配置')
+    expect(heads[0]).toContain('回调密钥未设置')
+    expect(heads[1]).toContain('云盘存储')
+    expect(heads[1]).toContain('已配置')
+    expect(heads[1]).toContain('腾讯云 COS · ap-guangzhou')
+    expect(heads[2]).toContain('未配置')
   })
 
-  it('onMounted 拉取公司配置', async () => {
-    mountPage()
+  it('管理员默认展开第一个需要处理的项，并且无修改时不提交任何字段', async () => {
+    const wrapper = mountPage('Y')
     await flushPromises()
-    expect(getCompanyConfig).toHaveBeenCalled()
+    expect(wrapper.find('.cc-item.is-open .cc-item-title').text()).toBe('AI 同传 / 字幕')
+    expect((wrapper.vm as any).payload).toEqual({})
   })
 
-  it('渲染配置卡片容器', async () => {
-    const wrapper = mountPage()
+  it('非管理员只显示状态，不能展开编辑', async () => {
+    const wrapper = mountPage('N')
     await flushPromises()
-    expect(wrapper.find('.v2-card').exists()).toBe(true)
+    expect(wrapper.text()).toContain('仅管理员可修改')
+    await wrapper.findAll('.cc-item-head')[1].trigger('click')
+    expect(wrapper.find('.cc-item-body').exists()).toBe(false)
+  })
+
+  it('修改 Bucket 地址后同步名称与区域，并明确写入存储类型', async () => {
+    const wrapper = mountPage('Y')
+    await flushPromises()
+    await wrapper.findAll('.cc-item-head')[1].trigger('click')
+    const urlInput = wrapper.find('.cc-item-body input')
+    await urlInput.setValue('https://newbucket-1300000000.cos.ap-shanghai.myqcloud.com')
+    await flushPromises()
+    expect((wrapper.vm as any).payload).toMatchObject({
+      tencentCosBucketUrl: 'https://newbucket-1300000000.cos.ap-shanghai.myqcloud.com',
+      tencentCosBucketName: 'newbucket-1300000000',
+      tencentCosRegion: 'ap-shanghai',
+      storageType: 'tencentCOS',
+    })
   })
 })
