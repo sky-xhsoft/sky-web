@@ -120,18 +120,27 @@
             <a-switch v-model="formData.isRecord" :checked-value="'Y'" :unchecked-value="'N'" />
             <div class="form-tip">{{ t('liveRoomForm.isRecordTips') }}</div>
           </a-form-item>
+          <!-- 开启录制时选择录制存储位置（云盘文件夹） -->
+          <a-form-item v-if="formData.isRecord === 'Y'" :label="t('liveRoomForm.recordFolder')" field="recordFolderId">
+            <CloudFolderSelect
+              v-model="formData.recordFolderId"
+              :root-label="t('liveRoomForm.storageFolderRoot')"
+              :placeholder="t('liveRoomForm.recordFolderPlaceholder')"
+            />
+            <div class="form-tip">{{ t('liveRoomForm.recordFolderTips') }}</div>
+          </a-form-item>
           <a-form-item :label="t('liveRoomForm.isClip')" field="isClip">
             <a-switch v-model="formData.isClip" :checked-value="'Y'" :unchecked-value="'N'" />
             <div class="form-tip">{{ t('liveRoomForm.isClipTips') }}</div>
           </a-form-item>
-          <!-- 开启录制或切片时选择存储位置（云盘文件夹） -->
-          <a-form-item v-if="needStorage" :label="t('liveRoomForm.storageFolder')" field="storageFolderId">
+          <!-- 开启切片时选择切片存储位置（云盘文件夹） -->
+          <a-form-item v-if="formData.isClip === 'Y'" :label="t('liveRoomForm.clipFolder')" field="clipFolderId">
             <CloudFolderSelect
-              v-model="formData.storageFolderId"
+              v-model="formData.clipFolderId"
               :root-label="t('liveRoomForm.storageFolderRoot')"
-              :placeholder="t('liveRoomForm.storageFolderPlaceholder')"
+              :placeholder="t('liveRoomForm.clipFolderPlaceholder')"
             />
-            <div class="form-tip">{{ t('liveRoomForm.storageFolderTips') }}</div>
+            <div class="form-tip">{{ t('liveRoomForm.clipFolderTips') }}</div>
           </a-form-item>
         </a-col>
       </a-row>
@@ -194,12 +203,12 @@ const formData = reactive({
   coverImage: '',
   isRecord: 'Y',
   isClip: 'Y',
-  // 录制/切片存储位置：云盘文件夹 ID，0 为云盘根目录（提交为空），undefined 为尚未选择
-  storageFolderId: undefined as number | undefined,
+  // 录制 / 切片存储位置：云盘文件夹 ID，0 为云盘根目录（提交为空），undefined 为尚未选择
+  recordFolderId: undefined as number | undefined,
+  clipFolderId: undefined as number | undefined,
   description: '',
 })
 
-const needStorage = computed(() => formData.isRecord === 'Y' || formData.isClip === 'Y')
 
 
 
@@ -209,8 +218,9 @@ const rules = {
     { max: 100, message: t('liveRoomForm.roomNameMaxLength') }
   ],
   startTime: [{ required: true, message: t('liveRoomForm.validation.startTime') }],
-  // 仅在开启录制或切片时显示，未显示的字段不参与校验
-  storageFolderId: [{ required: true, message: t('liveRoomForm.storageFolderRequired') }],
+  // 仅在开启录制 / 切片时显示，未显示的字段不参与校验
+  recordFolderId: [{ required: true, message: t('liveRoomForm.recordFolderRequired') }],
+  clipFolderId: [{ required: true, message: t('liveRoomForm.clipFolderRequired') }],
 }
 
 // 加载直播间数据（编辑模式）
@@ -232,7 +242,8 @@ const loadRoomData = async () => {
       formData.isRecord = data.IS_RECORD || 'Y'
       formData.isClip = data.IS_CLIP || 'Y'
       // 已有直播间未设置存储位置时视为云盘根目录
-      formData.storageFolderId = data.STORAGE_FOLDER_ID ? Number(data.STORAGE_FOLDER_ID) : 0
+      formData.recordFolderId = data.RECORD_FOLDER_ID ? Number(data.RECORD_FOLDER_ID) : 0
+      formData.clipFolderId = data.CLIP_FOLDER_ID ? Number(data.CLIP_FOLDER_ID) : 0
       formData.description = data.DESCRIPTION || ''
     } else {
       Message.error('加载直播间数据失败')
@@ -315,7 +326,8 @@ const handleSubmit = async () => {
       COVER_IMAGE: formData.coverImage,
       IS_RECORD: formData.isRecord,
       IS_CLIP: formData.isClip,
-      STORAGE_FOLDER_ID: formData.storageFolderId || null,
+      RECORD_FOLDER_ID: formData.recordFolderId || null,
+      CLIP_FOLDER_ID: formData.clipFolderId || null,
       DESCRIPTION: formData.description,    }
     if (isEditMode.value) {
       // 编辑时不动这些通用/状态字段，避免重置直播阶段/观看·回放方式/状态
