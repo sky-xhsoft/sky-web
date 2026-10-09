@@ -323,10 +323,10 @@ const kpis = computed(() => {
 
 const tabs = computed(() => [
   { key: 'overview' as const, label: t('liveRoomDetail.page.tabs.overview'), count: undefined },
-  { key: 'speech' as const, label: t('liveRoomDetail.subtitle'), count: undefined },
   { key: 'dispatch' as const, label: t('liveRoomDetail.pullStreamTask'), count: undefined },
   { key: 'clips' as const, label: t('liveRoomDetail.highlightClips'), count: clipCount.value },
   { key: 'recordings' as const, label: t('liveRoomDetail.recordings'), count: recordingCount.value },
+  { key: 'speech' as const, label: t('liveRoomDetail.subtitle'), count: undefined },
 ])
 
 // ---------- 推流 / 播放地址 ----------

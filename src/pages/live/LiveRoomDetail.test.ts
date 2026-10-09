@@ -180,4 +180,17 @@ describe('LiveRoomDetail (页面组件挂载)', () => {
       vi.useRealTimers()
     }
   })
+
+  it('标签顺序：概览、社媒分发、直播切片、直播录制，同传/字幕在最后', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+    const labels = wrapper.findAll('.lrd-tab').map((b) => b.text().replace(/\d+$/, '').trim())
+    expect(labels).toEqual([
+      'liveRoomDetail.page.tabs.overview',
+      'liveRoomDetail.pullStreamTask',
+      'liveRoomDetail.highlightClips',
+      'liveRoomDetail.recordings',
+      'liveRoomDetail.subtitle',
+    ])
+  })
 })
