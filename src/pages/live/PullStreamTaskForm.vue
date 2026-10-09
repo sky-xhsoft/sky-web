@@ -88,6 +88,7 @@
                 </a-form-item>
               </div>
               <div class="ptf-tip">{{ currentPlatform.guide }}获取「服务器地址」和「推流码」，系统自动拼接为推流地址</div>
+              <div v-if="currentPlatform.warning" class="ptf-platform-warning">{{ currentPlatform.warning }}</div>
               <div v-if="composedTarget" class="ptf-composed">{{ maskUrl(composedTarget) }}</div>
             </template>
             <a-form-item v-else label="目标地址" field="targetUrl" :rules="[{ required: true, message: '请输入目标地址' }]">
@@ -255,6 +256,7 @@ const previewSourceName = computed(() => {
 const platforms = [
   { value: 'youtube', label: 'YouTube', mark: 'YT', color: '#ff0000', defaultServer: 'rtmp://a.rtmp.youtube.com/live2', serverPlaceholder: 'rtmp://a.rtmp.youtube.com/live2', guide: '在 YouTube Studio「直播」→「串流设置」中' },
   { value: 'facebook', label: 'Facebook', mark: 'f', color: '#1877f2', defaultServer: 'rtmps://live-api-s.facebook.com:443/rtmp/', serverPlaceholder: 'rtmps://live-api-s.facebook.com:443/rtmp/', guide: '在 Facebook「直播制作工具」→「串流软件」中' },
+  { value: 'instagram', label: 'Instagram', mark: 'IG', color: '#e1306c', defaultServer: '', serverPlaceholder: 'rtmps://edgetee-upload-xxx.fbcdn.net:443/rtmp/', guide: '在 Instagram 网页版「创建」→「直播」（Live Producer）中', warning: '需专业账号（创作者或商家）。推流码每次直播重新生成、只能使用一次，生成后约 1 小时内未开始推流即失效，请在开播前获取并创建任务。' },
   { value: 'tiktok', label: 'TikTok', mark: 'TT', color: '#000000', defaultServer: '', serverPlaceholder: 'rtmp://xxx.tiktokcdn.com/stage/', guide: '在 TikTok LIVE Studio 或 LIVE Producer 中' },
   { value: 'twitch', label: 'Twitch', mark: 'Tw', color: '#9146ff', defaultServer: 'rtmp://live.twitch.tv/app', serverPlaceholder: 'rtmp://live.twitch.tv/app', guide: '在 Twitch 创作者仪表板「设置」→「串流」中' },
   { value: 'x', label: 'X', mark: 'X', color: '#000000', defaultServer: '', serverPlaceholder: 'rtmps://xx.pscp.tv:443/x', guide: '在 X Media Studio「Producer」→「来源」中' },
@@ -645,7 +647,7 @@ onMounted(async () => {
 /* 平台卡片 */
 .ptf-platforms {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -681,6 +683,15 @@ onMounted(async () => {
   text-align: center;
   font-weight: 600;
   color: #fff;
+}
+
+.ptf-platform-warning {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--warning-bg);
+  font-size: 12px;
+  color: var(--warning);
 }
 
 .ptf-notice {
