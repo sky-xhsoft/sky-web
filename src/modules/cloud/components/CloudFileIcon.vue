@@ -70,7 +70,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { fileKindOf, FILE_KIND_COLORS, type FileKind } from '@/modules/cloud/utils/file-kind'
+import { fileKindOf, fileKindLabel, FILE_KIND_COLORS, type FileKind } from '@/modules/cloud/utils/file-kind'
 
 interface Props {
   /** 文件名或扩展名 */
@@ -96,21 +96,7 @@ const color = computed(() => FILE_KIND_COLORS[kind.value].color)
 const LETTERS: Partial<Record<FileKind, string>> = { pdf: 'PDF', word: 'W', excel: 'X', ppt: 'P' }
 const letters = computed(() => LETTERS[kind.value] || '')
 
-const LABELS: Record<FileKind, string> = {
-  video: '视频',
-  image: '图片',
-  audio: '音频',
-  pdf: 'PDF',
-  word: 'Word 文档',
-  excel: '表格',
-  ppt: '演示文稿',
-  archive: '压缩包',
-  code: '代码',
-  text: '文本',
-  exe: '安装包',
-  other: '文件',
-}
-const label = computed(() => (props.folder ? '文件夹' : LABELS[kind.value]))
+const label = computed(() => (props.folder ? '文件夹' : fileKindLabel(props.name, props.mime)))
 </script>
 
 <style scoped>

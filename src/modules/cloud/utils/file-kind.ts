@@ -72,3 +72,23 @@ export function fileKindOf(ext?: string | null, mime?: string | null): FileKind 
   if (type.includes('zip') || type.includes('compressed')) return 'archive'
   return 'other'
 }
+
+const KIND_LABELS: Record<FileKind, string> = {
+  video: '视频',
+  image: '图片',
+  audio: '音频',
+  pdf: 'PDF 文档',
+  word: 'Word 文档',
+  excel: '表格',
+  ppt: '演示文稿',
+  archive: '压缩包',
+  code: '代码',
+  text: '文本',
+  exe: '安装包',
+  other: '文件',
+}
+
+/** 文件类型中文名称 */
+export function fileKindLabel(ext?: string | null, mime?: string | null): string {
+  return KIND_LABELS[fileKindOf(ext, mime)]
+}

@@ -67,7 +67,8 @@ export function useCloudPreview() {
     }
 
     // 文档
-    if (['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'].includes(ext) ||
+    if (['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.wps', '.et', '.dps', '.odt', '.ods', '.odp', '.rtf',
+         '.epub', '.ofd', '.xps', '.eml', '.msg', '.xmind', '.drawio'].includes(ext) ||
         mimeType === 'application/pdf' ||
         mimeType.includes('application/msword') ||
         mimeType.includes('application/vnd.openxmlformats-officedocument') ||
@@ -109,7 +110,7 @@ export function useCloudPreview() {
    */
   function canPreview(file: FileItem): boolean {
     const category = getFileCategory(file)
-    return ['image', 'video', 'audio', 'document', 'text', 'code'].includes(category)
+    return ['image', 'video', 'audio', 'document', 'text', 'code', 'archive'].includes(category)
   }
 
   /**

@@ -17,6 +17,7 @@ export interface FileItem {
   UserID: number
   StoragePath?: string
   CreateTime: string
+  CreateBy?: string       // 创建人（上传者用户名）
   UpdateTime?: string
   id?: number
   fileName?: string

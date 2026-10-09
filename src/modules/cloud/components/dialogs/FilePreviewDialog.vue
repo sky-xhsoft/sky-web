@@ -1,182 +1,180 @@
 <template>
-  <V2Modal
+  <!-- 文件预览：大窗口，左侧预览，右侧信息栏（文件信息 / 快捷操作 / 同文件夹文件） -->
+  <a-modal
     :visible="visible"
-    @update:visible="emit('update:visible', $event)"
-    :title="modalTitle"
-    :width="modalWidth"
     :footer="false"
+    :closable="false"
+    :hide-title="true"
     :mask-closable="true"
     :esc-to-close="true"
-    class="v2 preview-modal file-preview-modal modal-full"
+    width="min(1600px, 94vw)"
+    modal-class="file-preview-modal"
+    :body-style="{ padding: 0 }"
+    @update:visible="emit('update:visible', $event)"
     @cancel="handleClose"
   >
-    <template #title>
-      <div class="preview-header">
-        <div class="preview-title">
-          <span class="file-emoji">{{ fileEmoji }}</span>
-          <span class="file-name">{{ fileName }}</span>
+    <div class="fp">
+      <!-- 顶栏 -->
+      <header class="fp-header">
+        <CloudFileIcon :name="file?.FileExt || fileName" :mime="file?.FileType" :size="26" />
+        <span class="fp-title" :title="fileName">{{ fileName }}</span>
+
+        <div v-if="canNavigate && siblings.length > 1" class="fp-nav" role="group" aria-label="切换文件">
+          <button type="button" class="icon-btn" aria-label="上一个文件" :disabled="!hasPrevious" @click="emit('previous')">
+            <icon-left />
+          </button>
+          <span class="fp-nav__pos">{{ currentIndex + 1 }} / {{ siblings.length }}</span>
+          <button type="button" class="icon-btn" aria-label="下一个文件" :disabled="!hasNext" @click="emit('next')">
+            <icon-right />
+          </button>
         </div>
-        <div class="preview-actions">
-          <V2Button
-            size="sm"
-            type="text"
-            @click="handleDownload"
-            :loading="downloading"
-          >
-            <template #icon>
-              <icon-download />
-            </template>
-            下载
-          </V2Button>
-          <V2Button
-            v-if="canNavigate"
-            size="sm"
-            type="text"
-            @click="handlePrevious"
-            :disabled="!hasPrevious"
-          >
-            <template #icon>
-              <icon-left />
-            </template>
-            上一个
-          </V2Button>
-          <V2Button
-            v-if="canNavigate"
-            size="sm"
-            type="text"
-            @click="handleNext"
-            :disabled="!hasNext"
-          >
-            <template #icon>
-              <icon-right />
-            </template>
-            下一个
-          </V2Button>
-        </div>
-      </div>
-    </template>
 
-    <!-- 加载状态 -->
-    <div v-if="loading" class="preview-loading">
-      <a-spin :size="50" />
-      <p>正在加载...</p>
-    </div>
+        <button type="button" class="fp-download" :disabled="downloading" @click="handleDownload">
+          <icon-loading v-if="downloading" />
+          <icon-download v-else />
+          下载
+        </button>
+        <button
+          type="button"
+          class="icon-btn icon-btn--bordered"
+          :class="{ 'is-active': infoOpen }"
+          :aria-label="infoOpen ? '收起信息栏' : '展开信息栏'"
+          :aria-pressed="infoOpen"
+          @click="toggleInfo"
+        >
+          <icon-layout />
+        </button>
+        <button type="button" class="icon-btn" aria-label="关闭" @click="handleClose">
+          <icon-close />
+        </button>
+      </header>
 
-    <!-- 预览内容 -->
-    <div v-else class="preview-content">
-      <!-- 图片预览 -->
-      <ImagePreview
-        v-if="category === 'image'"
-        :url="previewUrl"
-        :file-name="fileName"
-      />
+      <div class="fp-body">
+        <!-- 预览区 -->
+        <main class="fp-stage" :class="{ 'is-media': isMedia }">
+          <div v-if="loading" class="fp-state">
+            <a-spin :size="36" />
+            <p>正在加载…</p>
+          </div>
 
-      <!-- 视频预览 -->
-      <VideoPreview
-        v-else-if="category === 'video'"
-        :url="previewUrl"
-        :file-name="fileName"
-      />
+          <template v-else>
+            <ImagePreview v-if="category === 'image' && previewUrl" :url="previewUrl" :file-name="fileName" />
+            <VideoPreview v-else-if="category === 'video' && previewUrl" :url="previewUrl" :file-name="fileName" />
+            <AudioPreview v-else-if="category === 'audio' && previewUrl" :url="previewUrl" :file-name="fileName" />
 
-      <!-- 音频预览 -->
-      <AudioPreview
-        v-else-if="category === 'audio'"
-        :url="previewUrl"
-        :file-name="fileName"
-      />
+            <!-- 文档 / 文本 / 代码 / 压缩包：open-file-viewer 浏览器内渲染 -->
+            <DocumentViewer
+              v-else-if="useDocumentViewer && documentBlob"
+              :file="documentBlob"
+              :file-name="fileName"
+              :mime-type="file?.FileType"
+            />
 
-      <!-- PDF预览 -->
-      <PDFPreview
-        v-else-if="category === 'document' && isPDF"
-        :url="previewUrl"
-        :file-name="fileName"
-      />
-
-      <!-- Office文档预览 -->
-      <OfficePreview
-        v-else-if="category === 'document'"
-        :url="previewUrl"
-        :file-name="fileName"
-      />
-
-      <!-- Markdown预览 -->
-      <MarkdownPreview
-        v-else-if="category === 'text' && isMarkdown"
-        :content="textContent"
-        :file-name="fileName"
-      />
-
-      <!-- 文本预览 -->
-      <TextPreview
-        v-else-if="category === 'text'"
-        :content="textContent"
-        :file-name="fileName"
-      />
-
-      <!-- 代码预览 -->
-      <CodePreview
-        v-else-if="category === 'code'"
-        :content="textContent"
-        :file-name="fileName"
-        :file-ext="fileExt"
-      />
-
-      <!-- 不支持的格式 -->
-      <div v-else class="preview-unsupported">
-        <icon-file />
-        <p>暂不支持预览此类型文件</p>
-        <V2Button type="primary" @click="handleDownload">
-          <template #icon>
-            <icon-download />
+            <!-- 不支持的格式 / 文件过大 / 加载失败 -->
+            <div v-else class="fp-state">
+              <CloudFileIcon :name="file?.FileExt || fileName" :mime="file?.FileType" :size="64" />
+              <p>{{ unavailableText }}</p>
+              <button type="button" class="fp-download" @click="handleDownload">
+                <icon-download />
+                下载文件
+              </button>
+            </div>
           </template>
-          下载文件
-        </V2Button>
-      </div>
-    </div>
+        </main>
 
-    <!-- 文件信息 -->
-    <div class="preview-info">
-      <div class="info-item">
-        <span class="info-label">文件大小:</span>
-        <span class="info-value">{{ fileSize }}</span>
-      </div>
-      <div class="info-item">
-        <span class="info-label">文件类型:</span>
-        <span class="info-value">{{ fileType }}</span>
-      </div>
-      <div class="info-item">
-        <span class="info-label">创建时间:</span>
-        <span class="info-value">{{ createTime }}</span>
+        <!-- 右侧信息栏 -->
+        <aside v-if="infoOpen" class="fp-info" aria-label="文件信息">
+          <section class="fp-section">
+            <h3 class="fp-section__title">文件信息</h3>
+            <dl class="fp-meta">
+              <dt>大小</dt>
+              <dd>{{ fileSize }}</dd>
+              <dt>类型</dt>
+              <dd>{{ typeLabel }}</dd>
+              <template v-if="location">
+                <dt>位置</dt>
+                <dd :title="location">{{ location }}</dd>
+              </template>
+              <template v-if="file?.CreateBy">
+                <dt>创建人</dt>
+                <dd>{{ file.CreateBy }}</dd>
+              </template>
+              <dt>创建时间</dt>
+              <dd>{{ createTime }}</dd>
+            </dl>
+          </section>
+
+          <section class="fp-actions" aria-label="快捷操作">
+            <button v-for="a in actions" :key="a.key" type="button" class="fp-action" :class="{ 'is-danger': a.danger }" @click="emit('action', a.key)">
+              <component :is="a.icon" class="fp-action__icon" />
+              {{ a.label }}
+            </button>
+          </section>
+
+          <section v-if="siblings.length > 0" class="fp-siblings">
+            <h3 class="fp-section__title fp-siblings__title">同文件夹（{{ siblings.length }}）</h3>
+            <div class="fp-siblings__list">
+              <button
+                v-for="f in siblings"
+                :key="f.ID"
+                type="button"
+                class="fp-sibling"
+                :class="{ 'is-current': f.ID === file?.ID }"
+                :aria-current="f.ID === file?.ID ? 'true' : undefined"
+                @click="f.ID !== file?.ID && emit('select', f)"
+              >
+                <span class="fp-sibling__thumb">
+                  <CloudFileThumb :file-id="f.ID" :name="f.FileName" :ext="f.FileExt" :mime="f.FileType" :icon-size="22" compact />
+                </span>
+                <span class="fp-sibling__name" :title="f.FileName">{{ f.FileName }}</span>
+              </button>
+            </div>
+          </section>
+        </aside>
       </div>
     </div>
-  </V2Modal>
+  </a-modal>
 </template>
 
 <script setup lang="ts">
-      import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, defineAsyncComponent, onBeforeUnmount } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import {
   IconDownload,
   IconLeft,
   IconRight,
-  IconFile,
+  IconClose,
+  IconLayout,
+  IconLoading,
+  IconShareAlt,
+  IconEdit,
+  IconExport,
+  IconDelete,
 } from '@arco-design/web-vue/es/icon'
 import { fetchFileBlob } from '@/modules/cloud/api'
 import { useCloudFile } from '@/modules/cloud/composables'
 import { formatSize as formatFileSize, formatDate } from '@/modules/cloud/utils/format'
+import { fileKindLabel } from '@/modules/cloud/utils/file-kind'
 import type { FileItem } from '@/modules/cloud/types'
 import type { FileCategory } from '@/modules/cloud/composables/useCloudPreview'
-import { V2Modal, V2Button } from '@/components/ui'
+import CloudFileIcon from '../CloudFileIcon.vue'
+import CloudFileThumb from '../CloudFileThumb.vue'
 
-// 导入预览子组件
+// 预览子组件
 import ImagePreview from './previews/ImagePreview.vue'
 import VideoPreview from './previews/VideoPreview.vue'
 import AudioPreview from './previews/AudioPreview.vue'
-import PDFPreview from './previews/PDFPreview.vue'
-import TextPreview from './previews/TextPreview.vue'
-import CodePreview from './previews/CodePreview.vue'
-import MarkdownPreview from './previews/MarkdownPreview.vue'
-import OfficePreview from './previews/OfficePreview.vue'
+
+// 文档预览组件体积较大，打开预览时才加载
+const DocumentViewer = defineAsyncComponent(() => import('./previews/DocumentViewer.vue'))
+
+/** 文档类预览需要把文件整体读入浏览器，超过该大小提示下载 */
+const MAX_DOCUMENT_PREVIEW_SIZE = 100 * 1024 * 1024
+
+/** 信息栏展开状态（每个浏览器记住） */
+const INFO_OPEN_KEY = 'sky-web:cloud-preview-info-open'
+
+export type PreviewAction = 'share' | 'rename' | 'move' | 'delete'
 
 interface Props {
   visible: boolean
@@ -185,6 +183,10 @@ interface Props {
   canNavigate?: boolean
   hasPrevious?: boolean
   hasNext?: boolean
+  /** 同文件夹中的文件（按页面显示顺序） */
+  siblings?: FileItem[]
+  /** 当前文件所在位置，如「我的云盘 / FR品牌之夜」 */
+  location?: string
 }
 
 interface Emits {
@@ -192,12 +194,16 @@ interface Emits {
   (e: 'previous'): void
   (e: 'next'): void
   (e: 'download'): void
+  (e: 'select', file: FileItem): void
+  (e: 'action', action: PreviewAction): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   canNavigate: false,
   hasPrevious: false,
   hasNext: false,
+  siblings: () => [],
+  location: '',
 })
 
 const emit = defineEmits<Emits>()
@@ -206,191 +212,109 @@ const emit = defineEmits<Emits>()
 const loading = ref(false)
 const downloading = ref(false)
 const previewUrl = ref<string>('')
-const textContent = ref<string>('')
+const documentBlob = ref<Blob | null>(null)
+const tooLarge = ref(false)
+const loadFailed = ref(false)
+const infoOpen = ref(readInfoOpen())
 
 const { download } = useCloudFile()
+
+const actions: { key: PreviewAction; label: string; icon: unknown; danger?: boolean }[] = [
+  { key: 'share', label: '分享', icon: IconShareAlt },
+  { key: 'rename', label: '重命名', icon: IconEdit },
+  { key: 'move', label: '移动', icon: IconExport },
+  { key: 'delete', label: '删除', icon: IconDelete, danger: true },
+]
 
 // ==================== 计算属性 ====================
 const fileName = computed(() => props.file?.FileName || '未知文件')
 const fileSize = computed(() => formatFileSize(props.file?.FileSize || 0))
-const fileType = computed(() => props.file?.FileType || '未知')
-const fileExt = computed(() => props.file?.FileExt?.toLowerCase() || '')
 const createTime = computed(() => formatDate(props.file?.CreateTime || '', 'full'))
+const typeLabel = computed(() => {
+  const ext = (props.file?.FileExt || '').replace(/^\./, '').toLowerCase()
+  const label = fileKindLabel(props.file?.FileExt || props.file?.FileName, props.file?.FileType)
+  return ext ? `${label}（.${ext}）` : label
+})
+const currentIndex = computed(() => props.siblings.findIndex((f) => f.ID === props.file?.ID))
 
-// 判断是否是 Markdown 文件
-const isMarkdown = computed(() => {
-  const result = fileExt.value === '.md'
-  return result
+// 文档、文本、代码、压缩包使用 open-file-viewer 预览
+const useDocumentViewer = computed(() => ['document', 'text', 'code', 'archive'].includes(props.category))
+const isMedia = computed(() => ['image', 'video', 'audio'].includes(props.category))
+
+const unavailableText = computed(() => {
+  if (tooLarge.value) return `文件超过 ${formatFileSize(MAX_DOCUMENT_PREVIEW_SIZE)}，请下载后查看`
+  if (loadFailed.value) return '文件加载失败，可下载后查看'
+  return '暂不支持预览此类型文件'
 })
 
-// 判断是否是 PDF 文件
-const isPDF = computed(() => {
-  const result = fileExt.value === '.pdf'
-  return result
-})
-
-const fileEmoji = computed(() => {
-  const ext = fileExt.value
-  const emojiMap: Record<string, string> = {
-    // 图片
-    '.jpg': '🖼️',
-    '.jpeg': '🖼️',
-    '.png': '🖼️',
-    '.gif': '🎞️',
-    '.svg': '🎨',
-    '.webp': '🖼️',
-    '.bmp': '🖼️',
-
-    // 视频
-    '.mp4': '🎬',
-    '.webm': '🎬',
-    '.ogg': '🎬',
-    '.mov': '🎬',
-
-    // 音频
-    '.mp3': '🎵',
-    '.wav': '🎵',
-    '.m4a': '🎵',
-    '.aac': '🎵',
-
-    // 文档
-    '.pdf': '📕',
-    '.doc': '📘',
-    '.docx': '📘',
-    '.xls': '📗',
-    '.xlsx': '📗',
-    '.ppt': '📙',
-    '.pptx': '📙',
-
-    // 文本
-    '.txt': '📄',
-    '.md': '📝',
-    '.json': '📋',
-    '.xml': '📋',
-    '.csv': '📊',
-
-    // 代码
-    '.js': '📜',
-    '.ts': '📜',
-    '.vue': '💚',
-    '.html': '🌐',
-    '.css': '🎨',
-    '.go': '🔵',
-    '.py': '🐍',
-    '.java': '☕',
-  }
-
-  return emojiMap[ext] || '📄'
-})
-
-const modalTitle = computed(() => '文件预览')
-
-const modalWidth = computed(() => {
-  if (props.category === 'image' || props.category === 'video') {
-    return '90%'
-  }
-  if (props.category === 'code' || props.category === 'text') {
-    return '80%'
-  }
-  return '70%'
-})
-
-// ==================== 监听器 ====================
+// ==================== 监听 ====================
 watch(
   () => props.visible,
-  async (newVisible) => {
-    if (newVisible && props.file) {
+  async (visible) => {
+    if (visible && props.file) {
       await loadPreview()
+      window.addEventListener('keydown', handleKeydown)
     } else {
-      // 关闭时清理资源
       cleanupResources()
+      window.removeEventListener('keydown', handleKeydown)
     }
-  }
+  },
+  { immediate: true },
 )
 
 watch(
-  () => props.file,
-  async (newFile) => {
-    if (newFile && props.visible) {
-      await loadPreview()
-    }
-  }
+  () => props.file?.ID,
+  async () => {
+    if (props.file && props.visible) await loadPreview()
+  },
 )
 
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+  cleanupResources()
+})
+
 // ==================== 方法 ====================
-/**
- * 加载预览内容
- */
+/** 加载预览内容：文档类读取为 Blob，图片 / 视频 / 音频生成对象地址 */
 async function loadPreview() {
   if (!props.file) return
+  const fileId = props.file.ID
 
   loading.value = true
+  cleanupResources()
   try {
-    // 清理之前的资源
-    cleanupResources()
+    if (useDocumentViewer.value && (props.file.FileSize || 0) > MAX_DOCUMENT_PREVIEW_SIZE) {
+      tooLarge.value = true
+      return
+    }
+    if (!useDocumentViewer.value && !isMedia.value) return
 
-    const needText = ['text', 'code'].includes(props.category)
-
-    if (needText) {
-      // 文本和代码需要获取文本内容
-      const blob = await fetchFileBlob(props.file.ID)
-      textContent.value = await blob.text()
+    const blob = await fetchFileBlob(fileId)
+    if (props.file?.ID !== fileId) return // 加载期间已切换到其他文件
+    if (useDocumentViewer.value) {
+      documentBlob.value = blob
     } else {
-      // 检查是否是 oss 存储并且有 accessURL
-      // oss 存储直接播放公网 URL，不需要通过后端获取 blob
-      const fileAny = props.file as any
-      const storageType = fileAny.storageType || fileAny.StorageType
-      const accessUrl = fileAny.accessUrl || fileAny.accessURL || fileAny.AccessURL
-
-      const isOssWithAccessUrl = storageType === 'oss' && accessUrl && accessUrl.length > 0
-
-      if (isOssWithAccessUrl) {
-        // oss 直接使用 accessURL
-        previewUrl.value = accessUrl
-      } else {
-        // 检查是否是 oss 存储并且有 accessURL
-        // oss 存储直接播放公网 URL，不需要通过后端获取 blob
-        const fileAny = props.file as any
-        const storageType = fileAny.storageType || fileAny.StorageType
-        const accessUrl = fileAny.accessUrl || fileAny.accessURL || fileAny.AccessURL
-
-        const isOssWithAccessUrl = storageType === 'oss' && accessUrl && accessUrl.length > 0
-
-        if (isOssWithAccessUrl) {
-          // oss 直接使用 accessURL
-          previewUrl.value = accessUrl
-        } else {
-          // 其他存储需要通过 blob 方式加载（因为需要鉴权）
-          const blob = await fetchFileBlob(props.file.ID)
-          previewUrl.value = URL.createObjectURL(blob)
-        }
-      }
+      previewUrl.value = URL.createObjectURL(blob)
     }
   } catch (error: any) {
     console.error('加载预览失败:', error)
+    loadFailed.value = true
     Message.error(error?.message || '加载预览失败')
   } finally {
     loading.value = false
   }
 }
 
-/**
- * 清理资源
- */
 function cleanupResources() {
-  if (previewUrl.value && previewUrl.value.startsWith('blob:')) {
-    URL.revokeObjectURL(previewUrl.value)
-  }
+  if (previewUrl.value.startsWith('blob:')) URL.revokeObjectURL(previewUrl.value)
   previewUrl.value = ''
-  textContent.value = ''
+  documentBlob.value = null
+  tooLarge.value = false
+  loadFailed.value = false
 }
 
-/**
- * 处理下载
- */
 async function handleDownload() {
   if (!props.file) return
-
   downloading.value = true
   try {
     await download(props.file)
@@ -402,157 +326,322 @@ async function handleDownload() {
   }
 }
 
-/**
- * 处理关闭
- */
 function handleClose() {
   emit('update:visible', false)
 }
 
-/**
- * 处理上一个
- */
-function handlePrevious() {
-  emit('previous')
+function readInfoOpen(): boolean {
+  try {
+    return localStorage.getItem(INFO_OPEN_KEY) !== '0'
+  } catch {
+    return true
+  }
 }
 
-/**
- * 处理下一个
- */
-function handleNext() {
-  emit('next')
+function toggleInfo() {
+  infoOpen.value = !infoOpen.value
+  try {
+    localStorage.setItem(INFO_OPEN_KEY, infoOpen.value ? '1' : '0')
+  } catch {
+    // 存储不可用时只在本次生效
+  }
+}
+
+/** ← / → 切换文件（输入框内不处理） */
+function handleKeydown(event: KeyboardEvent) {
+  const target = event.target as HTMLElement | null
+  if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return
+  if (event.key === 'ArrowLeft' && props.hasPrevious) emit('previous')
+  else if (event.key === 'ArrowRight' && props.hasNext) emit('next')
 }
 </script>
 
 <style scoped>
-.modal-full :deep(.arco-modal) {
-  max-width: 95vw;
+.fp {
+  display: flex;
+  flex-direction: column;
+  height: min(1000px, 90vh);
+  color: var(--text-primary);
 }
 
-.modal-full :deep(.arco-modal-header) {
-  border-bottom: 1px solid var(--border-light);
-}
-
-.modal-full :deep(.arco-modal-body) {
-  padding: 0;
-  max-height: 75vh;
-  overflow: auto;
-}
-
-.preview-header {
+/* 顶栏 */
+.fp-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding-right: 40px;
+  gap: 12px;
+  flex: 0 0 auto;
+  height: 58px;
+  padding: 0 14px 0 20px;
+  border-bottom: 1px solid var(--border);
 }
 
-.preview-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.fp-title {
   flex: 1;
   min-width: 0;
-}
-
-.file-emoji {
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
-.file-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
   overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.preview-actions {
+.fp-nav {
   display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.preview-loading {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 100px 20px;
-  gap: 16px;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
-.preview-loading p {
-  margin: 0;
+.fp-nav__pos {
+  padding: 0 6px;
+  font-size: 12px;
   color: var(--text-secondary);
-  font-size: 14px;
+  white-space: nowrap;
 }
 
-.preview-content {
-  min-height: 400px;
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 16px;
+  cursor: pointer;
 }
 
-.preview-unsupported {
+.icon-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.icon-btn--bordered {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+}
+
+.icon-btn--bordered.is-active {
+  background: var(--info-bg);
+  border-color: transparent;
+  color: var(--brand-blue);
+}
+
+.fp-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--brand-blue);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fp-download:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.fp-download:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+/* 主体 */
+.fp-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.fp-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background: var(--bg-hover);
+}
+
+.fp-stage.is-media {
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: #111318;
+}
+
+.fp-stage :deep(.document-viewer) {
+  height: 100%;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.fp-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 100px 20px;
-  gap: 16px;
+  gap: 14px;
+  height: 100%;
+  min-height: 320px;
+  color: var(--text-secondary);
 }
 
-.preview-unsupported :deep(.arco-icon) {
-  font-size: 64px;
+.fp-stage.is-media .fp-state {
+  color: #c9ced8;
+}
+
+/* 信息栏 */
+.fp-info {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 300px;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+.fp-section {
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.fp-section__title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fp-meta {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.fp-meta dt {
   color: var(--text-tertiary);
 }
 
-.preview-unsupported p {
+.fp-meta dd {
   margin: 0;
-  color: var(--text-secondary);
-  font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.preview-info {
+.fp-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.fp-action {
   display: flex;
-  gap: 24px;
-  padding: 16px 24px;
-  background: var(--bg-hover);
-  border-top: 1px solid var(--border);
-}
-
-.info-item {
-  display: flex;
-  gap: 8px;
-  font-size: 14px;
-}
-
-.info-label {
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.info-value {
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
   color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
 }
 
-/* 响应式 */
-@media (max-width: 768px) {
-  .preview-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
+.fp-action:hover {
+  background: var(--bg-hover);
+}
 
-  .preview-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
+.fp-action.is-danger {
+  color: var(--error);
+}
 
-  .preview-info {
-    flex-direction: column;
-    gap: 8px;
+.fp-action__icon {
+  font-size: 18px;
+}
+
+.fp-siblings {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.fp-siblings__title {
+  padding: 14px 18px 0;
+}
+
+.fp-siblings__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px 12px;
+}
+
+.fp-sibling {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fp-sibling:hover {
+  background: var(--bg-hover);
+}
+
+.fp-sibling.is-current {
+  background: var(--info-bg);
+  font-weight: 600;
+  cursor: default;
+}
+
+.fp-sibling__thumb {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 28px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--bg-hover);
+}
+
+.fp-sibling__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .fp-info {
+    display: none;
   }
 }
 </style>

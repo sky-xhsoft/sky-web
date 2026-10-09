@@ -972,6 +972,7 @@ export async function fetchItems(parentId?: number): Promise<{ folders: Folder[]
     FolderID: item.parentId ?? 0,
     UserID: item.ownerId || 0,
     CreateTime: item.createTime || '',
+    CreateBy: item.createBy || item.CreateBy || '',
     StorageType: item.storageType || item.StorageType,
     StoragePath: item.storagePath || item.StoragePath,
     AccessURL: item.accessUrl || item.AccessURL,

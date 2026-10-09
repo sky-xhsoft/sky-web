@@ -208,8 +208,12 @@
       :can-navigate="true"
       :has-previous="hasPreviewPrevious"
       :has-next="hasPreviewNext"
+      :siblings="previewableFiles"
+      :location="previewLocation"
       @previous="handlePreviewPrevious"
       @next="handlePreviewNext"
+      @select="handlePreviewSelect"
+      @action="handlePreviewAction"
       @download="handlePreviewDownload"
     />
 
@@ -276,7 +280,8 @@ import {
 
 // 导入store
 import { useCloudStore } from '@/modules/cloud/stores/cloudStore'
-import type { GridItem, ShareCreateParams, ShareListItem } from '@/modules/cloud/types'
+import type { FileItem, GridItem, ShareCreateParams, ShareListItem } from '@/modules/cloud/types'
+import type { PreviewAction } from '@/modules/cloud/components/dialogs/FilePreviewDialog.vue'
 
 // ==================== 初始化 ====================
 const store = useCloudStore()
@@ -726,9 +731,12 @@ async function handleEditShare(params: { expirationDays: number; password?: stri
 }
 
 // ==================== 文件预览导航 ====================
+// 可预览文件按页面显示顺序（排序、搜索后），预览窗口的上一个 / 下一个与同文件夹列表一致
 const previewableFiles = computed(() => {
-  return store.files.filter((f) => preview.canPreview(f))
+  return store.filteredAndSortedFiles.filter((f) => preview.canPreview(f))
 })
+
+const previewLocation = computed(() => store.breadcrumbs.map((b) => b.name).join(' / '))
 
 const currentPreviewIndex = computed(() => {
   if (!currentItem.value?.file) return -1
@@ -763,6 +771,18 @@ function handlePreviewNext() {
       currentItem.value = nextItem
     }
   }
+}
+
+function handlePreviewSelect(target: FileItem) {
+  const item = store.gridItems.find((i) => i.type === 'file' && i.file?.ID === target.ID)
+  if (item) currentItem.value = item
+}
+
+/** 预览窗口中的快捷操作：移动、删除会改变当前文件夹内容，先关闭预览 */
+async function handlePreviewAction(action: PreviewAction) {
+  if (!currentItem.value) return
+  if (action === 'move' || action === 'delete') dialogs.preview = false
+  await handleItemAction({ action, item: currentItem.value })
 }
 
 async function handlePreviewDownload() {

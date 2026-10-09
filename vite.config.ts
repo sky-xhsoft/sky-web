@@ -11,6 +11,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        // open-file-viewer 的 EMF 转换仅在 Node 环境使用原生 canvas，浏览器构建中替换为空模块
+        '@napi-rs/canvas': path.resolve(__dirname, './src/shims/empty-module.ts'),
       },
     },
     server: {
