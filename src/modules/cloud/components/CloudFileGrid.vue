@@ -135,13 +135,13 @@ function handleContextMenu(event: MouseEvent, item: GridItem) {
 /* 对齐原型的 cloud-grid */
 .cloud-file-grid__container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
 }
 
 .cloud-file-grid__container :deep(.cloud-file-card) {
   content-visibility: auto;
-  contain-intrinsic-size: auto 92px;
+  contain-intrinsic-size: auto 156px;
 }
 
 @media (max-width: 768px) {
@@ -160,8 +160,7 @@ function handleContextMenu(event: MouseEvent, item: GridItem) {
 
 @media (min-width: 1440px) {
   .cloud-file-grid__container {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   }
 }
 </style>

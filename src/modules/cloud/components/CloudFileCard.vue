@@ -14,9 +14,13 @@
       <a-checkbox :model-value="selected" @change="handleSelect" />
     </div>
 
-    <!-- 图标 -->
-    <div class="cloud-file-card__icon" :style="{ color: item.color, background: item.bg }">
-      <span class="icon-emoji">{{ item.icon }}</span>
+    <!-- 类型图块：文件夹图标 / 文件扩展名 -->
+    <div class="cloud-file-card__tile" :style="{ color: item.color, background: item.bg }">
+      <svg v-if="item.type === 'folder'" class="folder-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 6.5A1.5 1.5 0 014.5 5h4.6l2 2h8.4A1.5 1.5 0 0121 8.5v9a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 17.5z" fill="#f4b740" />
+        <path d="M3 9h18v8.5a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 17.5z" fill="#f8c95c" />
+      </svg>
+      <span v-else class="ext-text">{{ extLabel }}</span>
     </div>
 
     <!-- 信息 -->
@@ -81,6 +85,7 @@ import {
   IconSafe,
   IconDelete,
 } from '@arco-design/web-vue/es/icon'
+import { computed } from 'vue'
 import type { GridItem } from '@/modules/cloud/types'
 import { useI18n } from 'vue-i18n'
 import { V2Button } from '@/components/ui'
@@ -110,6 +115,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
+/** 扩展名大写显示，无扩展名时显示 FILE */
+const extLabel = computed(() => {
+  const ext = (props.item.file?.FileExt || props.item.name.split('.').pop() || '').replace(/^\./, '')
+  return ext && ext.length <= 5 && ext !== props.item.name ? ext.toUpperCase() : 'FILE'
+})
+
 function handleClick() {
   emit('click', props.item)
 }
@@ -134,67 +145,69 @@ function handleContextMenu(event: MouseEvent) {
 </script>
 
 <style scoped>
-/* 对齐原型 cloud-card：白卡圆角 + hover 上浮 */
 .cloud-file-card {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 14px 16px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
   background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  border: 1px solid transparent;
-  transition: box-shadow var(--duration-base) var(--ease-out),
-    transform var(--duration-base) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
   user-select: none;
+  transition: box-shadow var(--duration-base) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
 }
 
 .cloud-file-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--border);
+  border-color: var(--brand-blue-light, #b9cdf5);
+  box-shadow: var(--shadow-md, 0 4px 14px rgba(16, 24, 40, 0.08));
 }
 
 .cloud-file-card.is-selected {
   background: var(--info-bg);
   border-color: var(--brand-blue);
-  box-shadow: 0 0 0 3px var(--info-bg);
 }
 
 .cloud-file-card__checkbox {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 14px;
+  left: 14px;
   z-index: 1;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
-.cloud-file-card__icon {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.cloud-file-card:hover .cloud-file-card__checkbox,
+.cloud-file-card.is-selected .cloud-file-card__checkbox {
+  opacity: 1;
+}
+
+.cloud-file-card__tile {
+  display: grid;
+  place-items: center;
+  height: 92px;
   border-radius: var(--radius-md);
-  flex-shrink: 0;
-  font-size: 24px;
-  line-height: 1;
-  transition: transform var(--duration-base) var(--ease-out);
 }
 
-.cloud-file-card:hover .cloud-file-card__icon {
-  transform: scale(1.06);
+.cloud-file-card.is-folder .cloud-file-card__tile {
+  background: #fff7e3 !important;
 }
 
-.icon-emoji {
-  line-height: 1;
+.folder-svg {
+  width: 54px;
+  height: 54px;
+}
+
+.ext-text {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .cloud-file-card__info {
   min-width: 0;
-  flex: 1;
 }
 
 .cloud-file-card__name {
@@ -207,9 +220,9 @@ function handleContextMenu(event: MouseEvent) {
 }
 
 .cloud-file-card__meta {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-tertiary);
-  margin-top: 4px;
+  margin-top: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -217,9 +230,11 @@ function handleContextMenu(event: MouseEvent) {
 
 .cloud-file-card__actions {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 12px;
+  right: 12px;
   opacity: 0;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
   transition: opacity var(--duration-fast) var(--ease-out);
 }
 

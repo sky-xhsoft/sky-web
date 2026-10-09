@@ -1,5 +1,5 @@
 <template>
-  <div class="cloud-file-list">
+  <div ref="rootRef" class="cloud-file-list">
     <!-- 空状态 -->
     <div v-if="items.length === 0 && !loading" class="cloud-file-list__empty">
       <span class="empty-icon"><icon-folder /></span>
@@ -22,8 +22,8 @@
       :row-selection="selectable ? rowSelection : undefined"
       :row-key="getRowKey"
       row-class="cloud-file-list__row"
-      :scroll="{ x: 'auto', y: 600 }"
-      :virtual-list-props="{ height: 600, fixedSize: true, estimatedSize: 48 }"
+      :scroll="{ x: 'auto', y: tableHeight }"
+      :virtual-list-props="{ height: tableHeight, fixedSize: true, estimatedSize: 48 }"
       :bordered="false"
       @row-click="handleRowClick"
       @row-dblclick="handleRowDoubleClick"
@@ -44,7 +44,7 @@
 
       <!-- 类型列 -->
       <template #type="{ record }">
-        <V2Tag v-if="record.type === 'folder'" type="warning">
+        <V2Tag v-if="record.type === 'folder'" type="warning" class="nowrap-tag">
           {{ t('cloud.folder') }}
         </V2Tag>
         <span v-else class="file-ext">
@@ -124,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import {
   IconFolder,
   IconEye,
@@ -167,6 +167,35 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
+// 表格高度：填满所在滚动区域的剩余高度（原先固定 600px，下方大片留白）
+const rootRef = ref<HTMLElement>()
+const tableHeight = ref(600)
+let resizeObserver: ResizeObserver | undefined
+
+function measureHeight() {
+  const el = rootRef.value
+  if (!el) return
+  const box = el.closest('.cloud-view__files-wrapper') as HTMLElement | null
+  const bottom = box ? box.getBoundingClientRect().bottom - 24 : window.innerHeight - 24
+  const header = 40
+  tableHeight.value = Math.max(240, Math.floor(bottom - el.getBoundingClientRect().top - header))
+}
+
+onMounted(() => {
+  measureHeight()
+  const box = rootRef.value?.closest('.cloud-view__files-wrapper')
+  if (box && typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(measureHeight)
+    resizeObserver.observe(box)
+  }
+  window.addEventListener('resize', measureHeight)
+})
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  window.removeEventListener('resize', measureHeight)
+})
+
 const columns = [
   {
     title: t('cloud.fileName'),
@@ -179,7 +208,7 @@ const columns = [
     title: t('cloud.fileType'),
     dataIndex: 'type',
     slotName: 'type',
-    width: 100,
+    width: 110,
   },
   {
     title: t('cloud.fileSize'),
@@ -237,7 +266,7 @@ function handleActionSelect(value: string | number | Record<string, any> | undef
 <style scoped>
 .cloud-file-list {
   width: 100%;
-  min-height: 400px;
+  min-height: 240px;
   overflow: hidden; /* 防止溢出 */
 }
 
@@ -358,5 +387,8 @@ function handleActionSelect(value: string | number | Record<string, any> | undef
 :deep(.cloud-file-list__row) {
   cursor: pointer;
   transition: background-color var(--duration-fast);
+}
+.nowrap-tag {
+  white-space: nowrap;
 }
 </style>
