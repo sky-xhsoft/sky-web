@@ -472,7 +472,9 @@ const handlePageSizeChange = (pageSize: number) => {
   loadTaskList()
 }
 
-const goToCreate = () => navigationStore.navigateTo('PullStreamTaskForm', '创建分发任务', {})
+// 在直播间详情中创建时带上直播间 ID，表单默认选中该直播间作为直播源
+const goToCreate = () =>
+  navigationStore.navigateTo('PullStreamTaskForm', '创建分发任务', props.roomId ? { roomId: props.roomId } : {})
 const goToEdit = (task: PullStreamTaskInfo) => navigationStore.navigateTo('PullStreamTaskForm', '编辑分发任务', { taskId: task.taskId })
 
 const deleteTask = async (task: PullStreamTaskInfo) => {
