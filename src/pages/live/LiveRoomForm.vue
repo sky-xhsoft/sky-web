@@ -124,6 +124,15 @@
             <a-switch v-model="formData.isClip" :checked-value="'Y'" :unchecked-value="'N'" />
             <div class="form-tip">{{ t('liveRoomForm.isClipTips') }}</div>
           </a-form-item>
+          <!-- 开启录制或切片时选择存储位置（云盘文件夹） -->
+          <a-form-item v-if="needStorage" :label="t('liveRoomForm.storageFolder')" field="storageFolderId">
+            <CloudFolderSelect
+              v-model="formData.storageFolderId"
+              :root-label="t('liveRoomForm.storageFolderRoot')"
+              :placeholder="t('liveRoomForm.storageFolderPlaceholder')"
+            />
+            <div class="form-tip">{{ t('liveRoomForm.storageFolderTips') }}</div>
+          </a-form-item>
         </a-col>
       </a-row>
 
@@ -154,6 +163,7 @@ import api from '../../api/http'
 import dayjs from 'dayjs'
 import { useI18n } from 'vue-i18n'
 import { listDomains } from '../../api/live'
+import CloudFolderSelect from './components/CloudFolderSelect.vue'
 
 const { t } = useI18n()
 
@@ -184,8 +194,12 @@ const formData = reactive({
   coverImage: '',
   isRecord: 'Y',
   isClip: 'Y',
+  // 录制/切片存储位置：云盘文件夹 ID，0 为云盘根目录（提交为空），undefined 为尚未选择
+  storageFolderId: undefined as number | undefined,
   description: '',
 })
+
+const needStorage = computed(() => formData.isRecord === 'Y' || formData.isClip === 'Y')
 
 
 
@@ -194,7 +208,9 @@ const rules = {
     { required: true, message: t('liveRoomForm.validation.roomName') },
     { max: 100, message: t('liveRoomForm.roomNameMaxLength') }
   ],
-  startTime: [{ required: true, message: t('liveRoomForm.validation.startTime') }]
+  startTime: [{ required: true, message: t('liveRoomForm.validation.startTime') }],
+  // 仅在开启录制或切片时显示，未显示的字段不参与校验
+  storageFolderId: [{ required: true, message: t('liveRoomForm.storageFolderRequired') }],
 }
 
 // 加载直播间数据（编辑模式）
@@ -215,6 +231,8 @@ const loadRoomData = async () => {
       formData.coverImage = data.COVER_IMAGE || ''
       formData.isRecord = data.IS_RECORD || 'Y'
       formData.isClip = data.IS_CLIP || 'Y'
+      // 已有直播间未设置存储位置时视为云盘根目录
+      formData.storageFolderId = data.STORAGE_FOLDER_ID ? Number(data.STORAGE_FOLDER_ID) : 0
       formData.description = data.DESCRIPTION || ''
     } else {
       Message.error('加载直播间数据失败')
@@ -297,6 +315,7 @@ const handleSubmit = async () => {
       COVER_IMAGE: formData.coverImage,
       IS_RECORD: formData.isRecord,
       IS_CLIP: formData.isClip,
+      STORAGE_FOLDER_ID: formData.storageFolderId || null,
       DESCRIPTION: formData.description,    }
     if (isEditMode.value) {
       // 编辑时不动这些通用/状态字段，避免重置直播阶段/观看·回放方式/状态
