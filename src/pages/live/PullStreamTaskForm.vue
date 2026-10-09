@@ -21,7 +21,7 @@
           <div class="ptf-card">
             <div class="ptf-card-title">任务信息</div>
             <a-form-item label="任务备注" field="comment">
-              <a-input v-model="taskForm.comment" placeholder="例如：秋季发布会同步到 YouTube" />
+              <a-input v-model="taskForm.comment" placeholder="例如：秋季发布会同步到 Facebook" />
             </a-form-item>
             <div class="ptf-grid2">
               <a-form-item label="任务时间" field="timeRange" :rules="[{ required: true, message: '请选择任务时间' }]">
@@ -254,15 +254,15 @@ const previewSourceName = computed(() => {
 // ==================== 分发目标：平台（服务器地址 + 推流码）/ 自定义地址 ====================
 // 海外平台：服务器地址固定的平台选中时自动预填（defaultServer），其余只给示例
 const platforms = [
-  { value: 'youtube', label: 'YouTube', mark: 'YT', color: '#ff0000', defaultServer: 'rtmp://a.rtmp.youtube.com/live2', serverPlaceholder: 'rtmp://a.rtmp.youtube.com/live2', guide: '在 YouTube Studio「直播」→「串流设置」中' },
   { value: 'facebook', label: 'Facebook', mark: 'f', color: '#1877f2', defaultServer: 'rtmps://live-api-s.facebook.com:443/rtmp/', serverPlaceholder: 'rtmps://live-api-s.facebook.com:443/rtmp/', guide: '在 Facebook「直播制作工具」→「串流软件」中' },
   { value: 'instagram', label: 'Instagram', mark: 'IG', color: '#e1306c', defaultServer: '', serverPlaceholder: 'rtmps://edgetee-upload-xxx.fbcdn.net:443/rtmp/', guide: '在 Instagram 网页版「创建」→「直播」（Live Producer）中', warning: '需专业账号（创作者或商家）。推流码每次直播重新生成、只能使用一次，生成后约 1 小时内未开始推流即失效，请在开播前获取并创建任务。' },
+  { value: 'youtube', label: 'YouTube', mark: 'YT', color: '#ff0000', defaultServer: 'rtmp://a.rtmp.youtube.com/live2', serverPlaceholder: 'rtmp://a.rtmp.youtube.com/live2', guide: '在 YouTube Studio「直播」→「串流设置」中' },
   { value: 'tiktok', label: 'TikTok', mark: 'TT', color: '#000000', defaultServer: '', serverPlaceholder: 'rtmp://xxx.tiktokcdn.com/stage/', guide: '在 TikTok LIVE Studio 或 LIVE Producer 中' },
   { value: 'twitch', label: 'Twitch', mark: 'Tw', color: '#9146ff', defaultServer: 'rtmp://live.twitch.tv/app', serverPlaceholder: 'rtmp://live.twitch.tv/app', guide: '在 Twitch 创作者仪表板「设置」→「串流」中' },
   { value: 'x', label: 'X', mark: 'X', color: '#000000', defaultServer: '', serverPlaceholder: 'rtmps://xx.pscp.tv:443/x', guide: '在 X Media Studio「Producer」→「来源」中' },
   { value: 'custom', label: '自定义', mark: '+', color: '#86909c', defaultServer: '', serverPlaceholder: '', guide: '' },
 ]
-const targetPlatform = ref('youtube')
+const targetPlatform = ref('facebook')
 const currentPlatform = computed(() => platforms.find((p) => p.value === targetPlatform.value) || platforms[0])
 
 // 切换平台：服务器地址为空或仍是上一个平台的默认值时，换成新平台的默认地址

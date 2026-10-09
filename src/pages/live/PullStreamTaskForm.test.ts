@@ -86,23 +86,23 @@ describe('PullStreamTaskForm (页面组件挂载)', () => {
     expect(preview).toContain('http://play.test/live/82.flv')
   })
 
-  it('分发目标为海外平台，默认 YouTube；选择平台后预览同步', async () => {
+  it('分发目标顺序 Facebook、Instagram、YouTube 在前，默认 Facebook；选择平台后预览同步', async () => {
     const wrapper = mountPage()
     await flushPromises()
     const labels = wrapper.findAll('.ptf-platform').map((p) => p.text())
-    expect(labels).toEqual(['YTYouTube', 'fFacebook', 'IGInstagram', 'TTTikTok', 'TwTwitch', 'XX', '+自定义'])
-    expect(wrapper.findAll('.ptf-node-name')[1].text()).toBe('YouTube')
-    const facebook = wrapper.findAll('.ptf-platform')[1]
-    await facebook.trigger('click')
-    expect(facebook.classes()).toContain('is-active')
+    expect(labels).toEqual(['fFacebook', 'IGInstagram', 'YTYouTube', 'TTTikTok', 'TwTwitch', 'XX', '+自定义'])
     expect(wrapper.findAll('.ptf-node-name')[1].text()).toBe('Facebook')
+    const youtube = wrapper.findAll('.ptf-platform')[2]
+    await youtube.trigger('click')
+    expect(youtube.classes()).toContain('is-active')
+    expect(wrapper.findAll('.ptf-node-name')[1].text()).toBe('YouTube')
   })
 
   it('选择 Instagram 时提示推流码一次性、限时有效', async () => {
     const wrapper = mountPage()
     await flushPromises()
     expect(wrapper.find('.ptf-platform-warning').exists()).toBe(false)
-    await wrapper.findAll('.ptf-platform')[2].trigger('click')
+    await wrapper.findAll('.ptf-platform')[1].trigger('click')
     expect(wrapper.find('.ptf-platform-warning').text()).toContain('只能使用一次')
     expect(wrapper.findAll('.ptf-node-name')[1].text()).toBe('Instagram')
   })
