@@ -532,7 +532,8 @@ export async function uploadMultipartChunk(
   chunkIndex: number,
   chunkMd5: string,
   chunkData: Blob,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onUploadProgress?: (loaded: number) => void
 ): Promise<void> {
   const formData = new FormData()
   formData.append('sessionId', String(sessionId))
@@ -544,6 +545,7 @@ export async function uploadMultipartChunk(
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 0, // 分片上传不限制超时
     signal,
+    onUploadProgress: onUploadProgress ? (event) => onUploadProgress(Math.min(event.loaded, chunkData.size)) : undefined,
   })
 }
 
@@ -551,6 +553,30 @@ export async function uploadMultipartChunk(
  * 查询上传状态
  * 对应后端: GET /api/v1/cloud/files/multipart/status?sessionId=xxx
  */
+/** 合并状态轮询间隔（毫秒） */
+const MERGE_POLL_INTERVAL = 2000
+
+/**
+ * 等待后台合并完成：completed 视为成功；离开 merging 但未完成视为失败（带失败原因）
+ */
+async function waitMultipartMerged(sessionId: number): Promise<void> {
+  for (;;) {
+    await new Promise((resolve) => setTimeout(resolve, MERGE_POLL_INTERVAL))
+    let status: Awaited<ReturnType<typeof getMultipartUploadStatus>>
+    try {
+      status = await getMultipartUploadStatus(sessionId)
+    } catch (error: any) {
+      // 会话不存在（已取消）直接失败；网络抖动继续轮询
+      if (error?.response?.status === 404) throw error
+      continue
+    }
+    if (status.status === 'completed') return
+    if (status.status !== 'merging') {
+      throw new Error(status.errorMessage || '合并文件失败，请重试')
+    }
+  }
+}
+
 export async function getMultipartUploadStatus(sessionId: number): Promise<{
   sessionId: number
   fileId: string
@@ -561,6 +587,7 @@ export async function getMultipartUploadStatus(sessionId: number): Promise<{
   status: string
   progress: number
   expireTime: string
+  errorMessage?: string
 }> {
   const { data } = await api.get<ApiResponse<any>>(
     `/cloud/files/multipart/status?sessionId=${sessionId}`
@@ -578,6 +605,12 @@ export async function completeMultipartUpload(sessionId: number): Promise<FileIt
   }, {
     timeout: 0, // 合并分片可能需要较长时间，不限制超时
   })
+
+  // 需要服务端合并分片时（本地存储等）后端转后台合并，轮询直到完成
+  if (data.data?.status === 'merging') {
+    await waitMultipartMerged(sessionId)
+    return { ID: 0, FileName: '', FileSize: 0, FileType: '', FileExt: '' } as FileItem
+  }
 
   // 后端现在返回 CloudItem 格式，需要转换为 FileItem
   const item = data.data

@@ -28,6 +28,10 @@ export interface UploadTask {
   startTime?: number            // 开始时间戳
   lastUpdateTime?: number       // 最后更新时间戳
   resumable?: boolean
+  /** 分片上传所处阶段：校验文件 / 上传分片 / 合并 */
+  phase?: 'hashing' | 'uploading' | 'merging'
+  /** 校验文件（计算 MD5）进度 0-100 */
+  hashProgress?: number
 }
 
 /**

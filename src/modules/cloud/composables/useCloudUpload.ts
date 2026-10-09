@@ -8,7 +8,7 @@ import { ref, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { useCloudStore } from '@/modules/cloud/stores/cloudStore'
 import { uploadFile } from '@/modules/cloud/api'
-import { ResumableUploadManager } from '@/modules/cloud/utils/resumable-upload'
+import { ResumableUploadManager, isCancelledError } from '@/modules/cloud/utils/resumable-upload'
 import type { UploadTask, UploadResult, UploadStatus } from '@/modules/cloud/types'
 
 /**
@@ -17,6 +17,12 @@ import type { UploadTask, UploadResult, UploadStatus } from '@/modules/cloud/typ
 function generateUploadId(): string {
   return `upload_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 }
+
+/** 分片上传任务的管理器（模块级共享：各组件调用 useCloudUpload 时都能暂停 / 继续同一任务） */
+const resumableManagers = new Map<string, ResumableUploadManager>()
+
+/** 大于该大小的文件使用分片上传 */
+const RESUMABLE_THRESHOLD = 500 * 1024 * 1024
 
 /**
  * 云盘上传功能
@@ -204,6 +210,12 @@ export function useCloudUpload() {
    * @param taskId 任务ID
    */
   function removeFromQueue(taskId: string) {
+    const manager = resumableManagers.get(taskId)
+    if (manager) {
+      const task = store.uploadQueue.find((t) => t.id === taskId)
+      if (task && task.status !== 'completed') void manager.cancel()
+      resumableManagers.delete(taskId)
+    }
     const index = store.uploadQueue.findIndex((t) => t.id === taskId)
     if (index !== -1) {
       store.uploadQueue.splice(index, 1)
@@ -215,7 +227,7 @@ export function useCloudUpload() {
    */
   function clearCompletedTasks() {
     store.uploadQueue = store.uploadQueue.filter(
-      (task) => task.status === 'uploading' || task.status === 'pending'
+      (task) => task.status === 'uploading' || task.status === 'pending' || task.status === 'paused'
     )
   }
 
@@ -241,6 +253,10 @@ export function useCloudUpload() {
       return false
     }
 
+    if (task.resumable && resumableManagers.has(taskId)) {
+      return await runResumable(taskId)
+    }
+
     task.status = 'uploading'
     task.progress = 0
     task.uploadedSize = 0
@@ -259,6 +275,7 @@ export function useCloudUpload() {
       return false
     }
 
+    void resumableManagers.get(taskId)?.cancel()
     task.status = 'failed'
     task.error = '用户取消'
     Message.info('已取消上传')
@@ -294,28 +311,60 @@ export function useCloudUpload() {
     }
   }
 
+  function updateTask(taskId: string, patch: Partial<UploadTask>) {
+    const index = store.uploadQueue.findIndex((t) => t.id === taskId)
+    if (index !== -1) {
+      store.uploadQueue.splice(index, 1, { ...store.uploadQueue[index], ...patch })
+    }
+  }
+
   /**
-   * 断点续传上传（大文件）
+   * 执行（或继续）分片上传任务
+   */
+  async function runResumable(taskId: string): Promise<boolean> {
+    const manager = resumableManagers.get(taskId)
+    const task = store.uploadQueue.find((t) => t.id === taskId)
+    if (!manager || !task) return false
+
+    updateTask(taskId, { status: 'uploading', error: undefined })
+    try {
+      await manager.start()
+      updateTask(taskId, { status: 'completed', progress: 100, uploadedSize: task.file.size, speed: 0, remainingTime: 0 })
+      resumableManagers.delete(taskId)
+      Message.success(`上传成功：${task.file.name}`)
+      await Promise.all([store.loadFiles(), store.loadQuota()])
+      return true
+    } catch (e: any) {
+      const current = store.uploadQueue.find((t) => t.id === taskId)
+      // 用户暂停或移除：不算失败
+      if (!current || current.status === 'paused' || isCancelledError(e)) {
+        return false
+      }
+      console.error('分片上传失败:', e)
+      const message = e?.response?.data?.message || e?.message || '上传失败'
+      updateTask(taskId, { status: 'failed', error: message, speed: 0, remainingTime: 0 })
+      Message.error(`${task.file.name}：${message}`)
+      return false
+    }
+  }
+
+  /**
+   * 大文件分片上传（断点续传）
    * @param file 文件对象
    * @param folderId 目标文件夹ID
-   * @param useResumable 是否强制使用断点续传（默认根据文件大小自动判断）
+   * @param useResumable 是否强制使用分片上传（默认大于 500MB 的文件使用）
    */
   async function uploadWithResumable(
     file: File,
     folderId: number = store.currentFolderId,
     useResumable?: boolean
   ) {
-    // 判断是否使用断点续传（大于500MB的文件默认使用）
-    const shouldUseResumable = useResumable ?? file.size > 500 * 1024 * 1024
-
-    if (!shouldUseResumable) {
-      // 小文件使用普通上传
+    if (!(useResumable ?? file.size > RESUMABLE_THRESHOLD)) {
       return await uploadSingleFile(file, folderId)
     }
 
     const taskId = generateUploadId()
-
-    const task: UploadTask = {
+    store.uploadQueue.push({
       id: taskId,
       file,
       folderId,
@@ -325,104 +374,52 @@ export function useCloudUpload() {
       totalSize: file.size,
       speed: 0,
       remainingTime: 0,
-      resumable: true, // 标记为断点续传任务
-    }
-
-    store.uploadQueue.push(task)
-
-    try {
-      const manager = new ResumableUploadManager(file, folderId, {
-        useDirectUpload: true, // 开启前端直传模式，直接上传到腾讯云COS，不经过后端中转
-      })
-
-      // 设置进度回调，传入初始任务
-    manager.setProgressCallback((progress) => {
-      const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
-      if (taskIndex !== -1) {
-        // 确保更新所有字段，避免 NaN
-        const currentTask = store.uploadQueue[taskIndex]
-        const updatedTask: UploadTask = {
-          ...currentTask,
-          ...progress,
-          // 确保这些字段始终有值且单位一致
-          uploadedSize: Math.min(Number(progress.uploadedSize) || 0, file.size),
-          totalSize: file.size,
-          progress: Math.min(Number(progress.progress) || 0, 100),
-        }
-        // 直接替换整个任务对象，确保状态一致性
-        store.uploadQueue.splice(taskIndex, 1, updatedTask)
-      }
+      resumable: true,
+      phase: 'hashing',
+      hashProgress: 0,
     })
 
-      // 设置初始任务，让 manager 知道任务结构
-      manager.setInitialTask(task)
+    const manager = new ResumableUploadManager(file, folderId)
+    manager.setProgressCallback((progress) => {
+      const current = store.uploadQueue.find((t) => t.id === taskId)
+      if (!current || current.status === 'paused') return
+      const { status, ...rest } = progress
+      updateTask(taskId, {
+        ...rest,
+        ...(status ? { status } : {}),
+        uploadedSize: Math.min(Number(progress.uploadedSize ?? current.uploadedSize) || 0, file.size),
+        progress: Math.min(Number(progress.progress ?? current.progress) || 0, 100),
+        totalSize: file.size,
+      })
+    })
+    resumableManagers.set(taskId, manager)
 
-      // 开始上传
-      await manager.start()
-
-      // 更新任务状态为完成
-      const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
-      if (taskIndex !== -1) {
-        const updatedTask: UploadTask = {
-          ...store.uploadQueue[taskIndex],
-          status: 'completed' as UploadStatus,
-          progress: 100,
-          uploadedSize: file.size,
-          totalSize: file.size,
-        }
-        // 直接替换整个任务对象，确保状态一致性
-        store.uploadQueue.splice(taskIndex, 1, updatedTask)
-      }
-
-      Message.success(`上传成功：${file.name}`)
-
-      // 刷新文件列表和配额
-      await Promise.all([store.loadFiles(), store.loadQuota()])
-
-      return true
-    } catch (e: any) {
-      console.error('断点续传失败:', e)
-
-      // 更新任务状态为失败
-      const taskIndex = store.uploadQueue.findIndex((t) => t.id === taskId)
-      if (taskIndex !== -1) {
-        store.uploadQueue[taskIndex].status = 'failed'
-        store.uploadQueue[taskIndex].error = e?.message || '上传失败'
-      }
-
-      Message.error(e?.message || '上传文件失败')
-      return false
-    }
+    return await runResumable(taskId)
   }
 
   /**
-   * 暂停断点续传任务
-   * @param taskId 任务ID
+   * 暂停分片上传：中止进行中的请求，已上传的分片保留在服务端
    */
   function pauseResumableUpload(taskId: string) {
     const task = store.uploadQueue.find((t) => t.id === taskId)
-    if (!task || !task.resumable) {
+    const manager = resumableManagers.get(taskId)
+    if (!task || !manager || task.status !== 'uploading') {
       return false
     }
-
-    // 这里需要保存manager实例的引用，暂时标记为暂停
-    task.status = 'pending'
-    Message.info('已暂停上传')
+    updateTask(taskId, { status: 'paused', speed: 0, remainingTime: 0 })
+    manager.abort()
     return true
   }
 
   /**
-   * 恢复断点续传任务
-   * @param taskId 任务ID
+   * 继续分片上传：复用已计算的校验值，跳过已上传的分片
    */
   async function resumeResumableUpload(taskId: string) {
     const task = store.uploadQueue.find((t) => t.id === taskId)
-    if (!task || !task.resumable || task.status !== 'pending') {
+    if (!task || !resumableManagers.has(taskId) || task.status !== 'paused') {
       return false
     }
-
-    // 重新开始上传
-    return await uploadWithResumable(task.file, task.folderId, true)
+    return await runResumable(taskId)
   }
 
   return {

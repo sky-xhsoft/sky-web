@@ -41,15 +41,32 @@
         >
           <div class="task-info">
             <span class="task-name">{{ task.file.name }}</span>
-            <span class="task-size">{{ formatSize(task.file.size) }}</span>
+            <span class="task-size" :class="{ 'is-error': task.status === 'failed' }">{{ taskDetail(task) }}</span>
           </div>
           <div class="task-progress-bar">
+            <!-- progress 为 0-100 -->
             <i
-              :style="{ width: task.progress * 100 + '%' }"
-              :class="{ 'is-done': task.status === 'completed', 'is-error': task.status === 'failed' }"
+              :style="{ width: barPercent(task) + '%' }"
+              :class="{ 'is-done': task.status === 'completed', 'is-error': task.status === 'failed', 'is-hashing': task.phase === 'hashing' && task.status === 'uploading' }"
             />
           </div>
           <div class="task-actions">
+            <V2Button
+              v-if="task.resumable && task.status === 'uploading' && task.phase === 'uploading'"
+              size="sm"
+              type="text"
+              @click="emit('pause', task.id)"
+            >
+              暂停
+            </V2Button>
+            <V2Button
+              v-if="task.status === 'paused'"
+              size="sm"
+              type="secondary"
+              @click="emit('resume', task.id)"
+            >
+              继续
+            </V2Button>
             <V2Button
               v-if="task.status === 'failed'"
               size="sm"
@@ -77,7 +94,7 @@
 import { computed, ref } from 'vue'
 import { IconUpload, IconDown, IconUp, IconClose } from '@arco-design/web-vue/es/icon'
 import type { UploadTask } from '@/modules/cloud/types'
-import { formatSize } from '@/modules/cloud/utils/format'
+import { formatSize, formatSpeed, formatRemainingTime } from '@/modules/cloud/utils/format'
 import { V2Button, V2Card } from '@/components/ui'
 
 interface Props {
@@ -92,6 +109,8 @@ interface Props {
 
 interface Emits {
   (e: 'retry', taskId: string): void
+  (e: 'pause', taskId: string): void
+  (e: 'resume', taskId: string): void
   (e: 'remove', taskId: string): void
   (e: 'clearCompleted'): void
 }
@@ -127,6 +146,36 @@ const safeOverallProgress = computed(() => {
     percent: Math.min(100, Math.max(0, props.overallProgress.percent))
   }
 })
+
+/** 进度条：校验文件阶段显示校验进度，其余显示上传进度 */
+function barPercent(task: UploadTask) {
+  const value = task.phase === 'hashing' && task.status === 'uploading' ? task.hashProgress ?? 0 : task.progress
+  return Math.min(100, Math.max(0, Number(value) || 0))
+}
+
+/** 任务状态说明：大小 / 校验进度 / 速度与剩余时间 / 合并中 / 已暂停 / 失败原因 */
+function taskDetail(task: UploadTask) {
+  const size = formatSize(task.file.size)
+  switch (task.status) {
+    case 'completed':
+      return `${size} · 已完成`
+    case 'paused':
+      return `${formatSize(task.uploadedSize)} / ${size} · 已暂停`
+    case 'failed':
+      return task.error || '上传失败'
+    case 'uploading':
+      if (task.phase === 'hashing') return `${size} · 正在校验文件 ${task.hashProgress ?? 0}%`
+      if (task.phase === 'merging') return `${size} · 正在合并…`
+      if (task.resumable) {
+        const parts = [`${formatSize(task.uploadedSize)} / ${size}`]
+        if (task.speed > 0) parts.push(formatSpeed(task.speed), `剩余 ${formatRemainingTime(task.remainingTime)}`)
+        return parts.join(' · ')
+      }
+      return size
+    default:
+      return size
+  }
+}
 
 function handleRetry(taskId: string) {
   emit('retry', taskId)
@@ -247,9 +296,16 @@ function handleToggle() {
 
 .task-size {
   display: block;
+  overflow: hidden;
+  margin-top: 2px;
   font-size: 12px;
   color: var(--text-tertiary);
-  margin-top: 2px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-size.is-error {
+  color: var(--error);
 }
 
 .task-progress-bar {
@@ -270,6 +326,10 @@ function handleToggle() {
 
 .task-progress-bar > i.is-done {
   background: var(--success);
+}
+
+.task-progress-bar > i.is-hashing {
+  background: var(--warning);
 }
 
 .task-progress-bar > i.is-error {

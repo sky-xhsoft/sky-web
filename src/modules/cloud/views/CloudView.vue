@@ -82,6 +82,8 @@
       :has-uploading-tasks="store.hasUploadingTasks"
       :overall-progress="store.uploadProgress"
       @retry="handleRetryUpload"
+      @pause="upload.pauseResumableUpload"
+      @resume="upload.resumeResumableUpload"
       @remove="handleRemoveUpload"
       @clear-completed="handleClearCompletedUploads"
     />
