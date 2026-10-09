@@ -21,7 +21,7 @@
           <div class="ptf-card">
             <div class="ptf-card-title">任务信息</div>
             <a-form-item label="任务备注" field="comment">
-              <a-input v-model="taskForm.comment" placeholder="例如：秋季发布会同步到抖音" />
+              <a-input v-model="taskForm.comment" placeholder="例如：秋季发布会同步到 YouTube" />
             </a-form-item>
             <div class="ptf-grid2">
               <a-form-item label="任务时间" field="timeRange" :rules="[{ required: true, message: '请选择任务时间' }]">
@@ -32,7 +32,7 @@
                   <a-select v-model="taskForm.region" placeholder="请选择地域" :disabled="isEdit">
                     <a-option v-for="r in regions" :key="r.value" :value="r.value">{{ r.label }}</a-option>
                   </a-select>
-                  <div class="ptf-tip">选择离直播源较近的地域，拉流更稳定</div>
+                  <div class="ptf-tip">推流到海外平台建议选择海外地域（如新加坡、法兰克福、弗吉尼亚），推流更稳定</div>
                 </div>
               </a-form-item>
             </div>
@@ -251,15 +251,25 @@ const previewSourceName = computed(() => {
 })
 
 // ==================== 分发目标：平台（服务器地址 + 推流码）/ 自定义地址 ====================
+// 海外平台：服务器地址固定的平台选中时自动预填（defaultServer），其余只给示例
 const platforms = [
-  { value: 'douyin', label: '抖音', mark: '抖', color: '#111111', serverPlaceholder: 'rtmp://push-rtmp-xxx.douyincdn.com/third', guide: '在抖音直播伴侣或开播设置中' },
-  { value: 'kuaishou', label: '快手', mark: '快', color: '#ff5000', serverPlaceholder: 'rtmp://open-push.voip.yximgs.com/gifshow/', guide: '在快手直播伴侣或开播设置中' },
-  { value: 'bilibili', label: '哔哩哔哩', mark: 'B', color: '#fb7299', serverPlaceholder: 'rtmp://live-push.bilivideo.com/live-bvc/', guide: '在 B 站直播中心「我的直播间」中' },
-  { value: 'channels', label: '视频号', mark: '视', color: '#07c160', serverPlaceholder: 'rtmp://xxx.livepush.myqcloud.com/trtc_xxx/', guide: '在视频号助手「直播管理」中' },
-  { value: 'custom', label: '自定义', mark: '+', color: '#86909c', serverPlaceholder: '', guide: '' },
+  { value: 'youtube', label: 'YouTube', mark: 'YT', color: '#ff0000', defaultServer: 'rtmp://a.rtmp.youtube.com/live2', serverPlaceholder: 'rtmp://a.rtmp.youtube.com/live2', guide: '在 YouTube Studio「直播」→「串流设置」中' },
+  { value: 'facebook', label: 'Facebook', mark: 'f', color: '#1877f2', defaultServer: 'rtmps://live-api-s.facebook.com:443/rtmp/', serverPlaceholder: 'rtmps://live-api-s.facebook.com:443/rtmp/', guide: '在 Facebook「直播制作工具」→「串流软件」中' },
+  { value: 'tiktok', label: 'TikTok', mark: 'TT', color: '#000000', defaultServer: '', serverPlaceholder: 'rtmp://xxx.tiktokcdn.com/stage/', guide: '在 TikTok LIVE Studio 或 LIVE Producer 中' },
+  { value: 'twitch', label: 'Twitch', mark: 'Tw', color: '#9146ff', defaultServer: 'rtmp://live.twitch.tv/app', serverPlaceholder: 'rtmp://live.twitch.tv/app', guide: '在 Twitch 创作者仪表板「设置」→「串流」中' },
+  { value: 'x', label: 'X', mark: 'X', color: '#000000', defaultServer: '', serverPlaceholder: 'rtmps://xx.pscp.tv:443/x', guide: '在 X Media Studio「Producer」→「来源」中' },
+  { value: 'custom', label: '自定义', mark: '+', color: '#86909c', defaultServer: '', serverPlaceholder: '', guide: '' },
 ]
-const targetPlatform = ref('douyin')
+const targetPlatform = ref('youtube')
 const currentPlatform = computed(() => platforms.find((p) => p.value === targetPlatform.value) || platforms[0])
+
+// 切换平台：服务器地址为空或仍是上一个平台的默认值时，换成新平台的默认地址
+watch(targetPlatform, (next, prev) => {
+  const prevDefault = platforms.find((p) => p.value === prev)?.defaultServer || ''
+  const nextDefault = platforms.find((p) => p.value === next)?.defaultServer || ''
+  if (!taskForm.targetServer || taskForm.targetServer === prevDefault) taskForm.targetServer = nextDefault
+})
+if (!taskForm.targetServer) taskForm.targetServer = currentPlatform.value.defaultServer
 
 // 服务器地址 + 推流码 拼接为完整推流地址
 const composedTarget = computed(() => {
@@ -635,7 +645,7 @@ onMounted(async () => {
 /* 平台卡片 */
 .ptf-platforms {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 8px;
   margin-bottom: 14px;
 }

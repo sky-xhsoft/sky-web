@@ -86,12 +86,15 @@ describe('PullStreamTaskForm (页面组件挂载)', () => {
     expect(preview).toContain('http://play.test/live/82.flv')
   })
 
-  it('选择平台后预览中的分发目标同步为该平台', async () => {
+  it('分发目标为海外平台，默认 YouTube；选择平台后预览同步', async () => {
     const wrapper = mountPage()
     await flushPromises()
-    const kuaishou = wrapper.findAll('.ptf-platform')[1]
-    await kuaishou.trigger('click')
-    expect(kuaishou.classes()).toContain('is-active')
-    expect(wrapper.findAll('.ptf-node-name')[1].text()).toBe('快手')
+    const labels = wrapper.findAll('.ptf-platform').map((p) => p.text())
+    expect(labels).toEqual(['YTYouTube', 'fFacebook', 'TTTikTok', 'TwTwitch', 'XX', '+自定义'])
+    expect(wrapper.findAll('.ptf-node-name')[1].text()).toBe('YouTube')
+    const facebook = wrapper.findAll('.ptf-platform')[1]
+    await facebook.trigger('click')
+    expect(facebook.classes()).toContain('is-active')
+    expect(wrapper.findAll('.ptf-node-name')[1].text()).toBe('Facebook')
   })
 })
