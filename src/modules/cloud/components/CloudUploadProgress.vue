@@ -20,6 +20,7 @@
     <div class="cloud-transfer__list">
       <div v-for="task in uploadQueue" :key="task.id" class="cloud-transfer__task">
         <div class="task-head">
+          <CloudFileIcon :name="task.file.name" :mime="task.file.type" :size="22" />
           <span class="task-name" :title="task.file.name">{{ task.file.name }}</span>
           <span class="task-tag" :class="`is-${stateOf(task)}`">{{ tagText(task) }}</span>
         </div>
@@ -64,6 +65,7 @@ import { useI18n } from 'vue-i18n'
 import { IconClose } from '@arco-design/web-vue/es/icon'
 import type { UploadTask } from '@/modules/cloud/types'
 import { formatSize, formatSpeed, formatRemainingTime } from '@/modules/cloud/utils/format'
+import CloudFileIcon from './CloudFileIcon.vue'
 
 type TaskState = 'hashing' | 'uploading' | 'merging' | 'paused' | 'failed' | 'done' | 'waiting'
 

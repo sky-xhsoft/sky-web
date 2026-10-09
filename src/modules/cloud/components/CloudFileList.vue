@@ -31,12 +31,16 @@
       <!-- 名称列 -->
       <template #name="{ record }">
         <div class="file-name-cell">
-          <span
-            class="file-icon"
-            :class="{ 'file-icon--folder': record.type === 'folder' }"
-            :style="{ backgroundColor: record.bg, color: record.color }"
-          >
-            {{ record.icon }}
+          <span class="file-thumb">
+            <CloudFileThumb
+              :file-id="record.type === 'file' ? record.id : 0"
+              :folder="record.type === 'folder'"
+              :name="record.name"
+              :ext="record.file?.FileExt"
+              :mime="record.file?.FileType"
+              :icon-size="26"
+              compact
+            />
           </span>
           <span class="file-name" :title="record.name">{{ record.name }}</span>
         </div>
@@ -54,7 +58,7 @@
 
       <!-- 大小列 -->
       <template #size="{ record }">
-        <span v-if="record.type === 'file'">
+        <span v-if="record.type === 'file'" class="nowrap-tag">
           {{ formatSize(record.file?.FileSize || 0) }}
         </span>
         <span v-else class="text-muted">-</span>
@@ -139,6 +143,7 @@ import {
 import type { GridItem } from '@/modules/cloud/types'
 import type { TableRowSelection } from '@arco-design/web-vue'
 import { formatSize, formatDate } from '@/modules/cloud/utils/format'
+import CloudFileThumb from './CloudFileThumb.vue'
 import { useI18n } from 'vue-i18n'
 import { V2Button, V2Tag } from '@/components/ui'
 
@@ -214,7 +219,7 @@ const columns = [
     title: t('cloud.fileSize'),
     dataIndex: 'size',
     slotName: 'size',
-    width: 100,
+    width: 110,
   },
   {
     title: t('cloud.modified'),
@@ -339,19 +344,16 @@ function handleActionSelect(value: string | number | Record<string, any> | undef
 .file-name-cell {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   overflow: hidden; /* 防止溢出 */
 }
 
-.file-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  font-size: 18px;
-  flex-shrink: 0;
+.file-thumb {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 30px;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .file-name {

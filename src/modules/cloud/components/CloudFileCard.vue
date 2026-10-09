@@ -14,13 +14,17 @@
       <a-checkbox :model-value="selected" @change="handleSelect" />
     </div>
 
-    <!-- 类型图块：文件夹图标 / 文件扩展名 -->
-    <div class="cloud-file-card__tile" :style="{ color: item.color, background: item.bg }">
-      <svg v-if="item.type === 'folder'" class="folder-svg" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M3 6.5A1.5 1.5 0 014.5 5h4.6l2 2h8.4A1.5 1.5 0 0121 8.5v9a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 17.5z" fill="#f4b740" />
-        <path d="M3 9h18v8.5a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 17.5z" fill="#f8c95c" />
-      </svg>
-      <span v-else class="ext-text">{{ extLabel }}</span>
+    <!-- 图块：图片显示缩略图，视频显示第一帧，其他按类型显示图标 -->
+    <div class="cloud-file-card__tile" :style="{ background: tileBg }">
+      <CloudFileThumb
+        :file-id="item.type === 'file' ? item.id : 0"
+        :folder="item.type === 'folder'"
+        :name="item.name"
+        :ext="item.file?.FileExt"
+        :mime="item.file?.FileType"
+        :icon-size="52"
+      />
+      <span v-if="extLabel" class="ext-badge">{{ extLabel }}</span>
     </div>
 
     <!-- 信息 -->
@@ -87,6 +91,8 @@ import {
 } from '@arco-design/web-vue/es/icon'
 import { computed } from 'vue'
 import type { GridItem } from '@/modules/cloud/types'
+import CloudFileThumb from './CloudFileThumb.vue'
+import { extOf, fileKindOf, FILE_KIND_COLORS } from '@/modules/cloud/utils/file-kind'
 import { useI18n } from 'vue-i18n'
 import { V2Button } from '@/components/ui'
 
@@ -115,10 +121,17 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-/** 扩展名大写显示，无扩展名时显示 FILE */
+/** 图块背景：文件夹浅黄，文件按类型浅色 */
+const tileBg = computed(() => {
+  if (props.item.type === 'folder') return '#fff7e3'
+  return FILE_KIND_COLORS[fileKindOf(props.item.file?.FileExt || props.item.name, props.item.file?.FileType)].bg
+})
+
+/** 右下角扩展名角标（文件夹不显示） */
 const extLabel = computed(() => {
-  const ext = (props.item.file?.FileExt || props.item.name.split('.').pop() || '').replace(/^\./, '')
-  return ext && ext.length <= 5 && ext !== props.item.name ? ext.toUpperCase() : 'FILE'
+  if (props.item.type === 'folder') return ''
+  const ext = extOf(props.item.file?.FileExt || (props.item.name.includes('.') ? props.item.name : ''))
+  return ext && ext.length <= 5 ? ext.toUpperCase() : ''
 })
 
 function handleClick() {
@@ -185,25 +198,24 @@ function handleContextMenu(event: MouseEvent) {
 }
 
 .cloud-file-card__tile {
-  display: grid;
-  place-items: center;
+  position: relative;
   height: 92px;
+  overflow: hidden;
   border-radius: var(--radius-md);
 }
 
-.cloud-file-card.is-folder .cloud-file-card__tile {
-  background: #fff7e3 !important;
-}
-
-.folder-svg {
-  width: 54px;
-  height: 54px;
-}
-
-.ext-text {
-  font-size: 15px;
-  font-weight: 700;
+.ext-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
   letter-spacing: 0.04em;
+  color: var(--text-secondary);
 }
 
 .cloud-file-card__info {
