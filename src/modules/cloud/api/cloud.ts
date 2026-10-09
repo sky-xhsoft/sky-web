@@ -480,6 +480,7 @@ export async function getQuota(): Promise<QuotaInfo> {
     folderCount: quota.folderCount || quota.FolderCount,
     maxFileSize: quota.maxFileSize || quota.MaxFileSize,
     quotaType: quota.quotaType || quota.QuotaType,
+    company: quota.company,
   }
 }
 
@@ -930,15 +931,9 @@ export async function fetchFolderContent(folderId?: number): Promise<{ folders: 
 
 // ==================== CloudItem 统一接口（新） ====================
 
-/**
- * 获取云盘项目列表（文件+文件夹）
- * 对应后端: GET /api/v1/cloud/items?parentId=xxx
- */
-export async function fetchItems(parentId?: number): Promise<{ folders: Folder[]; files: FileItem[] }> {
-  const params = parentId !== undefined && parentId !== 0 ? { parentId } : {}
-  const { data } = await api.get<ApiResponse<any>>('/cloud/items', { params })
-
-  const result = data?.data || { folders: [], files: [] }
+/** CloudItem 列表结果转换为文件夹 / 文件 */
+function convertItemsResult(result: any): { folders: Folder[]; files: FileItem[] } {
+  result = result || { folders: [], files: [] }
 
   // 转换文件夹字段（CloudItem -> Folder）
   const convertFolder = (item: any): Folder => ({
@@ -984,6 +979,46 @@ export async function fetchItems(parentId?: number): Promise<{ folders: Folder[]
   }
 
   return converted
+}
+
+/**
+ * 获取云盘项目列表（文件+文件夹）
+ * 对应后端: GET /api/v1/cloud/items?parentId=xxx
+ */
+export async function fetchItems(parentId?: number): Promise<{ folders: Folder[]; files: FileItem[] }> {
+  const params = parentId !== undefined && parentId !== 0 ? { parentId } : {}
+  const { data } = await api.get<ApiResponse<any>>('/cloud/items', { params })
+
+  return convertItemsResult(data?.data)
+}
+
+/** 云盘统计：当前用户全部文件按类型的数量（不限当前目录） */
+export interface DriveStats {
+  all: number
+  video: number
+  image: number
+  document: number
+  other: number
+  folders: number
+  totalSize: number
+}
+
+/**
+ * 云盘文件统计
+ * 对应后端: GET /api/v1/cloud/items/stats
+ */
+export async function getDriveStats(): Promise<DriveStats> {
+  const { data } = await api.get<ApiResponse<DriveStats>>('/cloud/items/stats')
+  return data.data
+}
+
+/**
+ * 按类型列出全部文件（不限目录）
+ * 对应后端: GET /api/v1/cloud/items/by-category?category=video
+ */
+export async function fetchItemsByCategory(category: string): Promise<{ folders: Folder[]; files: FileItem[] }> {
+  const { data } = await api.get<ApiResponse<any>>('/cloud/items/by-category', { params: { category } })
+  return convertItemsResult(data?.data)
 }
 
 /**

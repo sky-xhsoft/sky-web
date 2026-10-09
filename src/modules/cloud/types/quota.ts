@@ -27,6 +27,16 @@ export interface QuotaInfo {
   updateBy?: string
   updateTime?: string
   isActive?: string
+  /** 公司存储空间（同公司用户共享，未配置时默认 100GB），云盘界面按此显示 */
+  company?: CompanyStorage
+}
+
+/** 公司存储空间 */
+export interface CompanyStorage {
+  companyId: number
+  totalQuota: number
+  usedSpace: number
+  fileCount: number
 }
 
 /**

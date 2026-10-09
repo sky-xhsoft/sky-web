@@ -3,10 +3,10 @@
     <!-- 左侧：上传 + 分类 + 我的分享 + 存储空间 -->
     <CloudSidebar
       class="cloud-view__sidebar"
-      :active="category"
+      :active="store.category"
       :counts="categoryCounts"
       :quota="store.quota"
-      @change="category = $event"
+      @change="store.setCategory($event)"
       @upload="handleUpload"
       @open-shares="handleOpenShareManager"
     />
@@ -18,7 +18,7 @@
       <div class="cloud-view__header">
         <CloudBreadcrumb
           class="cloud-view__breadcrumb"
-          :items="store.breadcrumbs"
+          :items="breadcrumbItems"
           :current-id="store.currentFolderId"
           @navigate="handleBreadcrumbNavigate($event.id)"
         />
@@ -90,13 +90,13 @@
       />
 
       <div class="cloud-view__files-wrapper">
-        <div v-if="category !== 'all' && displayItems.length === 0 && !store.loading.files" class="cloud-view__category-empty">
+        <div v-if="store.category !== 'all' && store.gridItems.length === 0 && !store.loading.files" class="cloud-view__category-empty">
           {{ t('cloud.categoryEmpty') }}
         </div>
         <CloudFileDisplay
           v-else
           :view-mode="store.viewMode"
-          :items="displayItems"
+          :items="store.gridItems"
           :loading="store.loading.files"
           :selected-ids="allSelectedIds"
           :selectable="true"
@@ -357,29 +357,26 @@ const allSelectedIds = computed(() => {
   store.selectedFolderIds.forEach((id) => ids.add(`folder-${id}`))
   return ids
 })
-// ==================== 分类筛选（当前文件夹内） ====================
-const category = ref<CloudCategory>('all')
-
-function categoryOf(item: GridItem): CloudCategory | 'folder' {
-  if (item.type === 'folder' || !item.file) return 'folder'
-  const c = preview.getFileCategory(item.file)
-  if (c === 'video' || c === 'image') return c
-  if (c === 'document' || c === 'text') return 'document'
-  return 'other'
-}
-
-const categoryCounts = computed(() => {
-  const counts: Record<CloudCategory, number> = { all: 0, video: 0, image: 0, document: 0, other: 0 }
-  for (const item of store.gridItems) {
-    counts.all += 1
-    const c = categoryOf(item)
-    if (c !== 'folder') counts[c] += 1
-  }
-  return counts
+// ==================== 分类（全部文件统计，不限当前目录） ====================
+const categoryCounts = computed<Partial<Record<CloudCategory, number>>>(() => {
+  const stats = store.driveStats
+  if (!stats) return {}
+  return { all: stats.all, video: stats.video, image: stats.image, document: stats.document, other: stats.other }
 })
 
-const displayItems = computed(() =>
-  category.value === 'all' ? store.gridItems : store.gridItems.filter((item) => categoryOf(item) === category.value)
+const CATEGORY_LABEL_KEYS: Record<CloudCategory, string> = {
+  all: 'cloud.catAll',
+  video: 'cloud.catVideo',
+  image: 'cloud.catImage',
+  document: 'cloud.catDocument',
+  other: 'cloud.catOther',
+}
+
+// 选中分类时路径显示「全部文件 / 视频」，点击「全部文件」回到按目录浏览
+const breadcrumbItems = computed(() =>
+  store.category === 'all'
+    ? store.breadcrumbs
+    : [{ id: 0, name: t('cloud.catAll') }, { id: -1, name: t(CATEGORY_LABEL_KEYS[store.category]) }]
 )
 
 // ==================== 传输明细 ====================
@@ -736,7 +733,9 @@ const previewableFiles = computed(() => {
   return store.filteredAndSortedFiles.filter((f) => preview.canPreview(f))
 })
 
-const previewLocation = computed(() => store.breadcrumbs.map((b) => b.name).join(' / '))
+const previewLocation = computed(() =>
+  store.category === 'all' ? store.breadcrumbs.map((b) => b.name).join(' / ') : ''
+)
 
 const currentPreviewIndex = computed(() => {
   if (!currentItem.value?.file) return -1

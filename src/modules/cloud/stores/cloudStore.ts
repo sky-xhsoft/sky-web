@@ -21,6 +21,8 @@ import type {
 import {
   fetchFolders,
   fetchItems,  // 统一获取 folders + files
+  fetchItemsByCategory,
+  getDriveStats,
   getQuota,
   createItem as createItemApi,
   deleteItem as deleteItemApi,
@@ -31,6 +33,10 @@ import {
 import { getFileIconConfig } from '@/modules/cloud/composables/useFileIcon'
 import { formatSize, formatDate } from '@/modules/cloud/utils/format'
 import i18n from '@/locales'
+import type { DriveStats } from '@/modules/cloud/api/cloud'
+
+/** 云盘左侧分类：全部文件，或全部目录中的某一类型 */
+export type CloudCategory = 'all' | 'video' | 'image' | 'document' | 'other'
 
 export const useCloudStore = defineStore('cloud', () => {
   // ==================== 状态 ====================
@@ -47,6 +53,9 @@ export const useCloudStore = defineStore('cloud', () => {
 
   // 配额信息
   const quota = ref<QuotaInfo | null>(null)
+  // 左侧分类与全盘统计
+  const category = ref<CloudCategory>('all')
+  const driveStats = ref<DriveStats | null>(null)
 
   // 加载状态
   const loading = ref<LoadingState>({
@@ -253,8 +262,10 @@ export const useCloudStore = defineStore('cloud', () => {
     loading.value.files = true
     loading.value.tree = true  // 同时加载文件夹
     try {
-      // 使用新的统一接口 fetchItems，一次性获取文件和文件夹
-      const result = await fetchItems(folderId === 0 ? undefined : folderId)
+      // 选中左侧分类时显示全部目录中该类型的文件；否则显示当前目录
+      const result = category.value !== 'all'
+        ? await fetchItemsByCategory(category.value)
+        : await fetchItems(folderId === 0 ? undefined : folderId)
       files.value = result.files
       currentSubFolders.value = result.folders  // 同时更新子文件夹
     } catch (e: any) {
@@ -292,8 +303,9 @@ export const useCloudStore = defineStore('cloud', () => {
     loading.value.files = true
     loading.value.tree = true
     try {
-      // 使用新的统一接口 fetchItems
-      const result = await fetchItems(folderId === 0 ? undefined : folderId)
+      const result = category.value !== 'all'
+        ? await fetchItemsByCategory(category.value)
+        : await fetchItems(folderId === 0 ? undefined : folderId)
       currentSubFolders.value = result.folders
       files.value = result.files
     } catch (e: any) {
@@ -311,6 +323,8 @@ export const useCloudStore = defineStore('cloud', () => {
    */
   async function loadQuota() {
     loading.value.quota = true
+    // 上传、删除后都会刷新配额，顺带刷新分类统计
+    void loadDriveStats()
     try {
       const data = await getQuota()
       quota.value = data
@@ -320,6 +334,28 @@ export const useCloudStore = defineStore('cloud', () => {
     } finally {
       loading.value.quota = false
     }
+  }
+
+  /**
+   * 加载云盘分类统计（全部文件，不限当前目录）
+   */
+  async function loadDriveStats() {
+    try {
+      driveStats.value = await getDriveStats()
+    } catch (e: any) {
+      console.error('加载云盘统计失败:', e)
+    }
+  }
+
+  /**
+   * 切换左侧分类：非「全部文件」时列出全部目录中该类型的文件
+   */
+  async function setCategory(next: CloudCategory) {
+    if (category.value === next) return
+    category.value = next
+    selectedFileIds.value.clear()
+    selectedFolderIds.value.clear()
+    await loadFiles()
   }
 
   /**
@@ -350,6 +386,8 @@ export const useCloudStore = defineStore('cloud', () => {
    * 切换文件夹
    */
   async function switchFolder(folderId: number, folderName?: string) {
+    // 进入目录即回到按目录浏览
+    category.value = 'all'
     
     // 如果要回到根目录
     if (folderId === 0) {
@@ -657,6 +695,8 @@ export const useCloudStore = defineStore('cloud', () => {
     files,
     currentSubFolders,
     quota,
+    category,
+    driveStats,
     loading,
     uploadQueue,
     selectedFileIds,
@@ -685,6 +725,8 @@ export const useCloudStore = defineStore('cloud', () => {
     loadSubFolders,
     loadFolderContent,
     loadQuota,
+    loadDriveStats,
+    setCategory,
     loadShares,
     refreshAll,
     switchFolder,

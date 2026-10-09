@@ -91,8 +91,9 @@ const categories = computed(() => [
   { key: 'other' as const, label: t('cloud.catOther'), icon: IconMore },
 ])
 
-const used = computed(() => Number(props.quota?.usedSpace ?? (props.quota as any)?.UsedSpace ?? 0) || 0)
-const total = computed(() => Number(props.quota?.totalQuota ?? (props.quota as any)?.TotalQuota ?? 0) || 0)
+// 公司存储空间（同公司用户共享，未配置时默认 100GB）；旧接口没有 company 时退回个人配额
+const used = computed(() => Number(props.quota?.company?.usedSpace ?? props.quota?.usedSpace ?? 0) || 0)
+const total = computed(() => Number(props.quota?.company?.totalQuota ?? props.quota?.totalQuota ?? 0) || 0)
 const quotaPercent = computed(() => (total.value > 0 ? Math.min(100, Math.round((used.value / total.value) * 100)) : 0))
 
 function handleUpload(option: RequestOption) {
