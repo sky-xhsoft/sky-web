@@ -1,166 +1,182 @@
 <template>
   <div class="live-room-form">
-    <!-- 左上角按钮 -->
-    <div class="form-header">
-      <a-space>
-        <a-button @click="handleCancel">{{ t('liveRoomForm.return') }}</a-button>
-        <a-button type="primary" @click="handleSubmit" :loading="submitting">
+    <div class="lrf-wrap">
+      <!-- 页头：与直播间详情一致 -->
+      <div class="lrf-head">
+        <div class="lrf-head-main">
+          <div class="lrf-crumb">
+            <span class="lrf-link" @click="handleCancel">{{ t('liveRoomForm.crumbRooms') }}</span>
+            <span>/</span>
+            <span>{{ pageTitle }}</span>
+          </div>
+          <h1 class="lrf-title">{{ pageTitle }}</h1>
+        </div>
+        <a-button @click="handleCancel">{{ t('liveRoomForm.cancel') }}</a-button>
+        <a-button type="primary" :loading="submitting" @click="handleSubmit">
           {{ isEditMode ? t('liveRoomForm.edit') : t('liveRoomForm.submit') }}
         </a-button>
-      </a-space>
-    </div>
+      </div>
 
-    <a-alert type="info" show-icon style="margin-bottom: 16px">
-      {{ t('liveRoomForm.compliance') }}
-    </a-alert>
-
-    <a-form :model="formData" :rules="rules" ref="formRef" layout="vertical" size="small">
-      <!-- 基本信息 -->
-      <div class="form-section-title">{{ t('liveRoomForm.sectionBasic') }}</div>
-      <a-row :gutter="24">
-        <a-col :span="12">
-          <a-form-item :label="t('liveRoomForm.roomName')" field="roomName" required>
-            <a-input
-              v-model="formData.roomName"
-              :placeholder="t('liveRoomForm.roomNamePlaceholder')"
-              :max-length="100"
-              show-word-limit
-            />
-          </a-form-item>
-        </a-col>
-        <a-col :span="12">
-          <a-form-item :label="t('liveRoomForm.displayMode')" field="displayMode">
-            <a-radio-group v-model="formData.displayMode" type="button">
-              <a-radio value="landscape">{{ t('liveRoomForm.displayModeLandscape') }}</a-radio>
-              <a-radio value="portrait">{{ t('liveRoomForm.displayModePortrait') }}</a-radio>
-              <a-radio value="three_screen">三分屏</a-radio>
-            </a-radio-group>
-          </a-form-item>
-        </a-col>
-      </a-row>
-
-      <a-row :gutter="24">
-        <a-col :span="12">
-          <a-form-item :label="t('liveRoomForm.startTime')" field="startTime" required>
-            <a-date-picker
-              v-model="formData.startTime"
-              show-time
-              format="YYYY-MM-DD HH:mm:ss"
-              style="width: 100%"
-            />
-          </a-form-item>
-        </a-col>
-        <a-col :span="12">
-          <a-form-item :label="t('liveRoomForm.endTime')" field="endTime">
-            <a-date-picker
-              v-model="formData.endTime"
-              show-time
-              format="YYYY-MM-DD HH:mm:ss"
-              style="width: 100%"
-            />
-          </a-form-item>
-        </a-col>
-      </a-row>
-
-      <!-- 封面与录制设置 -->
-      <div class="form-section-title">{{ t('liveRoomForm.sectionCoverRec') }}</div>
-      <a-row :gutter="24">
-        <a-col :span="12">
-          <a-form-item :label="t('liveRoomForm.coverImage')" field="coverImage">
-            <div class="cover-upload-wrapper">
-              <a-upload
-                v-if="!formData.coverImage"
-                :custom-request="handleUpload"
-                :show-file-list="false"
-                :limit="1"
-                accept="image/*"
-              >
-                <template #upload-button>
-                  <div class="upload-area">
-                    <icon-plus />
-                    <div>{{ t('liveRoomForm.upload') }}</div>
-                  </div>
-                </template>
-              </a-upload>
-              <div v-else class="cover-preview">
-                <a-image
-                  :src="formData.coverImage"
-                  width="180"
-                  height="101"
-                  fit="cover"
-                />
-                <div class="cover-actions">
-                  <a-button size="small" @click="handleRemoveCover">
-                    <template #icon>
-                      <icon-delete />
-                    </template>
-                    {{ t('liveRoomForm.delete') }}
-                  </a-button>
-                  <a-upload
-                    :custom-request="handleUpload"
-                    :show-file-list="false"
-                    accept="image/*"
-                  >
-                    <template #upload-button>
-                      <a-button size="small">
-                        <template #icon>
-                          <icon-swap />
-                        </template>
-                        {{ t('liveRoomForm.replace') }}
-                      </a-button>
-                    </template>
-                  </a-upload>
+      <!-- 左侧表单，右侧实时预览；窄屏上下排列 -->
+      <a-form :model="formData" :rules="rules" ref="formRef" layout="vertical" class="lrf-body">
+        <div class="lrf-main">
+          <div class="lrf-card">
+            <div class="lrf-card-title">{{ t('liveRoomForm.sectionBasic') }}</div>
+            <a-form-item :label="t('liveRoomForm.roomName')" field="roomName" required>
+              <a-input
+                v-model="formData.roomName"
+                :placeholder="t('liveRoomForm.roomNamePlaceholder')"
+                :max-length="100"
+                show-word-limit
+              />
+            </a-form-item>
+            <div class="lrf-grid2">
+              <a-form-item :label="t('liveRoomForm.startTime')" field="startTime" required>
+                <a-date-picker v-model="formData.startTime" show-time format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
+              </a-form-item>
+              <a-form-item :label="t('liveRoomForm.endTime')" field="endTime">
+                <a-date-picker v-model="formData.endTime" show-time format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
+              </a-form-item>
+            </div>
+            <a-form-item :label="t('liveRoomForm.displayMode')" field="displayMode">
+              <div class="lrf-modes">
+                <div
+                  v-for="mode in displayModes"
+                  :key="mode.value"
+                  :class="['lrf-mode', { 'is-active': formData.displayMode === mode.value }]"
+                  @click="formData.displayMode = mode.value"
+                >
+                  <span :class="['lrf-shape', `is-${mode.value}`]"><i /><i /></span>
+                  <span>{{ mode.label }}</span>
                 </div>
               </div>
-            </div>
-          </a-form-item>
-        </a-col>
-        <a-col :span="12">
-          <a-form-item :label="t('liveRoomForm.isRecord')" field="isRecord">
-            <a-switch v-model="formData.isRecord" :checked-value="'Y'" :unchecked-value="'N'" />
-            <div class="form-tip">{{ t('liveRoomForm.isRecordTips') }}</div>
-          </a-form-item>
-          <!-- 开启录制时选择录制存储位置（云盘文件夹） -->
-          <a-form-item v-if="formData.isRecord === 'Y'" :label="t('liveRoomForm.recordFolder')" field="recordFolderId">
-            <CloudFolderSelect
-              v-model="formData.recordFolderId"
-              :root-label="t('liveRoomForm.storageFolderRoot')"
-              :placeholder="t('liveRoomForm.recordFolderPlaceholder')"
-            />
-            <div class="form-tip">{{ t('liveRoomForm.recordFolderTips') }}</div>
-          </a-form-item>
-          <a-form-item :label="t('liveRoomForm.isClip')" field="isClip">
-            <a-switch v-model="formData.isClip" :checked-value="'Y'" :unchecked-value="'N'" />
-            <div class="form-tip">{{ t('liveRoomForm.isClipTips') }}</div>
-          </a-form-item>
-          <!-- 开启切片时选择切片存储位置（云盘文件夹） -->
-          <a-form-item v-if="formData.isClip === 'Y'" :label="t('liveRoomForm.clipFolder')" field="clipFolderId">
-            <CloudFolderSelect
-              v-model="formData.clipFolderId"
-              :root-label="t('liveRoomForm.storageFolderRoot')"
-              :placeholder="t('liveRoomForm.clipFolderPlaceholder')"
-            />
-            <div class="form-tip">{{ t('liveRoomForm.clipFolderTips') }}</div>
-          </a-form-item>
-        </a-col>
-      </a-row>
+            </a-form-item>
+            <a-form-item :label="t('liveRoomForm.description')" field="description">
+              <a-textarea
+                v-model="formData.description"
+                :max-length="1000"
+                show-word-limit
+                :placeholder="t('liveRoomForm.descriptionPlaceholder')"
+              />
+            </a-form-item>
+          </div>
 
-      <!-- 描述 -->
-      <div class="form-section-title">{{ t('liveRoomForm.sectionDesc') }}</div>
-      <a-row :gutter="24">
-        <a-col :span="24">
-          <a-form-item :label="t('liveRoomForm.description')" field="description">
-            <a-textarea
-              v-model="formData.description"
-              :max-length="1000"
-              show-word-limit
-              :placeholder="t('liveRoomForm.descriptionPlaceholder')"
-              style="width: 100%"
-            />
-          </a-form-item>
-        </a-col>
-      </a-row>
-    </a-form>
+          <div class="lrf-card">
+            <div class="lrf-card-title">{{ t('liveRoomForm.sectionMedia') }}</div>
+            <!-- 录制：开关 + 说明 + 存储位置 -->
+            <div class="lrf-feature">
+              <div class="lrf-feature-top">
+                <a-switch v-model="formData.isRecord" :checked-value="'Y'" :unchecked-value="'N'" />
+                <div>
+                  <div class="lrf-feature-name">{{ t('liveRoomForm.featureRecord') }}</div>
+                  <div class="lrf-tip">{{ t('liveRoomForm.isRecordTips') }}</div>
+                </div>
+              </div>
+              <a-form-item
+                v-if="formData.isRecord === 'Y'"
+                :label="t('liveRoomForm.recordFolder')"
+                field="recordFolderId"
+                class="lrf-feature-body"
+              >
+                <div class="lrf-field-col">
+                  <CloudFolderSelect
+                    v-model="formData.recordFolderId"
+                    :root-label="t('liveRoomForm.storageFolderRoot')"
+                    :placeholder="t('liveRoomForm.recordFolderPlaceholder')"
+                    @path-change="recordFolderPath = $event"
+                  />
+                  <div class="lrf-tip">{{ t('liveRoomForm.recordFolderTips') }}</div>
+                </div>
+              </a-form-item>
+            </div>
+            <!-- 切片：开关 + 说明 + 存储位置 -->
+            <div class="lrf-feature">
+              <div class="lrf-feature-top">
+                <a-switch v-model="formData.isClip" :checked-value="'Y'" :unchecked-value="'N'" />
+                <div>
+                  <div class="lrf-feature-name">{{ t('liveRoomForm.featureClip') }}</div>
+                  <div class="lrf-tip">{{ t('liveRoomForm.isClipTips') }}</div>
+                </div>
+              </div>
+              <a-form-item
+                v-if="formData.isClip === 'Y'"
+                :label="t('liveRoomForm.clipFolder')"
+                field="clipFolderId"
+                class="lrf-feature-body"
+              >
+                <div class="lrf-field-col">
+                  <CloudFolderSelect
+                    v-model="formData.clipFolderId"
+                    :root-label="t('liveRoomForm.storageFolderRoot')"
+                    :placeholder="t('liveRoomForm.clipFolderPlaceholder')"
+                    @path-change="clipFolderPath = $event"
+                  />
+                  <div class="lrf-tip">{{ t('liveRoomForm.clipFolderTips') }}</div>
+                </div>
+              </a-form-item>
+            </div>
+          </div>
+
+          <div class="lrf-notice">{{ t('liveRoomForm.compliance') }}</div>
+        </div>
+
+        <!-- 实时预览：封面上传在此处 -->
+        <div class="lrf-card lrf-preview">
+          <div class="lrf-card-title">{{ t('liveRoomForm.preview') }}</div>
+          <div class="lrf-cover">
+            <img v-if="formData.coverImage" :src="formData.coverImage" alt="" />
+            <a-upload
+              v-else
+              :custom-request="handleUpload"
+              :show-file-list="false"
+              :limit="1"
+              accept="image/*"
+              class="lrf-cover-upload"
+            >
+              <template #upload-button>
+                <div class="lrf-cover-empty">
+                  <icon-plus />
+                  <span>{{ t('liveRoomForm.uploadCover') }}</span>
+                </div>
+              </template>
+            </a-upload>
+            <span class="lrf-cover-badge">{{ currentModeLabel }}</span>
+          </div>
+          <div v-if="formData.coverImage" class="lrf-cover-actions">
+            <a-upload :custom-request="handleUpload" :show-file-list="false" accept="image/*">
+              <template #upload-button>
+                <a-button size="mini">
+                  <template #icon><icon-swap /></template>
+                  {{ t('liveRoomForm.replace') }}
+                </a-button>
+              </template>
+            </a-upload>
+            <a-button size="mini" @click="handleRemoveCover">
+              <template #icon><icon-delete /></template>
+              {{ t('liveRoomForm.delete') }}
+            </a-button>
+          </div>
+          <div class="lrf-preview-name">{{ formData.roomName || t('liveRoomForm.previewNoName') }}</div>
+          <div class="lrf-tip">{{ previewStartText }}</div>
+          <div class="lrf-preview-list">
+            <span class="lrf-preview-key">{{ t('liveRoomForm.featureRecord') }}</span>
+            <span class="lrf-preview-val">
+              <span :class="['lrf-tag', { 'is-off': formData.isRecord !== 'Y' }]">
+                {{ formData.isRecord === 'Y' ? t('liveRoomForm.on') : t('liveRoomForm.off') }}
+              </span>
+              <span v-if="formData.isRecord === 'Y'" class="lrf-path">{{ folderLabel(recordFolderPath) }}</span>
+            </span>
+            <span class="lrf-preview-key">{{ t('liveRoomForm.featureClip') }}</span>
+            <span class="lrf-preview-val">
+              <span :class="['lrf-tag', { 'is-off': formData.isClip !== 'Y' }]">
+                {{ formData.isClip === 'Y' ? t('liveRoomForm.on') : t('liveRoomForm.off') }}
+              </span>
+              <span v-if="formData.isClip === 'Y'" class="lrf-path">{{ folderLabel(clipFolderPath) }}</span>
+            </span>
+          </div>
+        </div>
+      </a-form>
+    </div>
   </div>
 </template>
 
@@ -188,6 +204,26 @@ const formRef = ref()
 const submitting = ref(false)
 
 const isEditMode = computed(() => !!props.roomId)
+const pageTitle = computed(() => (isEditMode.value ? t('liveRoomForm.pageTitleEdit') : t('liveRoomForm.pageTitleCreate')))
+
+// 显示方式（示意图卡片）
+const displayModes = computed(() => [
+  { value: 'landscape', label: t('liveRoomForm.displayModeLandscape') },
+  { value: 'portrait', label: t('liveRoomForm.displayModePortrait') },
+  { value: 'three_screen', label: t('liveRoomForm.displayModeThree') },
+])
+const currentModeLabel = computed(() => displayModes.value.find((m) => m.value === formData.displayMode)?.label || '')
+
+// 实时预览：开播时间与存储位置路径
+const previewStartText = computed(() =>
+  formData.startTime
+    ? t('liveRoomForm.previewStartAt', { time: dayjs(formData.startTime).format('MM-DD HH:mm') })
+    : t('liveRoomForm.previewNoTime'),
+)
+const recordFolderPath = ref('')
+const clipFolderPath = ref('')
+const folderLabel = (path: string) =>
+  path === '/' ? t('liveRoomForm.storageFolderRoot') : path || t('liveRoomForm.notSelected')
 
 const formData = reactive({
   roomName: '',
@@ -408,90 +444,327 @@ onActivated(async () => {
 
 <style scoped lang="scss">
 .live-room-form {
-  padding: 16px;
-  background: #fff;
+  height: 100%;
+  padding: 8px;
   overflow-y: auto;
-  height: calc(100vh - 140px);
-  min-height: 600px;
+}
+
+.lrf-wrap {
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lrf-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+}
+
+.lrf-head-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.lrf-crumb {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.lrf-link {
+  color: var(--brand-blue);
+  cursor: pointer;
+}
+
+.lrf-title {
+  margin: 4px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lrf-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 12px;
+  align-items: start;
+}
+
+.lrf-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.lrf-card {
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
 
   :deep(.arco-form-item) {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
-  :deep(.arco-alert) {
-    padding: 8px 12px;
-    font-size: 13px;
+  :deep(.arco-form-item:last-child) {
+    margin-bottom: 0;
+  }
+}
+
+.lrf-card-title {
+  margin-bottom: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lrf-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.lrf-field-col {
+  width: 100%;
+}
+
+.lrf-tip {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* 显示方式：示意图卡片 */
+.lrf-modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.lrf-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+
+  &:hover {
+    border-color: var(--brand-blue);
   }
 
-  :deep(.arco-radio-group) {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 12px;
+  &.is-active {
+    border-color: var(--brand-blue);
+    background: var(--info-bg);
+    color: var(--brand-blue);
+  }
+}
+
+.lrf-shape {
+  display: grid;
+  gap: 2px;
+  height: 26px;
+
+  i {
+    background: currentColor;
+    border-radius: 2px;
+    opacity: 0.35;
   }
 
-  :deep(.arco-radio) {
-    margin-right: 0;
-  }
+  &.is-landscape {
+    width: 44px;
+    grid-template-columns: 1fr;
 
-  :deep(.arco-form-label-item) {
-    margin-bottom: 4px;
-  }
-
-  .form-section-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1d2129;
-    margin: 20px 0 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #f0f0f0;
-  }
-
-  .form-tip {
-    margin-top: 4px;
-    font-size: 12px;
-    color: #86909c;
-    line-height: 1.4;
-  }
-
-  .cover-upload-wrapper {
-    .upload-area {
-      width: 180px;
-      height: 100px;
-      border: 1px dashed #c9cdd4;
-      border-radius: 4px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s;
-
-      &:hover {
-        border-color: #165dff;
-        color: #165dff;
-      }
-
-      .arco-icon {
-        font-size: 28px;
-        margin-bottom: 6px;
-      }
+    i:last-child {
+      display: none;
     }
+  }
 
-    .cover-preview {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+  &.is-portrait {
+    width: 16px;
+    grid-template-columns: 1fr;
 
-      .cover-actions {
-        display: flex;
-        gap: 8px;
-      }
+    i:last-child {
+      display: none;
     }
   }
 
-  .form-header {
-    margin-bottom: 16px;
-    text-align: left;
+  &.is-three_screen {
+    width: 44px;
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+/* 录制 / 切片：开关 + 说明 + 存储位置 */
+.lrf-feature {
+  padding: 12px 14px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+
+  & + & {
+    margin-top: 10px;
+  }
+}
+
+.lrf-feature-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lrf-feature-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lrf-feature-body {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-light);
+}
+
+.lrf-notice {
+  padding: 9px 14px;
+  border-radius: var(--radius-md);
+  background: var(--warning-bg);
+  font-size: 12px;
+  color: var(--warning);
+}
+
+/* 右侧实时预览 */
+.lrf-preview {
+  position: sticky;
+  top: 0;
+}
+
+.lrf-cover {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.lrf-cover-upload,
+.lrf-cover-upload :deep(.arco-upload) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lrf-cover-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  border: 1px dashed var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--brand-blue);
+    color: var(--brand-blue);
+  }
+}
+
+.lrf-cover-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  font-size: 11px;
+  color: #fff;
+  pointer-events: none;
+}
+
+.lrf-cover-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.lrf-preview-name {
+  margin-top: 12px;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lrf-preview-list {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 8px 10px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light);
+  font-size: 12px;
+}
+
+.lrf-preview-key {
+  color: var(--text-tertiary);
+}
+
+.lrf-preview-val {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lrf-tag {
+  flex-shrink: 0;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: var(--info-bg);
+  color: var(--brand-blue);
+
+  &.is-off {
+    background: var(--bg-page);
+    color: var(--text-tertiary);
+  }
+}
+
+.lrf-path {
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1000px) {
+  .lrf-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lrf-preview {
+    position: static;
   }
 }
 </style>

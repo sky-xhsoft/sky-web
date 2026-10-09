@@ -9,12 +9,13 @@
       :placeholder="placeholder"
       @change="handleChange"
     />
-    <div v-if="selectedPath" class="folder-path">{{ selectedPath }}</div>
+    <!-- 根目录已在下拉框中显示名称，不再重复显示 / -->
+    <div v-if="selectedPath && selectedPath !== '/'" class="folder-path">{{ selectedPath }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import type { TreeNodeData } from '@arco-design/web-vue'
 import api from '@/api/http'
 
@@ -37,6 +38,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: number): void
+  /** 选中文件夹的完整路径（根目录为 /，未选择为空），文件夹树加载完成后也会更新 */
+  (e: 'path-change', path: string): void
 }>()
 
 const loading = ref(false)
@@ -58,6 +61,8 @@ const selectedPath = computed(() => {
   if (props.modelValue === ROOT) return '/'
   return pathMap.value.get(props.modelValue) || ''
 })
+
+watch(selectedPath, (path) => emit('path-change', path), { immediate: true })
 
 const filterNode = (search: string, node: TreeNodeData) =>
   String(node.title ?? '').toLowerCase().includes(search.toLowerCase())

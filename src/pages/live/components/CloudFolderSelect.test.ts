@@ -66,6 +66,11 @@ describe('CloudFolderSelect', () => {
     await flushPromises()
     expect(selected.find('.folder-path').text()).toBe('/项目/直播资料')
 
+    const root = mountSelect(0)
+    await flushPromises()
+    expect(root.find('.folder-path').exists()).toBe(false)
+    expect(root.emitted('path-change')?.at(-1)).toEqual(['/'])
+
     const empty = mountSelect(undefined)
     await flushPromises()
     expect(empty.find('.folder-path').exists()).toBe(false)
