@@ -389,6 +389,8 @@ export const batchDeleteCallbackEvents = (ids: number[]) => {
 // ==================== 直播流实时指标 ====================
 
 export interface StreamMetrics {
+  /** 为 false 表示后端尚未接入实时统计，此时其余字段无值 */
+  supported?: boolean
   streamName: string
   domainName: string
   appName: string

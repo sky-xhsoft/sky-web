@@ -132,9 +132,10 @@
             <div v-if="isLive" class="lrd-panel">
               <div class="lrd-panel-head">
                 <span class="lrd-panel-title">{{ t('liveRoomDetail.page.metrics.title') }}</span>
-                <span class="lrd-panel-desc">{{ t('liveRoomDetail.page.metrics.hint') }}</span>
+                <span v-if="metricsSupported" class="lrd-panel-desc">{{ t('liveRoomDetail.page.metrics.hint') }}</span>
               </div>
-              <div v-if="metrics" class="lrd-metrics">
+              <div v-if="!metricsSupported" class="lrd-empty">{{ t('liveRoomDetail.page.metrics.notSupported') }}</div>
+              <div v-else-if="metrics" class="lrd-metrics">
                 <div v-for="m in metricRows" :key="m.label" class="lrd-metric">
                   <span class="lrd-kpi-label">{{ m.label }}</span>
                   <span class="lrd-metric-value">{{ m.value }}</span>
@@ -251,6 +252,8 @@ const pullUrls = ref({ rtmp: '', flv: '', hls: '' })
 const pushError = ref('')
 const pullError = ref('')
 const metrics = ref<Record<string, any> | null>(null)
+// 后端尚未接入实时统计时为 false：停止轮询，不再重复请求
+const metricsSupported = ref(true)
 const clipCount = ref<number | undefined>()
 const recordingCount = ref<number | undefined>()
 const now = ref(Date.now())
@@ -403,10 +406,18 @@ const metricRows = computed(() => {
 })
 
 const loadMetrics = async () => {
-  if (!isLive.value || !streamName.value) return
+  if (!metricsSupported.value || !isLive.value || !streamName.value) return
   try {
     const host = pushUrls.value.rtmp ? new URL(pushUrls.value.rtmp).host : ''
-    metrics.value = await getStreamMetrics(streamName.value, { domainName: host || undefined, appName: 'live' })
+    const data = await getStreamMetrics(streamName.value, { domainName: host || undefined, appName: 'live' })
+    if (data?.supported === false) {
+      metricsSupported.value = false
+      metrics.value = null
+      if (metricsTimer) clearInterval(metricsTimer)
+      metricsTimer = undefined
+      return
+    }
+    metrics.value = data
   } catch {
     metrics.value = null
   }

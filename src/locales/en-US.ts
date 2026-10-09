@@ -1128,7 +1128,8 @@ export default {
         fps: 'Frame rate',
         resolution: 'Resolution',
         viewers: 'Online viewers',
-        unavailable: 'No stream data yet (the encoder has not started or data is delayed)'
+        unavailable: 'No stream data yet (the encoder has not started or data is delayed)',
+        notSupported: 'Real-time stream statistics are not integrated yet, so bitrate, frame rate and other metrics are unavailable'
       },
       progress: {
         title: 'Progress',

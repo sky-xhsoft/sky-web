@@ -1137,7 +1137,8 @@ export default {
         fps: '帧率',
         resolution: '分辨率',
         viewers: '在线人数',
-        unavailable: '暂未获取到推流数据（推流软件尚未推流或数据有延迟）'
+        unavailable: '暂未获取到推流数据（推流软件尚未推流或数据有延迟）',
+        notSupported: '腾讯云实时统计暂未接入，暂不提供码率、帧率等实时指标'
       },
       progress: {
         title: '直播进度',

@@ -42,7 +42,7 @@ const pageStubs = {
 
 import LiveRoomDetail from './LiveRoomDetail.vue'
 import api from '@/api/http'
-import { generatePushURLByRoom, generatePullURLByRoom } from '@/api/live'
+import { generatePushURLByRoom, generatePullURLByRoom, getStreamMetrics } from '@/api/live'
 import { useNavigationStore } from '@/stores/navigation'
 
 const PUSH_URL = 'rtmp://push.test/live/room-1?txSecret=SECRET123&txTime=6A0E2F7F'
@@ -162,5 +162,22 @@ describe('LiveRoomDetail (页面组件挂载)', () => {
     await flushPromises()
     const badges = wrapper.findAll('.lrd-tab-badge').map((b) => b.text())
     expect(badges).toEqual(['5', '2'])
+  })
+
+  it('实时指标未接入时提示并停止轮询', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.mocked(getStreamMetrics).mockResolvedValue({ supported: false } as any)
+      const wrapper = mountPage()
+      await flushPromises()
+      expect(wrapper.text()).toContain('liveRoomDetail.page.metrics.notSupported')
+      const calls = vi.mocked(getStreamMetrics).mock.calls.length
+      vi.advanceTimersByTime(35000)
+      await flushPromises()
+      expect(vi.mocked(getStreamMetrics).mock.calls.length).toBe(calls)
+      wrapper.unmount()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
