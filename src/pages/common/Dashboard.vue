@@ -118,13 +118,14 @@
       <V2Card class="activity-card">
         <div class="card-section-title">{{ t('dashboard.latestActivity') }}</div>
         <div class="activity-list">
+          <div v-if="!activities.length" class="activity-empty">{{ t('activity.empty') }}</div>
           <div v-for="item in activities" :key="item.id" class="activity-item">
             <icon-history class="activity-item__icon" />
             <div class="activity-item__body">
               <div class="activity-item__text">
-                <b>{{ item.username || '-' }}</b>
-                {{ item.action }}
-                <span class="activity-item__target">{{ item.resourceName }}</span>
+                <b>{{ describeActivity(item, t).user }}</b>
+                {{ describeActivity(item, t).action }}
+                <span class="activity-item__target">{{ describeActivity(item, t).target }}</span>
               </div>
               <div class="activity-item__time">{{ formatDateTime(item.createdAt) }}</div>
             </div>
@@ -155,6 +156,7 @@ import {
 import { V2PageHeader, V2Card, V2Button, V2Tag } from '@/components/ui'
 import { useNavigationStore } from '@/stores/navigation'
 import { formatFileSize, formatDateTime } from '@/utils/format'
+import { describeActivity } from '@/utils/activity'
 import {
   getDashboardStats,
   getDashboardTrend,
@@ -660,4 +662,5 @@ watch(locale, () => {
     grid-template-columns: 1fr;
   }
 }
+.activity-empty { padding: 16px 0; font-size: 13px; color: var(--text-tertiary); text-align: center; }
 </style>

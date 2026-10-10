@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import { SUBSYSTEMS, isSubSystem, subsystemHomePath } from '@/constants/subsystems'
 import { computed, onMounted, ref, watch, shallowRef, nextTick, h, onBeforeUnmount, defineAsyncComponent, type Component } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
@@ -477,6 +478,23 @@ const onMenuClick = async (key: string) => {
   }
 }
 
+// ==================== 子系统切换 ====================
+// 当前子系统：未记录时（如旧会话）按视频系统处理，与默认主页一致
+const currentSystem = computed(() => SUBSYSTEMS.find((s) => s.key === authStore.loginType) || SUBSYSTEMS[0])
+const currentSystemLabel = computed(() => t(currentSystem.value.labelKey))
+
+/**
+ * 切换子系统：菜单、标签页、主页都按子系统区分，切换后清空当前标签页与菜单缓存并重新载入目标系统主页，
+ * 避免残留上一个系统的页面；登录令牌不变，无需重新登录
+ */
+const handleSwitchSystem = (value: unknown) => {
+  if (!isSubSystem(value) || value === currentSystem.value.key) return
+  navigationStore.closeAllTabs()
+  menuStore.reset()
+  authStore.switchSystem(value)
+  window.location.assign(subsystemHomePath(value))
+}
+
 const handleLogout = async () => {
   // 保存当前的登录类型，用于退出后跳转
   const savedLoginType = authStore.loginType
@@ -792,6 +810,24 @@ const updateTabTitles = () => {
             </div>
           </div>
           <div class="v2-tabbar-actions">
+            <!-- 子系统切换 -->
+            <a-dropdown trigger="click" position="br" @select="handleSwitchSystem">
+              <button class="v2-system-btn" :title="t('login.switchSystem')" :aria-label="t('login.switchSystem')">
+                <icon-swap />
+                <span>{{ currentSystemLabel }}</span>
+                <icon-down class="v2-system-btn__arrow" />
+              </button>
+              <template #content>
+                <a-doption
+                  v-for="sys in SUBSYSTEMS"
+                  :key="sys.key"
+                  :value="sys.key"
+                  :class="{ 'v2-system-option--active': sys.key === currentSystem.key }"
+                >
+                  {{ t(sys.labelKey) }}
+                </a-doption>
+              </template>
+            </a-dropdown>
             <button class="v2-icon-btn" :title="t('layout.closeOther')" @click="handleCloseOtherTabs"><icon-close-circle /></button>
             <button class="v2-icon-btn" :title="t('layout.closeAll')" @click="handleCloseAllTabs"><icon-close /></button>
             <button class="v2-icon-btn" :title="themeStore.theme === 'dark' ? t('layout.lightMode') : t('layout.darkMode')" @click="themeStore.toggleTheme">
@@ -999,4 +1035,25 @@ const updateTabTitles = () => {
     margin-left: 0;
   }
 }
+
+/* 子系统切换 */
+.v2-system-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  margin-right: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 6px);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.v2-system-btn:hover { border-color: var(--brand-blue); color: var(--brand-blue); }
+.v2-system-btn__arrow { font-size: 10px; opacity: 0.7; }
+:global(.v2-system-option--active) { color: var(--brand-blue); font-weight: 600; }
 </style>

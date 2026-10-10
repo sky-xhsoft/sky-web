@@ -1,4 +1,20 @@
 export default {
+  activity: {
+    empty: '暂无动态',
+    actions: {
+      create: '创建了', update: '修改了', delete: '删除了', upload: '上传了', rename: '重命名了', move: '移动了',
+      share: '分享了', start_live: '开始了', end_live: '结束了', login: '登录', logout: '退出登录',
+      update_config: '更新了', execute: '执行了', submit: '提交了', unsubmit: '撤回了', import: '导入了', export: '导出了',
+      start_process: '发起了', complete_task: '完成了', claim_task: '认领了', transfer_task: '转交了', publish_workflow: '发布了',
+      grant_permission: '授予了', revoke_permission: '撤销了', refresh_cache: '刷新了', reset_sequence: '重置了',
+    },
+    resources: {
+      cloud_file: '云盘文件', cloud_share: '云盘分享', live_room: '直播间', pull_stream: '分发任务', live_domain: '直播域名',
+      live_record: '录制 / 切片', company: '公司配置', menu: '菜单', user: '用户', table: '数据', action: '动作',
+      workflow: '工作流', task: '任务', dict: '数据字典', sequence: '单据编号', permission: '权限',
+    },
+    fallbackAction: '操作了',
+  },
   dashboard: {
     title: '总览控制台',
     welcomeBack: '欢迎回来，管理员',
@@ -718,6 +734,7 @@ export default {
     welcomeBack: '欢迎回来',
     signInHint: '登录 {system}，开启高效工作',
     enterSystem: '进入{system}',
+    switchSystem: '切换系统',
     platforms: {
       live: '视频系统',
       cloud: '云盘系统',

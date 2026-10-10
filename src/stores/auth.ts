@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { login as loginApi, logout as logoutApi, refreshAccessToken as refreshApi, type LoginRequest, type LoginResponse, type UserInfo, type CompanyInfo, type CompanyConf } from '../api/auth'
-import { clearAuth, getAccessToken, getRefreshToken, getStoredUser, saveAuth, setDeviceId, getDeviceId, getLoginType } from '../utils/token'
+import { clearAuth, getAccessToken, getRefreshToken, getStoredUser, saveAuth, setDeviceId, getDeviceId, getLoginType, setLoginType } from '../utils/token'
 import { COMPANY_STORAGE_KEY, COMPANY_CONF_STORAGE_KEY } from '../config'
 
 const fallbackDeviceId = () => {
@@ -103,6 +103,11 @@ export const useAuthStore = defineStore('auth', {
       this.companyConf = null
       // 不清除 loginType，这样用户退出登录后还能记住之前的登录模式
       clearAuth()
+    },
+    /** 切换当前子系统（登录后在主页右上角切换）：菜单按子系统加载，无需重新登录 */
+    switchSystem(type: 'live' | 'cloud' | 'system') {
+      this.loginType = type
+      setLoginType(type)
     },
     applyLogin(res: LoginResponse, deviceId: string, loginType: 'live' | 'cloud' | 'system' | null = null) {
       this.token = res.token

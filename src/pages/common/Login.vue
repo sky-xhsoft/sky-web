@@ -7,15 +7,24 @@ import { useAuthStore } from '../../stores/auth'
 import { getLoginType } from '../../utils/token'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '../../components/LanguageSwitcher.vue'
+import { SUBSYSTEMS, isSubSystem, subsystemHomePath, type SubSystem } from '../../constants/subsystems'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const { t } = useI18n()
 
-type LoginType = 'live' | 'cloud' | 'system' | null
+type LoginType = SubSystem | null
 
 const loginType = ref<LoginType>(null)
+
+// 子系统切换：选择后写入地址参数（刷新、分享登录链接时保持所选系统）
+const subsystemOptions = computed(() => SUBSYSTEMS.map((s) => ({ value: s.key, label: t(s.labelKey) })))
+const selectSubsystem = (value: string | number | boolean) => {
+  if (!isSubSystem(value)) return
+  loginType.value = value
+  router.replace({ query: { ...route.query, type: value } })
+}
 
 const form = reactive({
   username: '',
@@ -62,9 +71,7 @@ const handleSubmit = async ({ errors }: { errors?: Record<string, any> }) => {
 
 // 各系统登录后的默认跳转路径
 function defaultPath(type: LoginType): string {
-  if (type === 'cloud') return '/CloudDashboard'
-  if (type === 'system') return '/SystemDashboard'
-  return '/LiveDashboard'
+  return subsystemHomePath(type)
 }
 
 const goRegister = () => {
@@ -73,11 +80,11 @@ const goRegister = () => {
 
 onMounted(() => {
   const typeParam = route.query.type as string
-  if (typeParam === 'live' || typeParam === 'cloud' || typeParam === 'system') {
-    loginType.value = typeParam as 'live' | 'cloud' | 'system'
+  if (isSubSystem(typeParam)) {
+    loginType.value = typeParam
   } else {
-    // 未指定系统时沿用上次登录的系统（登录过期被带回登录页时不丢失所在系统）
-    loginType.value = getLoginType()
+    // 未指定系统时沿用上次登录的系统（登录过期被带回登录页时不丢失所在系统），首次登录默认视频系统
+    loginType.value = getLoginType() || 'live'
   }
 })
 </script>
@@ -110,6 +117,17 @@ onMounted(() => {
           <div class="title">ZiGeBo Experience</div>
           <div class="subtitle">{{ platformSubtitle }}</div>
         </div>
+
+        <!-- 子系统切换 -->
+        <a-radio-group
+          :model-value="loginType || 'live'"
+          type="button"
+          class="subsystem-switch"
+          :aria-label="t('login.switchSystem')"
+          @change="selectSubsystem"
+        >
+          <a-radio v-for="opt in subsystemOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</a-radio>
+        </a-radio-group>
 
         <a-form :model="form" :rules="rules" layout="vertical" @submit="handleSubmit">
           <a-form-item field="username" :label="t('login.fields.username')">
@@ -269,6 +287,17 @@ onMounted(() => {
 .subtitle {
   font-size: 14px;
   color: #6b7280;
+}
+
+.subsystem-switch {
+  display: flex;
+  width: 100%;
+  margin-bottom: 22px;
+}
+
+.subsystem-switch :deep(.arco-radio-button) {
+  flex: 1;
+  text-align: center;
 }
 
 .login-btn {

@@ -1,4 +1,20 @@
 export default {
+  activity: {
+    empty: 'No activity yet',
+    actions: {
+      create: 'created', update: 'updated', delete: 'deleted', upload: 'uploaded', rename: 'renamed', move: 'moved',
+      share: 'shared', start_live: 'started', end_live: 'ended', login: 'signed in', logout: 'signed out',
+      update_config: 'updated', execute: 'executed', submit: 'submitted', unsubmit: 'withdrew', import: 'imported', export: 'exported',
+      start_process: 'started', complete_task: 'completed', claim_task: 'claimed', transfer_task: 'transferred', publish_workflow: 'published',
+      grant_permission: 'granted', revoke_permission: 'revoked', refresh_cache: 'refreshed', reset_sequence: 'reset',
+    },
+    resources: {
+      cloud_file: 'cloud file', cloud_share: 'cloud share', live_room: 'live room', pull_stream: 'distribution task', live_domain: 'live domain',
+      live_record: 'recording / clip', company: 'company settings', menu: 'menu', user: 'user', table: 'data', action: 'action',
+      workflow: 'workflow', task: 'task', dict: 'dictionary', sequence: 'document number', permission: 'permission',
+    },
+    fallbackAction: 'operated on',
+  },
   dashboard: {
     title: 'Dashboard',
     welcomeBack: 'Welcome back, Administrator',
@@ -716,6 +732,7 @@ export default {
     welcomeBack: 'Welcome Back',
     signInHint: 'Sign in to {system}',
     enterSystem: 'Enter {system}',
+    switchSystem: 'Switch system',
     platforms: {
       live: 'Video System',
       cloud: 'Cloud Storage System',

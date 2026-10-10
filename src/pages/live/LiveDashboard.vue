@@ -85,6 +85,7 @@
       <V2Card class="activity-card">
         <div class="card-section-title">{{ t('dashboard.latestActivity') }}</div>
         <div class="activity-list">
+          <div v-if="!activities.length" class="activity-empty">{{ t('activity.empty') }}</div>
           <div v-for="(item, idx) in activities" :key="idx" class="activity-item">
             <IconHistory class="activity-item__icon" />
             <div class="activity-item__body">
@@ -112,6 +113,7 @@ import { V2PageHeader, V2Card, V2Button, V2Tag } from '@/components/ui'
 import { useNavigationStore } from '@/stores/navigation'
 import { getDashboardStats, getDashboardTrend, getRecentRooms, getActivities } from '@/api/dashboard'
 import type { DashboardStats, DashboardTrend, RecentRoom as ApiRecentRoom, Activity as ApiActivity } from '@/api/dashboard'
+import { describeActivity } from '@/utils/activity'
 
 const { t, locale } = useI18n()
 const navigationStore = useNavigationStore()
@@ -210,22 +212,13 @@ const roomColumns = computed(() => [
   { title: t('dashboard.table.ops'), slotName: 'ops', width: 80 },
 ])
 
-const activities = computed(() => {
-  if (activityData.value && activityData.value.length) {
-    return activityData.value.map(a => ({
-      time: new Date(a.createdAt).toLocaleString('zh-CN', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
-      user: a.username,
-      action: a.action,
-      target: a.resourceName || a.resource,
-    }))
-  }
-  return [
-    { time: '10 分钟前', user: '张晓', action: '创建了直播间', target: '2026 秋季新品发布会' },
-    { time: '1 小时前', user: '李工', action: '上传文件到云盘', target: '产品白皮书-v3.pdf' },
-    { time: '2 小时前', user: '系统', action: '录制完成', target: '产品周会 · 第 38 期' },
-    { time: '昨天', user: '管理员', action: '更新了权限组', target: '直播运营组' },
-  ]
-})
+// 最新动态：操作与资源转为可读文案；没有数据时显示「暂无动态」（不再显示写死的示例动态）
+const activities = computed(() =>
+  (activityData.value || []).map(a => ({
+    time: new Date(a.createdAt).toLocaleString('zh-CN', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+    ...describeActivity(a, t),
+  }))
+)
 
 // ===== 趋势图 =====
 const chartEl = ref<HTMLDivElement | null>(null)
@@ -312,6 +305,7 @@ watch(locale, () => nextTick(() => initChart()))
 .activity-list { display: flex; flex-direction: column; }
 .activity-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border-light); }
 .activity-item:last-child { border-bottom: none; }
+.activity-empty { padding: 16px 0; font-size: 13px; color: var(--text-tertiary); text-align: center; }
 .activity-item__icon { color: var(--brand-blue); font-size: 16px; margin-top: 2px; flex-shrink: 0; }
 .activity-item__text { font-size: 13px; color: var(--text-primary); }
 .activity-item__target { color: var(--brand-blue); }
