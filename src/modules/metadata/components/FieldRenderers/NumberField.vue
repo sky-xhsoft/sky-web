@@ -18,7 +18,9 @@
     style="width: 100%"
     @update:model-value="handleChange"
     @blur="handleBlur"
-  />
+  >
+    <template v-if="unit" #suffix>{{ unit.unit }}</template>
+  </a-input-number>
 </template>
 
 <style scoped>
@@ -36,6 +38,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useFieldRendererBase } from '../../composables'
+import { getColumnUnit, formatUnitValue } from '../../types'
 import type { SysColumn, FieldValue, FormMode } from '../../types'
 
 interface Props {
@@ -58,13 +61,17 @@ const emit = defineEmits<{
 
 const { placeholder, isReadonly, isDisabled, formatValue, fieldProps } = useFieldRendererBase(props)
 
-// 转换为数字类型
+// 字段单位（如库中存字节、界面按 GB 输入）
+const unit = computed(() => getColumnUnit(props.column))
+
+// 转换为数字类型（有单位时换算为单位值）
 const numberValue = computed(() => {
   if (props.modelValue === null || props.modelValue === undefined || props.modelValue === '') {
     return undefined
   }
   const num = Number(props.modelValue)
-  return isNaN(num) ? undefined : num
+  if (isNaN(num)) return undefined
+  return unit.value ? num / unit.value.scale : num
 })
 
 // 小数位数
@@ -114,12 +121,17 @@ const formattedValue = computed(() => {
   if (props.modelValue === null || props.modelValue === undefined || props.modelValue === '') {
     return '-'
   }
+  if (unit.value) return formatUnitValue(props.modelValue, unit.value)
   return formatValue(props.modelValue)
 })
 
-// 值变化处理
+// 值变化处理（有单位时换算回库值）
 function handleChange(value: number | undefined) {
-  emit('update:modelValue', value ?? null)
+  if (value === undefined || value === null) {
+    emit('update:modelValue', null)
+    return
+  }
+  emit('update:modelValue', unit.value ? Math.round(value * unit.value.scale) : value)
 }
 
 // 失焦处理

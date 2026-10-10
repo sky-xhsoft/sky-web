@@ -95,6 +95,11 @@
         {{ formatDate(record[column.dataIndex]) }}
       </template>
 
+      <!-- 带单位的数值列（如字节按 GB 显示） -->
+      <template #unit="{ record, column }">
+        {{ formatUnitCell(column, record[column.dataIndex]) }}
+      </template>
+
       <!-- 日期时间列自定义渲染 -->
       <template #datetime="{ record, column }">
         {{ formatDateTime(record[column.dataIndex]) }}
@@ -334,6 +339,7 @@ import { useTableColumns } from './useTableColumns'
 import { submitRecord, unsubmitRecord, getImportTemplate, fetchTableActions } from '../../api/metadata'
 import type { TableColumnData } from '@arco-design/web-vue'
 import type { FormData, SysAction } from '../../types'
+import { getColumnUnit, formatUnitValue } from '../../types'
 
 // ==================== Props ====================
 
@@ -624,6 +630,14 @@ function getStatusText(value: any): string {
     return '禁用'
   }
   return String(value || '-')
+}
+
+/**
+ * 格式化带单位的数值（PROPS.unit / unitScale）
+ */
+function formatUnitCell(column: any, value: any): string {
+  const unit = getColumnUnit(column?.originalColumn)
+  return unit ? formatUnitValue(value, unit) : String(value ?? '-')
 }
 
 /**

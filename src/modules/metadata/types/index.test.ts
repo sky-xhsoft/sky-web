@@ -4,6 +4,8 @@
 
 import { describe, it, expect } from 'vitest'
 import {
+  getColumnUnit,
+  formatUnitValue,
   isFormMode,
   isActiveStatus,
   isForeignKeyColumn,
@@ -207,6 +209,22 @@ describe('工具函数', () => {
     it('getTableDisplayName 获取显示名称', () => {
       const table = { DISPLAY_NAME: '用户表' } as SysTable
       expect(getTableDisplayName(table)).toBe('用户表')
+    })
+  })
+
+  describe('getColumnUnit / formatUnitValue', () => {
+    const GB = 1073741824
+    it('PROPS 配置单位时按单位换算显示', () => {
+      const unit = getColumnUnit({ PROPS: `{"unit":"GB","unitScale":${GB}}` } as SysColumn)
+      expect(unit).toEqual({ unit: 'GB', scale: GB })
+      expect(formatUnitValue(1000 * GB, unit!)).toBe('1000 GB')
+      expect(formatUnitValue(GB / 2, unit!)).toBe('0.5 GB')
+      expect(formatUnitValue(null, unit!)).toBe('-')
+    })
+    it('未配置单位或 PROPS 非法时返回 null', () => {
+      expect(getColumnUnit({ PROPS: '' } as SysColumn)).toBeNull()
+      expect(getColumnUnit({ PROPS: 'bad' } as SysColumn)).toBeNull()
+      expect(getColumnUnit({ PROPS: '{"unit":"GB","unitScale":-1}' } as SysColumn)).toEqual({ unit: 'GB', scale: 1 })
     })
   })
 })

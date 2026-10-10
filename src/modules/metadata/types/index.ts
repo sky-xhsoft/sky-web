@@ -502,6 +502,33 @@ export function parsePropsSafe(propsStr: string | undefined | null): Record<stri
   }
 }
 
+export interface ColumnUnit {
+  unit: string
+  scale: number
+}
+
+/**
+ * 字段单位（PROPS: {"unit":"GB","unitScale":1073741824}）：库中保存原始值（如字节），
+ * 界面按单位显示与输入（显示值 = 库值 / unitScale）
+ */
+export function getColumnUnit(column: Partial<SysColumn> | undefined | null): ColumnUnit | null {
+  if (!column) return null
+  const props = parsePropsSafe(column.PROPS || (column as any).props)
+  const unit = typeof props.unit === 'string' ? props.unit.trim() : ''
+  if (!unit) return null
+  const scale = Number(props.unitScale)
+  return { unit, scale: Number.isFinite(scale) && scale > 0 ? scale : 1 }
+}
+
+/** 库值按单位显示，如 1073741824000 → "1000 GB" */
+export function formatUnitValue(value: unknown, unit: ColumnUnit): string {
+  if (value === null || value === undefined || value === '') return '-'
+  const num = Number(value)
+  if (!Number.isFinite(num)) return String(value)
+  const shown = Math.round((num / unit.scale) * 100) / 100
+  return `${shown} ${unit.unit}`
+}
+
 /**
  * 获取字段显示名称
  */

@@ -4,6 +4,7 @@
  */
 import { computed, type Ref } from 'vue'
 import type { TableColumnData } from '@arco-design/web-vue'
+import { getColumnUnit } from '../../types'
 
 interface UseTableColumnsOptions {
   tableConfig: Ref<any>
@@ -76,6 +77,8 @@ export function useTableColumns(options: UseTableColumnsOptions) {
         col.slotName = 'foreignkey'; (col as any).originalColumn = originalColumn
       } else if (setValueType === 'select') {
         col.slotName = 'select'; (col as any).originalColumn = originalColumn
+      } else if (getColumnUnit(originalColumn)) {
+        col.slotName = 'unit'; (col as any).originalColumn = originalColumn
       } else if (isStatusColumn(column.dataIndex)) {
         col.slotName = 'status'
       } else if (isDateColumn(column.dataIndex)) {
