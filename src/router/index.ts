@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { canUseSubsystem, subsystemHomePath } from '@/constants/subsystems'
 import { Message } from '@arco-design/web-vue'
 import BasicLayout from '../layouts/BasicLayout.vue'
 import Welcome from '@/pages/common/Welcome.vue'
@@ -174,14 +175,17 @@ router.beforeEach(async (to, from, next) => {
   const hasTypeParam = to.query.type !== undefined && to.query.type !== null && to.query.type !== ''
 
   // 登录类型 → Dashboard 首页路径（子系统独立路由，按登录类型加载对应 Dashboard）
-        const systemHomePath = (type: string) => {
-          switch (type) {
-            case 'cloud': return '/CloudDashboard'
-            case 'system': return '/SystemDashboard'
-            case 'live':
-            default: return '/LiveDashboard'
-          }
-        }
+  const systemHomePath = (type: string) => subsystemHomePath(type)
+
+  // 系统中心仅公司 1 的用户可用：其他公司访问系统中心（直接输入地址、旧书签、旧会话记录的系统）时改为进入视频系统
+  if (auth.isAuthenticated && !canUseSubsystem('system', auth.currentCompanyId())) {
+    const wantsSystem = to.path === subsystemHomePath('system') || to.query.type === 'system' || auth.loginType === 'system'
+    if (wantsSystem) {
+      auth.switchSystem('live')
+      next({ path: subsystemHomePath('live') })
+      return
+    }
+  }
 
   // 如果已经登录且 URL 中有 type 参数，访问任何路径都直接跳转到对应系统页面
   if (auth.isAuthenticated && hasTypeParam) {

@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { SUBSYSTEMS, isSubSystem, subsystemHomePath } from '@/constants/subsystems'
+import { SUBSYSTEMS, availableSubsystems, canUseSubsystem, isSubSystem, subsystemHomePath } from '@/constants/subsystems'
 import { computed, onMounted, ref, watch, shallowRef, nextTick, h, onBeforeUnmount, defineAsyncComponent, type Component } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
@@ -479,8 +479,10 @@ const onMenuClick = async (key: string) => {
 }
 
 // ==================== 子系统切换 ====================
-// 当前子系统：未记录时（如旧会话）按视频系统处理，与默认主页一致
-const currentSystem = computed(() => SUBSYSTEMS.find((s) => s.key === authStore.loginType) || SUBSYSTEMS[0])
+// 可切换的子系统：系统中心仅公司 1 的用户可见
+const systemOptions = computed(() => availableSubsystems(authStore.currentCompanyId()))
+// 当前子系统：未记录或无权使用时（如旧会话）按视频系统处理，与默认主页一致
+const currentSystem = computed(() => systemOptions.value.find((s) => s.key === authStore.loginType) || SUBSYSTEMS[0])
 const currentSystemLabel = computed(() => t(currentSystem.value.labelKey))
 
 /**
@@ -489,6 +491,7 @@ const currentSystemLabel = computed(() => t(currentSystem.value.labelKey))
  */
 const handleSwitchSystem = (value: unknown) => {
   if (!isSubSystem(value) || value === currentSystem.value.key) return
+  if (!canUseSubsystem(value, authStore.currentCompanyId())) return
   navigationStore.closeAllTabs()
   menuStore.reset()
   authStore.switchSystem(value)
@@ -819,7 +822,7 @@ const updateTabTitles = () => {
               </button>
               <template #content>
                 <a-doption
-                  v-for="sys in SUBSYSTEMS"
+                  v-for="sys in systemOptions"
                   :key="sys.key"
                   :value="sys.key"
                   :class="{ 'v2-system-option--active': sys.key === currentSystem.key }"

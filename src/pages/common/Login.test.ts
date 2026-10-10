@@ -52,10 +52,20 @@ describe('Login (页面组件挂载)', () => {
   })
 
   it('地址中未指定系统时沿用上次登录的系统（登录过期被带回登录页时不丢失）', async () => {
+    localStorage.setItem('sky-web:login-type', 'cloud')
+    const wrapper = mountPage()
+    await flushPromises()
+    expect(wrapper.find('.subtitle').text()).toBe('login.platforms.cloud')
+    localStorage.removeItem('sky-web:login-type')
+  })
+
+  it('系统中心仅公司 1 可用：登录页默认不显示，上次是系统中心时按视频系统显示', async () => {
     localStorage.setItem('sky-web:login-type', 'system')
     const wrapper = mountPage()
     await flushPromises()
-    expect(wrapper.text()).toContain('login.platforms.system')
+    expect(wrapper.find('.subtitle').text()).toBe('login.platforms.live')
+    expect(wrapper.find('.subsystem-switch').text()).not.toContain('login.platforms.system')
+    expect(wrapper.find('.subsystem-switch').text()).toContain('login.platforms.cloud')
     localStorage.removeItem('sky-web:login-type')
   })
 })

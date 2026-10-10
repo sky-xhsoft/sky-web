@@ -7,7 +7,7 @@ import { useAuthStore } from '../../stores/auth'
 import { getLoginType } from '../../utils/token'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '../../components/LanguageSwitcher.vue'
-import { SUBSYSTEMS, isSubSystem, subsystemHomePath, type SubSystem } from '../../constants/subsystems'
+import { SUBSYSTEMS, canUseSubsystem, isSubSystem, subsystemHomePath, type SubSystem } from '../../constants/subsystems'
 
 const router = useRouter()
 const route = useRoute()
@@ -18,8 +18,12 @@ type LoginType = SubSystem | null
 
 const loginType = ref<LoginType>(null)
 
-// 子系统切换：选择后写入地址参数（刷新、分享登录链接时保持所选系统）
-const subsystemOptions = computed(() => SUBSYSTEMS.map((s) => ({ value: s.key, label: t(s.labelKey) })))
+// 子系统切换：选择后写入地址参数（刷新、分享登录链接时保持所选系统）。
+// 系统中心仅公司 1 可用，登录前不知道用户公司，默认不显示；地址明确带 type=system 时（公司 1 管理员的书签）才显示
+const showSystemCenter = computed(() => route.query.type === 'system')
+const subsystemOptions = computed(() =>
+  SUBSYSTEMS.filter((s) => s.key !== 'system' || showSystemCenter.value).map((s) => ({ value: s.key, label: t(s.labelKey) })),
+)
 const selectSubsystem = (value: string | number | boolean) => {
   if (!isSubSystem(value)) return
   loginType.value = value
@@ -59,6 +63,11 @@ const handleSubmit = async ({ errors }: { errors?: Record<string, any> }) => {
     })
     Message.success(t('login.success'))
 
+    // 非公司 1 的用户不能进入系统中心：改为进入视频系统
+    if (loginType.value && !canUseSubsystem(loginType.value, authStore.currentCompanyId())) {
+      loginType.value = 'live'
+      authStore.switchSystem('live')
+    }
     const redirect = (route.query.redirect as string) || defaultPath(loginType.value)
     router.push(redirect)
   } catch (err: any) {
@@ -83,8 +92,10 @@ onMounted(() => {
   if (isSubSystem(typeParam)) {
     loginType.value = typeParam
   } else {
-    // 未指定系统时沿用上次登录的系统（登录过期被带回登录页时不丢失所在系统），首次登录默认视频系统
-    loginType.value = getLoginType() || 'live'
+    // 未指定系统时沿用上次登录的系统（登录过期被带回登录页时不丢失所在系统），首次登录默认视频系统；
+    // 上次是系统中心时不在选项中，按视频系统显示
+    const last = getLoginType()
+    loginType.value = last && last !== 'system' ? last : 'live'
   }
 })
 </script>

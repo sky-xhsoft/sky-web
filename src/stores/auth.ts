@@ -104,6 +104,10 @@ export const useAuthStore = defineStore('auth', {
       // 不清除 loginType，这样用户退出登录后还能记住之前的登录模式
       clearAuth()
     },
+    /** 当前用户所属公司 ID */
+    currentCompanyId(): number | null {
+      return this.user?.companyId ?? this.company?.id ?? null
+    },
     /** 切换当前子系统（登录后在主页右上角切换）：菜单按子系统加载，无需重新登录 */
     switchSystem(type: 'live' | 'cloud' | 'system') {
       this.loginType = type
