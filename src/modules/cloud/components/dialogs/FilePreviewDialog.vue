@@ -174,6 +174,8 @@ const MAX_DOCUMENT_PREVIEW_SIZE = 100 * 1024 * 1024
 const MAX_MEDIA_BLOB_SIZE = 200 * 1024 * 1024
 /** 浏览器内无法保留排版、由服务器转换为 PDF 预览的旧版 Word 格式（与后端 previewPDFExts 一致） */
 const LEGACY_WORD_EXTS = ['doc', 'dot', 'wps']
+/** 旧版 Word 转换上限（与后端 previewMaxSourceSize 一致），超过则不转换 */
+const MAX_LEGACY_WORD_SIZE = 50 * 1024 * 1024
 
 /** 信息栏展开状态（每个浏览器记住） */
 const INFO_OPEN_KEY = 'sky-web:cloud-preview-info-open'
@@ -249,10 +251,7 @@ const isMedia = computed(() => ['image', 'video', 'audio'].includes(props.catego
 const fileExt = computed(() => (props.file?.FileExt || props.file?.FileName?.split('.').pop() || '').replace(/^\./, '').toLowerCase())
 
 const unavailableText = computed(() => {
-  if (tooLarge.value) {
-    const limit = isMedia.value ? MAX_MEDIA_BLOB_SIZE : MAX_DOCUMENT_PREVIEW_SIZE
-    return `文件超过 ${formatFileSize(limit)}，请下载后查看`
-  }
+  if (tooLarge.value) return '文件过大，无法直接查看，建议下载后查看'
   if (loadFailed.value) return '文件加载失败，可下载后查看'
   return '暂不支持预览此类型文件'
 })
@@ -293,7 +292,9 @@ async function loadPreview() {
   loading.value = true
   cleanupResources()
   try {
-    if (useDocumentViewer.value && (props.file.FileSize || 0) > MAX_DOCUMENT_PREVIEW_SIZE) {
+    const size = props.file.FileSize || 0
+    const docLimit = LEGACY_WORD_EXTS.includes(fileExt.value) ? MAX_LEGACY_WORD_SIZE : MAX_DOCUMENT_PREVIEW_SIZE
+    if (useDocumentViewer.value && size > docLimit) {
       tooLarge.value = true
       return
     }
