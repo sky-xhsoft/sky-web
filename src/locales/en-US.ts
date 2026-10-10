@@ -732,18 +732,6 @@ export default {
     welcomeBack: 'Welcome Back',
     signInHint: 'Sign in to {system}',
     enterSystem: 'Enter {system}',
-    brand: {
-      badge: 'One account, two systems',
-      welcome: 'Welcome back',
-      title: 'Sign in to Zigebo',
-      description: 'Switch between the Video and Cloud systems from the top-right corner at any time — no need to sign in again.',
-      liveDesc: 'Live streaming · Recording & clips · Overseas distribution',
-      cloudDesc: 'Direct uploads · Online preview · Sharing',
-    },
-    formTitle: 'Sign in',
-    formSubtitle: 'Choose a system to enter — you can switch any time after signing in',
-    backHome: 'Back to home',
-    showPassword: 'Show password',
     switchSystem: 'Switch system',
     platforms: {
       live: 'Video System',
@@ -862,47 +850,97 @@ export default {
   welcome: {
     brandTitle: 'Zigebo',
     brandSubtitle: 'AI Video Platform',
-    nav: { products: 'Products', features: 'Features', login: 'Sign in', register: 'Register company' },
-    heroBadge: 'Video and cloud storage, one account',
-    heroTitle: 'A professional',
-    heroTitleGradient: 'video & cloud data platform',
-    heroDescription: 'Live streaming, recording and clips, overseas social distribution and enterprise cloud storage — all with one account. Switch between the Video and Cloud systems at any time after signing in.',
-    heroButtons: { login: 'Sign in', register: 'Register company' },
-    heroPreview: { live: 'Live', liveRoom: 'Product launch', recording: 'Recording', cloud: 'Enterprise drive', saved: 'Recordings are saved to the cloud drive automatically' },
-    products: {
-      title: 'Two systems, one entrance',
-      subtitle: 'Switch systems from the top-right corner after signing in — no need to sign in again',
-      live: {
-        title: 'Video System',
-        description: 'Live rooms, push and playback, recording and highlight clips, plus one-click distribution to overseas social media',
-        features: ['Live rooms and streaming', 'Recording and highlight clips', 'Facebook / Instagram / YouTube distribution'],
+    navLinks: {
+      features: 'Features',
+      platforms: 'Product Platforms',
+      stats: 'Statistics'
+    },
+    heroBadge: 'New version launched',
+    heroTitle: 'Professional',
+    heroTitleGradient: 'Cloud Data Platform',
+    heroDescription: 'Provides one-stop solutions for live streaming management, cloud storage, social media distribution, and more. Makes your content creation and management more efficient and convenient.',
+    heroButtons: {
+      start: 'Get Started',
+      demo: 'Watch Demo'
+    },
+    platforms: {
+      title: 'Choose Your Platform',
+      subtitle: 'Select the appropriate product platform based on your needs, or choose the comprehensive center to use all features',
+      liveCenter: {
+        title: 'Live Streaming Center',
+        description: 'Focused on live stream management, domain configuration, and live content production',
+        features: ['Live room management', 'Domain configuration', 'Live recording and clipping'],
+        button: 'Enter Live Streaming Center'
       },
-      cloud: {
-        title: 'Cloud System',
-        description: 'Enterprise file storage and collaboration: direct uploads to cloud storage and online preview of documents and videos',
-        features: ['Chunked direct upload for large files', 'Online preview of videos, images and documents', 'File sharing and permissions'],
+      cloudCenter: {
+        title: 'Cloud Storage Center',
+        description: 'Focused on file storage, management, and sharing cloud storage solutions',
+        features: ['File upload and download', 'Folder management', 'File sharing'],
+        button: 'Enter Cloud Storage Center'
       },
+      systemCenter: {
+        title: 'System Center',
+        description: 'System configuration & metadata-driven management',
+        features: ['Metadata management', 'Permission system', 'System config'],
+        button: 'Enter System Center'
+      },
+      allCenter: {
+        title: 'All-in-One Center',
+        description: 'One-stop access to live, cloud storage, and system management',
+        features: ['Live Center', 'Cloud Center', 'System Center'],
+        button: 'Enter All-in-One Center'
+      }
     },
     features: {
-      title: 'Core features',
-      subtitle: 'The complete chain from live production to distribution and storage',
-      domainManagement: { title: 'Domain management', description: 'Flexible push and playback domains with CNAME setup and status monitoring' },
-      liveStreamManagement: { title: 'Stream management', description: 'Monitor live streams in real time, generate push URLs and control streams' },
-      socialDistribution: { title: 'Social distribution', description: 'Relay live streams to Facebook, Instagram, YouTube and other overseas platforms in one click' },
-      liveClips: { title: 'Live clips', description: 'Highlight clips generated automatically for re-sharing' },
-      liveRecording: { title: 'Live recording', description: 'Record whole broadcasts automatically and save them to the cloud drive' },
-      cloudStorage: { title: 'Cloud storage', description: 'Secure enterprise storage with file management, sharing and collaboration' },
+      title: 'Powerful Features',
+      subtitle: 'We provide comprehensive solutions to meet your various needs',
+      domainManagement: {
+        title: 'Domain Management',
+        description: 'Flexible push and playback domain configuration, supporting CNAME resolution and status monitoring'
+      },
+      liveStreamManagement: {
+        title: 'Live Stream Management',
+        description: 'Real-time monitoring of all live stream statuses, supporting stream address generation and stream control'
+      },
+      socialDistribution: {
+        title: 'Social Media Distribution',
+        description: 'One-click synchronization of live streams to multiple mainstream social media platforms such as Douyin, Kuaishou, and Bilibili'
+      },
+      liveClips: {
+        title: 'Live Clipping',
+        description: 'Real-time generation of live highlights, supporting marking and exporting clip content'
+      },
+      liveRecording: {
+        title: 'Live Recording',
+        description: 'Automatic recording of the entire live stream, supporting recording rule configuration and file management'
+      },
+      cloudStorage: {
+        title: 'Cloud Storage',
+        description: 'Secure and reliable cloud storage service, supporting file management, sharing, and collaboration'
+      }
+    },
+    stats: {
+      users: 'Active Users',
+      sessions: 'Live Sessions',
+      storage: 'Storage Data',
+      availability: 'Service Availability'
     },
     cta: {
-      title: 'Ready to get started?',
-      description: 'Sign in to use the Video and Cloud systems',
-      loginButton: 'Sign in now',
-      registerButton: 'Register company',
+      title: 'Ready to Get Started?',
+      description: 'Login now to experience professional cloud data platform services and make your content management more efficient',
+      loginButton: 'Login Now',
+      contactButton: 'Contact Us'
     },
     footer: {
-      brandText: 'A professional video and cloud data platform for live streaming and cloud storage',
-      copyright: '© 2026 Zigebo AI Video Platform. All rights reserved.',
-    },
+      brandText: 'A professional cloud data platform that provides one-stop solutions for live streaming management, cloud storage, and more',
+      productTitle: 'Product',
+      productLinks: ['Live Streaming Center', 'Cloud Storage Center', 'Social Media Distribution', 'API Documentation'],
+      companyTitle: 'Company',
+      companyLinks: ['About Us', 'News', 'Join Us', 'Contact'],
+      supportTitle: 'Support',
+      supportLinks: ['Help Center', 'Tutorials', 'Service Status', 'Submit Ticket'],
+      copyright: '© 2024 Zigebo AI Video Platform. All rights reserved.'
+    }
   },
   systemManagement: {
     systemArchitecture: 'System Architecture Features',

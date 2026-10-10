@@ -42,22 +42,20 @@ describe('Login (页面组件挂载)', () => {
     const wrapper = mountPage()
     await flushPromises()
     expect(wrapper.find('.login-card').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Zigebo')
+    expect(wrapper.text()).toContain('ZiGeBo')
   })
 
   it('渲染品牌面板', async () => {
     const wrapper = mountPage()
     await flushPromises()
-    expect(wrapper.find('.login-brand').exists()).toBe(true)
-    expect(wrapper.find('.login-brand').text()).toContain('login.platforms.live')
-    expect(wrapper.find('.login-brand').text()).toContain('login.platforms.cloud')
+    expect(wrapper.find('.deco-side').exists()).toBe(true)
   })
 
   it('地址中未指定系统时沿用上次登录的系统（登录过期被带回登录页时不丢失）', async () => {
     localStorage.setItem('sky-web:login-type', 'cloud')
     const wrapper = mountPage()
     await flushPromises()
-    expect(wrapper.find('.subsystem-switch [aria-checked="true"]').text()).toBe('login.platforms.cloud')
+    expect(wrapper.find('.subtitle').text()).toBe('login.platforms.cloud')
     localStorage.removeItem('sky-web:login-type')
   })
 
@@ -65,7 +63,7 @@ describe('Login (页面组件挂载)', () => {
     localStorage.setItem('sky-web:login-type', 'system')
     const wrapper = mountPage()
     await flushPromises()
-    expect(wrapper.find('.subsystem-switch [aria-checked="true"]').text()).toBe('login.platforms.live')
+    expect(wrapper.find('.subtitle').text()).toBe('login.platforms.live')
     expect(wrapper.find('.subsystem-switch').text()).not.toContain('login.platforms.system')
     expect(wrapper.find('.subsystem-switch').text()).toContain('login.platforms.cloud')
     localStorage.removeItem('sky-web:login-type')

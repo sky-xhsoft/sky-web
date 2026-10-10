@@ -734,18 +734,6 @@ export default {
     welcomeBack: '欢迎回来',
     signInHint: '登录 {system}，开启高效工作',
     enterSystem: '进入{system}',
-    brand: {
-      badge: '一个账号，两大系统',
-      welcome: '欢迎回来',
-      title: '登录 Zigebo',
-      description: '登录后可在页面右上角随时切换视频系统与云盘系统，无需重新登录。',
-      liveDesc: '直播管理 · 录制切片 · 海外社媒分发',
-      cloudDesc: '大文件直传 · 在线预览 · 分享协作',
-    },
-    formTitle: '登录账号',
-    formSubtitle: '选择要进入的系统，登录后也可随时切换',
-    backHome: '返回首页',
-    showPassword: '显示密码',
     switchSystem: '切换系统',
     platforms: {
       live: '视频系统',
@@ -864,47 +852,97 @@ export default {
   welcome: {
     brandTitle: 'Zigebo',
     brandSubtitle: 'AI视频平台',
-    nav: { products: '产品', features: '功能', login: '登录', register: '注册企业' },
-    heroBadge: '视频与云盘，一个账号统一管理',
+    navLinks: {
+      features: '功能介绍',
+      platforms: '产品平台',
+      stats: '数据统计'
+    },
+    heroBadge: '全新版本已上线',
     heroTitle: '专业的',
-    heroTitleGradient: '视频与云数据平台',
-    heroDescription: '直播管理、录制切片、海外社媒分发与企业云盘存储，一个账号即可使用。登录后可随时在视频系统与云盘系统之间切换。',
-    heroButtons: { login: '登录', register: '注册企业' },
-    heroPreview: { live: '直播中', liveRoom: '新品发布会', recording: '录制中', cloud: '企业云盘', saved: '录制文件已自动保存到云盘' },
-    products: {
-      title: '两大系统，一个入口',
-      subtitle: '登录后在页面右上角即可切换系统，无需重新登录',
-      live: {
-        title: '视频系统',
-        description: '直播间管理、推流与播放、录制与高光切片，并可一键分发到海外社交媒体',
-        features: ['直播间与推流管理', '直播录制与高光切片', 'Facebook / Instagram / YouTube 分发'],
+    heroTitleGradient: '云数据平台',
+    heroDescription: '提供直播管理、云盘存储、社媒分发等一站式解决方案。让您的内容创作和管理更加高效便捷。',
+    heroButtons: {
+      start: '立即开始',
+      demo: '观看演示'
+    },
+    platforms: {
+      title: '选择您的平台',
+      subtitle: '根据您的需求选择合适的产品平台，也可以选择综合中心使用全部功能',
+      liveCenter: {
+        title: '直播中心',
+        description: '专注于直播流管理、域名配置和直播内容生产',
+        features: ['直播间管理', '域名配置', '直播录制与切片'],
+        button: '进入直播中心'
       },
-      cloud: {
-        title: '云盘系统',
-        description: '企业级文件存储与协作：大文件直传云存储，常见文档与视频在线预览',
-        features: ['大文件分片直传', '视频、图片、文档在线预览', '文件分享与权限管理'],
+      cloudCenter: {
+        title: '云盘中心',
+        description: '专注于文件存储、管理和分享的云存储解决方案',
+        features: ['文件上传下载', '文件夹管理', '文件分享'],
+        button: '进入云盘中心'
       },
+      systemCenter: {
+        title: '系统中心',
+        description: '系统配置与元数据驱动管理，掌握平台运行核心',
+        features: ['元数据管理', '权限体系', '系统配置'],
+        button: '进入系统中心'
+      },
+      allCenter: {
+        title: '综合中心',
+        description: '一站式使用直播、云盘与系统管理的全部功能',
+        features: ['直播中心', '云盘中心', '系统中心'],
+        button: '进入综合中心'
+      }
     },
     features: {
-      title: '核心功能',
-      subtitle: '覆盖直播生产、分发与内容存储的完整链路',
-      domainManagement: { title: '域名管理', description: '灵活的推流和播放域名配置，支持 CNAME 解析和状态监控' },
-      liveStreamManagement: { title: '直播流管理', description: '实时监控直播流状态，支持推流地址生成和流控制' },
-      socialDistribution: { title: '社媒分发', description: '一键将直播同步推流到 Facebook、Instagram、YouTube 等海外社交媒体' },
-      liveClips: { title: '直播切片', description: '自动生成直播精彩片段，便于二次传播' },
-      liveRecording: { title: '直播录制', description: '自动录制直播全程，录制文件自动保存到云盘' },
-      cloudStorage: { title: '云盘存储', description: '安全可靠的企业云存储，支持文件管理、分享和协作' },
+      title: '强大的功能特性',
+      subtitle: '我们提供全方位的解决方案，满足您的各种需求',
+      domainManagement: {
+        title: '域名管理',
+        description: '灵活的推流和播放域名配置，支持 CNAME 解析和状态监控'
+      },
+      liveStreamManagement: {
+        title: '直播流管理',
+        description: '实时监控所有直播流状态，支持推流地址生成和流控制'
+      },
+      socialDistribution: {
+        title: '社媒分发',
+        description: '一键同步推流到抖音、快手、B站等多个主流社交媒体平台'
+      },
+      liveClips: {
+        title: '直播切片',
+        description: '实时生成直播精彩片段，支持标记和导出剪辑内容'
+      },
+      liveRecording: {
+        title: '直播录制',
+        description: '自动录制直播全程，支持录制规则配置和文件管理'
+      },
+      cloudStorage: {
+        title: '云盘存储',
+        description: '安全可靠的云存储服务，支持文件管理、分享和协作'
+      }
+    },
+    stats: {
+      users: '活跃用户',
+      sessions: '直播场次',
+      storage: '存储数据',
+      availability: '服务可用性'
     },
     cta: {
       title: '准备开始使用了吗？',
-      description: '登录后即可使用视频系统与云盘系统',
+      description: '立即登录，体验专业的云数据平台服务，让您的内容管理更加高效',
       loginButton: '立即登录',
-      registerButton: '注册企业',
+      contactButton: '联系我们'
     },
     footer: {
-      brandText: '专业的视频与云数据平台，提供直播管理、云盘存储等一站式解决方案',
-      copyright: '© 2026 Zigebo AI视频平台. All rights reserved.',
-    },
+      brandText: '专业的云数据平台，提供直播管理、云盘存储等一站式解决方案',
+      productTitle: '产品',
+      productLinks: ['直播中心', '云盘中心', '社媒分发', 'API 文档'],
+      companyTitle: '公司',
+      companyLinks: ['关于我们', '新闻动态', '加入我们', '联系方式'],
+      supportTitle: '支持',
+      supportLinks: ['帮助中心', '使用教程', '服务状态', '提交工单'],
+      copyright: '© 2024 Zigebo AI视频平台. All rights reserved.'
+    }
   },
   systemManagement: {
     systemArchitecture: '系统架构特性',
