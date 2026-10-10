@@ -2,7 +2,7 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
-import { IconVideoCamera } from '@arco-design/web-vue/es/icon'
+import { IconVideoCamera, IconCloud, IconLeft } from '@arco-design/web-vue/es/icon'
 import { useAuthStore } from '../../stores/auth'
 import { getLoginType } from '../../utils/token'
 import { useI18n } from 'vue-i18n'
@@ -87,6 +87,10 @@ const goRegister = () => {
   router.push({ name: 'company-register' })
 }
 
+const goWelcome = () => {
+  router.push({ name: 'welcome' })
+}
+
 onMounted(() => {
   const typeParam = route.query.type as string
   if (isSubSystem(typeParam)) {
@@ -102,6 +106,10 @@ onMounted(() => {
 
 <template>
   <div class="login-page">
+    <a href="/welcome" class="back-home" @click.prevent="goWelcome">
+      <IconLeft />
+      {{ t('login.backHome') }}
+    </a>
     <div class="language-switcher">
       <LanguageSwitcher />
     </div>
@@ -115,8 +123,19 @@ onMounted(() => {
         <div class="deco-logo">
           <IconVideoCamera class="deco-logo-icon" />
         </div>
-        <div class="deco-brand">ZiGeBo</div>
+        <div class="deco-brand">Zigebo</div>
         <div class="deco-tagline">{{ t('welcome.brandSubtitle') }}</div>
+        <!-- 一个账号可使用的两大系统 -->
+        <ul class="deco-systems">
+          <li>
+            <IconVideoCamera />
+            <span><b>{{ t('login.platforms.live') }}</b>{{ t('login.decoLive') }}</span>
+          </li>
+          <li>
+            <IconCloud />
+            <span><b>{{ t('login.platforms.cloud') }}</b>{{ t('login.decoCloud') }}</span>
+          </li>
+        </ul>
       </div>
 
       <!-- 右侧登录表单卡片 -->
@@ -125,7 +144,7 @@ onMounted(() => {
           <div class="logo-mark">
             <IconVideoCamera />
           </div>
-          <div class="title">ZiGeBo Experience</div>
+          <div class="title">Zigebo Experience</div>
           <div class="subtitle">{{ platformSubtitle }}</div>
         </div>
 
@@ -154,7 +173,7 @@ onMounted(() => {
 
         <div class="register-link">
           <span>{{ t('login.noAccount') }}</span>
-          <a @click="goRegister">{{ t('login.register') }}</a>
+          <a href="/company-register" @click.prevent="goRegister">{{ t('login.registerCompany') }}</a>
         </div>
       </div>
     </div>
@@ -258,6 +277,55 @@ onMounted(() => {
   text-align: center;
   opacity: 0.9;
   line-height: 1.6;
+}
+
+.deco-systems {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.deco-systems li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.deco-systems li > svg {
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.deco-systems b {
+  display: block;
+  font-size: 13px;
+}
+
+.back-home {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #4b5563;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.back-home:hover {
+  color: #165dff;
 }
 
 /* 右侧登录卡片 */

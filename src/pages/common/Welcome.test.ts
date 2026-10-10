@@ -39,11 +39,14 @@ describe('Welcome (页面组件挂载)', () => {
     expect(wrapper.text()).toContain('welcome.brandTitle')
   })
 
-  it('渲染平台选择区域', async () => {
+  it('渲染产品介绍区域（两大系统，无平台选择）', async () => {
     const wrapper = mountPage()
     await flushPromises()
     expect(wrapper.find('#platforms').exists()).toBe(true)
-    expect(wrapper.findAll('.platform-card').length).toBe(3)
+    // 只介绍视频系统与云盘系统，不显示系统中心（仅公司 1 使用），也不再让用户选择平台进入
+    expect(wrapper.findAll('.platform-card').length).toBe(2)
+    expect(wrapper.text()).not.toContain('welcome.platforms.systemCenter')
+    expect(wrapper.findAll('.platform-btn').length).toBe(0)
   })
 
   it('渲染导航栏', async () => {

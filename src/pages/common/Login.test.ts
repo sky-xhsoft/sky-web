@@ -42,7 +42,7 @@ describe('Login (页面组件挂载)', () => {
     const wrapper = mountPage()
     await flushPromises()
     expect(wrapper.find('.login-card').exists()).toBe(true)
-    expect(wrapper.text()).toContain('ZiGeBo')
+    expect(wrapper.text()).toContain('Zigebo')
   })
 
   it('渲染品牌面板', async () => {

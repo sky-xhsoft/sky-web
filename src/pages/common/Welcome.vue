@@ -14,17 +14,13 @@ import {
   IconShareAlt,
   IconScissor,
   IconRecord,
-  IconGithub,
-  IconTwitter,
-  IconWechat,
 } from '@arco-design/web-vue/es/icon'
 
 const router = useRouter()
 const { t } = useI18n()
-let selectedPlatform = ''
-
-const goToLogin = (p:string) => {
-  router.push(`/login?type=${p}`)
+// 统一从登录页进入（登录页可切换视频系统 / 云盘系统，登录后右上角也可切换），不再让用户先选择平台
+const goToLogin = () => {
+  router.push('/login')
 }
 
 const goToRegister = () => {
@@ -61,7 +57,6 @@ const goToRegister = () => {
           <div class="nav-links">
             <a href="#features" class="nav-link">{{ t('welcome.navLinks.features') }}</a>
             <a href="#platforms" class="nav-link">{{ t('welcome.navLinks.platforms') }}</a>
-            <a href="#stats" class="nav-link">{{ t('welcome.navLinks.stats') }}</a>
           </div>
           <div class="nav-actions">
             <a @click="goToRegister" class="register-btn">{{ t('login.register') }}</a>
@@ -87,13 +82,9 @@ const goToRegister = () => {
             </h2>
             <p class="hero-description">{{ t('welcome.heroDescription') }}</p>
             <div class="hero-buttons">
-              <button @click="goToLogin('live')" class="btn btn-primary btn-lg">
+              <button @click="goToLogin()" class="btn btn-primary btn-lg">
                 <span>{{ t('welcome.heroButtons.start') }}</span>
                 <icon-arrow-right class="btn-icon" />
-              </button>
-              <button class="btn btn-secondary btn-lg">
-                <icon-play-circle class="btn-icon" />
-                <span>{{ t('welcome.heroButtons.demo') }}</span>
               </button>
             </div>
           </div>
@@ -157,7 +148,6 @@ const goToRegister = () => {
         <div class="platforms-grid">
           <div
             class="platform-card"
-            :class="{ active: selectedPlatform === 'live' }"
           >
             <div class="platform-icon red-gradient">
               <IconVideoCamera class="icon-xl" />
@@ -178,18 +168,10 @@ const goToRegister = () => {
                 {{ t('welcome.platforms.liveCenter.features.2') }}
               </li>
             </ul>
-            <button
-              @click="goToLogin('live')"
-              class="platform-btn"
-              :class="{ primary: selectedPlatform === 'live' }"
-            >
-              {{ t('welcome.platforms.liveCenter.button') }}
-            </button>
           </div>
 
           <div
             class="platform-card"
-            :class="{ active: selectedPlatform === 'cloud' }"
           >
             <div class="platform-icon green-blue-gradient">
               <IconCloud class="icon-xl" />
@@ -210,46 +192,8 @@ const goToRegister = () => {
                 {{ t('welcome.platforms.cloudCenter.features.2') }}
               </li>
             </ul>
-            <button
-              @click="goToLogin('cloud')"
-              class="platform-btn"
-              :class="{ primary: selectedPlatform === 'cloud' }"
-            >
-              {{ t('welcome.platforms.cloudCenter.button') }}
-            </button>
           </div>
 
-          <div
-            class="platform-card"
-            :class="{ active: selectedPlatform === 'system' }"
-          >
-            <div class="platform-icon purple-pink-gradient">
-              <IconApps class="icon-xl" />
-            </div>
-            <h4 class="platform-title">{{ t('welcome.platforms.systemCenter.title') }}</h4>
-            <p class="platform-description">{{ t('welcome.platforms.systemCenter.description') }}</p>
-            <ul class="platform-features">
-              <li class="platform-feature">
-                <icon-check class="check-icon" />
-                {{ t('welcome.platforms.systemCenter.features.0') }}
-              </li>
-              <li class="platform-feature">
-                <icon-check class="check-icon" />
-                {{ t('welcome.platforms.systemCenter.features.1') }}
-              </li>
-              <li class="platform-feature">
-                <icon-check class="check-icon" />
-                {{ t('welcome.platforms.systemCenter.features.2') }}
-              </li>
-            </ul>
-            <button
-              @click="goToLogin('system')"
-              class="platform-btn"
-              :class="{ primary: selectedPlatform === 'system' }"
-            >
-              {{ t('welcome.platforms.systemCenter.button') }}
-            </button>
-          </div>
         </div>
       </section>
 
@@ -305,47 +249,17 @@ const goToRegister = () => {
         </div>
       </section>
 
-      <!-- 数据统计 -->
-      <section id="stats" class="stats-section">
-        <div class="stats-card">
-          <div class="stats-decoration">
-            <svg viewBox="0 0 200 200" class="stats-svg">
-              <circle cx="100" cy="100" r="80" fill="white"/>
-              <circle cx="160" cy="60" r="40" fill="white"/>
-              <circle cx="40" cy="150" r="30" fill="white"/>
-            </svg>
-          </div>
-          <div class="stats-content">
-            <div class="stat-item">
-              <div class="stat-number">10K+</div>
-              <div class="stat-label">{{ t('welcome.stats.users') }}</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-number">50K+</div>
-              <div class="stat-label">{{ t('welcome.stats.sessions') }}</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-number">100TB+</div>
-              <div class="stat-label">{{ t('welcome.stats.storage') }}</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-number">99.9%</div>
-              <div class="stat-label">{{ t('welcome.stats.availability') }}</div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <!-- CTA 区域 -->
       <section class="cta-section">
         <h3 class="cta-title">{{ t('welcome.cta.title') }}</h3>
         <p class="cta-description">{{ t('welcome.cta.description') }}</p>
         <div class="cta-buttons">
-          <button @click="goToLogin('live')" class="btn btn-primary btn-lg">
+          <button @click="goToLogin()" class="btn btn-primary btn-lg">
             <span>{{ t('welcome.cta.loginButton') }}</span>
             <icon-arrow-right class="btn-icon" />
           </button>
-          <button class="btn btn-secondary btn-lg">{{ t('welcome.cta.contactButton') }}</button>
+          <button class="btn btn-secondary btn-lg" @click="goToRegister">{{ t('welcome.cta.registerButton') }}</button>
         </div>
       </section>
     </main>
@@ -366,47 +280,9 @@ const goToRegister = () => {
             </div>
             <p class="footer-text">{{ t('welcome.footer.brandText') }}</p>
           </div>
-          <div class="footer-column">
-            <h6 class="footer-column-title">{{ t('welcome.footer.productTitle') }}</h6>
-            <ul class="footer-links">
-              <li><a href="#">{{ t('welcome.footer.productLinks.0') }}</a></li>
-              <li><a href="#">{{ t('welcome.footer.productLinks.1') }}</a></li>
-              <li><a href="#">{{ t('welcome.footer.productLinks.2') }}</a></li>
-              <li><a href="#">{{ t('welcome.footer.productLinks.3') }}</a></li>
-            </ul>
-          </div>
-          <div class="footer-column">
-            <h6 class="footer-column-title">{{ t('welcome.footer.companyTitle') }}</h6>
-            <ul class="footer-links">
-              <li><a href="#">{{ t('welcome.footer.companyLinks.0') }}</a></li>
-              <li><a href="#">{{ t('welcome.footer.companyLinks.1') }}</a></li>
-              <li><a href="#">{{ t('welcome.footer.companyLinks.2') }}</a></li>
-              <li><a href="#">{{ t('welcome.footer.companyLinks.3') }}</a></li>
-            </ul>
-          </div>
-          <div class="footer-column">
-            <h6 class="footer-column-title">{{ t('welcome.footer.supportTitle') }}</h6>
-            <ul class="footer-links">
-              <li><a href="#">{{ t('welcome.footer.supportLinks.0') }}</a></li>
-              <li><a href="#">{{ t('welcome.footer.supportLinks.1') }}</a></li>
-              <li><a href="#">{{ t('welcome.footer.supportLinks.2') }}</a></li>
-              <li><a href="#">{{ t('welcome.footer.supportLinks.3') }}</a></li>
-            </ul>
-          </div>
         </div>
         <div class="footer-bottom">
           <p class="footer-copyright">{{ t('welcome.footer.copyright') }}</p>
-          <div class="footer-social">
-            <a href="#" class="social-btn">
-              <icon-github class="social-icon" />
-            </a>
-            <a href="#" class="social-btn">
-              <icon-twitter class="social-icon" />
-            </a>
-            <a href="#" class="social-btn">
-              <icon-wechat class="social-icon" />
-            </a>
-          </div>
         </div>
       </div>
     </footer>
@@ -944,9 +820,9 @@ const goToRegister = () => {
 /* 平台选择 */
 .platforms-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
-  max-width: 1024px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
@@ -1234,7 +1110,7 @@ const goToRegister = () => {
 
 .footer-content {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 32px;
   margin-bottom: 32px;
 }
@@ -1365,7 +1241,7 @@ const goToRegister = () => {
   }
 
   .footer-content {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .nav-links {

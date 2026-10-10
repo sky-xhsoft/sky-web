@@ -734,6 +734,10 @@ export default {
     welcomeBack: '欢迎回来',
     signInHint: '登录 {system}，开启高效工作',
     enterSystem: '进入{system}',
+    backHome: '返回首页',
+    registerCompany: '注册企业',
+    decoLive: '直播 · 录制切片 · 社媒分发',
+    decoCloud: '大文件直传 · 在线预览 · 分享',
     switchSystem: '切换系统',
     platforms: {
       live: '视频系统',
@@ -854,7 +858,7 @@ export default {
     brandSubtitle: 'AI视频平台',
     navLinks: {
       features: '功能介绍',
-      platforms: '产品平台',
+      platforms: '产品介绍',
       stats: '数据统计'
     },
     heroBadge: '全新版本已上线',
@@ -862,22 +866,22 @@ export default {
     heroTitleGradient: '云数据平台',
     heroDescription: '提供直播管理、云盘存储、社媒分发等一站式解决方案。让您的内容创作和管理更加高效便捷。',
     heroButtons: {
-      start: '立即开始',
+      start: '立即登录',
       demo: '观看演示'
     },
     platforms: {
-      title: '选择您的平台',
-      subtitle: '根据您的需求选择合适的产品平台，也可以选择综合中心使用全部功能',
+      title: '两大系统，一个账号',
+      subtitle: '登录后可在页面右上角随时切换视频系统与云盘系统，无需重新登录',
       liveCenter: {
-        title: '直播中心',
-        description: '专注于直播流管理、域名配置和直播内容生产',
-        features: ['直播间管理', '域名配置', '直播录制与切片'],
+        title: '视频系统',
+        description: '直播间管理、推流与播放、录制与高光切片，并可分发到海外社交媒体',
+        features: ['直播间与推流管理', '直播录制与高光切片', 'Facebook / Instagram / YouTube 分发'],
         button: '进入直播中心'
       },
       cloudCenter: {
-        title: '云盘中心',
-        description: '专注于文件存储、管理和分享的云存储解决方案',
-        features: ['文件上传下载', '文件夹管理', '文件分享'],
+        title: '云盘系统',
+        description: '企业级文件存储与协作：大文件直传云存储，常见文档与视频在线预览',
+        features: ['大文件分片直传', '视频、图片、文档在线预览', '文件分享与权限管理'],
         button: '进入云盘中心'
       },
       systemCenter: {
@@ -906,7 +910,7 @@ export default {
       },
       socialDistribution: {
         title: '社媒分发',
-        description: '一键同步推流到抖音、快手、B站等多个主流社交媒体平台'
+        description: '一键将直播同步推流到 Facebook、Instagram、YouTube 等海外社交媒体'
       },
       liveClips: {
         title: '直播切片',
@@ -931,7 +935,8 @@ export default {
       title: '准备开始使用了吗？',
       description: '立即登录，体验专业的云数据平台服务，让您的内容管理更加高效',
       loginButton: '立即登录',
-      contactButton: '联系我们'
+      contactButton: '联系我们',
+      registerButton: '注册企业'
     },
     footer: {
       brandText: '专业的云数据平台，提供直播管理、云盘存储等一站式解决方案',
@@ -941,7 +946,7 @@ export default {
       companyLinks: ['关于我们', '新闻动态', '加入我们', '联系方式'],
       supportTitle: '支持',
       supportLinks: ['帮助中心', '使用教程', '服务状态', '提交工单'],
-      copyright: '© 2024 Zigebo AI视频平台. All rights reserved.'
+      copyright: '© 2026 Zigebo AI视频平台. All rights reserved.'
     }
   },
   systemManagement: {
