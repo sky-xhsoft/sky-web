@@ -428,6 +428,8 @@ export interface LiveRecording {
   id: number
   sysCompanyId: number
   roomId?: number
+  /** 直播间名称（列表接口按 roomId 填充） */
+  roomName?: string
   streamId: string
   recordUrl: string
   recordType: string

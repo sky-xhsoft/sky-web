@@ -30,7 +30,7 @@
         <a-form-item label="关键词">
           <a-input
             v-model="searchForm.keyword"
-            placeholder="流名称/描述"
+            placeholder="直播间名称/描述"
             style="width: 200px"
             allow-clear
           />
@@ -78,7 +78,10 @@
       >
         <template #columns>
           <a-table-column title="ID" data-index="id" :width="80" />
-          <a-table-column title="流名称" data-index="streamId" :width="160" />
+          <a-table-column title="直播间" :width="180">
+            <!-- 未关联直播间的旧记录显示流名称 -->
+            <template #cell="{ record }">{{ record.roomName || record.streamId || '-' }}</template>
+          </a-table-column>
           <a-table-column title="录制类型" :width="100">
             <template #cell="{ record }">
               <V2Tag v-if="record.recordType" :type="getFormatType(record.recordType)">{{ record.recordType.toUpperCase() }}</V2Tag>
