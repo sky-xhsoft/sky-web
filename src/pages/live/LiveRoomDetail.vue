@@ -348,6 +348,19 @@ const playUrlRows = computed(() => [
 
 const errorReason = (e: any) => e?.response?.data?.message || e?.message || t('liveRoomDetail.messages.fetchFailed')
 
+/**
+ * 拆出 OBS 的「服务器」与「推流码」：服务器 = rtmp://域名/app/，推流码 = 流名 + 鉴权参数（不含 app）。
+ * 不用 new URL()：rtmp 不是浏览器认识的协议，部分浏览器解析不出域名，
+ * 会把「//域名/live/流名」当作路径，拼出 rtmp:///域名/ 且推流码带上 live/
+ */
+const splitObsPushUrl = (pushUrl: string) => {
+  const m = pushUrl.match(/^[a-z][a-z0-9+.-]*:\/\/([^/?#]+)\/*([^?#]*)(\?[^#]*)?/i)
+  if (!m) return { host: '', server: '', streamKey: '' }
+  const [, host, path, query = ''] = m
+  const [app = 'live', ...rest] = path.split('/').filter(Boolean)
+  return { host, server: `rtmp://${host}/${app}/`, streamKey: rest.join('/') + query }
+}
+
 const loadPushUrls = async () => {
   pushError.value = ''
   try {
@@ -355,15 +368,13 @@ const loadPushUrls = async () => {
     const data = res.data?.data || res.data
     const pushUrl: string = data?.pushUrl || ''
     if (!pushUrl) throw new Error(t('liveRoomDetail.page.push.emptyReason'))
-    const u = new URL(pushUrl)
-    const segments = u.pathname.split('/').filter(Boolean)
+    const { server, streamKey } = splitObsPushUrl(pushUrl)
     pushUrls.value = {
       rtmp: pushUrl,
       webrtc: data?.pushUrlWebRtc || '',
       srt: data?.pushUrlSrt || '',
-      // OBS 服务器 = 域名 + app；推流码 = 流名 + 鉴权参数（不含 app，避免与服务器里的 app 重复）
-      obsServer: `rtmp://${u.host}/${segments[0] || 'live'}/`,
-      obsStreamKey: segments.slice(1).join('/') + u.search,
+      obsServer: server,
+      obsStreamKey: streamKey,
     }
   } catch (e: any) {
     // 不再回退到示例地址：带假签名的地址无法推流，只会误导
@@ -408,7 +419,7 @@ const metricRows = computed(() => {
 const loadMetrics = async () => {
   if (!metricsSupported.value || !isLive.value || !streamName.value) return
   try {
-    const host = pushUrls.value.rtmp ? new URL(pushUrls.value.rtmp).host : ''
+    const host = splitObsPushUrl(pushUrls.value.rtmp).host
     const data = await getStreamMetrics(streamName.value, { domainName: host || undefined, appName: 'live' })
     if (data?.supported === false) {
       metricsSupported.value = false

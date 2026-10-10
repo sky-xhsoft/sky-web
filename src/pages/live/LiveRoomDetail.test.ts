@@ -99,6 +99,27 @@ describe('LiveRoomDetail (页面组件挂载)', () => {
     expect(wrapper.text()).toContain('room-1?txSecret=SECRET123&txTime=6A0E2F7F')
   })
 
+  it('浏览器解析不出 rtmp 域名时，服务器不多出 /、推流码不带 live', async () => {
+    // 部分浏览器对 rtmp:// 这类非标准协议：host 为空，「//域名/live/流名」被当作路径
+    const RealURL = globalThis.URL
+    vi.stubGlobal('URL', class extends RealURL {
+      get host() { return '' }
+      get pathname() { return '//push.test/live/room-1' }
+    })
+    try {
+      const wrapper = mountPage()
+      await flushPromises()
+      await button(wrapper, 'liveRoomDetail.page.push.show')!.trigger('click')
+      const text = wrapper.text()
+      expect(text).toContain('rtmp://push.test/live/')
+      expect(text).not.toContain('rtmp:///')
+      expect(text).toContain('room-1?txSecret=SECRET123&txTime=6A0E2F7F')
+      expect(text).not.toContain('live/room-1?txSecret')
+    } finally {
+      vi.stubGlobal('URL', RealURL)
+    }
+  })
+
   it('直播中：显示结束直播与预览，删除不可用', async () => {
     const wrapper = mountPage()
     await flushPromises()
