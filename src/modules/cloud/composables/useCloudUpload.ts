@@ -21,8 +21,11 @@ function generateUploadId(): string {
 /** 分片上传任务的管理器（模块级共享：各组件调用 useCloudUpload 时都能暂停 / 继续同一任务） */
 const resumableManagers = new Map<string, ResumableUploadManager>()
 
-/** 大于该大小的文件使用分片上传 */
-const RESUMABLE_THRESHOLD = 500 * 1024 * 1024
+/**
+ * 大于该大小的文件使用分片上传：云存储（COS）由浏览器直传存储桶，不经过应用服务器；
+ * 不超过该大小的文件经服务器上传（与后端 MaxRelayUploadSize 一致）
+ */
+export const RESUMABLE_THRESHOLD = 50 * 1024 * 1024
 
 /**
  * 云盘上传功能
@@ -352,7 +355,7 @@ export function useCloudUpload() {
    * 大文件分片上传（断点续传）
    * @param file 文件对象
    * @param folderId 目标文件夹ID
-   * @param useResumable 是否强制使用分片上传（默认大于 500MB 的文件使用）
+   * @param useResumable 是否强制使用分片上传（默认大于 50MB 的文件使用）
    */
   async function uploadWithResumable(
     file: File,
