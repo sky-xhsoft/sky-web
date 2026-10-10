@@ -10,10 +10,13 @@ vi.mock('@/modules/cloud/api', () => ({
   uploadMultipartChunk: vi.fn(),
   completeMultipartUpload: vi.fn().mockResolvedValue({ ID: 99 }),
   abortMultipartUpload: vi.fn().mockResolvedValue(undefined),
+  getChunkPresignedURLs: vi.fn(),
+  putChunkToStorage: vi.fn(),
+  markChunkUploaded: vi.fn().mockResolvedValue(undefined),
 }))
 
 import { computeChunkedHash, hashFileChunks } from './file-hash'
-import { ResumableUploadManager } from './resumable-upload'
+import { ResumableUploadManager, STORAGE_CORS_ERROR } from './resumable-upload'
 import * as api from '@/modules/cloud/api'
 
 // 5 个分片：1024 × 4 + 500
@@ -115,5 +118,55 @@ describe('ResumableUploadManager', () => {
     expect(hashSpy).not.toHaveBeenCalled()
     expect(vi.mocked(api.uploadMultipartChunk).mock.calls.map((c) => c[1])).toEqual([4])
     hashSpy.mockRestore()
+  })
+})
+
+describe('ResumableUploadManager 直传云存储', () => {
+  const presign = (indexes: number[], expireSeconds = 3600) =>
+    indexes.map((i) => ({ chunkIndex: i, presignedUrl: `https://bucket/obj?partNumber=${i + 1}&n=${Math.random()}`, expireSeconds }))
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(api.initMultipartUpload).mockResolvedValue({ sessionId: 8, uploadedChunks: [1], uploadMode: 'direct' } as any)
+    vi.mocked(api.getChunkPresignedURLs).mockImplementation(async (_s, indexes) => presign(indexes))
+    vi.mocked(api.putChunkToStorage).mockImplementation(async (url) => `etag-${url.split('partNumber=')[1].split('&')[0]}`)
+  })
+
+  it('分块直接 PUT 到存储桶并登记 ETag，不经服务器中转；地址批量获取', async () => {
+    const { file } = makeFile()
+    const id = await new ResumableUploadManager(file, 0).start()
+
+    expect(id).toBe(99)
+    expect(api.uploadMultipartChunk).not.toHaveBeenCalled()
+    expect(api.getChunkPresignedURLs).toHaveBeenCalledTimes(1)
+    expect(new Set(vi.mocked(api.getChunkPresignedURLs).mock.calls[0][1])).toEqual(new Set([0, 2, 3, 4]))
+    const marked = vi.mocked(api.markChunkUploaded).mock.calls.map((c) => [c[1], c[2]])
+    expect(new Map(marked as [number, string][])).toEqual(new Map([[0, 'etag-1'], [2, 'etag-3'], [3, 'etag-4'], [4, 'etag-5']]))
+  })
+
+  it('存储桶返回 403（地址过期）时换新地址重试', async () => {
+    let failed = false
+    vi.mocked(api.putChunkToStorage).mockImplementation(async (url) => {
+      if (url.includes('partNumber=3&') && !failed) {
+        failed = true
+        throw Object.assign(new Error('Forbidden'), { response: { status: 403 } })
+      }
+      return 'etag'
+    })
+    const { file } = makeFile()
+    await new ResumableUploadManager(file, 0).start()
+
+    const urlsForChunk2 = vi.mocked(api.putChunkToStorage).mock.calls.map((c) => c[0]).filter((u) => u.includes('partNumber=3&'))
+    expect(urlsForChunk2).toHaveLength(2)
+    expect(urlsForChunk2[0]).not.toBe(urlsForChunk2[1])
+    expect(api.markChunkUploaded).toHaveBeenCalledTimes(4)
+  })
+
+  it('直传始终没有响应（存储桶未配置跨域）时提示配置跨域', async () => {
+    vi.mocked(api.putChunkToStorage).mockRejectedValue(new Error('Network Error'))
+    const { file } = makeFile()
+    await expect(new ResumableUploadManager(file, 0).start()).rejects.toThrow(STORAGE_CORS_ERROR)
+    expect(api.uploadMultipartChunk).not.toHaveBeenCalled()
+    expect(api.completeMultipartUpload).not.toHaveBeenCalled()
   })
 })

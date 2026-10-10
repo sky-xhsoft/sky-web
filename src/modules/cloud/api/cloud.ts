@@ -4,6 +4,7 @@
  * 优化版本 - 使用统一的类型定义，修复已知bug
  */
 
+import axios from 'axios'
 import api from '@/api/http'
 import SparkMD5 from 'spark-md5'
 import { API_BASE_URL } from '@/config'
@@ -508,6 +509,8 @@ export async function initMultipartUpload(params: {
   uploadedChunks: number[]
   status: string
   expireTime: string
+  /** direct：浏览器直传云存储；relay：经服务器上传（本地存储） */
+  uploadMode?: 'direct' | 'relay'
 }> {
   const { data } = await api.post<ApiResponse<any>>('/cloud/files/multipart/init', {
     fileName: params.fileName,
@@ -669,6 +672,37 @@ export async function getChunkPresignedURL(
     `/cloud/files/multipart/${sessionId}/presigned?chunkIndex=${chunkIndex}`
   )
   return data.data
+}
+
+/**
+ * 批量获取分块直传地址（前端直传模式，一次最多 200 个）
+ * 对应后端: POST /api/v1/cloud/files/multipart/{sessionId}/presigned
+ */
+export async function getChunkPresignedURLs(
+  sessionId: number,
+  chunkIndexes: number[]
+): Promise<Array<{ chunkIndex: number; presignedUrl: string; expireSeconds: number }>> {
+  const { data } = await api.post<ApiResponse<any>>(`/cloud/files/multipart/${sessionId}/presigned`, { chunkIndexes })
+  return data.data || []
+}
+
+/**
+ * 用预签名地址把分块直接 PUT 到云存储（不经过应用服务器，不携带登录令牌），返回存储端的 ETag
+ */
+export async function putChunkToStorage(
+  presignedUrl: string,
+  chunkData: Blob,
+  signal?: AbortSignal,
+  onUploadProgress?: (loaded: number) => void
+): Promise<string> {
+  const response = await axios.put(presignedUrl, chunkData, {
+    timeout: 0,
+    signal,
+    // 不带 Content-Type：签名只签了 host，浏览器按 Blob 默认处理即可
+    transformRequest: [(body) => body],
+    onUploadProgress: onUploadProgress ? (event) => onUploadProgress(Math.min(event.loaded, chunkData.size)) : undefined,
+  })
+  return String(response.headers?.etag || '').replace(/"/g, '')
 }
 
 /**
