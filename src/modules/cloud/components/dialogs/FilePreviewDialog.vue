@@ -151,7 +151,7 @@ import {
   IconExport,
   IconDelete,
 } from '@arco-design/web-vue/es/icon'
-import { fetchFileBlob, fetchPreviewPdf, getPlayUrl } from '@/modules/cloud/api'
+import { fetchFileBlobPreferDirect, fetchPreviewPdf, getPlayUrl } from '@/modules/cloud/api'
 import { useCloudFile } from '@/modules/cloud/composables'
 import { formatSize as formatFileSize, formatDate } from '@/modules/cloud/utils/format'
 import { fileKindLabel } from '@/modules/cloud/utils/file-kind'
@@ -299,21 +299,24 @@ async function loadPreview() {
     }
     if (!useDocumentViewer.value && !isMedia.value) return
 
-    if (isMedia.value && props.category !== 'image') {
-      // 视频 / 音频：云存储用签名直链边下边播，不把整个文件经服务器读进浏览器内存
-      const url = await getPlayUrl(fileId)
-      if (props.file?.ID !== fileId) return
-      if (url) {
-        previewUrl.value = url
+    const legacyWord = useDocumentViewer.value && LEGACY_WORD_EXTS.includes(fileExt.value)
+    // 云存储文件取签名直链：浏览器直接从 COS 读取，不经过应用服务器（本地存储没有直链）
+    const directUrl = legacyWord ? '' : await getPlayUrl(fileId).catch(() => '')
+    if (props.file?.ID !== fileId) return
+
+    if (isMedia.value) {
+      // 图片 / 视频 / 音频：直接用直链显示或边下边播
+      if (directUrl) {
+        previewUrl.value = directUrl
         return
       }
-      if ((props.file.FileSize || 0) > MAX_MEDIA_BLOB_SIZE) {
+      if (props.category !== 'image' && (props.file.FileSize || 0) > MAX_MEDIA_BLOB_SIZE) {
         tooLarge.value = true
         return
       }
     }
 
-    if (useDocumentViewer.value && LEGACY_WORD_EXTS.includes(fileExt.value)) {
+    if (legacyWord) {
       // 旧版 Word：浏览器内只能解析出文字，改用服务器转换的 PDF 保留排版；转换不可用时退回浏览器解析
       try {
         const pdf = await fetchPreviewPdf(fileId)
@@ -326,7 +329,7 @@ async function loadPreview() {
       }
     }
 
-    const blob = await fetchFileBlob(fileId)
+    const blob = await fetchFileBlobPreferDirect(fileId, directUrl)
     if (props.file?.ID !== fileId) return // 加载期间已切换到其他文件
     if (useDocumentViewer.value) {
       documentBlob.value = blob

@@ -271,11 +271,29 @@ export async function fetchFileBlob(id: number): Promise<Blob> {
 }
 
 /**
- * 视频、音频在线播放直链：云存储返回带签名的地址（浏览器边下边播，不经过应用服务器）；本地存储返回空字符串
+ * 文件直链：云存储返回带签名的地址（浏览器直接从 COS 读取，不经过应用服务器）；本地存储返回空字符串。
+ * 用于视频 / 音频边下边播、图片显示和文档预览
  */
 export async function getPlayUrl(id: number): Promise<string> {
   const { data } = await api.get<ApiResponse<{ url: string }>>(`/cloud/files/${id}/play-url`)
   return data.data?.url || ''
+}
+
+/**
+ * 读取文件内容用于预览：有直链时浏览器直接从 COS 读取（需存储桶配置跨域），
+ * 没有直链或直读失败（如未配跨域）时退回经服务器下载
+ */
+export async function fetchFileBlobPreferDirect(id: number, directUrl?: string): Promise<Blob> {
+  if (directUrl) {
+    try {
+      const response = await fetch(directUrl)
+      if (response.ok) return await response.blob()
+      console.warn('从云存储直接读取文件失败，改为经服务器下载:', response.status)
+    } catch (error) {
+      console.warn('从云存储直接读取文件失败（可能未配置跨域），改为经服务器下载:', error)
+    }
+  }
+  return fetchFileBlob(id)
 }
 
 /**
