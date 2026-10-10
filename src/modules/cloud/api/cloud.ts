@@ -271,6 +271,22 @@ export async function fetchFileBlob(id: number): Promise<Blob> {
 }
 
 /**
+ * 视频、音频在线播放直链：云存储返回带签名的地址（浏览器边下边播，不经过应用服务器）；本地存储返回空字符串
+ */
+export async function getPlayUrl(id: number): Promise<string> {
+  const { data } = await api.get<ApiResponse<{ url: string }>>(`/cloud/files/${id}/play-url`)
+  return data.data?.url || ''
+}
+
+/**
+ * 旧版 Word（.doc / .dot / .wps）在服务器转换后的 PDF，用于保留排版的预览
+ */
+export async function fetchPreviewPdf(id: number): Promise<Blob> {
+  const response = await api.get(`/cloud/files/${id}/preview-pdf`, { responseType: 'blob', timeout: 150000 })
+  return response.data as Blob
+}
+
+/**
  * 删除文件
  */
 export async function deleteFile(id: number): Promise<void> {

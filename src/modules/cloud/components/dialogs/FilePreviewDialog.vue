@@ -66,8 +66,8 @@
             <DocumentViewer
               v-else-if="useDocumentViewer && documentBlob"
               :file="documentBlob"
-              :file-name="fileName"
-              :mime-type="file?.FileType"
+              :file-name="documentIsPdf ? `${fileName}.pdf` : fileName"
+              :mime-type="documentIsPdf ? 'application/pdf' : file?.FileType"
             />
 
             <!-- 不支持的格式 / 文件过大 / 加载失败 -->
@@ -151,7 +151,7 @@ import {
   IconExport,
   IconDelete,
 } from '@arco-design/web-vue/es/icon'
-import { fetchFileBlob } from '@/modules/cloud/api'
+import { fetchFileBlob, fetchPreviewPdf, getPlayUrl } from '@/modules/cloud/api'
 import { useCloudFile } from '@/modules/cloud/composables'
 import { formatSize as formatFileSize, formatDate } from '@/modules/cloud/utils/format'
 import { fileKindLabel } from '@/modules/cloud/utils/file-kind'
@@ -170,6 +170,10 @@ const DocumentViewer = defineAsyncComponent(() => import('./previews/DocumentVie
 
 /** 文档类预览需要把文件整体读入浏览器，超过该大小提示下载 */
 const MAX_DOCUMENT_PREVIEW_SIZE = 100 * 1024 * 1024
+/** 本地存储的视频 / 音频没有直链，需整个读入浏览器内存，超过该大小提示下载 */
+const MAX_MEDIA_BLOB_SIZE = 200 * 1024 * 1024
+/** 浏览器内无法保留排版、由服务器转换为 PDF 预览的旧版 Word 格式（与后端 previewPDFExts 一致） */
+const LEGACY_WORD_EXTS = ['doc', 'dot', 'wps']
 
 /** 信息栏展开状态（每个浏览器记住） */
 const INFO_OPEN_KEY = 'sky-web:cloud-preview-info-open'
@@ -213,6 +217,8 @@ const loading = ref(false)
 const downloading = ref(false)
 const previewUrl = ref<string>('')
 const documentBlob = ref<Blob | null>(null)
+/** documentBlob 是服务器转换出的 PDF（旧版 Word） */
+const documentIsPdf = ref(false)
 const tooLarge = ref(false)
 const loadFailed = ref(false)
 const infoOpen = ref(readInfoOpen())
@@ -240,9 +246,13 @@ const currentIndex = computed(() => props.siblings.findIndex((f) => f.ID === pro
 // 文档、文本、代码、压缩包使用 open-file-viewer 预览
 const useDocumentViewer = computed(() => ['document', 'text', 'code', 'archive'].includes(props.category))
 const isMedia = computed(() => ['image', 'video', 'audio'].includes(props.category))
+const fileExt = computed(() => (props.file?.FileExt || props.file?.FileName?.split('.').pop() || '').replace(/^\./, '').toLowerCase())
 
 const unavailableText = computed(() => {
-  if (tooLarge.value) return `文件超过 ${formatFileSize(MAX_DOCUMENT_PREVIEW_SIZE)}，请下载后查看`
+  if (tooLarge.value) {
+    const limit = isMedia.value ? MAX_MEDIA_BLOB_SIZE : MAX_DOCUMENT_PREVIEW_SIZE
+    return `文件超过 ${formatFileSize(limit)}，请下载后查看`
+  }
   if (loadFailed.value) return '文件加载失败，可下载后查看'
   return '暂不支持预览此类型文件'
 })
@@ -289,6 +299,33 @@ async function loadPreview() {
     }
     if (!useDocumentViewer.value && !isMedia.value) return
 
+    if (isMedia.value && props.category !== 'image') {
+      // 视频 / 音频：云存储用签名直链边下边播，不把整个文件经服务器读进浏览器内存
+      const url = await getPlayUrl(fileId)
+      if (props.file?.ID !== fileId) return
+      if (url) {
+        previewUrl.value = url
+        return
+      }
+      if ((props.file.FileSize || 0) > MAX_MEDIA_BLOB_SIZE) {
+        tooLarge.value = true
+        return
+      }
+    }
+
+    if (useDocumentViewer.value && LEGACY_WORD_EXTS.includes(fileExt.value)) {
+      // 旧版 Word：浏览器内只能解析出文字，改用服务器转换的 PDF 保留排版；转换不可用时退回浏览器解析
+      try {
+        const pdf = await fetchPreviewPdf(fileId)
+        if (props.file?.ID !== fileId) return
+        documentBlob.value = pdf
+        documentIsPdf.value = true
+        return
+      } catch (error) {
+        console.warn('文档转换预览不可用，改为浏览器内解析:', error)
+      }
+    }
+
     const blob = await fetchFileBlob(fileId)
     if (props.file?.ID !== fileId) return // 加载期间已切换到其他文件
     if (useDocumentViewer.value) {
@@ -309,6 +346,7 @@ function cleanupResources() {
   if (previewUrl.value.startsWith('blob:')) URL.revokeObjectURL(previewUrl.value)
   previewUrl.value = ''
   documentBlob.value = null
+  documentIsPdf.value = false
   tooLarge.value = false
   loadFailed.value = false
 }
