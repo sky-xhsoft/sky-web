@@ -25,7 +25,7 @@
             </a-form-item>
             <div class="ptf-grid2">
               <a-form-item label="任务时间" field="timeRange" :rules="[{ required: true, message: '请选择任务时间' }]">
-                <a-range-picker v-model="taskForm.timeRange" show-time format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
+                <a-range-picker v-model="taskForm.timeRange" show-time format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
               </a-form-item>
               <a-form-item label="地域" field="region" :rules="[{ required: true, message: '请选择地域' }]">
                 <div class="ptf-field-col">
@@ -195,6 +195,9 @@ const loadingRooms = ref(false)
 const roomPullUrl = ref('')
 const loadingRoomUrl = ref(false)
 
+/** 任务时间统一为 YYYY-MM-DD HH:mm:ss（本地时间）：直播间、腾讯云返回的是带时区的 ISO 格式 */
+const toTaskTime = (value?: string) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '')
+
 const loadRooms = async () => {
   loadingRooms.value = true
   try {
@@ -230,7 +233,7 @@ watch(() => taskForm.sourceRoomId, async (id) => {
   }
   const room = rooms.value.find((r) => r.id === id)
   if (room?.startTime && room?.endTime && !taskForm.timeRange?.length) {
-    taskForm.timeRange = [room.startTime, room.endTime]
+    taskForm.timeRange = [toTaskTime(room.startTime), toTaskTime(room.endTime)]
   }
   taskFormRef.value?.validateField?.('sourceRoomId')
 })
@@ -319,9 +322,11 @@ const previewTime = computed(() => {
   }
 })
 
-// 返回列表
+// 返回列表：没有导航历史（从菜单直接打开、或刷新过页面）时回到分发任务列表，避免保存后页面不动
 const goBack = () => {
-  navigationStore.goBack()
+  if (navigationStore.goBack()) return
+  const roomId = roomIdParam.value
+  navigationStore.navigateTo('PullStreamTask', '分发任务', roomId ? { roomId } : {}, false)
 }
 
 // 加载任务详情
@@ -332,8 +337,8 @@ const loadTaskDetail = async (id: string) => {
       const task = result[0]
       taskForm.comment = task.comment || task.Comment || ''
       taskForm.timeRange = [
-        task.startTime || task.StartTime,
-        task.endTime || task.EndTime
+        toTaskTime(task.startTime || task.StartTime),
+        toTaskTime(task.endTime || task.EndTime)
       ]
       taskForm.region = task.region || task.Region || ''
       taskForm.sourceType = task.sourceType || task.SourceType
