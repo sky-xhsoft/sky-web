@@ -253,7 +253,7 @@ const fileExt = computed(() => (props.file?.FileExt || props.file?.FileName?.spl
 const unavailableText = computed(() => {
   if (tooLarge.value) return '文件过大，无法直接查看，建议下载后查看'
   if (loadFailed.value) return '文件加载失败，可下载后查看'
-  return '暂不支持预览此类型文件'
+  return '暂不支持预览此类型文件，请下载后查看'
 })
 
 // ==================== 监听 ====================

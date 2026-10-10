@@ -479,12 +479,10 @@ async function handleItemDoubleClick(item: GridItem) {
     // 双击文件夹：进入文件夹（与单击行为一致）
     await navigation.navigateTo(item.id, item.name)
   } else if (item.type === 'file') {
-    // 双击文件：预览
-    if (item.file && preview.canPreview(item.file)) {
+    // 双击文件：打开预览窗口；不支持预览的类型在窗口内提示下载
+    if (item.file) {
       currentItem.value = item
       dialogs.preview = true
-    } else {
-      Message.warning(t('cloud.previewNotSupported'))
     }
   }
 }
@@ -522,10 +520,9 @@ async function handleItemAction(payload: { action: string; item: GridItem }) {
 
   switch (action) {
     case 'preview':
-      if (item.type === 'file' && item.file && preview.canPreview(item.file)) {
+      // 不支持预览的类型也打开预览窗口，在窗口内提示下载
+      if (item.type === 'file' && item.file) {
         dialogs.preview = true
-      } else {
-        Message.warning(t('cloud.previewNotSupported'))
       }
       break
 
@@ -728,10 +725,8 @@ async function handleEditShare(params: { expirationDays: number; password?: stri
 }
 
 // ==================== 文件预览导航 ====================
-// 可预览文件按页面显示顺序（排序、搜索后），预览窗口的上一个 / 下一个与同文件夹列表一致
-const previewableFiles = computed(() => {
-  return store.filteredAndSortedFiles.filter((f) => preview.canPreview(f))
-})
+// 预览窗口的上一个 / 下一个：同文件夹全部文件，按页面显示顺序（排序、搜索后）；不支持预览的文件在窗口内提示下载
+const previewableFiles = computed(() => store.filteredAndSortedFiles)
 
 const previewLocation = computed(() =>
   store.category === 'all' ? store.breadcrumbs.map((b) => b.name).join(' / ') : ''

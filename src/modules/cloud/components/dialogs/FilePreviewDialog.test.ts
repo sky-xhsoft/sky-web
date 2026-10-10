@@ -60,4 +60,12 @@ describe('FilePreviewDialog 文件过大', () => {
     expect(wrapper.text()).toContain(TOO_LARGE)
     expect(fetchFileBlobPreferDirect).not.toHaveBeenCalled()
   })
+
+  it('不支持预览的类型：窗口内提示下载并提供下载按钮，不读取文件', async () => {
+    const wrapper = mountDialog('安装包.exe', '.exe', 2 * MB, 'unknown')
+    await flushPromises()
+    expect(wrapper.text()).toContain('暂不支持预览此类型文件，请下载后查看')
+    expect(wrapper.text()).toContain('下载文件')
+    expect(fetchFileBlobPreferDirect).not.toHaveBeenCalled()
+  })
 })
