@@ -734,6 +734,18 @@ export default {
     welcomeBack: '欢迎回来',
     signInHint: '登录 {system}，开启高效工作',
     enterSystem: '进入{system}',
+    brand: {
+      badge: '一个账号，两大系统',
+      welcome: '欢迎回来',
+      title: '登录 Zigebo',
+      description: '登录后可在页面右上角随时切换视频系统与云盘系统，无需重新登录。',
+      liveDesc: '直播管理 · 录制切片 · 海外社媒分发',
+      cloudDesc: '大文件直传 · 在线预览 · 分享协作',
+    },
+    formTitle: '登录账号',
+    formSubtitle: '选择要进入的系统，登录后也可随时切换',
+    backHome: '返回首页',
+    showPassword: '显示密码',
     switchSystem: '切换系统',
     platforms: {
       live: '视频系统',

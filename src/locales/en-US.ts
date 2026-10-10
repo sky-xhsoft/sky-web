@@ -732,6 +732,18 @@ export default {
     welcomeBack: 'Welcome Back',
     signInHint: 'Sign in to {system}',
     enterSystem: 'Enter {system}',
+    brand: {
+      badge: 'One account, two systems',
+      welcome: 'Welcome back',
+      title: 'Sign in to Zigebo',
+      description: 'Switch between the Video and Cloud systems from the top-right corner at any time — no need to sign in again.',
+      liveDesc: 'Live streaming · Recording & clips · Overseas distribution',
+      cloudDesc: 'Direct uploads · Online preview · Sharing',
+    },
+    formTitle: 'Sign in',
+    formSubtitle: 'Choose a system to enter — you can switch any time after signing in',
+    backHome: 'Back to home',
+    showPassword: 'Show password',
     switchSystem: 'Switch system',
     platforms: {
       live: 'Video System',
