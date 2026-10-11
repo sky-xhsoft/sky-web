@@ -14,7 +14,7 @@
       <div class="stm-head">
         <div>
           <div class="stm-title">{{ title || '新建字幕同传任务' }}</div>
-          <div class="stm-subtitle">{{ copyFrom ? `复制自「${copyFrom.name}」· ` : '' }}{{ room?.roomName ? `直播间「${room.roomName}」· ` : '' }}火山引擎声影同传</div>
+          <div class="stm-subtitle">{{ copyFrom ? `复制自「${copyFrom.name}」· ` : '' }}{{ room?.roomName ? `直播间「${room.roomName}」· ` : '' }}声影同传</div>
         </div>
         <a-button type="text" aria-label="关闭" @click="handleCancel"><icon-close /></a-button>
       </div>

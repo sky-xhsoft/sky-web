@@ -18,17 +18,17 @@
         <a-form-item field="description" label="描述">
           <a-input v-model="form.description" :max-length="1024" />
         </a-form-item>
-        <a-form-item field="cosRegion" label="COS 地域" :rules="[{ required: true, message: '请选择地域' }]">
+        <a-form-item field="cosRegion" label="存储地域" :rules="[{ required: true, message: '请选择地域' }]">
           <a-select v-model="form.cosRegion" :options="regionOptions" :loading="bucketsLoading" allow-search placeholder="选择地域" @change="onRegionChange" />
         </a-form-item>
-        <a-form-item field="cosBucket" label="COS 存储桶" :rules="[{ required: true, message: '请选择存储桶' }]">
+        <a-form-item field="cosBucket" label="存储桶" :rules="[{ required: true, message: '请选择存储桶' }]">
           <a-select v-model="form.cosBucket" :options="bucketOptions" :loading="bucketsLoading" allow-search placeholder="选择存储桶" @change="onBucketChange" />
         </a-form-item>
       </div>
       <div class="rtm-buckets">
-        <span v-if="bucketsLoading">正在获取本公司腾讯云账号下的存储桶…</span>
+        <span v-if="bucketsLoading">正在获取本公司云账号下的存储桶…</span>
         <span v-else-if="bucketsError" class="rtm-warn">{{ bucketsError }}</span>
-        <span v-else>本公司腾讯云账号下共 {{ buckets.length }} 个存储桶</span>
+        <span v-else>本公司云账号下共 {{ buckets.length }} 个存储桶</span>
         <a-link v-if="!bucketsLoading" :hoverable="false" @click="loadBuckets">刷新</a-link>
         <a-link v-if="!bucketsLoading" :hoverable="false" @click="createOpen = true">新建存储桶</a-link>
       </div>
@@ -49,7 +49,7 @@
         </a-form-item>
       </div>
       <div class="rtm-info">
-        录制格式为 MP4，存储至 COS。录制为腾讯云付费增值功能，推流期间产生录制和 COS 存储费用。
+        录制格式为 MP4，存储至所选存储桶。录制为云平台付费增值功能，推流期间产生录制和存储费用。
         <template v-if="defaults?.cosBucket">本公司 COS：{{ defaults.cosBucket }}（{{ defaults.cosRegion }}）。</template>
       </div>
     </a-form>
@@ -166,7 +166,7 @@ const submit = async () => {
   try {
     const { minutes, ...rest } = form
     const saved = await saveRecordTemplate({ ...rest, recordInterval: minutes * 60 }, props.template?.id)
-    if (saved.syncStatus === 'synced') Message.success('已保存并同步到腾讯云')
+    if (saved.syncStatus === 'synced') Message.success('已保存并同步到云端')
     else Message.warning(`已保存，${SYNC_STATUS[saved.syncStatus].label}：${saved.syncError || ''}`)
     emit('saved', saved)
     emit('update:visible', false)

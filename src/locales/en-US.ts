@@ -1049,7 +1049,7 @@ export default {
       step2: 'CNAME Config'
     },
     configSteps: {
-      loginToDomainProvider: 'Log in to your domain name service provider (such as Aliyun, Tencent Cloud, DNSPod, etc.)',
+      loginToDomainProvider: 'Log in to your domain registrar or DNS hosting provider',
       findDnsSettings: 'Find the domain name resolution settings page',
       addRecord: 'Add the following CNAME record'
     },
@@ -1090,7 +1090,7 @@ export default {
       modalTitle: 'Verify Domain Ownership',
       verified: 'Domain ownership verified successfully. You can continue to add.',
       notVerified: 'This domain has not passed ownership verification. Please add the DNS record below at your DNS provider.',
-      dnsTip: 'Please add the following DNS record at your DNS provider (e.g. Aliyun, Tencent Cloud, DNSPod, etc.):',
+      dnsTip: 'Please add the following DNS record at your DNS provider:',
       domain: 'Domain',
       hostRecord: 'Host Record',
       recordType: 'Record Type',
@@ -1179,7 +1179,7 @@ export default {
       },
       metrics: {
         title: 'Live Stream Metrics',
-        hint: 'Refreshes every 10 s · from Tencent Cloud Live',
+        hint: 'Refreshes every 10 s · from the cloud live service',
         bitrate: 'Bitrate',
         fps: 'Frame rate',
         resolution: 'Resolution',
@@ -1369,7 +1369,7 @@ export default {
       fontSize: 'Font Size',
       fontFamily: 'Font Family',
       keywordLibrary: 'Keyword Library',
-      keywordLibraryPlaceholder: 'Use "source:target" format separated by commas, e.g. "Volcano Engine:Volcengine,Live Streaming:Live"',
+      keywordLibraryPlaceholder: 'Use "source:target" format separated by commas, e.g. "视频直播:Live Streaming,同声传译:Simultaneous Interpretation"',
       errorWords: 'Error Corrections',
       errorWordsTip: 'Force correction based on target keywords, max 50 chars each, up to 500 entries.',
       errorWordSource: 'Target',
@@ -1650,7 +1650,7 @@ export default {
     maxChar: 'Max Chars per Line',
     maxCharTip: 'Subtitle will be truncated when exceeding display range',
     glossaryMap: 'Glossary',
-    glossaryMapPlaceholder: 'Enter "original:translation" per line, comma separated. E.g. 火山引擎:Volcengine, 视频直播:Live',
+    glossaryMapPlaceholder: 'Enter "original:translation" per line, comma separated. E.g. 视频直播:Live, 同声传译:Simultaneous Interpretation',
     replaceMap: 'Easily-confused words',
     replaceMapPlaceholder: 'Force corrections based on translated keywords, comma separated, up to 500 words',
     createSuccess: 'Subtitles & simulcast task created successfully',

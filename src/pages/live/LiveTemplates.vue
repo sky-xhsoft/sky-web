@@ -1,8 +1,8 @@
 <template>
   <div class="live-templates-page">
-    <V2PageHeader title="模板管理" description="在本系统配置回调、录制模板，保存后自动同步到本公司的腾讯云账号（每个账号最多 50 个模板）">
+    <V2PageHeader title="模板管理" description="在本系统配置回调、录制模板，保存后自动同步到本公司的云账号（每个账号最多 50 个模板）">
       <template #actions>
-        <V2Button type="secondary" :loading="importing" @click="doImport">从腾讯云导入</V2Button>
+        <V2Button type="secondary" :loading="importing" @click="doImport">从云端导入</V2Button>
         <V2Button v-if="failedCount" type="secondary" :loading="resyncing" @click="resyncFailed">重新同步失败项（{{ failedCount }}）</V2Button>
         <V2Button @click="openCreate">
           <template #icon><icon-plus /></template>
@@ -11,8 +11,8 @@
       </template>
     </V2PageHeader>
 
-    <div v-if="defaults && !defaults.tencentConfigured" class="lt-alert">本公司未配置腾讯云密钥：模板只能保存在本地，无法同步。请先在公司配置中填写腾讯云 SecretId / SecretKey。</div>
-    <div v-else-if="cloudError" class="lt-alert">未能与腾讯云对账：{{ cloudError }}</div>
+    <div v-if="defaults && !defaults.tencentConfigured" class="lt-alert">本公司未配置云直播密钥：模板只能保存在本地，无法同步。请先在公司配置中填写 SecretId / SecretKey。</div>
+    <div v-else-if="cloudError" class="lt-alert">未能与云端对账：{{ cloudError }}</div>
 
     <V2Card :padding="false" class="lt-card">
       <div class="lt-toolbar">
@@ -47,7 +47,7 @@
                   <span v-for="k in callbackKinds(record)" :key="k" class="lt-chip">{{ k }}</span>
                 </template>
                 <template v-else>
-                  <div v-if="record.cosStore === 'Y'">COS · <span class="lt-mono">{{ record.cosBucket }} · {{ record.cosRegion }}</span></div>
+                  <div v-if="record.cosStore === 'Y'">存储桶 · <span class="lt-mono">{{ record.cosBucket }} · {{ record.cosRegion }}</span></div>
                   <div v-else>云点播 VOD</div>
                   <div class="lt-sub">{{ (record.formats || 'mp4').toUpperCase() }} · 每 {{ Math.round(record.recordInterval / 60) }} 分钟一段</div>
                 </template>
@@ -81,7 +81,7 @@
                   <V2Button v-else-if="record.syncStatus !== 'synced'" type="text" size="sm" @click="sync(record, '重新同步')">重新同步</V2Button>
                   <V2Button v-if="tab === 'callback' || record.cosStore === 'Y'" type="text" size="sm" @click="openEdit(record)">编辑</V2Button>
                   <V2Button type="text" size="sm" @click="openBind(record)">绑定域名</V2Button>
-                  <a-popconfirm :content="`确定删除模板「${record.name}」？腾讯云上的模板会同时删除`" @ok="remove(record)">
+                  <a-popconfirm :content="`确定删除模板「${record.name}」？云端的模板会同时删除`" @ok="remove(record)">
                     <V2Button type="text" size="sm" class="lt-danger">删除</V2Button>
                   </a-popconfirm>
                 </div>
@@ -89,7 +89,7 @@
             </a-table-column>
           </template>
           <template #empty>
-            <div class="lt-empty">还没有{{ tab === 'callback' ? '回调' : '录制' }}模板。可以新增，或从腾讯云导入已有模板。</div>
+            <div class="lt-empty">还没有{{ tab === 'callback' ? '回调' : '录制' }}模板。可以新增，或从云端导入已有模板。</div>
           </template>
         </a-table>
       </div>
@@ -148,7 +148,7 @@ const rows = computed(() => {
 })
 const failedCount = computed(() => current.value.filter((r) => r.syncStatus === 'failed' || r.syncStatus === 'pending').length)
 
-const sourceLabel = (s: string) => ({ local: '本系统创建', import: '从腾讯云导入', standard: '标准配置' } as Record<string, string>)[s] || s
+const sourceLabel = (s: string) => ({ local: '本系统创建', import: '从云端导入', standard: '标准配置' } as Record<string, string>)[s] || s
 
 const load = async () => {
   loading.value = true

@@ -27,7 +27,7 @@
               <a-form-item label="任务时间" field="timeRange" :rules="timeRangeRules">
                 <div class="ptf-field-col">
                   <a-range-picker v-model="taskForm.timeRange" show-time format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" :disabled-date="isPastDate" style="width: 100%" />
-                  <div class="ptf-tip">任务时长须小于 30 天，结束时间须晚于当前时间（腾讯云限制）</div>
+                  <div class="ptf-tip">任务时长须小于 30 天，结束时间须晚于当前时间（云平台限制）</div>
                 </div>
               </a-form-item>
               <a-form-item label="地域" field="region" :rules="[{ required: true, message: '请选择地域' }]">

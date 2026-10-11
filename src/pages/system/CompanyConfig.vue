@@ -38,14 +38,14 @@
             <div class="cc-field">
               <div class="cc-label">回调密钥</div>
               <a-input-password v-model="secretInputs.tencentCloudCallbackKey" :placeholder="secretPlaceholder('tencentCloudCallbackKey', '未设置')" class="cc-mono" />
-              <div class="cc-hint">与腾讯云直播回调模板中的「回调密钥」一致</div>
+              <div class="cc-hint">与直播回调模板中的「回调密钥」一致</div>
             </div>
           </div>
 
           <!-- 云盘存储 -->
           <template v-else-if="section.key === 'storage'">
             <!-- 云盘存储只支持腾讯云 COS；原先使用服务器本地存储的公司提示切换 -->
-            <div v-if="savedLocal" class="cc-notice">当前为服务器本地存储，已不再支持。请选择或新建存储桶并保存，切换为腾讯云 COS。</div>
+            <div v-if="savedLocal" class="cc-notice">当前为服务器本地存储，已不再支持。请选择或新建存储桶并保存，切换为云存储。</div>
             <template v-if="form.storageType === 'tencentCOS'">
               <!-- 先选择或新建存储桶（用已保存的云盘存储密钥），选中后带出 Bucket 地址 -->
               <div class="cc-field">
@@ -56,7 +56,7 @@
                     :options="bucketOptions"
                     :loading="bucketsLoading"
                     allow-search
-                    placeholder="选择本公司腾讯云账号下的存储桶"
+                    placeholder="选择本公司云账号下的存储桶"
                     class="cc-bucket-select"
                     @change="onPickBucket"
                   />
@@ -65,7 +65,7 @@
                 </div>
                 <div class="cc-hint">
                   <span v-if="bucketsError" class="cc-err">{{ bucketsError }}</span>
-                  <span v-else>使用已保存的密钥（{{ conf.tencentCosSecretId ? '单独设置的 COS 密钥' : '直播密钥' }}）；修改密钥后请先保存</span>
+                  <span v-else>使用已保存的密钥（{{ conf.tencentCosSecretId ? '单独设置的存储密钥' : '直播密钥' }}）；修改密钥后请先保存</span>
                 </div>
               </div>
               <CreateCosBucketModal
@@ -78,7 +78,7 @@
               />
               <div class="cc-field">
                 <div class="cc-label">Bucket 地址</div>
-                <a-input v-model="form.tencentCosBucketUrl" placeholder="选择存储桶后自动带出，也可直接填写 https://{bucket}.cos.{region}.myqcloud.com" class="cc-mono" />
+                <a-input v-model="form.tencentCosBucketUrl" placeholder="选择存储桶后自动带出，也可直接填写存储桶访问地址（https:// 开头）" class="cc-mono" />
                 <div v-if="parsedBucket.bucket" class="cc-chips">
                   <span class="cc-chip">Bucket 名称 <b>{{ parsedBucket.bucket }}</b></span>
                   <span class="cc-chip">区域 <b>{{ parsedBucket.region }}</b>（已从地址识别）</span>
@@ -102,7 +102,7 @@
                     <a-radio value="live">使用直播密钥</a-radio>
                     <a-radio value="own">单独设置</a-radio>
                   </a-radio-group>
-                  <div class="cc-hint">直播和存储在同一个腾讯云账号时无需重复填写</div>
+                  <div class="cc-hint">直播和存储在同一个云账号时无需重复填写</div>
                 </div>
                 <div class="cc-field">
                   <div class="cc-label">CDN 域名（可选）</div>
@@ -111,11 +111,11 @@
               </div>
               <div v-if="cosKeyMode === 'own'" class="cc-grid2">
                 <div class="cc-field">
-                  <div class="cc-label">COS SecretId</div>
+                  <div class="cc-label">存储 SecretId</div>
                   <a-input v-model="secretInputs.tencentCosSecretId" :placeholder="secretPlaceholder('tencentCosSecretId')" class="cc-mono" />
                 </div>
                 <div class="cc-field">
-                  <div class="cc-label">COS SecretKey</div>
+                  <div class="cc-label">存储 SecretKey</div>
                   <a-input-password v-model="secretInputs.tencentCosSecretKey" :placeholder="secretPlaceholder('tencentCosSecretKey')" class="cc-mono" />
                 </div>
               </div>
@@ -290,14 +290,14 @@ const changeCount = computed(() => Object.keys(payload.value).length)
 const liveStatus = computed(() => {
   const id = has('tencentCloudSecretId')
   const key = has('tencentCloudSecretKey')
-  if (!id && !key) return { level: 'off' as Level, summary: '需要腾讯云 SecretId 与 SecretKey' }
+  if (!id && !key) return { level: 'off' as Level, summary: '需要 SecretId 与 SecretKey' }
   if (!id || !key) return { level: 'warn' as Level, summary: `缺少 ${id ? 'SecretKey' : 'SecretId'}` }
   const region = form.tencentCloudRegion || '未设置区域'
   return { level: 'ok' as Level, summary: `${region} · ${has('tencentCloudCallbackKey') ? '回调密钥已设置' : '回调密钥未设置'}` }
 })
 
 const storageStatus = computed(() => {
-  if (savedLocal.value && !form.tencentCosBucketUrl) return { level: 'warn' as Level, summary: '服务器本地存储已不再支持，请改为腾讯云 COS' }
+  if (savedLocal.value && !form.tencentCosBucketUrl) return { level: 'warn' as Level, summary: '服务器本地存储已不再支持，请改为云存储' }
   const missing: string[] = []
   if (!form.tencentCosBucketUrl) missing.push('Bucket 地址')
   else {
@@ -307,15 +307,15 @@ const storageStatus = computed(() => {
   const keysOk = cosKeyMode.value === 'live'
     ? has('tencentCloudSecretId') && has('tencentCloudSecretKey')
     : has('tencentCosSecretId') && has('tencentCosSecretKey')
-  if (!keysOk) missing.push(cosKeyMode.value === 'live' ? '直播密钥' : 'COS 密钥')
-  if (missing.length) return { level: 'warn' as Level, summary: `腾讯云 COS · 缺少${missing.join('、')}` }
+  if (!keysOk) missing.push(cosKeyMode.value === 'live' ? '直播密钥' : '存储密钥')
+  if (missing.length) return { level: 'warn' as Level, summary: `云存储 · 缺少${missing.join('、')}` }
   const region = parsedBucket.value.region || form.tencentCosRegion
-  return { level: 'ok' as Level, summary: `腾讯云 COS · ${region}` }
+  return { level: 'ok' as Level, summary: `云存储 · ${region}` }
 })
 
 
 const sections = computed(() => [
-  { key: 'live' as SectionKey, title: '腾讯云直播', desc: '用于直播域名、推流 / 播放地址、社媒分发与直播回调', keyLink: 'https://console.cloud.tencent.com/cam/capi', status: liveStatus.value },
+  { key: 'live' as SectionKey, title: '云直播', desc: '用于直播域名、推流 / 播放地址、社媒分发与直播回调', keyLink: 'https://console.cloud.tencent.com/cam/capi', status: liveStatus.value },
   { key: 'storage' as SectionKey, title: '云盘存储', desc: '云盘上传的文件、直播录制与切片的保存位置', keyLink: '', status: storageStatus.value },
 ])
 

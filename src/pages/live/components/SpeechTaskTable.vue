@@ -18,7 +18,7 @@
         <a-button type="primary" @click="openCreate"><template #icon><icon-plus /></template>新建任务</a-button>
       </div>
     </div>
-    <div v-if="syncError" class="stt-alert">未能从火山同步任务状态：{{ syncError }}</div>
+    <div v-if="syncError" class="stt-alert">未能从同传服务同步任务状态：{{ syncError }}</div>
 
     <a-table :data="items" :loading="loading" :pagination="pagination" row-key="taskId" :scroll="{ x: 1000 }" @page-change="onPage" @page-size-change="onPageSize">
       <template #columns>
@@ -62,7 +62,7 @@
               <a-popconfirm v-if="statusOf(record).active && record.status !== 'prestop'" content="停止后任务结束、不能重新开启，可复制新建。确定停止？" @ok="stop(record)">
                 <a-button type="text" size="mini" status="warning" :loading="busy === record.taskId + 'stop'">停止</a-button>
               </a-popconfirm>
-              <a-popconfirm :content="statusOf(record).active ? '任务正在进行，删除会先停止任务并删除全部记录。确定删除？' : '删除后火山上的任务记录也会删除，不可恢复。确定删除？'" @ok="remove(record)">
+              <a-popconfirm :content="statusOf(record).active ? '任务正在进行，删除会先停止任务并删除全部记录。确定删除？' : '删除后同传服务上的任务记录也会删除，不可恢复。确定删除？'" @ok="remove(record)">
                 <a-button type="text" size="mini" status="danger" :loading="busy === record.taskId + 'delete'">删除</a-button>
               </a-popconfirm>
             </div>

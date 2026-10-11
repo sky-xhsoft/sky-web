@@ -22,7 +22,7 @@
             </div>
           </div>
           <div class="dtp-actions">
-            <V2Button type="secondary" :loading="importing" @click="doImport">从腾讯云导入</V2Button>
+            <V2Button type="secondary" :loading="importing" @click="doImport">从云端导入</V2Button>
             <V2Button :disabled="!ov.callbackBase" @click="standardVisible = true">应用标准配置</V2Button>
           </div>
         </V2Card>
@@ -91,7 +91,7 @@
                 <dd class="dtp-mono">AppName = {{ recRule.appName || '（空）' }} · {{ recRule.streamName || '全部流' }}</dd>
                 <dt>存储位置</dt>
                 <dd>
-                  <template v-if="recRule.record.cosStore === 'Y'">COS · <span class="dtp-mono">{{ recRule.record.cosBucket }} · {{ recRule.record.cosRegion }}</span></template>
+                  <template v-if="recRule.record.cosStore === 'Y'">存储桶 · <span class="dtp-mono">{{ recRule.record.cosBucket }} · {{ recRule.record.cosRegion }}</span></template>
                   <template v-else>云点播 VOD</template>
                 </dd>
                 <dt>存储路径</dt>
@@ -104,7 +104,7 @@
               <div v-if="recRule.syncError" class="dtp-sync-error">{{ recRule.syncError }}</div>
             </template>
             <div v-else class="dtp-empty">未绑定录制模板，推流不会自动录制</div>
-            <div class="dtp-note">录制为腾讯云付费增值功能，推流即产生录制费用。录制文件回调到达后，系统自动把文件转存到直播间的云盘目录。</div>
+            <div class="dtp-note">录制为云平台付费增值功能，推流即产生录制费用。录制文件回调到达后，系统自动把文件转存到直播间的云盘目录。</div>
           </V2Card>
         </div>
 
@@ -114,11 +114,11 @@
             <div class="dtp-card-title">
               高光切片配置
               <V2Tag :type="ov.highlight.count7d ? 'success' : 'neutral'">{{ ov.highlight.count7d ? `近 7 天收到 ${ov.highlight.count7d} 条` : '近 7 天未收到高光切片' }}</V2Tag>
-              <V2Tag type="info">仅支持在腾讯云控制台配置</V2Tag>
+              <V2Tag type="info">仅支持在云平台控制台配置</V2Tag>
             </div>
             <div class="dtp-card-actions">
               <V2Button type="secondary" size="sm" :disabled="!ov.highlight.callbackUrl" @click="copy(ov.highlight.callbackUrl)">复制回调地址</V2Button>
-              <a class="dtp-link" :href="`https://console.cloud.tencent.com/live/domainmanage/detail/${domain}?tab=tempConfig`" target="_blank" rel="noopener">打开腾讯云控制台</a>
+              <a class="dtp-link" :href="`https://console.cloud.tencent.com/live/domainmanage/detail/${domain}?tab=tempConfig`" target="_blank" rel="noopener">打开云平台控制台</a>
             </div>
           </div>
           <div class="dtp-hl-grid">
@@ -129,22 +129,22 @@
                 <dt>回调地址</dt><dd class="dtp-mono dtp-break">{{ ov.highlight.callbackUrl || '未配置系统回调地址' }}</dd>
                 <dt>切片存放</dt><dd>直播间云盘目录 / 高光切片</dd>
               </dl>
-              <div class="dtp-muted dtp-foot">腾讯云未开放高光切片的配置接口，本系统无法读取或修改其模板，只能根据实际收到的回调判断是否生效。</div>
+              <div class="dtp-muted dtp-foot">云平台未开放高光切片的配置接口，本系统无法读取或修改其模板，只能根据实际收到的回调判断是否生效。</div>
             </div>
             <div class="dtp-steps">
               <div class="dtp-steps-title">开启步骤</div>
               <ol>
-                <li>腾讯云控制台 → AI 智能 → 高光切片：创建高光切片模板，绑定推流域名 <b>{{ domain }}</b></li>
+                <li>云平台控制台 → AI 智能 → 高光切片：创建高光切片模板，绑定推流域名 <b>{{ domain }}</b></li>
                 <li>功能配置 → 直播回调：在该域名绑定的回调模板中，填写「高光切片回调」为左侧地址</li>
                 <li>推流并产生精彩片段后，这里显示收到的切片数，切片自动存入直播间云盘</li>
               </ol>
-              <div class="dtp-fee">高光切片为腾讯云付费增值功能，按直播时长计费</div>
+              <div class="dtp-fee">高光切片为云平台付费增值功能，按直播时长计费</div>
             </div>
           </div>
         </V2Card>
 
         <p class="dtp-muted dtp-effect">
-          生效说明：绑定后约 10 分钟生效；解绑或更换在<b>重新推流</b>后生效，不影响正在直播的流。配置以本系统为准，保存后自动同步到本公司的腾讯云账号。
+          生效说明：绑定后约 10 分钟生效；解绑或更换在<b>重新推流</b>后生效，不影响正在直播的流。配置以本系统为准，保存后自动同步到本公司的云账号。
         </p>
       </template>
     </a-spin>

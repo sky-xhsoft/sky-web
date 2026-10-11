@@ -1058,7 +1058,7 @@ export default {
       step2: 'CNAME配置'
     },
     configSteps: {
-      loginToDomainProvider: '登录您的域名服务商（如阿里云、腾讯云、DNSPod等）',
+      loginToDomainProvider: '登录您的域名服务商（域名注册商或 DNS 解析服务商）',
       findDnsSettings: '找到域名解析设置页面',
       addRecord: '添加以下 CNAME 记录'
     },
@@ -1099,7 +1099,7 @@ export default {
       modalTitle: '验证域名归属权',
       verified: '域名归属验证成功，可以继续添加。',
       notVerified: '该域名尚未通过归属验证，请按照下方信息在域名 DNS 服务商处添加解析记录。',
-      dnsTip: '请在域名解析服务商（如阿里云、腾讯云、DNSPod 等）添加以下 DNS 记录：',
+      dnsTip: '请在您的域名解析服务商添加以下 DNS 记录：',
       domain: '域名',
       hostRecord: '主机记录',
       recordType: '记录类型',
@@ -1188,13 +1188,13 @@ export default {
       },
       metrics: {
         title: '实时流指标',
-        hint: '每 10 秒自动刷新 · 来自腾讯云直播',
+        hint: '每 10 秒自动刷新 · 来自云直播服务',
         bitrate: '码率',
         fps: '帧率',
         resolution: '分辨率',
         viewers: '在线人数',
         unavailable: '暂未获取到推流数据（推流软件尚未推流或数据有延迟）',
-        notSupported: '腾讯云实时统计暂未接入，暂不提供码率、帧率等实时指标'
+        notSupported: '云直播实时统计暂未接入，暂不提供码率、帧率等实时指标'
       },
       progress: {
         title: '直播进度',
@@ -1377,7 +1377,7 @@ export default {
       fontSize: '字号',
       fontFamily: '字体',
       keywordLibrary: '关键词库',
-      keywordLibraryPlaceholder: '按"原文:译文"方式排列，用逗号隔开，例如"火山引擎:Volcengine,视频直播:Live"',
+      keywordLibraryPlaceholder: '按"原文:译文"方式排列，用逗号隔开，例如"视频直播:Live,同声传译:Simultaneous Interpretation"',
       errorWords: '易错词',
       errorWordsTip: '根据译文关键词进行强制纠错，单词不超50个字，最多添加500个纠错词，建议根据实际效果调整。',
       errorWordSource: '译文',
@@ -1659,7 +1659,7 @@ export default {
     maxChar: '超长截断字数',
     maxCharTip: '超出显示范围时字幕将被截断',
     glossaryMap: '关键词库',
-    glossaryMapPlaceholder: '按"原文:译文"逐条填写，用英文逗号分隔。例：火山引擎: Volcengine，视频直播: Live',
+    glossaryMapPlaceholder: '按"原文:译文"逐条填写，用英文逗号分隔。例：视频直播: Live，同声传译: Simultaneous Interpretation',
     replaceMap: '易错词',
     replaceMapPlaceholder: '根据译文关键词进行强制纠错，多个用逗号分隔，最多500个纠错词',
     createSuccess: '字幕同传任务创建成功',

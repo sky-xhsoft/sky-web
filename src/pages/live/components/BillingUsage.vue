@@ -14,7 +14,7 @@
         <div class="bl-k">播放流量</div>
         <div class="bl-v">{{ summary ? formatGB(summary.playGb) : '—' }}</div>
         <div class="bl-row"><span>{{ meteredText }}</span></div>
-        <div class="bl-foot">观众观看直播的下行流量，按腾讯云计费流量分摊到直播间；录制回放暂不计</div>
+        <div class="bl-foot">观众观看直播的下行流量，按云平台计费流量分摊到直播间；录制回放暂不计</div>
       </section>
       <section class="bl-tile" aria-label="存储空间">
         <div class="bl-k">存储空间（日均）</div>

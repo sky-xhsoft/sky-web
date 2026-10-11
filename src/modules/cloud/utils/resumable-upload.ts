@@ -48,7 +48,7 @@ const PRESIGN_BATCH = 50
 const PRESIGN_MIN_TTL = 5 * 60 * 1000
 
 /** 直传到存储桶时浏览器拿不到响应（通常是存储桶未配置跨域）的提示 */
-export const STORAGE_CORS_ERROR = '无法直接上传到云存储：存储桶可能未配置跨域（CORS）。请联系管理员在腾讯云控制台为存储桶添加跨域规则（允许本站来源的 PUT 请求，并暴露 ETag 响应头）'
+export const STORAGE_CORS_ERROR = '无法直接上传到云存储：存储桶可能未配置跨域（CORS）。请联系管理员在云平台控制台为存储桶添加跨域规则（允许本站来源的 PUT 请求，并暴露 ETag 响应头）'
 
 type HttpError = { response?: { status?: number }; config?: { url?: string } }
 

@@ -4,7 +4,7 @@
       <div class="br-head">
         <div>
           <div class="br-title">全部公司用量</div>
-          <div class="br-sub">{{ month }}，含使用平台腾讯云账号和自有账号的公司</div>
+          <div class="br-sub">{{ month }}，含使用平台云账号和自有云账号的公司</div>
         </div>
         <div class="br-actions">
           <a-range-picker v-model="range" value-format="YYYY-MM-DD" :disabled-date="isFuture" :style="{ width: '250px' }" aria-label="重新计量日期" />
@@ -26,7 +26,7 @@
               <div class="br-sub">ID {{ record.companyId }}</div>
             </template>
           </a-table-column>
-          <a-table-column title="腾讯云账号" :width="190">
+          <a-table-column title="云账号" :width="190">
             <template #cell="{ record }">
               <a-tag :color="record.account === 'global' ? 'arcoblue' : 'gray'" size="small">{{ accountLabel(record.account) }}</a-tag>
             </template>
@@ -43,7 +43,7 @@
       <div class="br-head">
         <div>
           <div class="br-title">播放流量对账</div>
-          <div class="br-sub">按流监控流量用于分摊，计费流量来自腾讯云账单；两者相差超过 3% 或拉取失败时需要核对</div>
+          <div class="br-sub">按流监控流量用于分摊，计费流量来自云平台账单；两者相差超过 3% 或拉取失败时需要核对</div>
         </div>
         <a-radio-group v-model="fluxFilter" type="button" size="small">
           <a-radio value="all">全部 {{ flux.length }}</a-radio>

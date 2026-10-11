@@ -15,7 +15,7 @@
         <a-input v-model="form.bucket" placeholder="小写字母、数字和 -，如 live-record" :max-length="50" allow-clear>
           <template v-if="appId" #suffix><span class="ccb-suffix">-{{ appId }}</span></template>
         </a-input>
-        <template #extra>腾讯云内全局唯一，创建后不能修改</template>
+        <template #extra>全局唯一，创建后不能修改</template>
       </a-form-item>
       <a-form-item field="region" label="地域" :rules="[{ required: true, message: '请选择地域' }]">
         <a-select v-model="form.region" :options="regionOptions" allow-search placeholder="选择地域" />
@@ -24,7 +24,7 @@
     </a-form>
     <div class="ccb-warn">
       存储桶将设为<b>公开读写</b>，并允许所有来源跨域访问（CORS 全部为 *）。任何人都可以读取、上传、覆盖、删除其中的文件，
-      产生的存储和流量费用计入本公司腾讯云账号。
+      产生的存储和流量费用计入本公司云账号。
     </div>
   </V2Modal>
 </template>

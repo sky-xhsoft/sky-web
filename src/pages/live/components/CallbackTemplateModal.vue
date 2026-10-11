@@ -46,7 +46,7 @@
       <div class="ctm-row">
         <span class="ctm-muted">高光切片回调</span>
         <div class="ctm-note">
-          腾讯云未开放此项接口，请在控制台的回调模板中填写
+          云平台未开放此项接口，请在云平台控制台的回调模板中填写
           <span class="ctm-mono ctm-strong">{{ defaults?.highlightUrl || '[系统回调地址]/api/v1/live/callback/highlight' }}</span>。
           本系统同步时只更新上方各项，不会清除控制台已填写的高光切片回调。
         </div>
@@ -57,7 +57,7 @@
       </a-form-item>
 
       <div class="ctm-info">
-        保存后自动同步到本公司的腾讯云账号<template v-if="boundDomains">。此模板已绑定 <b>{{ boundDomains }}</b>，修改会同时影响这些域名</template>，约 5 分钟后生效。
+        保存后自动同步到本公司的云账号<template v-if="boundDomains">。此模板已绑定 <b>{{ boundDomains }}</b>，修改会同时影响这些域名</template>，约 5 分钟后生效。
       </div>
     </a-form>
   </V2Modal>
@@ -139,7 +139,7 @@ const submit = async () => {
   saving.value = true
   try {
     const saved = await saveCallbackTemplate(payload, props.template?.id)
-    if (saved.syncStatus === 'synced') Message.success('已保存并同步到腾讯云')
+    if (saved.syncStatus === 'synced') Message.success('已保存并同步到云端')
     else Message.warning(`已保存，${SYNC_STATUS[saved.syncStatus].label}：${saved.syncError || ''}`)
     emit('saved', saved)
     emit('update:visible', false)

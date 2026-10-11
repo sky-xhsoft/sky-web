@@ -23,7 +23,7 @@
 
       <!-- 预览 -->
       <div v-else-if="plan">
-        <div class="scm-sub">推流域名 <b>{{ domain }}</b> · 确认后同步到本公司腾讯云账号</div>
+        <div class="scm-sub">推流域名 <b>{{ domain }}</b> · 确认后同步到本公司云账号</div>
 
         <div class="scm-step">
           <span class="scm-num">1</span>
@@ -37,7 +37,7 @@
               </div>
               <a-radio-group v-model="callbackMode" direction="vertical" class="scm-options">
                 <a-radio value="complete">补全现有模板（推荐：高光切片回调不受影响；该模板绑定的其他域名会同时补全）</a-radio>
-                <a-radio value="replace">新建 {{ plan.callback.standardName }} 并替换（高光切片回调需到腾讯云控制台重新填写）</a-radio>
+                <a-radio value="replace">新建 {{ plan.callback.standardName }} 并替换（高光切片回调需到云平台控制台重新填写）</a-radio>
               </a-radio-group>
             </template>
             <template v-else>
@@ -59,7 +59,7 @@
               存储至本公司 COS（{{ plan.record.cosBucket }} · {{ plan.record.cosRegion }}）· MP4 · 录制原始流 · 每 {{ plan.record.recordInterval / 60 }} 分钟一段 · 路径 <span class="scm-mono">{{ plan.record.cosPath }}</span>
             </div>
             <div v-if="plan.record.exists" class="scm-diff">
-              <div class="scm-box"><div class="scm-muted">当前</div>{{ plan.record.templateName }}（{{ plan.record.cloudTemplateId }}）· {{ Math.round(plan.record.currentInterval / 60) }} 分钟一段{{ plan.record.storesCompanyCos ? ' · 已存储至本公司 COS' : '' }}</div>
+              <div class="scm-box"><div class="scm-muted">当前</div>{{ plan.record.templateName }}（{{ plan.record.cloudTemplateId }}）· {{ Math.round(plan.record.currentInterval / 60) }} 分钟一段{{ plan.record.storesCompanyCos ? ' · 已存储至本公司存储桶' : '' }}</div>
               <icon-arrow-right />
               <div class="scm-box"><div class="scm-muted">替换为</div>{{ plan.record.standardName }} · {{ plan.record.recordInterval / 60 }} 分钟一段</div>
             </div>
@@ -70,8 +70,8 @@
         <div class="scm-warn">
           <div class="scm-warn-title">执行前请确认</div>
           <div>· 新绑定约 10 分钟生效；替换规则会先解绑再绑定，正在直播的流需<b>重新推流</b>后才按新配置</div>
-          <div>· 录制为腾讯云付费功能，推流期间产生录制和 COS 存储费用</div>
-          <div>· 高光切片的模板和回调地址只能在腾讯云控制台配置，本操作不会改动</div>
+          <div>· 录制为云平台付费功能，推流期间产生录制和存储费用</div>
+          <div>· 高光切片的模板和回调地址只能在云平台控制台配置，本操作不会改动</div>
           <div>· 被替换的模板不会被删除，可在「模板管理」中继续使用</div>
         </div>
       </div>
