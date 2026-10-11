@@ -21,7 +21,7 @@
           <span class="bl-num" :class="record.amount > 0 ? 'bl-pos' : 'bl-neg'">{{ formatSigned(record.amount) }}</span>
         </template></a-table-column>
         <a-table-column title="变动后余额" align="right" :width="130"><template #cell="{ record }"><span class="bl-num">{{ formatMoney(record.balanceAfter) }}</span></template></a-table-column>
-        <a-table-column title="说明"><template #cell="{ record }">
+        <a-table-column title="说明" :min-width="200"><template #cell="{ record }">
           <div>{{ record.remark || '—' }}</div>
           <div v-if="record.voucher || record.giftAmount" class="bl-sub">
             <span v-if="record.voucher">凭证 {{ record.voucher }}</span>

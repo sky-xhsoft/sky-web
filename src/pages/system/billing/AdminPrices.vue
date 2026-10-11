@@ -30,7 +30,7 @@
           <a-table-column title="状态" :width="90"><template #cell="{ record }">
             <a-tag size="small" :color="STATE[state(record)].color">{{ STATE[state(record)].label }}</a-tag>
           </template></a-table-column>
-          <a-table-column title="备注"><template #cell="{ record }"><span class="bl-sub">{{ record.remark || '—' }}</span></template></a-table-column>
+          <a-table-column title="备注" :min-width="140"><template #cell="{ record }"><span class="bl-sub">{{ record.remark || '—' }}</span></template></a-table-column>
           <a-table-column title="创建" :width="150"><template #cell="{ record }"><span class="bl-sub">{{ record.createBy }} · {{ fmt(record.createTime) }}</span></template></a-table-column>
           <a-table-column title="操作" :width="80"><template #cell="{ record }">
             <a-popconfirm v-if="state(record) === 'upcoming'" content="删除这个未生效的单价版本？" @ok="remove(record)">

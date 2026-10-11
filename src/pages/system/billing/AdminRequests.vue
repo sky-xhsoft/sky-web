@@ -15,7 +15,7 @@
         <a-table-column title="金额" align="right" :width="130"><template #cell="{ record }">
           <span class="bl-num" :class="record.amount > 0 ? 'bl-pos' : 'bl-neg'">{{ formatSigned(record.amount) }}</span>
         </template></a-table-column>
-        <a-table-column title="原因"><template #cell="{ record }">{{ record.reason }}</template></a-table-column>
+        <a-table-column title="原因" :min-width="180"><template #cell="{ record }">{{ record.reason }}</template></a-table-column>
         <a-table-column title="申请人" :width="100"><template #cell="{ record }">{{ record.requestBy }}</template></a-table-column>
         <a-table-column title="状态" :width="170"><template #cell="{ record }">
           <a-tag size="small" :color="STATUS[record.status].color">{{ STATUS[record.status].label }}</a-tag>

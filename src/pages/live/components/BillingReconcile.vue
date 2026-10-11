@@ -20,7 +20,7 @@
       </div>
       <a-table :data="data?.companies || []" :loading="loading" :pagination="false" row-key="companyId" :scroll="{ x: 760 }">
         <template #columns>
-          <a-table-column title="公司">
+          <a-table-column title="公司" :min-width="180">
             <template #cell="{ record }">
               <div class="br-name">{{ record.companyName || `公司 ${record.companyId}` }}</div>
               <div class="br-sub">ID {{ record.companyId }}</div>
@@ -53,7 +53,7 @@
       <a-table :data="shownFlux" :loading="loading" :pagination="shownFlux.length > 20 ? { pageSize: 20 } : false" row-key="id" :scroll="{ x: 900 }">
         <template #columns>
           <a-table-column title="日期" :width="110"><template #cell="{ record }"><span class="br-num">{{ record.usageDate }}</span></template></a-table-column>
-          <a-table-column title="账号 / 播放域名">
+          <a-table-column title="账号 / 播放域名" :min-width="200">
             <template #cell="{ record }">
               <div class="br-name">{{ record.playDomain }}</div>
               <div class="br-sub">{{ accountLabel(record.account) }} · {{ record.streamCount }} 条流</div>

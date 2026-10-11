@@ -17,7 +17,7 @@
     </div>
     <a-table :data="shown" :loading="loading" row-key="companyId" :pagination="shown.length > 20 ? { pageSize: 20 } : false" :scroll="{ x: 1000 }">
       <template #columns>
-        <a-table-column title="公司"><template #cell="{ record }">
+        <a-table-column title="公司" :min-width="180"><template #cell="{ record }">
           <div class="bl-name">{{ record.companyName }}</div><div class="bl-sub">ID {{ record.companyId }}</div>
         </template></a-table-column>
         <a-table-column title="余额" align="right" :width="140"><template #cell="{ record }">

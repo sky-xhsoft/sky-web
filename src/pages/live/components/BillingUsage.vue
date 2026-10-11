@@ -45,7 +45,7 @@
       <div class="bl-head"><span class="bl-title">直播间用量</span><span class="bl-sub">{{ rooms.length }} 个直播间</span></div>
       <a-table :data="rooms" :loading="loading" :pagination="rooms.length > 20 ? { pageSize: 20 } : false" row-key="roomId" :scroll="{ x: 720 }">
         <template #columns>
-          <a-table-column title="直播间">
+          <a-table-column title="直播间" :min-width="180">
             <template #cell="{ record }">
               <div class="bl-name">{{ record.roomName || `直播间 ${record.roomId}` }}</div>
               <div class="bl-sub">ID {{ record.roomId }}<a-tag v-if="record.deleted" size="small" class="bu-deleted">已删除</a-tag></div>

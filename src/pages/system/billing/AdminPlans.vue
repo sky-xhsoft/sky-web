@@ -7,7 +7,7 @@
       </div>
       <a-table :data="plans" :loading="loading" row-key="id" :pagination="false" :scroll="{ x: 900 }">
         <template #columns>
-          <a-table-column title="套餐"><template #cell="{ record }">
+          <a-table-column title="套餐" :min-width="200"><template #cell="{ record }">
             <div class="bl-name">{{ record.name }}</div><div class="bl-sub">{{ record.description || '—' }}</div>
           </template></a-table-column>
           <a-table-column title="月费" align="right" :width="120"><template #cell="{ record }"><span class="bl-num">{{ formatMoney(record.monthlyFee) }}</span></template></a-table-column>

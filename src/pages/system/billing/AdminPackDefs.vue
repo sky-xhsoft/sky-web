@@ -7,7 +7,7 @@
       </div>
       <a-table :data="rows" :loading="loading" row-key="id" :pagination="false" :scroll="{ x: 860 }">
         <template #columns>
-          <a-table-column title="资源包"><template #cell="{ record }">
+          <a-table-column title="资源包" :min-width="200"><template #cell="{ record }">
             <div class="bl-name">{{ record.name }}</div><div class="bl-sub">{{ record.description || '—' }}</div>
           </template></a-table-column>
           <a-table-column title="计费点" :width="100"><template #cell="{ record }">{{ METERS[record.meter].label }}</template></a-table-column>
