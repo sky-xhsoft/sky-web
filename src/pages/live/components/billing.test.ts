@@ -16,6 +16,7 @@ describe('费用中心显示规则', () => {
   it('流量与存储', () => {
     expect(formatGB(0)).toBe('0 GB')
     expect(formatGB(0.005)).toBe('5.1 MB')
+    expect(formatGB(0.00001)).toBe('< 0.1 MB')
     expect(formatGB(0.5)).toBe('512 MB')
     expect(formatGB(1282.5253)).toBe('1,282.53 GB')
   })

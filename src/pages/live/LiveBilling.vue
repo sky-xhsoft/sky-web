@@ -26,7 +26,7 @@
           <section class="lb-meter" aria-label="播放流量">
             <div class="lb-meter-k">播放流量</div>
             <div class="lb-meter-v">{{ summary ? formatGB(summary.playGb) : '—' }}</div>
-            <div class="lb-meter-sub"><span>{{ summary?.fluxLatestDay ? `已统计到 ${summary.fluxLatestDay}` : '本月暂无流量数据' }}</span></div>
+            <div class="lb-meter-sub"><span>{{ meteredText }}</span></div>
             <div class="lb-meter-rule">观众观看直播的下行流量，按腾讯云计费流量分摊到直播间；录制回放暂不计</div>
           </section>
           <section class="lb-meter" aria-label="存储空间">
@@ -62,7 +62,7 @@
               <a-table-column title="直播间">
                 <template #cell="{ record }">
                   <div class="lb-name">{{ record.roomName || `直播间 ${record.roomId}` }}</div>
-                  <div class="lb-sub">ID {{ record.roomId }}</div>
+                  <div class="lb-sub">ID {{ record.roomId }}<a-tag v-if="record.deleted" size="small" class="lb-deleted">已删除</a-tag></div>
                 </template>
               </a-table-column>
               <a-table-column title="直播时长" :width="170" align="right">
@@ -101,8 +101,9 @@
           <a-table-column title="时长" align="right" :width="100"><template #cell="{ record }">
             <span class="lb-num">{{ formatSeconds(record.endTime ? record.seconds : secondsSince(record.startTime, record.lastSeenTime)) }}</span>
           </template></a-table-column>
-          <a-table-column title="结束方式" :width="150"><template #cell="{ record }">
+          <a-table-column title="结束方式" :width="200"><template #cell="{ record }">
             <span class="lb-sub">{{ record.endTime ? END_SOURCE[record.endSource] || '—' : '—' }}</span>
+            <a-tag v-if="!record.counted" size="small" color="gray" class="lb-uncounted">未计入（不足 60 秒）</a-tag>
           </template></a-table-column>
         </template>
       </a-table>
@@ -118,6 +119,7 @@ import dayjs from 'dayjs'
 import * as echarts from '@/utils/echarts'
 import { V2Button, V2Card, V2PageHeader } from '@/components/ui'
 import { useAuthStore } from '@/stores/auth'
+import { useThemeStore } from '@/stores/theme'
 import { SYSTEM_CENTER_COMPANY_ID } from '@/constants/subsystems'
 import { getLiveSessions, getUsageDaily, getUsageRooms, getUsageSummary, type DailyUsage, type LiveSession, type RoomUsage, type UsageSummary } from '@/api/billing'
 import { END_SOURCE, STORAGE_ITEMS, formatGB, formatMinutes, formatSeconds, recentMonths } from './components/billing'
@@ -133,6 +135,13 @@ const loading = ref(false)
 const summary = ref<UsageSummary | null>(null)
 const daily = ref<DailyUsage[]>([])
 const rooms = ref<RoomUsage[]>([])
+
+// 流量按天计量：以已计量的天数为准，区分「没有计量」和「流量为 0」
+const meteredText = computed(() => {
+  const s = summary.value
+  if (!s || !s.fluxDays) return '本月还没有计量播放流量'
+  return `已统计 ${s.fluxDays} 天，截至 ${s.fluxLatestDay}`
+})
 
 const errMsg = (e: any, fallback: string) => e?.response?.data?.message || e?.message || fallback
 
@@ -174,6 +183,9 @@ const drawChart = () => {
   }, true)
 }
 const onResize = () => chart?.resize()
+// 切换明暗主题后按新的颜色重画
+const themeStore = useThemeStore()
+watch(() => themeStore.theme, () => nextTick(drawChart))
 watch(tab, async (v) => {
   if (v === 'usage') {
     await nextTick()
@@ -224,23 +236,25 @@ onUnmounted(() => {
 
 <style scoped>
 .live-billing-page { display: flex; flex-direction: column; gap: 16px; }
-.lb-trial { padding: 10px 14px; border-radius: 6px; background: rgb(var(--arcoblue-1)); color: rgb(var(--arcoblue-7)); font-size: 13px; }
+.lb-trial { padding: 10px 14px; border-radius: 6px; background: var(--info-bg); color: var(--brand-blue); font-size: 13px; }
 .lb-tabs :deep(.arco-tabs-content) { padding-top: 16px; }
 .lb-meters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
-.lb-meter { background: var(--color-bg-2); border: 1px solid var(--color-border-2); border-radius: 8px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.lb-meter-k { font-size: 13px; color: var(--color-text-3); }
-.lb-meter-v { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--color-text-1); }
-.lb-meter-sub { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--color-text-2); }
-.lb-live { color: rgb(var(--green-6)); }
-.lb-meter-rule { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--color-border-1); font-size: 12px; color: var(--color-text-3); line-height: 1.6; }
-.lb-items { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--color-border-1); font-size: 12px; color: var(--color-text-3); }
+.lb-meter { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.lb-meter-k { font-size: 13px; color: var(--text-tertiary); }
+.lb-meter-v { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.lb-meter-sub { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--text-secondary); }
+.lb-live { color: var(--success); }
+.lb-meter-rule { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border-light); font-size: 12px; color: var(--text-tertiary); line-height: 1.6; }
+.lb-items { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border-light); font-size: 12px; color: var(--text-tertiary); }
 .lb-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px 0; flex-wrap: wrap; }
 .lb-card-title { font-weight: 600; }
 .lb-chart { height: 280px; margin: 8px 12px 12px; }
 .lb-name { font-weight: 500; }
-.lb-sub { font-size: 12px; color: var(--color-text-3); }
+.lb-sub { font-size: 12px; color: var(--text-tertiary); }
 .lb-num { font-variant-numeric: tabular-nums; }
-.lb-empty { padding: 28px 0; color: var(--color-text-3); }
+.lb-deleted { margin-left: 6px; }
+.lb-uncounted { display: block; width: fit-content; margin-top: 2px; }
+.lb-empty { padding: 28px 0; color: var(--text-tertiary); }
 @media (max-width: 900px) {
   .lb-meters { grid-template-columns: minmax(0, 1fr); }
 }

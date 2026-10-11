@@ -259,7 +259,7 @@ onMounted(load)
 
 <style scoped>
 .live-templates-page { display: flex; flex-direction: column; gap: 16px; }
-.lt-alert { padding: 10px 14px; border-radius: 6px; background: rgb(var(--orange-1)); color: rgb(var(--orange-7)); font-size: 13px; }
+.lt-alert { padding: 10px 14px; border-radius: 6px; background: var(--warning-bg); color: var(--warning); font-size: 13px; }
 .lt-card { overflow: hidden; }
 .lt-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 0 20px; border-bottom: 1px solid var(--color-border-1); }
 .lt-tabs :deep(.arco-tabs-content) { display: none; }

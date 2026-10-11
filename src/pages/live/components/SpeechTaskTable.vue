@@ -186,7 +186,7 @@ defineExpose({ reload })
 .stt-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .stt-filters, .stt-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .stt-tip { font-size: 12px; color: var(--color-text-3); }
-.stt-alert { padding: 8px 12px; border-radius: 6px; background: rgb(var(--orange-1)); color: rgb(var(--orange-7)); font-size: 13px; }
+.stt-alert { padding: 8px 12px; border-radius: 6px; background: var(--warning-bg); color: var(--warning); font-size: 13px; }
 .stt-name { font-weight: 600; }
 .stt-sub { font-size: 12px; color: var(--color-text-3); }
 .stt-mono { font-family: Consolas, monospace; }

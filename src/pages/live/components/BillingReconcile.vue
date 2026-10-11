@@ -137,12 +137,12 @@ const recompute = async () => {
 
 <style scoped>
 .br { display: flex; flex-direction: column; gap: 16px; }
-.br-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 20px; flex-wrap: wrap; border-bottom: 1px solid var(--color-border-1); }
+.br-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 20px; flex-wrap: wrap; border-bottom: 1px solid var(--border-light); }
 .br-title { font-weight: 600; }
 .br-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .br-name { font-weight: 500; }
-.br-sub { font-size: 12px; color: var(--color-text-3); }
+.br-sub { font-size: 12px; color: var(--text-tertiary); }
 .br-msg { margin-top: 2px; line-height: 1.5; }
 .br-num { font-variant-numeric: tabular-nums; }
-.br-empty { padding: 28px 0; color: var(--color-text-3); }
+.br-empty { padding: 28px 0; color: var(--text-tertiary); }
 </style>

@@ -13,6 +13,7 @@ export interface UsageSummary {
   storageLatestDay: string
   storageItems: Record<string, number>
   fluxLatestDay: string
+  fluxDays: number
   liveRooms: number
   onlineRooms: number
 }
@@ -31,6 +32,7 @@ export interface RoomUsage {
   liveSeconds: number
   playGb: number
   sessions: number
+  deleted: boolean
 }
 
 export interface LiveSession {
@@ -43,6 +45,7 @@ export interface LiveSession {
   lastSeenTime: string
   seconds: number
   endSource: '' | 'callback' | 'patrol' | 'cap'
+  counted: boolean
 }
 
 export interface CompanyUsage {

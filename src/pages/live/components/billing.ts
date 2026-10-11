@@ -20,8 +20,10 @@ export const formatSeconds = (seconds: number) => {
 /** 流量、存储：≥ 1 GB 保留 2 位，< 1 GB 换算为 MB */
 export const formatGB = (gb: number) => {
   const v = gb || 0
-  if (v === 0) return '0 GB'
-  if (v < 1) return `${(v * 1024).toFixed(v * 1024 < 10 ? 1 : 0)} MB`
+  if (v <= 0) return '0 GB'
+  const mb = v * 1024
+  if (mb < 0.1) return '< 0.1 MB'
+  if (v < 1) return `${mb.toFixed(mb < 10 ? 1 : 0)} MB`
   return `${v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} GB`
 }
 
