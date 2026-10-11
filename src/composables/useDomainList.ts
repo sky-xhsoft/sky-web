@@ -26,6 +26,21 @@ export interface DomainInfo {
   cnameConfigured?: number
 }
 
+// 常见的两级公共后缀，主机记录要去掉整个后缀加主域名
+const TWO_LEVEL_SUFFIXES = ['com.cn', 'net.cn', 'org.cn', 'gov.cn', 'edu.cn', 'ac.cn', 'com.hk', 'com.tw', 'co.uk']
+
+/** DNS 解析的主机记录：skyttt.skyzhou.cn → skyttt，主域名本身为 @ */
+export function cnameHost(domain: string): string {
+  const labels = domain.toLowerCase().split('.')
+  const rootLabels = TWO_LEVEL_SUFFIXES.includes(labels.slice(-2).join('.')) ? 3 : 2
+  return labels.length > rootLabels ? domain.split('.').slice(0, labels.length - rootLabels).join('.') : '@'
+}
+
+/** 腾讯云未返回 CNAME 时的默认值：推流域名 .tlivepush.com，播放域名 .liveplay.com */
+export function defaultCname(domain: string, type: number): string {
+  return domain + (type === 0 ? '.tlivepush.com' : '.liveplay.com')
+}
+
 export interface UseDomainListOptions {
   /** 默认域名类型筛选 (0=推流, 1=播放, undefined=全部) */
   defaultType?: number
@@ -183,6 +198,7 @@ export function useDomainList(options: UseDomainListOptions = {}) {
   const submitting = ref(false)
   const currentStep = ref(1)
   const addedDomainName = ref('')
+  const addedDomainType = ref(0)
   const cnameStatus = ref(0)
   const addFormRef = ref<FormInstance>()
   const addForm = reactive({ domainName: '', domainType: 0, region: 'global', tags: '' })
@@ -258,6 +274,7 @@ export function useDomainList(options: UseDomainListOptions = {}) {
       await addDomain({ domainName: addForm.domainName, domainType: addForm.domainType })
       Message.success('添加成功')
       addedDomainName.value = addForm.domainName
+      addedDomainType.value = addForm.domainType
       cnameStatus.value = 0
       needVerify.value = false
       verifyOwnerInfo.value = null
@@ -306,7 +323,10 @@ export function useDomainList(options: UseDomainListOptions = {}) {
 
   const cnameRecords = computed(() => {
     if (!addedDomainName.value) return []
-    return [{ domain: addedDomainName.value, host: '@', type: 'CNAME', value: addedDomainName.value + '.liveplay.com' }]
+    const name = addedDomainName.value
+    // 以腾讯云返回的 TargetDomain 为准（添加后刷新列表取得），未取到时按域名类型给默认值
+    const cname = domains.value.find((d) => d.name === name)?.cname || defaultCname(name, addedDomainType.value)
+    return [{ domain: name, host: cnameHost(name), type: 'CNAME', value: cname }]
   })
 
   onMounted(() => loadDomains())
