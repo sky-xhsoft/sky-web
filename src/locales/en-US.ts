@@ -260,6 +260,7 @@ export default {
     pullStream: 'Social Media Distribution',
     liveTemplates: 'Templates',
     liveSpeechTasks: 'Live Interpretation',
+    liveBilling: 'Billing',
     createTask: 'Create Task',
     editTask: 'Edit Task',
     highlightClips: 'Highlight Clips',

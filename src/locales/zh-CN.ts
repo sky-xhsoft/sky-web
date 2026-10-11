@@ -260,6 +260,7 @@ export default {
     pullStream: '社媒分发',
     liveTemplates: '模板管理',
     liveSpeechTasks: '同传字幕',
+    liveBilling: '费用中心',
     createTask: '创建分发任务',
     editTask: '编辑分发任务',
     highlightClips: '高光切片',
