@@ -120,7 +120,7 @@
             <div class="cc-field">
               <div class="cc-label">火山方舟推理接入点</div>
               <a-input v-model="form.arkModel" placeholder="例如 ep-20261011xxxxxx-xxxxx" class="cc-mono" />
-              <div class="cc-hint">在火山方舟控制台「在线推理」创建豆包模型接入点后填写</div>
+              <div class="cc-hint">固定使用北京区域（cn-beijing）：请在火山方舟控制台「在线推理」的北京区域创建豆包模型接入点，填写 ep- 开头的接入点 ID</div>
             </div>
           </div>
 
