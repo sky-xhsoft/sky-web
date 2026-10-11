@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import dayjs from 'dayjs'
-import { ruleToSpeechForm, buildSpeechTaskRule, defaultSpeechForm, delayRangeOf, parseGlossary, pipeOf, suggestedDelay, validateSpeechForm, validateSpeechFormDetail, applyPreset, mergePairs, glossaryLength, type SpeechForm, type TermPair } from './speechTask'
+import { checkCustomSize, sizeLabel, ruleToSpeechForm, buildSpeechTaskRule, defaultSpeechForm, delayRangeOf, parseGlossary, pipeOf, suggestedDelay, validateSpeechForm, validateSpeechFormDetail, applyPreset, mergePairs, glossaryLength, type SpeechForm, type TermPair } from './speechTask'
 
 const base = (): SpeechForm => ({
   ...defaultSpeechForm(),
@@ -145,5 +145,22 @@ describe('复制新建：Rule 还原为表单', () => {
       expect(buildSpeechTaskRule(back)).toEqual(rule)
       expect(back.name).toBe('zgbtest-副本')
     }
+  })
+})
+
+describe('预览尺寸', () => {
+  it('尺寸文案与宽高比', () => {
+    expect(sizeLabel('1920x1080')).toBe('1920 * 1080 (16:9)')
+    expect(sizeLabel('1534x864')).toBe('1534 * 864 (16:9)')
+    expect(sizeLabel('1440x900')).toBe('1440 * 900 (16:10)')
+    expect(sizeLabel('1080x1920')).toBe('1080 * 1920 (9:16)')
+    expect(sizeLabel('1000x700')).toBe('1000 * 700 (10:7)')
+    expect(sizeLabel('bad')).toBe('1920 * 1080 (16:9)')
+  })
+  it('自定义尺寸校验', () => {
+    expect(checkCustomSize(1680, 1050)).toBe('')
+    expect(checkCustomSize(50, 1050)).not.toBe('')
+    expect(checkCustomSize(undefined, 1050)).not.toBe('')
+    expect(checkCustomSize(8000, 1050)).not.toBe('')
   })
 })

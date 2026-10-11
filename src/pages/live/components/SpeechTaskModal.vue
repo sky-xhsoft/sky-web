@@ -39,7 +39,7 @@
           {{ s.title }}
           <span v-if="s.key >= 3" class="stm-nav-opt">可选</span>
         </button>
-        <div class="stm-nav-note">推流到转推地址成功后开始计费，关闭任务后停止；每个账号同时最多运行 2 条任务。</div>
+        <div class="stm-nav-note">推流到转推流地址成功后开始计费，关闭任务后停止；每个账号同时最多运行 2 条任务。</div>
       </nav>
 
       <!-- 中：步骤内容（v-show 保留各步骤的输入） -->
@@ -56,27 +56,34 @@
               <span class="ss-label ss-req">转推时间</span>
               <a-range-picker v-model="form.timeRange" show-time format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" :disabled-date="isPastDate" style="width: 100%" />
             </div>
-            <div v-if="!record" class="ss-field ss-field-full">
-              <span class="ss-label">源直播间</span>
-              <a-select v-model="sourceRoomId" placeholder="选择直播间，自动填写源流地址（也可直接填写下方地址）" allow-clear allow-search aria-label="源直播间" @change="onSourceRoomChange">
-                <a-option v-for="r in rooms" :key="r.id" :value="String(r.id)">{{ r.roomName || `直播间${r.id}` }}</a-option>
-              </a-select>
+            <!-- 源：直播间 → 流地址 -->
+            <div class="ss-field-full stm-pair">
+              <div class="ss-field">
+                <span class="ss-label">源直播间</span>
+                <a-input v-if="record" :model-value="record.roomName || `直播间${record.id}`" disabled aria-label="源直播间" />
+                <a-select v-else v-model="sourceRoomId" placeholder="选择直播间（可选）" allow-clear allow-search aria-label="源直播间" @change="onSourceRoomChange">
+                  <a-option v-for="r in rooms" :key="r.id" :value="String(r.id)">{{ r.roomName || `直播间${r.id}` }}</a-option>
+                </a-select>
+              </div>
+              <div class="ss-field">
+                <label class="ss-label ss-req" for="stm-src">源流地址</label>
+                <a-input id="stm-src" v-model="form.sourceUrl" placeholder="请输入拉流地址" allow-clear />
+                <div class="ss-tip">需要拉取的原始流地址，支持 RTMP、FLV；选择源直播间后自动填写其播放地址</div>
+              </div>
             </div>
-            <div class="ss-field ss-field-full">
-              <label class="ss-label ss-req" for="stm-src">源流地址</label>
-              <a-input id="stm-src" v-model="form.sourceUrl" placeholder="请输入拉流地址" allow-clear />
-              <div class="ss-tip">需要拉取的原始流地址，支持 RTMP、FLV{{ room?.roomName ? `，默认为直播间「${room.roomName}」的播放地址` : '' }}</div>
-            </div>
-            <div class="ss-field ss-field-full">
-              <label class="ss-label ss-req" for="stm-dst">转推地址</label>
-              <a-input id="stm-dst" v-model="form.targetUrl" placeholder="请输入转推的推流地址" allow-clear>
-                <template #append>
-                  <a-select v-model="targetRoomId" placeholder="从直播间选择" allow-clear :style="{ width: '170px' }" :bordered="false" aria-label="从直播间选择转推地址" @change="onTargetRoomChange">
-                    <a-option v-for="r in targetRooms" :key="r.id" :value="String(r.id)">{{ r.roomName || `直播间${r.id}` }}</a-option>
-                  </a-select>
-                </template>
-              </a-input>
-              <div class="ss-tip">同传后转推的地址，支持 RTMP；也可以从直播间选择，自动生成其推流地址</div>
+            <!-- 转推：直播间 → 流地址 -->
+            <div class="ss-field-full stm-pair">
+              <div class="ss-field">
+                <span class="ss-label">转推直播间</span>
+                <a-select v-model="targetRoomId" placeholder="选择直播间（可选）" allow-clear allow-search aria-label="转推直播间" @change="onTargetRoomChange">
+                  <a-option v-for="r in targetRooms" :key="r.id" :value="String(r.id)">{{ r.roomName || `直播间${r.id}` }}</a-option>
+                </a-select>
+              </div>
+              <div class="ss-field">
+                <label class="ss-label ss-req" for="stm-dst">转推流地址</label>
+                <a-input id="stm-dst" v-model="form.targetUrl" placeholder="请输入转推的推流地址" allow-clear />
+                <div class="ss-tip">同传后转推的地址，支持 RTMP；选择转推直播间后自动生成其推流地址</div>
+              </div>
             </div>
           </div>
         </section>
@@ -302,11 +309,13 @@ const handleCancel = () => {
 .stm-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--color-border-2); background: var(--color-bg-2); flex-wrap: wrap; }
 .stm-foot-tip { font-size: 12px; color: var(--color-text-3); }
 .stm-foot-btns { display: flex; gap: 8px; }
+.stm-pair { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 16px; }
 @media (max-width: 1100px) {
   .stm-body, .stm-body.is-step-3 { grid-template-columns: minmax(0, 1fr); height: auto; max-height: 75vh; overflow-y: auto; }
   .stm-nav { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--color-border-2); }
   .stm-nav-note { display: none; }
   .stm-main, .stm-aside { overflow: visible; }
+  .stm-pair { grid-template-columns: minmax(0, 1fr); gap: 14px; }
 }
 </style>
 <style>

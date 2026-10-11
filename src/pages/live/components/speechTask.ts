@@ -90,6 +90,37 @@ export const SIZES = [
   { value: '1920x1080', label: '1920 * 1080 (16:9)' },
 ]
 
+const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a)
+const COMMON_RATIOS: [number, number][] = [[16, 9], [16, 10], [4, 3], [21, 9], [9, 16], [10, 16], [3, 4], [1, 1]]
+
+/** 预览尺寸 "1920x1080" → 宽高；非法时为 1920×1080 */
+export const parseSize = (v: string) => {
+  const [w, h] = (v || '').split('x').map(Number)
+  return w > 0 && h > 0 ? { w, h } : { w: 1920, h: 1080 }
+}
+
+/** 宽高比文案：接近常见比例（误差 1.5% 内）时用常见比例，否则约分 */
+export const sizeRatio = (w: number, h: number) => {
+  const r = w / h
+  const hit = COMMON_RATIOS.find(([a, b]) => Math.abs(r - a / b) / (a / b) < 0.015)
+  if (hit) return `${hit[0]}:${hit[1]}`
+  const g = gcd(w, h)
+  return `${w / g}:${h / g}`
+}
+
+/** 尺寸文案，如 "1920 * 1080 (16:9)" */
+export const sizeLabel = (v: string) => {
+  const { w, h } = parseSize(v)
+  return `${w} * ${h} (${sizeRatio(w, h)})`
+}
+
+/** 自定义尺寸校验：宽高为 100–7680 的整数，返回错误信息或空串 */
+export const checkCustomSize = (w: number | undefined, h: number | undefined) => {
+  if (!Number.isInteger(w) || !Number.isInteger(h)) return '请输入整数宽高'
+  if (w! < 100 || h! < 100 || w! > 7680 || h! > 7680) return '宽高需在 100–7680 之间'
+  return ''
+}
+
 /** 预设样式：白字黑边、黑字白边、白字蓝边 */
 export const PRESETS = [
   { label: '白字黑色描边', font: '#ffffff', border: '#000000' },
@@ -313,9 +344,9 @@ const validateStep1 = (f: SpeechForm): string | null => {
   if (!src) return '请输入源流地址'
   if (!/^rtmps?:\/\//i.test(src) && !/^https?:\/\/.+\.flv(\?|$)/i.test(src)) return '源流地址仅支持 RTMP、FLV 地址'
   const dst = f.targetUrl.trim()
-  if (!dst) return '请输入转推地址'
-  if (!/^rtmps?:\/\//i.test(dst)) return '转推地址仅支持 RTMP 地址'
-  if (src === dst) return '转推地址不能与源流地址相同'
+  if (!dst) return '请输入转推流地址'
+  if (!/^rtmps?:\/\//i.test(dst)) return '转推流地址仅支持 RTMP 地址'
+  if (src === dst) return '转推流地址不能与源流地址相同'
   return null
 }
 

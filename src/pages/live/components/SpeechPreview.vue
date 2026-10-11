@@ -1,16 +1,17 @@
 <template>
   <div class="spv">
-    <template v-if="controls">
-      <div class="spv-bar">
-        <a-select v-model="form.previewSize" class="spv-size" aria-label="源流尺寸">
-          <template #prefix><icon-desktop /></template>
-          <a-option v-for="s in SIZES" :key="s.value" :value="s.value">{{ s.label }}</a-option>
-        </a-select>
+    <div class="spv-bar">
+      <div class="spv-size"><SpeechSizePicker v-model="form.previewSize" /></div>
+      <template v-if="controls">
         <a-button @click="bgInput?.click()"><template #icon><icon-upload /></template>上传背景图</a-button>
         <a-button v-if="form.bgImage" type="text" @click="form.bgImage = ''">移除</a-button>
         <input ref="bgInput" type="file" accept="image/*" class="spv-hidden" aria-label="上传背景图" @change="onBgUpload" />
-      </div>
-    </template>
+      </template>
+      <a-tooltip v-if="zoomable" content="放大预览">
+        <a-button aria-label="放大预览" @click="zoomOpen = true"><template #icon><icon-fullscreen /></template></a-button>
+      </a-tooltip>
+    </div>
+    <div v-if="!controls" class="spv-tip">请选择源流尺寸，转码字幕会按源流尺寸等比缩放</div>
     <div class="spv-stage" :style="stageStyle">
       <span class="spv-size-tag">{{ sizeLabel }}</span>
       <div v-if="form.subtitleOn" class="spv-subs" :style="subsStyle">
@@ -27,18 +28,32 @@
           <template #suffix><span class="spv-count">{{ (form.testMain || '').length }}/{{ form.rows || '自适应' }}</span></template>
         </a-input>
       </label>
-      <div class="spv-tip">按源流尺寸等比缩放；超出显示范围时，内容将会被截断</div>
+      <div class="spv-tip">请选择源流尺寸，转码字幕会按源流尺寸等比缩放；超出显示范围时，内容将会被截断</div>
     </template>
+
+    <a-modal v-if="zoomable" v-model:visible="zoomOpen" title="预览效果" :footer="false" :width="Math.max(zoom.width, 420) + 48" unmount-on-close>
+      <SpeechPreview :width="zoom.width" :max-height="zoom.maxHeight" :zoomable="false" />
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue'
-import { IconDesktop, IconUpload } from '@arco-design/web-vue/es/icon'
-import { SIZES, SPEECH_FORM_KEY, textStroke, type SpeechStyle } from './speechTask'
+import { IconFullscreen, IconUpload } from '@arco-design/web-vue/es/icon'
+import { SPEECH_FORM_KEY, parseSize, textStroke, type SpeechStyle } from './speechTask'
+import SpeechSizePicker from './SpeechSizePicker.vue'
 
-const props = withDefaults(defineProps<{ width?: number; controls?: boolean }>(), { width: 300, controls: false })
+// controls：显示背景图与测试内容；zoomable：可放大预览；maxHeight：画面最大高度（默认宽度的 0.9 倍）
+const props = withDefaults(defineProps<{ width?: number; maxHeight?: number; controls?: boolean; zoomable?: boolean }>(), { width: 300, controls: false, zoomable: true })
 const form = inject(SPEECH_FORM_KEY)!
+
+const zoomOpen = ref(false)
+// 放大预览：按窗口可用宽高等比放大，竖屏尺寸按高度收窄
+const zoom = computed(() => {
+  const maxHeight = Math.max(240, window.innerHeight - 240)
+  const { w, h } = parseSize(form.previewSize)
+  return { width: Math.round(Math.min(960, window.innerWidth - 96, (maxHeight * w) / h)), maxHeight }
+})
 
 const bgInput = ref<HTMLInputElement | null>(null)
 const onBgUpload = (e: Event) => {
@@ -53,15 +68,14 @@ const onBgUpload = (e: Event) => {
   reader.readAsDataURL(file)
 }
 
-const src = computed(() => {
-  const [w, h] = form.previewSize.split('x').map(Number)
-  return { w: w || 1920, h: h || 1080 }
-})
+const src = computed(() => parseSize(form.previewSize))
 const sizeLabel = computed(() => `${src.value.w} × ${src.value.h}`)
-const scale = computed(() => props.width / src.value.w)
+// 高度不超过 maxHeight（竖屏尺寸按高度收窄并居中）
+const stageW = computed(() => Math.min(props.width, Math.round(((props.maxHeight ?? props.width * 0.9) * src.value.w) / src.value.h)))
+const scale = computed(() => stageW.value / src.value.w)
 const stageStyle = computed(() => ({
-  width: `${props.width}px`,
-  height: `${Math.round((props.width * src.value.h) / src.value.w)}px`,
+  width: `${stageW.value}px`,
+  height: `${Math.round((stageW.value * src.value.h) / src.value.w)}px`,
   backgroundImage: form.bgImage ? `url(${form.bgImage})` : 'linear-gradient(180deg, #2a3a55 0%, #121c30 100%)',
 }))
 const subsStyle = computed(() => ({ left: `${form.marginLr}%`, right: `${form.marginLr}%`, bottom: `${form.marginTb}%` }))
@@ -98,9 +112,9 @@ const lines = computed(() => {
 <style scoped>
 .spv { display: flex; flex-direction: column; gap: 10px; }
 .spv-bar { display: flex; gap: 8px; flex-wrap: wrap; }
-.spv-size { flex: 1; min-width: 180px; }
+.spv-size { flex: 1 1 180px; min-width: 0; }
 .spv-hidden { display: none; }
-.spv-stage { position: relative; max-width: 100%; border-radius: 8px; overflow: hidden; background-size: cover; background-position: center; flex-shrink: 0; }
+.spv-stage { position: relative; max-width: 100%; border-radius: 8px; overflow: hidden; background-size: cover; background-position: center; flex-shrink: 0; align-self: center; }
 .spv-size-tag { position: absolute; top: 6px; left: 6px; font-size: 11px; color: #fff; background: rgba(255, 255, 255, 0.16); border-radius: 10px; padding: 1px 8px; }
 .spv-subs { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .spv-line { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; text-align: center; border-radius: 2px; word-break: break-all; }
