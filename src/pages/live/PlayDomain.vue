@@ -32,8 +32,8 @@
                 <icon-check-circle-fill v-if="record.cnameConfigured === 1" class="cname-status-icon cname-success" />
                 <icon-exclamation-circle-fill v-else class="cname-status-icon cname-unconfigured" />
               </a-tooltip>
-              <span>{{ record.cname || record.name + '.liveplay.com' }}</span>
-              <icon-copy class="copy-icon" @click="copyToClipboard(record.cname)" />
+              <span>{{ record.cname || defaultCname(record.name, 1) }}</span>
+              <icon-copy class="copy-icon" @click="copyToClipboard(record.cname || defaultCname(record.name, record.type))" />
             </div>
           </template>
         </a-table-column>
@@ -105,7 +105,7 @@
 <script setup lang="ts">
 import { IconPlus, IconCopy, IconInfoCircle, IconCheckCircleFill, IconExclamationCircleFill } from '@arco-design/web-vue/es/icon'
 import { useNavigationStore } from '@/stores/navigation'
-import { useDomainList } from '@/composables/useDomainList'
+import { defaultCname, useDomainList } from '@/composables/useDomainList'
 import type { DomainInfo } from '@/composables/useDomainList'
 import { V2PageHeader, V2Card, V2Button, V2Tag } from '@/components/ui'
 

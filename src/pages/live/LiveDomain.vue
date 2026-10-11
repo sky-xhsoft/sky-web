@@ -41,7 +41,7 @@
                   <icon-exclamation-circle-fill v-else class="cname-status-icon cname-unconfigured" />
                 </a-tooltip>
                 <span>{{ record.cname || defaultCname(record.name, record.type) }}</span>
-                <icon-copy class="copy-icon" @click="copyToClipboard(record.cname)" />
+                <icon-copy class="copy-icon" @click="copyToClipboard(record.cname || defaultCname(record.name, record.type))" />
               </div>
             </template>
           </a-table-column>

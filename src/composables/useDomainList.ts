@@ -36,9 +36,9 @@ export function cnameHost(domain: string): string {
   return labels.length > rootLabels ? domain.split('.').slice(0, labels.length - rootLabels).join('.') : '@'
 }
 
-/** 腾讯云未返回 CNAME 时的默认值：推流域名 .tlivepush.com，播放域名 .liveplay.com */
+/** 腾讯云未返回 CNAME 时的默认值：推流域名 .tlivepush.com，播放域名 .txlivecdn.com */
 export function defaultCname(domain: string, type: number): string {
-  return domain + (type === 0 ? '.tlivepush.com' : '.liveplay.com')
+  return domain + (type === 0 ? '.tlivepush.com' : '.txlivecdn.com')
 }
 
 export interface UseDomainListOptions {

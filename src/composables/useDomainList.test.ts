@@ -12,6 +12,6 @@ describe('域名 CNAME 解析', () => {
 
   it('默认 CNAME 按域名类型区分', () => {
     expect(defaultCname('skyttt.skyzhou.cn', 0)).toBe('skyttt.skyzhou.cn.tlivepush.com')
-    expect(defaultCname('play.skyzhou.cn', 1)).toBe('play.skyzhou.cn.liveplay.com')
+    expect(defaultCname('play.skyzhou.cn', 1)).toBe('play.skyzhou.cn.txlivecdn.com')
   })
 })
