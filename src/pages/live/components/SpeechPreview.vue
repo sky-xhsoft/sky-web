@@ -79,6 +79,9 @@ const stageStyle = computed(() => ({
   backgroundImage: form.bgImage ? `url(${form.bgImage})` : 'linear-gradient(180deg, #2a3a55 0%, #121c30 100%)',
 }))
 const subsStyle = computed(() => ({ left: `${form.marginLr}%`, right: `${form.marginLr}%`, bottom: `${form.marginTb}%` }))
+// 默认测试内容足够长，能看出字幕行数与左右边距的效果
+const DEFAULT_ORIGINAL = '这是一条默认字幕，用来预览较长的句子在字幕区域内换行和行数限制的效果'
+const DEFAULT_TRANSLATION = 'This is a default subtitle, used to preview how a longer sentence wraps inside the subtitle area'
 
 const hexToRgba = (hex: string, alpha: number) => {
   const h = hex.replace('#', '')
@@ -95,16 +98,16 @@ const lineStyle = (st: SpeechStyle) => {
     textShadow: textStroke(st.borderColor, Math.max(0.6, scale.value * 2)),
     background: hexToRgba(st.boxColor, st.opacity / 100),
     padding: `${Math.max(1, Math.round(st.boxW * scale.value * 4))}px ${Math.max(2, Math.round(st.boxW * scale.value * 8))}px`,
-    maxWidth: `${st.maxChar * px * 0.6}px`,
+    maxWidth: `min(100%, ${st.maxChar * px * 0.6}px)`,
     WebkitLineClamp: form.rows || 'none',
   }
 }
 
 const showBoth = computed(() => form.mode !== 'asr' && form.subtitleFormat === 'both')
 const lines = computed(() => {
-  const main = { key: 'main', text: form.testMain || (form.mode === 'asr' ? '这是一条默认字幕' : 'This is a default subtitle'), style: lineStyle(form.transStyle) }
+  const main = { key: 'main', text: form.testMain || (form.mode === 'asr' ? DEFAULT_ORIGINAL : DEFAULT_TRANSLATION), style: lineStyle(form.transStyle) }
   if (!showBoth.value) return [main]
-  const original = { key: 'orig', text: form.testOriginal || '这是一条默认字幕', style: lineStyle(form.shareStyle ? form.transStyle : form.origStyle) }
+  const original = { key: 'orig', text: form.testOriginal || DEFAULT_ORIGINAL, style: lineStyle(form.shareStyle ? form.transStyle : form.origStyle) }
   return form.order === 'originalTop' ? [original, main] : [main, original]
 })
 </script>
@@ -116,7 +119,8 @@ const lines = computed(() => {
 .spv-hidden { display: none; }
 .spv-stage { position: relative; max-width: 100%; border-radius: 8px; overflow: hidden; background-size: cover; background-position: center; flex-shrink: 0; align-self: center; }
 .spv-size-tag { position: absolute; top: 6px; left: 6px; font-size: 11px; color: #fff; background: rgba(255, 255, 255, 0.16); border-radius: 10px; padding: 1px 8px; }
-.spv-subs { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+/* 虚线框为字幕区域，显示左右、底部边距 */
+.spv-subs { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 3px; outline: 1px dashed rgba(255, 255, 255, 0.35); outline-offset: 2px; }
 .spv-line { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; text-align: center; border-radius: 2px; word-break: break-all; }
 .spv-off { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.6); font-size: 12px; }
 .spv-test { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--color-text-2); }
