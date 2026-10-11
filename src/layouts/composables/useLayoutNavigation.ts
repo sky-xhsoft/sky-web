@@ -20,6 +20,7 @@ const ROUTE_CONFIG = {
   '/live/templates': { component: 'LiveTemplates', titleKey: 'layout.liveTemplates' },
   '/live/speech-tasks': { component: 'LiveSpeechTasks', titleKey: 'layout.liveSpeechTasks' },
   '/live/billing': { component: 'LiveBilling', titleKey: 'layout.liveBilling' },
+  '/system/billing': { component: 'BillingAdmin', titleKey: 'layout.billingAdmin' },
   '/live/distribution': { component: 'PullStreamTask', titleKey: 'layout.pullStream' },
   '/live/pull-stream/create': { component: 'PullStreamTaskForm', titleKey: 'layout.createTask' },
   '/live/highlight-clips': { component: 'LiveHighlightClips', titleKey: 'layout.highlightClips' },

@@ -44,6 +44,58 @@ export const STORAGE_ITEMS: { key: string; label: string }[] = [
 /** 对账账号：平台账号 / 公司自有账号 */
 export const accountLabel = (account: string) => (account === 'global' ? '平台账号' : `自有账号 ${account.replace(/^tc:/, '')}`)
 
+// ---------- 计费二期：金额与单价 ----------
+
+/** 金额（厘）→「¥ 1,234.56」；负数为「-¥ 12.00」 */
+export const formatMoney = (li: number) => {
+  const v = (li || 0) / 1000
+  const s = Math.abs(v).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return `${v < 0 ? '-' : ''}¥ ${s}`
+}
+
+/** 带符号的金额：收入为「+¥」，支出为「-¥」 */
+export const formatSigned = (li: number) => (li > 0 ? `+${formatMoney(li)}` : formatMoney(li))
+
+/** 元 → 厘（输入框中的金额，最多 3 位小数） */
+export const yuanToLi = (yuan: number | undefined) => Math.round((yuan || 0) * 1000)
+
+/** 单价（0.0001 元）→ 元 */
+export const unitPriceYuan = (p: number) => (p || 0) / 10000
+
+/** 元 → 单价（0.0001 元） */
+export const yuanToUnitPrice = (yuan: number | undefined) => Math.round((yuan || 0) * 10000)
+
+/** 计费点的名称、计价单位、数量单位 */
+export const METERS: Record<string, { label: string; priceUnit: string; qtyUnit: string }> = {
+  live_duration: { label: '直播时长', priceUnit: '分钟', qtyUnit: '分钟' },
+  play_flux: { label: '播放流量', priceUnit: 'GB', qtyUnit: 'GB' },
+  storage: { label: '存储空间', priceUnit: 'GB·月', qtyUnit: 'GB' },
+}
+
+/** 单价文案：「¥ 0.05 / 分钟」 */
+export const formatUnitPrice = (meter: string, p: number) =>
+  `¥ ${unitPriceYuan(p).toLocaleString('zh-CN', { maximumFractionDigits: 4 })} / ${METERS[meter]?.priceUnit || ''}`
+
+/** 用量数量：分钟取整，GB 保留 3 位 */
+export const formatQty = (meter: string, v: number) =>
+  meter === 'live_duration'
+    ? `${Math.round(v || 0).toLocaleString('zh-CN')} 分钟`
+    : `${(v || 0).toLocaleString('zh-CN', { maximumFractionDigits: 3 })} GB`
+
+/** 余额流水类型 */
+export const TXN_TYPES: Record<string, { label: string; color: string }> = {
+  recharge: { label: '充值', color: 'green' },
+  gift: { label: '赠送', color: 'cyan' },
+  usage: { label: '用量扣费', color: 'arcoblue' },
+  usage_adjust: { label: '补扣 / 退还', color: 'orange' },
+  plan_fee: { label: '套餐费', color: 'purple' },
+  pack_fee: { label: '资源包', color: 'purple' },
+  adjust: { label: '调账', color: 'red' },
+}
+
+/** 额度使用比例（0–100） */
+export const quotaPercent = (used: number, quota: number) => (quota > 0 ? Math.min(100, Math.round((used / quota) * 100)) : 0)
+
 /** 月份选项：当月起往前 n 个月（YYYY-MM） */
 export const recentMonths = (now: Date, n = 12) => {
   const out: string[] = []

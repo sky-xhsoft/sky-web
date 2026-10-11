@@ -71,6 +71,7 @@ export function useComponentLoader(options: ComponentLoaderOptions) {
     '/live/templates': { componentKey: 'LiveTemplates', titleKey: 'layout.liveTemplates' },
     '/live/speech-tasks': { componentKey: 'LiveSpeechTasks', titleKey: 'layout.liveSpeechTasks' },
     '/live/billing': { componentKey: 'LiveBilling', titleKey: 'layout.liveBilling' },
+    '/system/billing': { componentKey: 'BillingAdmin', titleKey: 'layout.billingAdmin' },
     '/live/distribution': { componentKey: 'PullStreamTask', titleKey: 'layout.pullStream' },
     '/live/pull-stream/create': {
       componentKey: 'PullStreamTaskForm',

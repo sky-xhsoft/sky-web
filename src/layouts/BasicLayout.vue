@@ -51,6 +51,7 @@ const LiveSpeechTasks = defineAsyncComponent(() => import('@/pages/live/LiveSpee
 const LiveBilling = defineAsyncComponent(() => import('@/pages/live/LiveBilling.vue'))
 const UserProfile = defineAsyncComponent(() => import('@/pages/system/UserProfile.vue'))
 const CompanyConfig = defineAsyncComponent(() => import('@/pages/system/CompanyConfig.vue'))
+const BillingAdmin = defineAsyncComponent(() => import('@/pages/system/BillingAdmin.vue'))
 const UserCenterPage = defineAsyncComponent(() => import('@/pages/system/UserCenterPage.vue'))
 const PermissionManagement = defineAsyncComponent(() => import('@/pages/system/PermissionManagement.vue'))
 const BatchEditPage = defineAsyncComponent(() => import('../modules/metadata/components/DynamicTable/BatchEditPage.vue'))
@@ -204,6 +205,7 @@ const componentRegistry: Record<string, Component> = {
     LiveTranslation,
     UserProfile,
       CompanyConfig,
+      BillingAdmin,
       UserCenterPage,
       PermissionManagement,
       BatchEditPage,
@@ -442,6 +444,10 @@ async function loadComponent(path: string) {
           currentComponent.value = componentRegistry.UserCenterPage
           navigationStore.navigateTo('UserCenterPage', t('layout.userProfile'), {}, false)
           break
+    case '/system/billing':
+      currentComponent.value = componentRegistry.BillingAdmin
+      navigationStore.navigateTo('BillingAdmin', t('layout.billingAdmin'), {}, false)
+      break
     case '/system/company-config':
       currentComponent.value = componentRegistry.CompanyConfig
       navigationStore.navigateTo('CompanyConfig', '公司配置', {}, false)

@@ -21,6 +21,7 @@ const componentLoaders: Record<string, () => Promise<any>> = {
   LiveTemplates: () => import('@/pages/live/LiveTemplates.vue'),
   LiveSpeechTasks: () => import('@/pages/live/LiveSpeechTasks.vue'),
   LiveBilling: () => import('@/pages/live/LiveBilling.vue'),
+  BillingAdmin: () => import('@/pages/system/BillingAdmin.vue'),
   PullStreamTaskForm: () => import('@/pages/live/PullStreamTaskForm.vue'),
   LiveHighlightClips: () => import('@/pages/live/LiveHighlightClips.vue'),
   LiveHighlightClipPreview: () => import('@/pages/live/LiveHighlightClipPreview.vue'),

@@ -261,6 +261,7 @@ export default {
     liveTemplates: 'Templates',
     liveSpeechTasks: 'Live Interpretation',
     liveBilling: 'Billing',
+    billingAdmin: 'Billing Admin',
     createTask: 'Create Task',
     editTask: 'Edit Task',
     highlightClips: 'Highlight Clips',
