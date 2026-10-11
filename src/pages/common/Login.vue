@@ -19,13 +19,12 @@ type LoginType = SubSystem | null
 const loginType = ref<LoginType>(null)
 
 // 子系统切换：选择后写入地址参数（刷新、分享登录链接时保持所选系统）。
-// 系统中心仅公司 1 可用，登录前不知道用户公司，默认不显示；地址明确带 type=system 时（公司 1 管理员的书签）才显示
-const showSystemCenter = computed(() => route.query.type === 'system')
-const subsystemOptions = computed(() =>
-  SUBSYSTEMS.filter((s) => s.key !== 'system' || showSystemCenter.value).map((s) => ({ value: s.key, label: t(s.labelKey) })),
-)
+// 登录页不显示系统中心：公司 1 的用户登录视频系统或云盘系统后，在右上角切换到系统中心
+const loginSystems = SUBSYSTEMS.filter((s) => s.key !== 'system')
+const subsystemOptions = computed(() => loginSystems.map((s) => ({ value: s.key, label: t(s.labelKey) })))
+const isLoginSystem = (v: unknown): v is SubSystem => isSubSystem(v) && v !== 'system'
 const selectSubsystem = (value: string | number | boolean) => {
-  if (!isSubSystem(value)) return
+  if (!isLoginSystem(value)) return
   loginType.value = value
   router.replace({ query: { ...route.query, type: value } })
 }
@@ -41,7 +40,6 @@ const submitting = ref(false)
 const platformSubtitle = computed(() =>
   loginType.value === 'live' ? t('login.platforms.live')
     : loginType.value === 'cloud' ? t('login.platforms.cloud')
-    : loginType.value === 'system' ? t('login.platforms.system')
     : t('welcome.brandSubtitle')
 )
 
@@ -93,13 +91,14 @@ const goWelcome = () => {
 
 onMounted(() => {
   const typeParam = route.query.type as string
-  if (isSubSystem(typeParam)) {
+  if (isLoginSystem(typeParam)) {
     loginType.value = typeParam
   } else {
-    // 未指定系统时沿用上次登录的系统（登录过期被带回登录页时不丢失所在系统），首次登录默认视频系统；
-    // 上次是系统中心时不在选项中，按视频系统显示
+    // 未指定系统（或指定的是系统中心）时沿用上次登录的系统（登录过期被带回登录页时不丢失所在系统），
+    // 首次登录默认视频系统；上次是系统中心时按视频系统显示
     const last = getLoginType()
-    loginType.value = last && last !== 'system' ? last : 'live'
+    loginType.value = isLoginSystem(last) ? last : 'live'
+    if (typeParam === 'system') router.replace({ query: { ...route.query, type: 'live' } })
   }
 })
 </script>

@@ -542,7 +542,8 @@ const handleLogout = async () => {
 
   // 5. 跳转到登录页，如果有之前的登录类型，带上该类型
   if (savedLoginType) {
-    router.push({ name: 'login', query: { type: savedLoginType } })
+    // 登录页不显示系统中心：从系统中心退出时回到视频系统的登录页
+    router.push({ name: 'login', query: { type: savedLoginType === 'system' ? 'live' : savedLoginType } })
   } else {
     router.push({ name: 'login' })
   }

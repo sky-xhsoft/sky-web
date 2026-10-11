@@ -7,6 +7,14 @@ vi.mock('@/api/auth', () => ({
   changePassword: vi.fn().mockResolvedValue({ data: { code: 200 } }),
 }))
 
+// 可控的路由：用例中设置地址参数
+const routeState = vi.hoisted(() => ({ query: {} as Record<string, string> }))
+const routerReplace = vi.hoisted(() => vi.fn())
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: vi.fn(), back: vi.fn(), replace: routerReplace }),
+  useRoute: () => ({ path: '/login', query: routeState.query, params: {} }),
+}))
+
 const pageStubs = {
   'a-input-password': true,
   LanguageSwitcher: true,
@@ -29,6 +37,8 @@ function mountPage() {
 describe('Login (页面组件挂载)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    routeState.query = {}
+    routerReplace.mockClear()
   })
 
   it('挂载后渲染页面根节点', async () => {
@@ -67,5 +77,14 @@ describe('Login (页面组件挂载)', () => {
     expect(wrapper.find('.subsystem-switch').text()).not.toContain('login.platforms.system')
     expect(wrapper.find('.subsystem-switch').text()).toContain('login.platforms.cloud')
     localStorage.removeItem('sky-web:login-type')
+  })
+
+  it('登录页不显示系统中心：地址带 type=system（从系统中心退出）时显示视频系统并改写地址', async () => {
+    routeState.query = { type: 'system' }
+    const wrapper = mountPage()
+    await flushPromises()
+    expect(wrapper.find('.subtitle').text()).toBe('login.platforms.live')
+    expect(wrapper.find('.subsystem-switch').text()).not.toContain('login.platforms.system')
+    expect(routerReplace).toHaveBeenCalledWith({ query: { type: 'live' } })
   })
 })
