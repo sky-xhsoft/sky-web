@@ -12,7 +12,7 @@ vi.mock('../../../api/live', () => ({
 
 import SpeechTaskModal from './SpeechTaskModal.vue'
 import api from '../../../api/http'
-import { listDomains } from '../../../api/live'
+import { generatePushURLByRoom, listDomains } from '../../../api/live'
 
 const stubs = {
   SpeechStepMode: true,
@@ -50,7 +50,7 @@ describe('SpeechTaskModal 直播间下拉', () => {
     expect((wrapper.vm as any).rooms.map((r: any) => r.id)).toEqual([100])
   })
 
-  it('转推直播间排除已结束的和源直播间', async () => {
+  it('转推直播间排除源直播间，已结束的也可选', async () => {
     vi.mocked(api.post).mockResolvedValueOnce(roomsResponse([
       { ID: 1, ROOM_NAME: '源', STATUS: 'live' },
       { ID: 2, ROOM_NAME: '草稿', STATUS: 'draft' },
@@ -59,6 +59,24 @@ describe('SpeechTaskModal 直播间下拉', () => {
     ]) as any)
     const wrapper = mount(SpeechTaskModal, { props: { visible: true, record: { id: 1, roomName: '源' } }, global: { stubs } })
     await flushPromises()
-    expect((wrapper.vm as any).targetRooms.map((r: any) => r.id)).toEqual([2, 4])
+    expect((wrapper.vm as any).targetRooms.map((r: any) => r.id)).toEqual([2, 3, 4])
+  })
+
+  it('转推推流地址有效期覆盖转推结束时间，改结束时间后重新生成', async () => {
+    vi.mocked(api.post).mockResolvedValueOnce(roomsResponse([{ ID: 5, ROOM_NAME: '目标', STATUS: 'ended' }]) as any)
+    vi.mocked(generatePushURLByRoom).mockResolvedValue({ data: { data: { pushUrl: 'rtmp://push.test/live/5?txSecret=x' } } } as any)
+    const wrapper = mount(SpeechTaskModal, { props: { visible: true }, global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as any
+    vm.form.timeRange = ['2026-10-11 22:00:00', '2026-10-14 22:00:00']
+    vm.targetRoomId = '5'
+    await vm.onTargetRoomChange('5')
+    const end = Math.floor(new Date('2026-10-14T22:00:00').getTime() / 1000) + 3600
+    expect(generatePushURLByRoom).toHaveBeenLastCalledWith('5', end)
+    expect(vm.form.targetUrl).toBe('rtmp://push.test/live/5?txSecret=x')
+
+    vm.form.timeRange = ['2026-10-11 22:00:00', '2026-10-20 22:00:00']
+    await flushPromises()
+    expect(generatePushURLByRoom).toHaveBeenLastCalledWith('5', Math.floor(new Date('2026-10-20T22:00:00').getTime() / 1000) + 3600)
   })
 })

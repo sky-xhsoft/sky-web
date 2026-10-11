@@ -195,11 +195,17 @@ const loadRooms = async () => {
   }
   if (props.visible && !form.sourceUrl) form.sourceUrl = defaultSource()
 }
-const targetRooms = computed(() => rooms.value.filter((r) => r.status !== 'ended' && Number(r.id) !== Number(room.value?.id)))
+// 已结束的直播间也可作为转推目标：重新推流后会回到直播中
+const targetRooms = computed(() => rooms.value.filter((r) => Number(r.id) !== Number(room.value?.id)))
+// 推流鉴权有效期至少到转推结束（多留 1 小时），否则转推中途断线重连会鉴权失败
+const transferEndUnix = () => {
+  const end = form.timeRange?.[1]
+  return end ? dayjs(end).unix() + 3600 : undefined
+}
 const onTargetRoomChange = async (id: unknown) => {
   if (!id) return
   try {
-    const resp: any = await generatePushURLByRoom(String(id))
+    const resp: any = await generatePushURLByRoom(String(id), transferEndUnix())
     const pushUrl = (resp?.data?.data || resp?.data)?.pushUrl || ''
     if (pushUrl) form.targetUrl = pushUrl
     else Message.warning('未获取到推流地址，请检查推流域名配置')
@@ -208,6 +214,13 @@ const onTargetRoomChange = async (id: unknown) => {
     Message.error(e?.response?.data?.message || '获取推流地址失败')
   }
 }
+
+watch(
+  () => form.timeRange?.[1],
+  (end, prev) => {
+    if (end && prev && end !== prev && targetRoomId.value) onTargetRoomChange(targetRoomId.value)
+  },
+)
 
 watch(
   () => props.visible,

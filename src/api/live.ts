@@ -287,8 +287,9 @@ export const generatePushURL = (data: GeneratePushURLRequest) => {
 }
 
 // 根据直播间ID获取推流地址（由后端取当前公司推流域名、鉴权主KEY、直播间开始时间）
-export const generatePushURLByRoom = (roomId: number | string) => {
-  return api.post('/live/push-url/by-room', { roomId })
+// expireTime：可选，推流地址至少有效到此时间（Unix 秒）
+export const generatePushURLByRoom = (roomId: number | string, expireTime?: number) => {
+  return api.post('/live/push-url/by-room', expireTime ? { roomId, expireTime } : { roomId })
 }
 
 // ==================== 拉流地址生成 ====================
