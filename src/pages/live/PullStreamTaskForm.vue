@@ -337,7 +337,10 @@ const previewTime = computed(() => {
   const [start, end] = taskForm.timeRange || []
   if (!start || !end) return { start: '未设置', end: '未设置' }
   const minutes = dayjs(end).diff(dayjs(start), 'minute')
-  const duration = minutes >= 60 ? `${Math.floor(minutes / 60)} 小时 ${minutes % 60} 分` : `${minutes} 分钟`
+  // 超过一天按「天 + 小时」显示，便于对照 30 天的上限
+  const duration = minutes >= 1440
+    ? `${Math.floor(minutes / 1440)} 天 ${Math.floor((minutes % 1440) / 60)} 小时`
+    : minutes >= 60 ? `${Math.floor(minutes / 60)} 小时 ${minutes % 60} 分` : `${minutes} 分钟`
   return {
     start: dayjs(start).format('MM-DD HH:mm'),
     end: `${dayjs(end).format('MM-DD HH:mm')}（${duration}）`,
