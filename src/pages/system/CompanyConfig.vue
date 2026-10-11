@@ -53,29 +53,21 @@
               <div v-if="form.storageType === 'local'" class="cc-hint">文件保存在服务器磁盘，适合测试或私有化部署</div>
             </div>
             <template v-if="form.storageType === 'tencentCOS'">
+              <!-- 先选择或新建存储桶（用已保存的云盘存储密钥），选中后带出 Bucket 地址 -->
               <div class="cc-field">
-                <div class="cc-label">Bucket 地址</div>
-                <a-input v-model="form.tencentCosBucketUrl" placeholder="https://{bucket}.cos.{region}.myqcloud.com" class="cc-mono" />
-                <div v-if="parsedBucket.bucket" class="cc-chips">
-                  <span class="cc-chip">Bucket 名称 <b>{{ parsedBucket.bucket }}</b></span>
-                  <span class="cc-chip">区域 <b>{{ parsedBucket.region }}</b>（已从地址识别）</span>
-                </div>
-              </div>
-              <!-- 从腾讯云账号选择 / 新建存储桶（用已保存的云盘存储密钥） -->
-              <div class="cc-field">
-                <div class="cc-label">从腾讯云账号选择</div>
+                <div class="cc-label">存储桶</div>
                 <div class="cc-bucket-row">
                   <a-select
                     :model-value="pickedBucketUrl"
                     :options="bucketOptions"
                     :loading="bucketsLoading"
                     allow-search
-                    placeholder="选择存储桶，自动填入 Bucket 地址"
+                    placeholder="选择本公司腾讯云账号下的存储桶"
                     class="cc-bucket-select"
-                    @popup-visible-change="(v: boolean) => v && !bucketsLoaded && loadBuckets()"
                     @change="onPickBucket"
                   />
                   <a-button size="small" @click="createOpen = true">新建存储桶</a-button>
+                  <a-button size="small" type="text" :loading="bucketsLoading" @click="loadBuckets">刷新</a-button>
                 </div>
                 <div class="cc-hint">
                   <span v-if="bucketsError" class="cc-err">{{ bucketsError }}</span>
@@ -90,6 +82,14 @@
                 :create="createStorageBucket"
                 @created="onBucketCreated"
               />
+              <div class="cc-field">
+                <div class="cc-label">Bucket 地址</div>
+                <a-input v-model="form.tencentCosBucketUrl" placeholder="选择存储桶后自动带出，也可直接填写 https://{bucket}.cos.{region}.myqcloud.com" class="cc-mono" />
+                <div v-if="parsedBucket.bucket" class="cc-chips">
+                  <span class="cc-chip">Bucket 名称 <b>{{ parsedBucket.bucket }}</b></span>
+                  <span class="cc-chip">区域 <b>{{ parsedBucket.region }}</b>（已从地址识别）</span>
+                </div>
+              </div>
               <!-- 地址无法识别时手动填写 -->
               <div v-if="form.tencentCosBucketUrl && !parsedBucket.bucket" class="cc-grid2">
                 <div class="cc-field">
@@ -238,7 +238,7 @@ const loadBuckets = async () => {
   bucketsLoading.value = true
   bucketsError.value = ''
   try {
-    buckets.value = await listStorageBuckets()
+    buckets.value = (await listStorageBuckets()) || []
     bucketsLoaded.value = true
   } catch (e: any) {
     bucketsError.value = e?.response?.data?.message || e?.message || '获取存储桶失败'
@@ -326,6 +326,13 @@ const toggle = (key: SectionKey) => {
   if (!isAdmin.value) return
   openKey.value = openKey.value === key ? '' : key
 }
+// 展开云盘存储且为 COS 时自动加载一次
+watch(
+  () => openKey.value === 'storage' && form.storageType === 'tencentCOS',
+  (show) => {
+    if (show && !bucketsLoaded.value && !bucketsLoading.value) loadBuckets()
+  },
+)
 
 const loadConfig = async () => {
   loading.value = true

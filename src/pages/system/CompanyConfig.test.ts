@@ -53,6 +53,7 @@ describe('CompanyConfig（公司配置折叠面板）', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.mocked(getCompanyConfig).mockResolvedValue({ ...conf50 } as any)
+    vi.mocked(listStorageBuckets).mockReset().mockResolvedValue([])
   })
 
   it('按与后端一致的规则计算各项状态：存储类型为空按 COS，区域从地址识别', async () => {
@@ -105,14 +106,18 @@ describe('CompanyConfig（公司配置折叠面板）', () => {
     })
   })
 
-  it('从腾讯云账号选择存储桶或新建后，填入 Bucket 地址并随保存提交', async () => {
+  it('展开云盘存储自动加载存储桶，选择或新建后带出 Bucket 地址并随保存提交', async () => {
     vi.mocked(listStorageBuckets).mockResolvedValue([
       { bucket: 'files-1504307838', region: 'ap-nanjing', url: 'https://files-1504307838.cos.ap-nanjing.myqcloud.com', current: false },
     ])
     const wrapper = mountPage('Y')
     await flushPromises()
     const vm = wrapper.vm as any
-    await vm.loadBuckets()
+    expect(listStorageBuckets).not.toHaveBeenCalled()
+    // 展开云盘存储时自动加载存储桶
+    await wrapper.findAll('.cc-item-head')[1].trigger('click')
+    await flushPromises()
+    expect(listStorageBuckets).toHaveBeenCalledTimes(1)
     expect(vm.bucketAppId).toBe('1504307838')
     expect(vm.bucketOptions[0].label).toBe('files-1504307838（ap-nanjing）')
 
