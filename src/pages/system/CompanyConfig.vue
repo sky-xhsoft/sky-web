@@ -1,5 +1,5 @@
 <template>
-  <!-- 公司配置：腾讯云直播 / 云盘存储 / AI 同传，折叠面板，一次展开一项 -->
+  <!-- 公司配置：腾讯云直播 / 云盘存储，折叠面板，一次展开一项（火山引擎为平台全局配置，不在公司内配置） -->
   <div class="company-config">
     <div class="cc-head">
       <span class="cc-title">公司配置</span>
@@ -99,31 +99,6 @@
             </template>
           </template>
 
-          <!-- AI 同传 / 字幕 -->
-          <div v-else class="cc-grid2">
-            <div class="cc-field">
-              <div class="cc-label">Access Key ID</div>
-              <a-input v-model="secretInputs.volcengineAccessKeyId" :placeholder="secretPlaceholder('volcengineAccessKeyId')" class="cc-mono" />
-            </div>
-            <div class="cc-field">
-              <div class="cc-label">Access Key Secret</div>
-              <a-input-password v-model="secretInputs.volcengineAccessKeySecret" :placeholder="secretPlaceholder('volcengineAccessKeySecret')" class="cc-mono" />
-            </div>
-            <div class="cc-field">
-              <div class="cc-label">区域</div>
-              <a-input v-model="form.volcengineRegion" placeholder="例如 cn-north-1" class="cc-mono" />
-            </div>
-            <div class="cc-field">
-              <div class="cc-label">火山方舟 API Key <span class="cc-hint-inline">（字幕同传词库智能提取）</span></div>
-              <a-input-password v-model="secretInputs.arkApiKey" :placeholder="secretPlaceholder('arkApiKey')" class="cc-mono" />
-            </div>
-            <div class="cc-field">
-              <div class="cc-label">火山方舟推理接入点</div>
-              <a-input v-model="form.arkModel" placeholder="例如 ep-20261011xxxxxx-xxxxx" class="cc-mono" />
-              <div class="cc-hint">固定使用北京区域（cn-beijing）：请在火山方舟控制台「在线推理」的北京区域创建豆包模型接入点，填写 ep- 开头的接入点 ID</div>
-            </div>
-          </div>
-
           <div class="cc-foot">
             <span v-if="changeCount" class="cc-changed">● 有 {{ changeCount }} 项修改未保存</span>
             <span class="cc-spacer" />
@@ -144,16 +119,13 @@ import type { CompanyConf } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 
 type Level = 'ok' | 'warn' | 'off'
-type SectionKey = 'live' | 'storage' | 'ai'
+type SectionKey = 'live' | 'storage'
 type SecretField =
   | 'tencentCloudSecretId'
   | 'tencentCloudSecretKey'
   | 'tencentCloudCallbackKey'
   | 'tencentCosSecretId'
   | 'tencentCosSecretKey'
-  | 'volcengineAccessKeyId'
-  | 'volcengineAccessKeySecret'
-  | 'arkApiKey'
 type TextField =
   | 'tencentCloudRegion'
   | 'storageType'
@@ -161,16 +133,14 @@ type TextField =
   | 'tencentCosBucketName'
   | 'tencentCosRegion'
   | 'tencentCosCdnDomain'
-  | 'volcengineRegion'
-  | 'arkModel'
 
 const SECRET_FIELDS: SecretField[] = [
   'tencentCloudSecretId', 'tencentCloudSecretKey', 'tencentCloudCallbackKey',
-  'tencentCosSecretId', 'tencentCosSecretKey', 'volcengineAccessKeyId', 'volcengineAccessKeySecret', 'arkApiKey',
+  'tencentCosSecretId', 'tencentCosSecretKey',
 ]
 const TEXT_FIELDS: TextField[] = [
   'tencentCloudRegion', 'storageType', 'tencentCosBucketUrl', 'tencentCosBucketName',
-  'tencentCosRegion', 'tencentCosCdnDomain', 'volcengineRegion', 'arkModel',
+  'tencentCosRegion', 'tencentCosCdnDomain',
 ]
 
 const statusText: Record<Level, string> = { ok: '已配置', warn: '配置不完整', off: '未配置' }
@@ -283,19 +253,10 @@ const storageStatus = computed(() => {
   return { level: 'ok' as Level, summary: `腾讯云 COS · ${region}` }
 })
 
-const aiStatus = computed(() => {
-  const id = has('volcengineAccessKeyId')
-  const key = has('volcengineAccessKeySecret')
-  if (!id && !key) return { level: 'off' as Level, summary: isAdmin.value ? '需要火山引擎 Access Key' : '请联系管理员配置' }
-  if (!id || !key) return { level: 'warn' as Level, summary: `缺少 ${id ? 'Access Key Secret' : 'Access Key ID'}` }
-  const ark = has('arkApiKey') && !!form.arkModel ? '词库提取已开启' : '未配置词库提取'
-  return { level: 'ok' as Level, summary: `${form.volcengineRegion || 'cn-north-1'} · ${ark}` }
-})
 
 const sections = computed(() => [
   { key: 'live' as SectionKey, title: '腾讯云直播', desc: '用于直播域名、推流 / 播放地址、社媒分发与直播回调', keyLink: 'https://console.cloud.tencent.com/cam/capi', status: liveStatus.value },
   { key: 'storage' as SectionKey, title: '云盘存储', desc: '云盘上传的文件、直播录制与切片的保存位置', keyLink: '', status: storageStatus.value },
-  { key: 'ai' as SectionKey, title: 'AI 同传 / 字幕', desc: '火山引擎账号，用于直播同传、字幕与翻译', keyLink: 'https://console.volcengine.com/iam/keymanage/', status: aiStatus.value },
 ])
 
 // 一次只展开一项；默认展开第一个需要处理的项
@@ -470,7 +431,6 @@ defineExpose({ sections, payload })
   color: var(--text-secondary);
 }
 
-.cc-hint-inline { font-size: 12px; color: var(--color-text-3); font-weight: 400; }
 .cc-hint {
   margin-top: 4px;
   font-size: 12px;

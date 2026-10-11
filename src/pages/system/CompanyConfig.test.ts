@@ -63,14 +63,21 @@ describe('CompanyConfig（公司配置折叠面板）', () => {
     expect(heads[1]).toContain('云盘存储')
     expect(heads[1]).toContain('已配置')
     expect(heads[1]).toContain('腾讯云 COS · ap-guangzhou')
-    expect(heads[2]).toContain('未配置')
+    // 火山引擎为平台全局配置，公司配置只剩两项
+    expect(heads).toHaveLength(2)
+    expect(wrapper.text()).not.toContain('AI 同传')
   })
 
-  it('管理员默认展开第一个需要处理的项，并且无修改时不提交任何字段', async () => {
+  it('管理员默认展开第一个需要处理的项（均已配置时不展开），并且无修改时不提交任何字段', async () => {
     const wrapper = mountPage('Y')
     await flushPromises()
-    expect(wrapper.find('.cc-item.is-open .cc-item-title').text()).toBe('AI 同传 / 字幕')
+    expect(wrapper.find('.cc-item.is-open').exists()).toBe(false)
     expect((wrapper.vm as any).payload).toEqual({})
+
+    vi.mocked(getCompanyConfig).mockResolvedValue({ ...conf50, storageType: 'tencentCOS', tencentCosBucketUrl: '', tencentCosBucketName: '' } as any)
+    const second = mountPage('Y')
+    await flushPromises()
+    expect(second.find('.cc-item.is-open .cc-item-title').text()).toBe('云盘存储')
   })
 
   it('非管理员只显示状态，不能展开编辑', async () => {

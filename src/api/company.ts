@@ -38,8 +38,6 @@ export type UpdateCompanyConfigRequest = {
   volcengineAccessKeyId?: string
   volcengineAccessKeySecret?: string
   volcengineRegion?: string
-  arkApiKey?: string
-  arkModel?: string
   volcengineService?: string
 
   // 本地化 / 限制
