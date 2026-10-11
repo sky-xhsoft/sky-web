@@ -4,15 +4,16 @@
 
 /**
  * 格式化日期时间
- * @param date 日期字符串或Date对象
+ * @param date 日期字符串、Date 对象或 Unix 时间戳（秒或毫秒，如录制、切片的开始/结束时间）
  * @param format 格式化模板，默认 'YYYY-MM-DD HH:mm:ss'
  * @returns 格式化后的日期字符串
  */
-export function formatDateTime(date: string | Date | null | undefined, format: string = 'YYYY-MM-DD HH:mm:ss'): string {
+export function formatDateTime(date: string | number | Date | null | undefined, format: string = 'YYYY-MM-DD HH:mm:ss'): string {
   if (!date) return '-'
 
   try {
-    const d = typeof date === 'string' ? new Date(date) : date
+    // 小于 1e12 的数字视为秒级时间戳
+    const d = typeof date === 'number' ? new Date(date < 1e12 ? date * 1000 : date) : typeof date === 'string' ? new Date(date) : date
 
     // 检查日期是否有效
     if (isNaN(d.getTime())) return '-'
