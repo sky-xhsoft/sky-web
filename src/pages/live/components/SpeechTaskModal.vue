@@ -127,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, provide, reactive, ref, watch } from 'vue'
+import { computed, provide, reactive, ref, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { IconCheck, IconClose } from '@arco-design/web-vue/es/icon'
 import dayjs from 'dayjs'
@@ -176,22 +176,25 @@ const defaultSource = () => roomSource(props.record?.id) || props.record?.source
 const onSourceRoomChange = (id: unknown) => {
   if (id) form.sourceUrl = roomSource(id) || form.sourceUrl
 }
+// 每次打开时重新加载：弹窗随任务列表常驻，只在挂载时加载会看不到之后新建的直播间
 const loadRooms = async () => {
-  try {
-    const [roomRes, domRes] = await Promise.all([
-      api.post('/data/LIVE_ROOM/query', { page: 1, pageSize: 200, filters: { IS_ACTIVE: 'Y' } }),
-      listDomains(undefined),
-    ])
-    const list = roomRes.data?.data?.data || []
+  // 两个请求互不影响：域名列表失败时直播间仍可选
+  const [roomRes, domRes] = await Promise.allSettled([
+    api.post('/data/LIVE_ROOM/query', { page: 1, pageSize: 100, filters: { IS_ACTIVE: 'Y' } }),
+    listDomains(undefined),
+  ])
+  if (roomRes.status === 'fulfilled') {
+    const list = roomRes.value.data?.data?.data || []
     rooms.value = (Array.isArray(list) ? list : []).map((it: any) => ({ id: it.ID, roomName: it.ROOM_NAME || '', status: it.STATUS || '' }))
-    const ds = domRes.data?.data?.domains || []
-    playDomain.value = (Array.isArray(ds) ? ds : []).find((d: any) => d.Type === 1)?.Name || ''
-    if (props.visible && !form.sourceUrl) form.sourceUrl = defaultSource()
-  } catch (e) {
-    console.error('加载直播间失败:', e)
+  } else {
+    console.error('加载直播间失败:', roomRes.reason)
   }
+  if (domRes.status === 'fulfilled') {
+    const ds = domRes.value.data?.data?.domains || []
+    playDomain.value = (Array.isArray(ds) ? ds : []).find((d: any) => d.Type === 1)?.Name || ''
+  }
+  if (props.visible && !form.sourceUrl) form.sourceUrl = defaultSource()
 }
-onMounted(loadRooms)
 const targetRooms = computed(() => rooms.value.filter((r) => r.status !== 'ended' && Number(r.id) !== Number(room.value?.id)))
 const onTargetRoomChange = async (id: unknown) => {
   if (!id) return
@@ -216,8 +219,11 @@ watch(
       // 复制新建：沿用原任务的全部参数，转推时间重置
       Object.assign(form, ruleToSpeechForm(props.copyFrom.rule, props.copyFrom.name))
       visited.value = new Set([1, 2, 3, 4])
-      const m = form.sourceUrl.match(/\/live\/(\d+)(\?|$)/)
-      if (!props.record && m && rooms.value.some((r) => String(r.id) === m[1])) sourceRoomId.value = m[1]
+      // 直播间加载完后再按源地址匹配源直播间
+      loadRooms().then(() => {
+        const m = form.sourceUrl.match(/\/live\/(\d+)(\?|$)/)
+        if (!props.record && !sourceRoomId.value && m && rooms.value.some((r) => String(r.id) === m[1])) sourceRoomId.value = m[1]
+      })
       return
     }
     Object.assign(form, defaultSpeechForm())
@@ -225,6 +231,7 @@ watch(
     if (props.record?.roomName) form.name = `${props.record.roomName}-同传`.slice(0, 20)
     form.sourceUrl = defaultSource()
     if (props.record?.targetUrlHint) form.targetUrl = props.record.targetUrlHint
+    loadRooms()
   },
   { immediate: true },
 )
