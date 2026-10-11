@@ -96,6 +96,7 @@ import { useRoute } from 'vue-router'
 import { Message } from '@arco-design/web-vue'
 import dayjs from 'dayjs'
 import { getPublicShare, type PublicShare } from '@/api/liveShare'
+import { TCPLAYER_LICENSE_URL } from '@/utils/tcplayer'
 
 // 直播间分享页：无需登录，直播中播放直播流；未开始显示倒计时；结束 1 小时内显示已结束，之后链接失效
 const POLL_MS = 15000
@@ -160,7 +161,7 @@ const initPlayer = async () => {
   if (!playUrl.value || typeof TCPlayer === 'undefined') return
   player = TCPlayer('ls-player', {
     sources: [{ src: playUrl.value }],
-    licenseUrl: 'https://1401565388.trtcube-license.cn/license/v2/1401565388_1/v_cube.license',
+    licenseUrl: TCPLAYER_LICENSE_URL,
     autoplay: true,
     controls: true,
     width: '100%',

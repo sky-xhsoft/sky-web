@@ -69,6 +69,7 @@ import { IconLeft, IconCopy } from '@arco-design/web-vue/es/icon'
 import { useNavigationStore } from '@/stores/navigation'
 import { generatePlayURL } from '@/api/live'
 import { V2Button } from '@/components/ui'
+import { TCPLAYER_LICENSE_URL } from '@/utils/tcplayer'
 import dayjs from 'dayjs'
 
 const navigationStore = useNavigationStore()
@@ -206,7 +207,7 @@ const initPlayer = () => {
         sources: [{
           src: playUrl.value
         }],
-        licenseUrl: 'https://1401565388.trtcube-license.cn/license/v2/1401565388_1/v_cube.license',
+        licenseUrl: TCPLAYER_LICENSE_URL,
         autoplay: true,
         controls: true,
         width: '100%',
