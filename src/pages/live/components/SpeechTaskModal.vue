@@ -39,7 +39,7 @@
           {{ s.title }}
           <span v-if="s.key >= 3" class="stm-nav-opt">可选</span>
         </button>
-        <div class="stm-nav-note">推流到转推流地址成功后开始计费，关闭任务后停止；每个账号同时最多运行 2 条任务。</div>
+        <div class="stm-nav-note">推流到转推流地址成功后开始计费，关闭任务后停止。</div>
       </nav>
 
       <!-- 中：步骤内容（v-show 保留各步骤的输入） -->
