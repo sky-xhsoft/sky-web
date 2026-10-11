@@ -24,8 +24,11 @@
               <a-input v-model="taskForm.comment" placeholder="例如：秋季发布会同步到 Facebook" />
             </a-form-item>
             <div class="ptf-grid2">
-              <a-form-item label="任务时间" field="timeRange" :rules="[{ required: true, message: '请选择任务时间' }]">
-                <a-range-picker v-model="taskForm.timeRange" show-time format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
+              <a-form-item label="任务时间" field="timeRange" :rules="timeRangeRules">
+                <div class="ptf-field-col">
+                  <a-range-picker v-model="taskForm.timeRange" show-time format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" :disabled-date="isPastDate" style="width: 100%" />
+                  <div class="ptf-tip">任务时长须小于 30 天，结束时间须晚于当前时间（腾讯云限制）</div>
+                </div>
               </a-form-item>
               <a-form-item label="地域" field="region" :rules="[{ required: true, message: '请选择地域' }]">
                 <div class="ptf-field-col">
@@ -237,6 +240,25 @@ watch(() => taskForm.sourceRoomId, async (id) => {
   }
   taskFormRef.value?.validateField?.('sourceRoomId')
 })
+
+// 任务时间按腾讯云限制校验：结束时间晚于开始时间与当前时间，时长小于 30 天
+const MAX_TASK_DAYS = 30
+const isPastDate = (current?: Date) => !!current && dayjs(current).isBefore(dayjs(), 'day')
+const timeRangeRules = [
+  { required: true, message: '请选择任务时间' },
+  {
+    validator: (value: string[] | undefined, callback: (error?: string) => void) => {
+      const [start, end] = value || []
+      if (!start || !end) return callback()
+      if (!dayjs(end).isAfter(dayjs(start))) return callback('结束时间必须晚于开始时间')
+      if (!dayjs(end).isAfter(dayjs())) return callback('结束时间必须晚于当前时间')
+      if (dayjs(end).diff(dayjs(start), 'second') >= MAX_TASK_DAYS * 86400) {
+        return callback(`任务时长不能超过 ${MAX_TASK_DAYS} 天，请缩短任务时间`)
+      }
+      callback()
+    },
+  },
+]
 
 const sourceRoomRules = [
   { required: true, message: '请选择直播间' },
