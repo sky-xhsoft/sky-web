@@ -33,11 +33,21 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { V2Modal } from '@/components/ui'
-import { createCosBucket, type CosBucketOption } from '@/api/liveTemplate'
+import { createCosBucket } from '@/api/liveTemplate'
 
-// appId：账号 APPID（取自现有存储桶，没有时用户需输入完整名称）；regions：账号已有存储桶的地域
-const props = defineProps<{ visible: boolean; defaultRegion?: string; appId?: string; regions?: string[] }>()
-const emit = defineEmits<{ 'update:visible': [boolean]; created: [CosBucketOption] }>()
+// 新建结果：fullName 为含 -APPID 的完整名称（云盘接口直接返回完整名称 bucket）
+type CreatedBucket = { bucket: string; region: string; fullName?: string }
+
+// appId：账号 APPID（取自现有存储桶，没有时用户需输入完整名称）；regions：账号已有存储桶的地域；
+// create：创建接口，默认录制模板的接口（公司直播密钥），公司配置传入云盘存储的接口
+const props = defineProps<{
+  visible: boolean
+  defaultRegion?: string
+  appId?: string
+  regions?: string[]
+  create?: (data: { bucket: string; region: string }) => Promise<CreatedBucket>
+}>()
+const emit = defineEmits<{ 'update:visible': [boolean]; created: [any] }>()
 
 // 腾讯云 COS 常用地域
 const COMMON_REGIONS: [string, string][] = [
@@ -79,8 +89,8 @@ const submit = async () => {
   if (await formRef.value?.validate()) return
   saving.value = true
   try {
-    const created = await createCosBucket({ bucket: form.bucket.trim(), region: form.region })
-    Message.success(`已创建存储桶 ${created.fullName}`)
+    const created: CreatedBucket = await (props.create || createCosBucket)({ bucket: form.bucket.trim(), region: form.region })
+    Message.success(`已创建存储桶 ${created.fullName || created.bucket}`)
     emit('created', created)
     emit('update:visible', false)
   } catch (e: any) {

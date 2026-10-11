@@ -23,10 +23,12 @@ const conf50 = {
 vi.mock('@/api/company', () => ({
   getCompanyConfig: vi.fn(),
   updateCompanyConfig: vi.fn().mockResolvedValue({}),
+  listStorageBuckets: vi.fn(),
+  createStorageBucket: vi.fn(),
 }))
 
 import CompanyConfig from './CompanyConfig.vue'
-import { getCompanyConfig } from '@/api/company'
+import { getCompanyConfig, listStorageBuckets } from '@/api/company'
 
 const pageStubs = {
   'a-radio-group': true,
@@ -101,5 +103,27 @@ describe('CompanyConfig（公司配置折叠面板）', () => {
       tencentCosRegion: 'ap-shanghai',
       storageType: 'tencentCOS',
     })
+  })
+
+  it('从腾讯云账号选择存储桶或新建后，填入 Bucket 地址并随保存提交', async () => {
+    vi.mocked(listStorageBuckets).mockResolvedValue([
+      { bucket: 'files-1504307838', region: 'ap-nanjing', url: 'https://files-1504307838.cos.ap-nanjing.myqcloud.com', current: false },
+    ])
+    const wrapper = mountPage('Y')
+    await flushPromises()
+    const vm = wrapper.vm as any
+    await vm.loadBuckets()
+    expect(vm.bucketAppId).toBe('1504307838')
+    expect(vm.bucketOptions[0].label).toBe('files-1504307838（ap-nanjing）')
+
+    vm.onPickBucket('https://files-1504307838.cos.ap-nanjing.myqcloud.com')
+    await flushPromises()
+    expect(vm.payload).toMatchObject({ tencentCosBucketUrl: 'https://files-1504307838.cos.ap-nanjing.myqcloud.com', tencentCosBucketName: 'files-1504307838', tencentCosRegion: 'ap-nanjing' })
+    expect(vm.pickedBucketUrl).toBe('https://files-1504307838.cos.ap-nanjing.myqcloud.com')
+
+    vm.onBucketCreated({ bucket: 'disk-1504307838', region: 'ap-shanghai', url: 'https://disk-1504307838.cos.ap-shanghai.myqcloud.com', current: false })
+    await flushPromises()
+    expect(vm.buckets).toHaveLength(2)
+    expect(vm.payload).toMatchObject({ tencentCosBucketName: 'disk-1504307838', tencentCosRegion: 'ap-shanghai' })
   })
 })

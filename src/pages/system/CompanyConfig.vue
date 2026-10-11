@@ -61,6 +61,35 @@
                   <span class="cc-chip">区域 <b>{{ parsedBucket.region }}</b>（已从地址识别）</span>
                 </div>
               </div>
+              <!-- 从腾讯云账号选择 / 新建存储桶（用已保存的云盘存储密钥） -->
+              <div class="cc-field">
+                <div class="cc-label">从腾讯云账号选择</div>
+                <div class="cc-bucket-row">
+                  <a-select
+                    :model-value="pickedBucketUrl"
+                    :options="bucketOptions"
+                    :loading="bucketsLoading"
+                    allow-search
+                    placeholder="选择存储桶，自动填入 Bucket 地址"
+                    class="cc-bucket-select"
+                    @popup-visible-change="(v: boolean) => v && !bucketsLoaded && loadBuckets()"
+                    @change="onPickBucket"
+                  />
+                  <a-button size="small" @click="createOpen = true">新建存储桶</a-button>
+                </div>
+                <div class="cc-hint">
+                  <span v-if="bucketsError" class="cc-err">{{ bucketsError }}</span>
+                  <span v-else>使用已保存的密钥（{{ conf.tencentCosSecretId ? '单独设置的 COS 密钥' : '直播密钥' }}）；修改密钥后请先保存</span>
+                </div>
+              </div>
+              <CreateCosBucketModal
+                v-model:visible="createOpen"
+                :default-region="parsedBucket.region || form.tencentCosRegion"
+                :app-id="bucketAppId"
+                :regions="bucketRegions"
+                :create="createStorageBucket"
+                @created="onBucketCreated"
+              />
               <!-- 地址无法识别时手动填写 -->
               <div v-if="form.tencentCosBucketUrl && !parsedBucket.bucket" class="cc-grid2">
                 <div class="cc-field">
@@ -114,7 +143,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { getCompanyConfig, updateCompanyConfig, type UpdateCompanyConfigRequest } from '@/api/company'
+import { createStorageBucket, getCompanyConfig, listStorageBuckets, updateCompanyConfig, type StorageBucket, type UpdateCompanyConfigRequest } from '@/api/company'
+import CreateCosBucketModal from '@/pages/live/components/CreateCosBucketModal.vue'
 import type { CompanyConf } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 
@@ -196,6 +226,37 @@ watch(() => form.tencentCosBucketUrl, (url) => {
     form.tencentCosRegion = region
   }
 })
+
+// ==================== 云盘存储：选择 / 新建存储桶 ====================
+// 只填入 Bucket 地址，随「保存」一起生效
+const buckets = ref<StorageBucket[]>([])
+const bucketsLoading = ref(false)
+const bucketsLoaded = ref(false)
+const bucketsError = ref('')
+const createOpen = ref(false)
+const loadBuckets = async () => {
+  bucketsLoading.value = true
+  bucketsError.value = ''
+  try {
+    buckets.value = await listStorageBuckets()
+    bucketsLoaded.value = true
+  } catch (e: any) {
+    bucketsError.value = e?.response?.data?.message || e?.message || '获取存储桶失败'
+  } finally {
+    bucketsLoading.value = false
+  }
+}
+const bucketOptions = computed(() => buckets.value.map((b) => ({ value: b.url, label: `${b.bucket}（${b.region}）${b.current ? ' · 当前' : ''}` })))
+const pickedBucketUrl = computed(() => buckets.value.find((b) => b.url === (form.tencentCosBucketUrl || '').trim().replace(/\/+$/, ''))?.url || '')
+const bucketAppId = computed(() => buckets.value.map((b) => /-(\d{10})$/.exec(b.bucket)?.[1]).find(Boolean) || '')
+const bucketRegions = computed(() => [...new Set(buckets.value.map((b) => b.region))])
+const onPickBucket = (url: unknown) => {
+  if (url) form.tencentCosBucketUrl = String(url)
+}
+const onBucketCreated = (b: StorageBucket) => {
+  if (!buckets.value.some((x) => x.url === b.url)) buckets.value = [...buckets.value, b]
+  form.tencentCosBucketUrl = b.url
+}
 
 // 待提交内容：只包含实际修改的字段
 const payload = computed<UpdateCompanyConfigRequest>(() => {
@@ -477,4 +538,7 @@ defineExpose({ sections, payload })
   font-size: 12px;
   color: var(--warning);
 }
+.cc-bucket-row { display: flex; gap: 8px; align-items: center; }
+.cc-bucket-select { flex: 1; min-width: 0; }
+.cc-err { color: rgb(var(--danger-6)); }
 </style>
