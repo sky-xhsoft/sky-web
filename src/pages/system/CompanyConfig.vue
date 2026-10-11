@@ -44,14 +44,8 @@
 
           <!-- 云盘存储 -->
           <template v-else-if="section.key === 'storage'">
-            <div class="cc-field">
-              <div class="cc-label">存储类型</div>
-              <a-radio-group v-model="form.storageType" type="button" size="small">
-                <a-radio value="tencentCOS">腾讯云 COS</a-radio>
-                <a-radio value="local">服务器本地</a-radio>
-              </a-radio-group>
-              <div v-if="form.storageType === 'local'" class="cc-hint">文件保存在服务器磁盘，适合测试或私有化部署</div>
-            </div>
+            <!-- 云盘存储只支持腾讯云 COS；原先使用服务器本地存储的公司提示切换 -->
+            <div v-if="savedLocal" class="cc-notice">当前为服务器本地存储，已不再支持。请选择或新建存储桶并保存，切换为腾讯云 COS。</div>
             <template v-if="form.storageType === 'tencentCOS'">
               <!-- 先选择或新建存储桶（用已保存的云盘存储密钥），选中后带出 Bucket 地址 -->
               <div class="cc-field">
@@ -200,7 +194,7 @@ const parseBucketUrl = (url: string) => {
 }
 const parsedBucket = computed(() => parseBucketUrl(form.tencentCosBucketUrl))
 
-// 与后端一致的存储类型规范化：cos → tencentCOS；为空且填了 COS 地址按 COS，否则本地
+// 已保存配置的存储类型规范化（用于识别原先的本地存储）：cos → tencentCOS；为空且填了 COS 地址按 COS，否则本地
 const normalizeStorageType = (c: Partial<CompanyConf>) => {
   const t = (c.storageType || '').trim().toLowerCase()
   if (t === 'cos' || t === 'tencentcos') return 'tencentCOS'
@@ -209,10 +203,13 @@ const normalizeStorageType = (c: Partial<CompanyConf>) => {
   return c.storageType || 'local'
 }
 
+const savedLocal = computed(() => normalizeStorageType(conf.value) === 'local')
+
 const resetEdits = () => {
   const c = conf.value
   TEXT_FIELDS.forEach((f) => { form[f] = (c[f] as string) || '' })
-  form.storageType = normalizeStorageType(c)
+  // 云盘存储只支持腾讯云 COS
+  form.storageType = 'tencentCOS'
   SECRET_FIELDS.forEach((f) => { secretInputs[f] = '' })
   cosKeyMode.value = c.tencentCosSecretId || c.tencentCosSecretKey ? 'own' : 'live'
 }
@@ -280,7 +277,9 @@ const payload = computed<UpdateCompanyConfigRequest>(() => {
   }
   // 存储有改动或类型变化时明确写入存储类型（历史数据可能为空或别名）
   const storageTouched = ['tencentCosBucketUrl', 'tencentCosBucketName', 'tencentCosRegion', 'tencentCosCdnDomain', 'tencentCosSecretId', 'tencentCosSecretKey'].some((k) => k in p)
-  if (form.storageType !== normalizeStorageType(c) || (storageTouched && form.storageType !== c.storageType)) {
+  // 存储有改动且已保存的类型不是 tencentCOS（原先本地、为空或别名）时明确写入；
+  // 原先本地存储的公司未选存储桶前不提交，避免切到没有 Bucket 的 COS
+  if (storageTouched && c.storageType !== 'tencentCOS') {
     p.storageType = form.storageType
   }
   return p as UpdateCompanyConfigRequest
@@ -298,7 +297,7 @@ const liveStatus = computed(() => {
 })
 
 const storageStatus = computed(() => {
-  if (form.storageType === 'local') return { level: 'ok' as Level, summary: '服务器本地存储' }
+  if (savedLocal.value && !form.tencentCosBucketUrl) return { level: 'warn' as Level, summary: '服务器本地存储已不再支持，请改为腾讯云 COS' }
   const missing: string[] = []
   if (!form.tencentCosBucketUrl) missing.push('Bucket 地址')
   else {
@@ -326,9 +325,9 @@ const toggle = (key: SectionKey) => {
   if (!isAdmin.value) return
   openKey.value = openKey.value === key ? '' : key
 }
-// 展开云盘存储且为 COS 时自动加载一次
+// 展开云盘存储时自动加载一次
 watch(
-  () => openKey.value === 'storage' && form.storageType === 'tencentCOS',
+  () => openKey.value === 'storage',
   (show) => {
     if (show && !bucketsLoaded.value && !bucketsLoading.value) loadBuckets()
   },
@@ -548,4 +547,5 @@ defineExpose({ sections, payload })
 .cc-bucket-row { display: flex; gap: 8px; align-items: center; }
 .cc-bucket-select { flex: 1; min-width: 0; }
 .cc-err { color: rgb(var(--danger-6)); }
+.cc-notice { padding: 8px 12px; margin-bottom: 12px; border-radius: 6px; background: rgb(var(--warning-1)); color: rgb(var(--warning-6)); font-size: 13px; }
 </style>

@@ -131,4 +131,22 @@ describe('CompanyConfig（公司配置折叠面板）', () => {
     expect(vm.buckets).toHaveLength(2)
     expect(vm.payload).toMatchObject({ tencentCosBucketName: 'disk-1504307838', tencentCosRegion: 'ap-shanghai' })
   })
+
+  it('只支持腾讯云 COS：原先本地存储的公司提示切换，选存储桶后写入 tencentCOS', async () => {
+    vi.mocked(getCompanyConfig).mockResolvedValue({ ...conf50, storageType: 'local', tencentCosBucketUrl: '', tencentCosBucketName: '', tencentCosRegion: '' } as any)
+    const wrapper = mountPage('Y')
+    await flushPromises()
+    const vm = wrapper.vm as any
+    expect(wrapper.text()).not.toContain('服务器本地存储 ')
+    expect(wrapper.findAll('.cc-item-head')[1].text()).toContain('服务器本地存储已不再支持')
+    // 默认展开云盘存储：只有 COS，没有「服务器本地」选项
+    expect(wrapper.find('.cc-item.is-open .cc-item-title').text()).toBe('云盘存储')
+    expect(wrapper.find('.cc-notice').text()).toContain('已不再支持')
+    expect(wrapper.text()).not.toContain('服务器本地</')
+    expect(vm.payload).toEqual({})
+
+    vm.onPickBucket('https://files-1504307838.cos.ap-nanjing.myqcloud.com')
+    await flushPromises()
+    expect(vm.payload).toMatchObject({ storageType: 'tencentCOS', tencentCosBucketName: 'files-1504307838', tencentCosRegion: 'ap-nanjing' })
+  })
 })
