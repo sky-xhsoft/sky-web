@@ -328,6 +328,13 @@
           </V2Card>
         </div>
       </a-tab-pane>
+
+      <!-- 推流域名：回调、录制模板与高光切片（本地配置，同步到本公司腾讯云账号） -->
+      <a-tab-pane v-if="domainInfo.type === 0" key="templates" title="模板配置">
+        <div class="tab-content">
+          <DomainTemplatePanel v-if="activeTab === 'templates'" :domain="domainInfo.name" />
+        </div>
+      </a-tab-pane>
     </a-tabs>
   </div>
 </template>
@@ -341,11 +348,12 @@ import { useNavigationStore } from '@/stores/navigation'
 import { formatDateTime } from '@/utils/date'
 import { useLiveStreamUrl } from '@/composables/useLiveStreamUrl'
 import { V2PageHeader, V2Card, V2Button, V2Tag } from '@/components/ui'
+import DomainTemplatePanel from './components/DomainTemplatePanel.vue'
 
 const navigationStore = useNavigationStore()
 
 // Props
-const props = defineProps<{ domainName: string }>()
+const props = defineProps<{ domainName: string; tab?: string }>()
 
 const {
   pushAuthKey, pushUrlList, pushForm, generatedPushUrl, generatedPushUrlList, pushCollapseActiveKeys,
@@ -385,7 +393,7 @@ const loadDomainInfo = async () => {
     }
 
     // 根据域名类型自动切换标签页
-        activeTab.value = data.Type === 0 ? 'push' : 'play'
+        activeTab.value = data.Type === 0 ? (props.tab === 'templates' ? 'templates' : 'push') : 'play'
         // 按域名类型加载对应的鉴权配置（推流/播放）
         loadDomainAuthKey()
       } catch (error: any) {

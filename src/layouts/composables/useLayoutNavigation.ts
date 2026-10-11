@@ -17,6 +17,7 @@ const ROUTE_CONFIG = {
   '/live/play-domains': { component: 'PlayDomain', titleKey: 'layout.playDomains' },
   '/live/streams': { component: 'LiveStream', titleKey: 'layout.liveStreams' },
   '/live/pull-stream': { component: 'PullStreamTask', titleKey: 'layout.pullStream' },
+  '/live/templates': { component: 'LiveTemplates', titleKey: 'layout.liveTemplates' },
   '/live/distribution': { component: 'PullStreamTask', titleKey: 'layout.pullStream' },
   '/live/pull-stream/create': { component: 'PullStreamTaskForm', titleKey: 'layout.createTask' },
   '/live/highlight-clips': { component: 'LiveHighlightClips', titleKey: 'layout.highlightClips' },

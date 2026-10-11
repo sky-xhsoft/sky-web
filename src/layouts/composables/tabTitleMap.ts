@@ -12,6 +12,7 @@ const componentTitleMap: Record<string, string | TitleResolver> = {
   PlayDomain:         'layout.playDomains',
   LiveStream:         'layout.liveStreams',
   PullStreamTask:     'layout.pullStream',
+  LiveTemplates:      'layout.liveTemplates',
   PullStreamTaskForm: (t, p) => p?.taskId ? t('layout.editTask') : t('layout.createTask'),
   LiveHighlightClips: 'layout.highlightClips',
   LiveRecordings:     'layout.recordings',

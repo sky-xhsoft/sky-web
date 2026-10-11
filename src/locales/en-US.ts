@@ -9,7 +9,7 @@ export default {
       grant_permission: 'granted', revoke_permission: 'revoked', refresh_cache: 'refreshed', reset_sequence: 'reset',
     },
     resources: {
-      cloud_file: 'cloud file', cloud_share: 'cloud share', live_room: 'live room', pull_stream: 'distribution task', live_domain: 'live domain',
+      cloud_file: 'cloud file', cloud_share: 'cloud share', live_room: 'live room', pull_stream: 'distribution task', live_domain: 'live domain', live_template: 'live template',
       live_record: 'recording / clip', company: 'company settings', menu: 'menu', user: 'user', table: 'data', action: 'action',
       workflow: 'workflow', task: 'task', dict: 'dictionary', sequence: 'document number', permission: 'permission',
     },
@@ -258,6 +258,7 @@ export default {
     domainDetail: 'Domain Detail',
     liveStreams: 'Live Stream Management',
     pullStream: 'Social Media Distribution',
+    liveTemplates: 'Templates',
     createTask: 'Create Task',
     editTask: 'Edit Task',
     highlightClips: 'Highlight Clips',

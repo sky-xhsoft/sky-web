@@ -38,6 +38,7 @@ const LiveStream = defineAsyncComponent(() => import('@/pages/live/LiveStream.vu
 const LivePreview = defineAsyncComponent(() => import('@/pages/live/LivePreview.vue'))
 const PullStreamTask = defineAsyncComponent(() => import('@/pages/live/PullStreamTask.vue'))
 const PullStreamTaskForm = defineAsyncComponent(() => import('@/pages/live/PullStreamTaskForm.vue'))
+const LiveTemplates = defineAsyncComponent(() => import('@/pages/live/LiveTemplates.vue'))
 const LiveHighlightClips = defineAsyncComponent(() => import('@/pages/live/LiveHighlightClips.vue'))
 const LiveHighlightClipPreview = defineAsyncComponent(() => import('@/pages/live/LiveHighlightClipPreview.vue'))
 const LiveRecordings = defineAsyncComponent(() => import('@/pages/live/LiveRecordings.vue'))
@@ -188,6 +189,7 @@ const componentRegistry: Record<string, Component> = {
   LivePreview,
   PullStreamTask,
   PullStreamTaskForm,
+  LiveTemplates,
   LiveHighlightClips,
   LiveHighlightClipPreview,
   LiveRecordings,
@@ -379,6 +381,10 @@ async function loadComponent(path: string) {
     case '/live/streams':
       currentComponent.value = componentRegistry.LiveStream
       navigationStore.navigateTo('LiveStream', t('layout.liveStreams'), {}, false)
+      break
+    case '/live/templates':
+      currentComponent.value = componentRegistry.LiveTemplates
+      navigationStore.navigateTo('LiveTemplates', t('layout.liveTemplates'), {}, false)
       break
     case '/live/pull-stream':
     case '/live/distribution':

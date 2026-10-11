@@ -9,7 +9,7 @@ export default {
       grant_permission: '授予了', revoke_permission: '撤销了', refresh_cache: '刷新了', reset_sequence: '重置了',
     },
     resources: {
-      cloud_file: '云盘文件', cloud_share: '云盘分享', live_room: '直播间', pull_stream: '分发任务', live_domain: '直播域名',
+      cloud_file: '云盘文件', cloud_share: '云盘分享', live_room: '直播间', pull_stream: '分发任务', live_domain: '直播域名', live_template: '直播模板',
       live_record: '录制 / 切片', company: '公司配置', menu: '菜单', user: '用户', table: '数据', action: '动作',
       workflow: '工作流', task: '任务', dict: '数据字典', sequence: '单据编号', permission: '权限',
     },
@@ -258,6 +258,7 @@ export default {
     domainDetail: '域名详情',
     liveStreams: '直播流管理',
     pullStream: '社媒分发',
+    liveTemplates: '模板管理',
     createTask: '创建分发任务',
     editTask: '编辑分发任务',
     highlightClips: '高光切片',

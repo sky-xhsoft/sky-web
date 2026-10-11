@@ -68,6 +68,7 @@ export function useComponentLoader(options: ComponentLoaderOptions) {
     '/live/play-domains': { componentKey: 'PlayDomain', titleKey: 'layout.playDomains' },
     '/live/streams': { componentKey: 'LiveStream', titleKey: 'layout.liveStreams' },
     '/live/pull-stream': { componentKey: 'PullStreamTask', titleKey: 'layout.pullStream' },
+    '/live/templates': { componentKey: 'LiveTemplates', titleKey: 'layout.liveTemplates' },
     '/live/distribution': { componentKey: 'PullStreamTask', titleKey: 'layout.pullStream' },
     '/live/pull-stream/create': {
       componentKey: 'PullStreamTaskForm',
