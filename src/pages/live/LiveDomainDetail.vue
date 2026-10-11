@@ -31,6 +31,11 @@
                 <code>{{ domainInfo.cname }}</code>
                 <icon-copy class="copy-icon" @click="copyToClipboard(domainInfo.cname)" />
               </span>
+              <span class="dt-label">主机记录</span>
+              <span class="cname-cell">
+                <code>{{ cnameHost(domainInfo.name) }}</code>
+                <span class="dt-hint">在域名解析中添加 CNAME 记录，指向上面的地址</span>
+              </span>
               <span class="dt-label">CNAME 状态</span>
               <span><V2Tag :type="domainInfo.cnameConfigured === 1 ? 'success' : 'neutral'">{{ domainInfo.cnameConfigured === 1 ? '已配置' : '未配置' }}</V2Tag></span>
               <span class="dt-label">状态</span>
@@ -183,6 +188,11 @@
               <span class="cname-cell">
                 <code>{{ domainInfo.cname }}</code>
                 <icon-copy class="copy-icon" @click="copyToClipboard(domainInfo.cname)" />
+              </span>
+              <span class="dt-label">主机记录</span>
+              <span class="cname-cell">
+                <code>{{ cnameHost(domainInfo.name) }}</code>
+                <span class="dt-hint">在域名解析中添加 CNAME 记录，指向上面的地址</span>
               </span>
               <span class="dt-label">CNAME 状态</span>
               <span><V2Tag :type="domainInfo.cnameConfigured === 1 ? 'success' : 'neutral'">{{ domainInfo.cnameConfigured === 1 ? '已配置' : '未配置' }}</V2Tag></span>
@@ -347,6 +357,7 @@ import { getDomain, generatePushURL } from '@/api/live'
 import { useNavigationStore } from '@/stores/navigation'
 import { formatDateTime } from '@/utils/date'
 import { useLiveStreamUrl } from '@/composables/useLiveStreamUrl'
+import { cnameHost, defaultCname } from '@/composables/useDomainList'
 import { V2PageHeader, V2Card, V2Button, V2Tag } from '@/components/ui'
 import DomainTemplatePanel from './components/DomainTemplatePanel.vue'
 
@@ -385,7 +396,8 @@ const loadDomainInfo = async () => {
       name: data.Name,
       type: data.Type,
       status: data.Status,
-      cname: data.TargetDomain || '',
+      // 腾讯云未返回时按域名类型给默认值
+      cname: data.TargetDomain || defaultCname(data.Name, data.Type),
       cnameConfigured: data.BCName || 0,
       region: data.Region || '全球加速',
       createTime: data.CreateTime,
@@ -649,6 +661,7 @@ onMounted(() => {
   color: var(--text-tertiary);
 }
 
+.dt-hint { color: var(--color-text-3); font-size: 12px; }
 .cname-cell,
 .url-cell {
   display: flex;

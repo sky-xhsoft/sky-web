@@ -30,11 +30,14 @@ const pageStubs = {
 import LiveDomainDetail from './LiveDomainDetail.vue'
 import { getDomain, generatePushURL } from '@/api/live'
 
-function mountPage() {
+// 渲染标签页内容（setup.ts 中 a-tabs / a-tab-pane 被 stub，默认不渲染插槽）
+const slotPassthrough = { template: '<div><slot /></div>' }
+
+function mountPage(renderTabs = false) {
   return mount(LiveDomainDetail, {
     props: { domainName: 'push.test' },
     global: {
-      stubs: pageStubs,
+      stubs: renderTabs ? { ...pageStubs, 'a-tabs': slotPassthrough, 'a-tab-pane': slotPassthrough } : pageStubs,
       config: {
         globalProperties: { t: (key: string) => key },
       },
@@ -66,5 +69,25 @@ describe('LiveDomainDetail (页面组件挂载)', () => {
     mountPage()
     await flushPromises()
     expect(generatePushURL).toBeDefined()
+  })
+
+  it('显示腾讯云返回的 CNAME 与主机记录', async () => {
+    vi.mocked(getDomain).mockResolvedValueOnce({
+      data: { code: 200, data: { Name: 'skyttt.skyzhou.cn', Type: 0, Status: 1, TargetDomain: 'skyttt.skyzhou.cn.tlivepush.com', BCName: 0 } },
+    } as any)
+    const wrapper = mountPage(true)
+    await flushPromises()
+    const codes = wrapper.findAll('.cname-cell code').map((c) => c.text())
+    expect(codes).toContain('skyttt.skyzhou.cn.tlivepush.com')
+    expect(codes).toContain('skyttt')
+  })
+
+  it('腾讯云未返回 CNAME 时按域名类型给默认值', async () => {
+    vi.mocked(getDomain).mockResolvedValueOnce({
+      data: { code: 200, data: { Name: 'play.skyzhou.cn', Type: 1, Status: 1, TargetDomain: '', BCName: 0 } },
+    } as any)
+    const wrapper = mountPage(true)
+    await flushPromises()
+    expect(wrapper.findAll('.cname-cell code').map((c) => c.text())).toContain('play.skyzhou.cn.txlivecdn.com')
   })
 })
