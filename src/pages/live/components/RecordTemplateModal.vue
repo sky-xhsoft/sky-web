@@ -18,24 +18,18 @@
         <a-form-item field="description" label="描述">
           <a-input v-model="form.description" :max-length="1024" />
         </a-form-item>
+        <a-form-item field="cosRegion" label="COS 地域" :rules="[{ required: true, message: '请选择地域' }]">
+          <a-select v-model="form.cosRegion" :options="regionOptions" :loading="bucketsLoading" allow-search placeholder="选择地域" @change="onRegionChange" />
+        </a-form-item>
         <a-form-item field="cosBucket" label="COS 存储桶" :rules="[{ required: true, message: '请选择存储桶' }]">
-          <a-select
-            v-model="bucketKey"
-            :loading="bucketsLoading"
-            :options="bucketOptions"
-            allow-search
-            allow-create
-            placeholder="选择存储桶，或输入名称（不含 -appid）"
-            @change="onBucketChange"
-          />
-          <template #extra>
-            <span v-if="bucketsError" class="rtm-warn">{{ bucketsError }}，可直接输入存储桶名称</span>
-            <span v-else-if="!bucketsLoading">本公司腾讯云账号下共 {{ buckets.length }} 个存储桶 <a-link :hoverable="false" @click="loadBuckets">刷新</a-link></span>
-          </template>
+          <a-select v-model="form.cosBucket" :options="bucketOptions" :loading="bucketsLoading" allow-search placeholder="选择存储桶" @change="onBucketChange" />
         </a-form-item>
-        <a-form-item field="cosRegion" label="COS 地域" :rules="[{ required: true, message: '请输入地域' }]">
-          <a-input v-model="form.cosRegion" placeholder="如 ap-shanghai" />
-        </a-form-item>
+      </div>
+      <div class="rtm-buckets">
+        <span v-if="bucketsLoading">正在获取本公司腾讯云账号下的存储桶…</span>
+        <span v-else-if="bucketsError" class="rtm-warn">{{ bucketsError }}</span>
+        <span v-else>本公司腾讯云账号下共 {{ buckets.length }} 个存储桶</span>
+        <a-link v-if="!bucketsLoading" :hoverable="false" @click="loadBuckets">刷新</a-link>
       </div>
       <a-form-item field="cosPath" label="存储路径" :rules="pathRules">
         <a-input v-model="form.cosPath" class="rtm-mono" />
@@ -73,36 +67,35 @@ const formRef = ref()
 const saving = ref(false)
 const form = reactive({ name: '', description: '', cosBucket: '', cosRegion: '', cosPath: '', minutes: 30, removeWatermark: 'Y' as 'Y' | 'N' })
 
-// ---------- 存储桶：从公司腾讯云账号拉取，选中后带出地域；拉取失败时仍可手动输入 ----------
+// ---------- 地域与存储桶：从公司腾讯云账号拉取后下拉选择，存储桶按所选地域筛选 ----------
 const buckets = ref<CosBucketOption[]>([])
 const bucketsLoading = ref(false)
 const bucketsError = ref('')
-// 选项值为「存储桶|地域」，同名存储桶可能在不同地域
-const keyOf = (bucket: string, region: string) => `${bucket}|${region}`
-const bucketOptions = computed(() => {
-  const opts = buckets.value.map((b) => ({ value: keyOf(b.bucket, b.region), label: `${b.bucket}（${b.region}）${b.company ? ' · 公司默认' : ''}` }))
-  // 当前值不在账号的存储桶中（如手动输入或已删除）时也显示出来
-  if (form.cosBucket && !buckets.value.some((b) => b.bucket === form.cosBucket && b.region === form.cosRegion)) {
-    opts.unshift({ value: keyOf(form.cosBucket, form.cosRegion), label: `${form.cosBucket}${form.cosRegion ? `（${form.cosRegion}）` : ''}` })
-  }
+// 编辑时原值不在账号的存储桶中（如已删除）也要显示出来
+const missing = '（不在本账号中）'
+const regionOptions = computed(() => {
+  const regions = [...new Set(buckets.value.map((b) => b.region))]
+  const opts = regions.map((r) => ({ value: r, label: r }))
+  if (form.cosRegion && !regions.includes(form.cosRegion)) opts.unshift({ value: form.cosRegion, label: form.cosRegion + missing })
   return opts
 })
-const bucketKey = computed({
-  get: () => (form.cosBucket ? keyOf(form.cosBucket, form.cosRegion) : ''),
-  set: () => {},
+const bucketOptions = computed(() => {
+  const opts = buckets.value
+    .filter((b) => !form.cosRegion || b.region === form.cosRegion)
+    .map((b) => ({ value: b.bucket, label: `${b.bucket}${form.cosRegion ? '' : `（${b.region}）`}${b.company ? ' · 公司默认' : ''}` }))
+  if (form.cosBucket && !opts.some((o) => o.value === form.cosBucket)) opts.unshift({ value: form.cosBucket, label: form.cosBucket + missing })
+  return opts
 })
-const onBucketChange = (v: unknown) => {
-  const s = String(v ?? '').trim()
-  const found = buckets.value.find((b) => keyOf(b.bucket, b.region) === s)
-  if (found) {
-    form.cosBucket = found.bucket
-    form.cosRegion = found.region
-    return
-  }
-  // 手动输入：可带 -appid，地域保留原值
-  const [bucket, region] = s.split('|')
-  form.cosBucket = (bucket || '').replace(/-\d+$/, '')
-  if (region) form.cosRegion = region
+// 换地域后原存储桶不在该地域时：只有一个或有公司默认存储桶则自动选上，否则清空
+const onRegionChange = () => {
+  const inRegion = buckets.value.filter((b) => b.region === form.cosRegion)
+  if (inRegion.some((b) => b.bucket === form.cosBucket)) return
+  form.cosBucket = (inRegion.find((b) => b.company) || (inRegion.length === 1 ? inRegion[0] : null))?.bucket || ''
+}
+// 未选地域时直接选存储桶，带出其地域
+const onBucketChange = () => {
+  const found = buckets.value.find((b) => b.bucket === form.cosBucket && (!form.cosRegion || b.region === form.cosRegion))
+  if (found) form.cosRegion = found.region
 }
 const loadBuckets = async () => {
   bucketsLoading.value = true
@@ -172,6 +165,7 @@ const submit = async () => {
 .rtm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
 .rtm-mono :deep(input) { font-family: Consolas, 'Cascadia Mono', monospace; }
 .rtm-warn { color: rgb(var(--warning-6)); }
+.rtm-buckets { display: flex; gap: 8px; align-items: center; margin: -8px 0 16px; color: var(--color-text-3); font-size: 12px; }
 .rtm-info { padding: 10px 14px; border-radius: 6px; background: var(--color-fill-1); color: var(--color-text-2); font-size: 13px; line-height: 1.7; }
 @media (max-width: 640px) {
   .rtm-grid { grid-template-columns: minmax(0, 1fr); }
