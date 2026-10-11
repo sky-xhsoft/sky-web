@@ -65,7 +65,8 @@
           <section class="ls-card ls-info">
             <h1 class="ls-title">{{ view.roomName }}</h1>
             <div class="ls-meta">
-              <span v-if="view.status === 'ended'">直播时间 {{ fmt(view.startTime) }}<template v-if="view.endedAt"> – {{ fmt(view.endedAt, 'HH:mm') }}</template></span>
+              <!-- 计划开始时间可能与实际开播不同，已结束只显示实际结束时间 -->
+              <span v-if="view.status === 'ended'"><template v-if="view.endedAt">结束于 {{ fmt(view.endedAt) }}</template></span>
               <span v-else-if="view.startTime">开播时间 {{ fmt(view.startTime) }}</span>
               <span v-if="displayModeText">{{ displayModeText }}</span>
             </div>

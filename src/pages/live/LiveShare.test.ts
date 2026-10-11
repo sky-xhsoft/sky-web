@@ -62,7 +62,7 @@ describe('LiveShare 直播间分享页', () => {
     await vm.load()
     await flushPromises()
     expect(wrapper.text()).toContain('直播已结束')
-    expect(wrapper.text()).toContain('直播时间 10-12 20:00 – 21:30')
+    expect(wrapper.text()).toContain('结束于 10-12 21:30')
     wrapper.unmount()
   })
 })
