@@ -19,6 +19,7 @@
           </template>
           <V2Button v-else-if="canStart" :loading="acting" @click="handleStartLive">{{ t('liveRoomDetail.page.actions.start') }}</V2Button>
           <V2Button type="secondary" :disabled="!roomInfo.id" @click="handleEdit">{{ t('liveRoomDetail.edit') }}</V2Button>
+          <V2Button type="secondary" :disabled="!roomInfo.id" @click="shareOpen = true">{{ t('liveRoomDetail.share') }}</V2Button>
           <a-tooltip :content="t('liveRoomDetail.page.deleteDisabledTip')" :disabled="!isLive">
             <span>
               <V2Button type="secondary" class="lrd-danger-outline" :disabled="isLive || !roomInfo.id" @click="handleDelete">{{ t('liveRoomDetail.delete') }}</V2Button>
@@ -200,6 +201,9 @@
         <LiveRecordings embedded v-if="roomInfo.id && activeTab === 'recordings'" :room-id="String(roomInfo.id)" />
       </div>
     </section>
+
+    <!-- 分享直播间（免登录观看链接） -->
+    <ShareRoomModal v-model:visible="shareOpen" :room="roomInfo.id ? { id: roomInfo.id, roomName: roomInfo.roomName } : null" />
   </div>
 </template>
 
@@ -224,6 +228,7 @@ import PullStreamTask from './PullStreamTask.vue'
 import LiveHighlightClips from './LiveHighlightClips.vue'
 import LiveRecordings from './LiveRecordings.vue'
 import SpeechTaskTable from './components/SpeechTaskTable.vue'
+import ShareRoomModal from './components/ShareRoomModal.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -532,6 +537,9 @@ const fetchRoomInfo = async () => {
 const handleBack = () => {
   navigationStore.navigateTo('LiveRoomList', t('liveRoomList.title'), {}, false)
 }
+
+// 分享弹窗
+const shareOpen = ref(false)
 
 const handleEdit = () => {
   if (!roomInfo.value.id) return

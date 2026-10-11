@@ -34,6 +34,13 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '文件分享', requiresAuth: false },
   },
   {
+    // 直播间分享：无需登录观看
+    path: '/live-share/:code',
+    name: 'live-share',
+    component: () => import('@/pages/live/LiveShare.vue'),
+    meta: { title: '直播', requiresAuth: false },
+  },
+  {
     path: '/',
     name: 'root',
     component: BasicLayout,

@@ -1494,6 +1494,7 @@ export default {
     addSpeechTask: 'Add Subtitle/Interpretation Task',
     createSpeechTask: 'Create Task',
     speechSubtitle: 'Subtitle/Interpretation',
+    share: 'Share',
     createLiveRoom: 'Create Live Room',
     refresh: 'Refresh',
     batchDelete: 'Batch Delete',

@@ -100,6 +100,7 @@
               <a-space class="room-card-actions">
                 <a-button size="mini" type="text" @click="handleEdit(record)"><template #icon><icon-edit /></template>{{ t('liveRoomList.edit') }}</a-button>
                 <a-button size="mini" type="text" @click="handleSpeechTask(record)"><template #icon><icon-language /></template>{{ t('liveRoomList.speechSubtitle') }}</a-button>
+                <a-button size="mini" type="text" @click="handleShare(record)"><template #icon><icon-share-alt /></template>{{ t('liveRoomList.share') }}</a-button>
                 <a-button size="mini" type="text" v-if="record.status === 'live'" @click="handlePreview(record)">{{ t('liveRoomList.preview') }}</a-button>
                 <a-button size="mini" type="text" @click="handlePullStreamTask(record)">{{ t('liveRoomList.socialDistribution') }}</a-button>
                 <a-button size="mini" type="text" @click="handleHighlightClips(record)">{{ t('liveRoomList.highlightClips') }}</a-button>
@@ -133,6 +134,9 @@
       :ok-text="t('liveRoomList.createSpeechTask')"
       @success="onSpeechTaskSuccess"
     />
+
+    <!-- 分享直播间（免登录观看链接） -->
+    <ShareRoomModal v-model:visible="shareModalVisible" :room="shareRoom" />
   </div>
 </template>
 
@@ -143,10 +147,11 @@ import { useNavigationStore } from '../../stores/navigation'
 import api from '../../api/http'
 import { listDomains } from '../../api/live'
 import dayjs from 'dayjs'
-import { IconRefresh, IconDelete, IconLanguage } from '@arco-design/web-vue/es/icon'
+import { IconRefresh, IconDelete, IconLanguage, IconShareAlt } from '@arco-design/web-vue/es/icon'
 import { useI18n } from 'vue-i18n'
 import { convertLiveRoomToFrontend, getStatusColor } from '../../composables/useLiveRoomData'
 import SpeechTaskModal from './components/SpeechTaskModal.vue'
+import ShareRoomModal from './components/ShareRoomModal.vue'
 
 const { t } = useI18n()
 
@@ -162,6 +167,14 @@ const selectedRows = ref<any[]>([])
 // 字幕同传弹窗状态
 const speechModalVisible = ref(false)
 const currentSpeechRecord = ref<any>(null)
+
+// 分享弹窗
+const shareModalVisible = ref(false)
+const shareRoom = ref<{ id: number; roomName: string } | null>(null)
+const handleShare = (record: any) => {
+  shareRoom.value = { id: record.id, roomName: record.roomName || record.name || '' }
+  shareModalVisible.value = true
+}
 
 const handleSpeechTask = (record: any) => {
   currentSpeechRecord.value = record

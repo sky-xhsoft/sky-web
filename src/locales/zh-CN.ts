@@ -1502,6 +1502,7 @@ export default {
     addSpeechTask: '添加字幕/同传任务',
     createSpeechTask: '创建任务',
     speechSubtitle: '字幕/同传',
+    share: '分享',
     createLiveRoom: '创建直播',
     refresh: '刷新',
     batchDelete: '批量删除',
