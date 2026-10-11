@@ -162,10 +162,7 @@ const addTypos = () => {
 
 <style scoped src="./speechStep.css"></style>
 <style scoped>
-.sg-results { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+.sg-results { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 .sg-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-.sg-scroll { max-height: 320px; overflow: auto; border: 1px solid var(--color-border-1); border-radius: 6px; }
-@media (max-width: 900px) {
-  .sg-results { grid-template-columns: minmax(0, 1fr); }
-}
+.sg-scroll { max-height: 260px; overflow: auto; border: 1px solid var(--color-border-1); border-radius: 6px; }
 </style>
