@@ -47,7 +47,7 @@
                   <td><a-checkbox v-model="k.checked" :aria-label="`选择 ${k.source}`" /></td>
                   <td><a-input v-model="k.source" size="small" :max-length="50" aria-label="原文" /></td>
                   <td v-if="!asr"><a-input v-model="k.target" size="small" :max-length="50" aria-label="译文" /></td>
-                  <td><span class="ss-tag" :class="{ 'ss-tag-brand': k.type === '品牌' || k.type === '产品' }" :title="`原文中出现 ${k.count} 次`">{{ k.type }}</span></td>
+                  <td><span class="ss-tag" :class="{ 'ss-tag-brand': /品牌|产品/.test(k.type) }" :title="`原文中出现 ${k.count} 次`">{{ k.type }}</span></td>
                 </tr>
               </tbody>
             </table>
@@ -116,7 +116,7 @@ const extract = async () => {
     })
     result.value = res
     // 通用词默认不勾选，其余默认勾选
-    keywords.value = res.keywords.map((k) => ({ ...k, checked: k.type !== '通用词' }))
+    keywords.value = res.keywords.map((k) => ({ ...k, checked: !k.type.includes('通用') }))
     typos.value = res.typos.map((t) => ({ ...t, checked: true }))
     if (res.failed) Message.warning(`有 ${res.failed} 段提取失败，结果可能不完整`)
     else Message.success(`提取到 ${res.keywords.length} 个${asr.value ? '热词' : '关键词'}、${res.typos.length} 个易错词`)
