@@ -259,6 +259,7 @@ export default {
     liveStreams: '直播流管理',
     pullStream: '社媒分发',
     liveTemplates: '模板管理',
+    liveSpeechTasks: '同传字幕',
     createTask: '创建分发任务',
     editTask: '编辑分发任务',
     highlightClips: '高光切片',

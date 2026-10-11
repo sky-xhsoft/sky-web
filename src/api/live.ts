@@ -491,3 +491,44 @@ export const extractSpeechGlossary = async (data: {
   const res = await api.post('/live/speech-tasks/glossary/extract', data, { timeout: 200000 })
   return res.data?.data as GlossaryExtractResult
 }
+
+// ==================== 字幕同传任务管理 ====================
+export type SpeechTaskStatus = 'created' | 'init' | 'prepare' | 'running' | 'prestop' | 'done'
+
+export interface SpeechTaskItem {
+  id: number
+  roomId: number
+  roomName: string
+  taskId: string
+  name: string
+  mode: string
+  sourceUrl: string
+  targetUrls: string
+  outputLangs: string
+  subtitle: boolean
+  startTime: string
+  endTime: string
+  status: SpeechTaskStatus
+  createTime: string
+}
+
+/** 分页查询本公司同传任务（同时从火山同步实时状态）；status 为 active 时只返回未结束的任务 */
+export const listSpeechTasks = async (params: { roomId?: string | number; keyword?: string; status?: string; page: number; pageSize: number }) => {
+  const res = await api.get('/live/speech-tasks', { params })
+  return res.data?.data as { items: SpeechTaskItem[]; total: number; syncError?: string }
+}
+
+/** 停止：结束任务，保留记录，可复制新建 */
+export const stopSpeechTask = (taskId: string) => api.post('/live/speech-tasks/stop', { taskId })
+
+/** 彻底删除：火山连同历史记录一起删除（运行中的任务会先停止） */
+export const deleteSpeechTask = (taskId: string) => api.post('/live/speech-tasks/delete', { TaskID: taskId })
+
+/** 重启运行中或启动中的任务；reloadSubtitle 为 true 时不中断直播，仅重启字幕模块 */
+export const restartSpeechTask = (taskId: string, reloadSubtitle: boolean) => api.post('/live/speech-tasks/restart', { taskId, reloadSubtitle })
+
+/** 任务创建时的参数（复制新建） */
+export const getSpeechTaskRule = async (taskId: string) => {
+  const res = await api.get(`/live/speech-tasks/${encodeURIComponent(taskId)}/rule`)
+  return res.data?.data as Record<string, any>
+}

@@ -189,7 +189,7 @@
         </div>
 
         <!-- 其他标签：进入时才加载 -->
-        <SpeechTaskListPanel
+        <SpeechTaskTable
           v-if="roomInfo.id && activeTab === 'speech'"
           :room-id="String(roomInfo.id)"
           :rtmp-pull-url="pullUrls.rtmp"
@@ -223,7 +223,7 @@ import { V2Button, V2Tag } from '@/components/ui'
 import PullStreamTask from './PullStreamTask.vue'
 import LiveHighlightClips from './LiveHighlightClips.vue'
 import LiveRecordings from './LiveRecordings.vue'
-import SpeechTaskListPanel from './components/SpeechTaskListPanel.vue'
+import SpeechTaskTable from './components/SpeechTaskTable.vue'
 
 const { t } = useI18n()
 const route = useRoute()

@@ -14,7 +14,7 @@
       <div class="stm-head">
         <div>
           <div class="stm-title">{{ title || '新建字幕同传任务' }}</div>
-          <div class="stm-subtitle">{{ record?.roomName ? `直播间「${record.roomName}」· ` : '' }}火山引擎声影同传</div>
+          <div class="stm-subtitle">{{ copyFrom ? `复制自「${copyFrom.name}」· ` : '' }}{{ room?.roomName ? `直播间「${room.roomName}」· ` : '' }}火山引擎声影同传</div>
         </div>
         <a-button type="text" aria-label="关闭" @click="handleCancel"><icon-close /></a-button>
       </div>
@@ -56,10 +56,16 @@
               <span class="ss-label ss-req">转推时间</span>
               <a-range-picker v-model="form.timeRange" show-time format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" :disabled-date="isPastDate" style="width: 100%" />
             </div>
+            <div v-if="!record" class="ss-field ss-field-full">
+              <span class="ss-label">源直播间</span>
+              <a-select v-model="sourceRoomId" placeholder="选择直播间，自动填写源流地址（也可直接填写下方地址）" allow-clear allow-search aria-label="源直播间" @change="onSourceRoomChange">
+                <a-option v-for="r in rooms" :key="r.id" :value="String(r.id)">{{ r.roomName || `直播间${r.id}` }}</a-option>
+              </a-select>
+            </div>
             <div class="ss-field ss-field-full">
               <label class="ss-label ss-req" for="stm-src">源流地址</label>
               <a-input id="stm-src" v-model="form.sourceUrl" placeholder="请输入拉流地址" allow-clear />
-              <div class="ss-tip">需要拉取的原始流地址，支持 RTMP、FLV{{ record?.roomName ? `，默认为直播间「${record.roomName}」的播放地址` : '' }}</div>
+              <div class="ss-tip">需要拉取的原始流地址，支持 RTMP、FLV{{ room?.roomName ? `，默认为直播间「${room.roomName}」的播放地址` : '' }}</div>
             </div>
             <div class="ss-field ss-field-full">
               <label class="ss-label ss-req" for="stm-dst">转推地址</label>
@@ -126,11 +132,12 @@ import SpeechStepGlossary from './SpeechStepGlossary.vue'
 import SpeechGlossaryLibrary from './SpeechGlossaryLibrary.vue'
 import SpeechPreview from './SpeechPreview.vue'
 import {
-  MODES, STEPS, SPEECH_FORM_KEY, buildSpeechTaskRule, defaultSpeechForm, isStep1Valid, langLabel, validateSpeechFormDetail,
+  MODES, STEPS, SPEECH_FORM_KEY, buildSpeechTaskRule, defaultSpeechForm, isStep1Valid, langLabel, ruleToSpeechForm, validateSpeechFormDetail,
   type SpeechForm,
 } from './speechTask'
 
-const props = defineProps<{ visible: boolean; record: any; title?: string; okText?: string }>()
+// record：从直播间进入时的直播间；copyFrom：复制新建时的原任务名称与创建参数
+const props = defineProps<{ visible: boolean; record?: any; title?: string; okText?: string; copyFrom?: { name: string; rule: any } | null }>()
 const emit = defineEmits<{ (e: 'update:visible', v: boolean): void; (e: 'success'): void; (e: 'cancel'): void }>()
 
 const form = reactive<SpeechForm>(defaultSpeechForm())
@@ -154,7 +161,14 @@ const stepDone = (n: number) => {
 const rooms = ref<{ id: number; roomName: string; status: string }[]>([])
 const playDomain = ref('')
 const targetRoomId = ref<string>()
-const defaultSource = () => (props.record?.id && playDomain.value ? `rtmp://${playDomain.value}/live/${props.record.id}` : props.record?.sourceUrlHint || '')
+const sourceRoomId = ref<string>()
+// 任务所属直播间：从直播间进入时为该直播间，从菜单进入时为所选源直播间
+const room = computed(() => props.record || rooms.value.find((r) => String(r.id) === sourceRoomId.value) || null)
+const roomSource = (id: unknown) => (id && playDomain.value ? `rtmp://${playDomain.value}/live/${id}` : '')
+const defaultSource = () => roomSource(props.record?.id) || props.record?.sourceUrlHint || ''
+const onSourceRoomChange = (id: unknown) => {
+  if (id) form.sourceUrl = roomSource(id) || form.sourceUrl
+}
 const loadRooms = async () => {
   try {
     const [roomRes, domRes] = await Promise.all([
@@ -171,7 +185,7 @@ const loadRooms = async () => {
   }
 }
 onMounted(loadRooms)
-const targetRooms = computed(() => rooms.value.filter((r) => r.status !== 'ended' && Number(r.id) !== Number(props.record?.id)))
+const targetRooms = computed(() => rooms.value.filter((r) => r.status !== 'ended' && Number(r.id) !== Number(room.value?.id)))
 const onTargetRoomChange = async (id: unknown) => {
   if (!id) return
   try {
@@ -188,10 +202,19 @@ watch(
   () => props.visible,
   (open) => {
     if (!open) return
-    Object.assign(form, defaultSpeechForm())
     step.value = 1
-    visited.value = new Set([1])
     targetRoomId.value = undefined
+    sourceRoomId.value = undefined
+    if (props.copyFrom) {
+      // 复制新建：沿用原任务的全部参数，转推时间重置
+      Object.assign(form, ruleToSpeechForm(props.copyFrom.rule, props.copyFrom.name))
+      visited.value = new Set([1, 2, 3, 4])
+      const m = form.sourceUrl.match(/\/live\/(\d+)(\?|$)/)
+      if (!props.record && m && rooms.value.some((r) => String(r.id) === m[1])) sourceRoomId.value = m[1]
+      return
+    }
+    Object.assign(form, defaultSpeechForm())
+    visited.value = new Set([1])
     if (props.record?.roomName) form.name = `${props.record.roomName}-同传`.slice(0, 20)
     form.sourceUrl = defaultSource()
     if (props.record?.targetUrlHint) form.targetUrl = props.record.targetUrlHint
@@ -230,8 +253,8 @@ const handleSubmit = async () => {
     const resp = await api.post('/live/speech-tasks', {
       Name: form.name.trim(),
       Rule: buildSpeechTaskRule(form),
-      roomId: props.record?.id ? String(props.record.id) : '',
-      roomName: props.record?.roomName || '',
+      roomId: room.value?.id ? String(room.value.id) : '',
+      roomName: room.value?.roomName || '',
     })
     if (resp.data && (resp.data.code === 0 || resp.data.code === 200 || resp.data.success)) {
       Message.success('字幕同传任务已创建')

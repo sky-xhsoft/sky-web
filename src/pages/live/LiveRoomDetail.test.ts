@@ -34,7 +34,7 @@ vi.mock('@arco-design/web-vue', async (importOriginal) => {
 
 const pageStubs = {
   'a-tooltip': { template: '<span><slot /></span>' },
-  SpeechTaskListPanel: true,
+  SpeechTaskTable: true,
   PullStreamTask: true,
   LiveHighlightClips: true,
   LiveRecordings: true,

@@ -259,6 +259,7 @@ export default {
     liveStreams: 'Live Stream Management',
     pullStream: 'Social Media Distribution',
     liveTemplates: 'Templates',
+    liveSpeechTasks: 'Live Interpretation',
     createTask: 'Create Task',
     editTask: 'Edit Task',
     highlightClips: 'Highlight Clips',

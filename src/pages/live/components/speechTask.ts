@@ -347,3 +347,107 @@ export const STEPS = [
 ]
 
 export const langLabel = (code: string) => [...INPUT_LANGS, ...OUTPUT_LANGS].find((o) => o.value === code)?.label || code
+
+/** 同传任务状态的显示文案与标签颜色 */
+export const SPEECH_STATUS: Record<string, { label: string; color: string; active: boolean }> = {
+  created: { label: '准备中', color: 'gray', active: true },
+  init: { label: '准备中', color: 'gray', active: true },
+  prepare: { label: '启动中', color: 'arcoblue', active: true },
+  running: { label: '运行中', color: 'green', active: true },
+  prestop: { label: '关闭中', color: 'orange', active: true },
+  done: { label: '已结束', color: 'gray', active: false },
+}
+
+/** Pipe → 模式文案（含原文 ASR 的两种出字方式） */
+export const speechModeLabel = (mode: string, outputLangs?: string) => {
+  if (mode === 'si') return '声影同传'
+  if (mode === 'mix') return '原文 ASR · 整句'
+  if (mode === 'realtime') return outputLangs ? '实时同传' : '原文 ASR · 实时流式'
+  return mode
+}
+
+const splitColor = (c: string | undefined, fallback: string): [string, number | undefined] => {
+  if (!c) return [fallback, undefined]
+  const [hex, alpha] = c.split('@')
+  return [hex || fallback, alpha !== undefined ? Number(alpha) : undefined]
+}
+
+const styleFromRule = (st: any): SpeechStyle => {
+  const d = defaultStyle()
+  if (!st) return d
+  const [fontColor] = splitColor(st.FontColor, d.fontColor)
+  const [borderColor] = splitColor(st.Border?.Color, d.borderColor)
+  const [boxColor, boxAlpha] = splitColor(st.Box?.Color, d.boxColor)
+  const opacity = st.Box?.Filter ?? boxAlpha
+  const preset = PRESETS.findIndex((p) => p.font.toLowerCase() === fontColor.toLowerCase() && p.border.toLowerCase() === borderColor.toLowerCase())
+  return {
+    preset,
+    fontColor,
+    borderColor,
+    boxColor,
+    boxW: st.Box?.W ?? d.boxW,
+    opacity: opacity !== undefined ? Math.round(opacity * 100) : d.opacity,
+    maxChar: st.MaxCharNumber || d.maxChar,
+    fontSize: st.FontSize || d.fontSize,
+    font: st.Font || d.font,
+  }
+}
+
+const mapToPairs = (m?: Record<string, string>): TermPair[] => Object.entries(m || {}).map(([from, to]) => ({ from, to }))
+
+/** 复制新建：把任务创建时的 Rule 还原为表单（转推时间重置为当前起 3 天，名称加「-副本」） */
+export const ruleToSpeechForm = (rule: any, name: string): SpeechForm => {
+  const f = defaultSpeechForm()
+  if (!rule) return f
+  const sub = rule.Subtitle || {}
+  const orig = sub.Original || {}
+  const trans = (sub.Translation || [])[0]
+  const pipe = rule.Pipe
+  if (pipe === 'si') f.mode = 'si'
+  else if (pipe === 'mix') {
+    f.mode = 'asr'
+    f.outWordMode = 'sentence'
+  } else if (pipe === 'realtime' && !trans) {
+    f.mode = 'asr'
+    f.outWordMode = 'stream'
+  } else f.mode = 'realtime'
+
+  f.name = `${name}-副本`.slice(0, 20)
+  f.sourceUrl = rule.Source?.Url || ''
+  f.targetUrl = (rule.Output?.Url || [])[0] || ''
+  f.delay = typeof rule.Delay === 'number' ? rule.Delay : suggestedDelay(f)
+  f.delayTouched = true
+  f.lipSync = !!rule.SI?.LipSync
+  f.voiceOn = rule.RealTime ? rule.RealTime.VoiceShow !== false : f.mode !== 'asr'
+  if (rule.Factory?.TTS && rule.Factory?.SID) {
+    f.voiceMode = 'fixed'
+    f.fixedVoice = `${rule.Factory.TTS}:${rule.Factory.SID}`
+  }
+  f.originalMode = rule.RealTime?.Separator ? 'translationOnly' : 'mix'
+  f.denoise = rule.Extra?.Separator?.HandleType === 1
+  if (rule.Extra?.AMix) {
+    f.audioEnhance = rule.Extra.AMix.AudioEnhance !== false
+    if (typeof rule.Extra.AMix.BGVolume === 'number') f.bgVolume = Math.round(rule.Extra.AMix.BGVolume * 100)
+  }
+
+  f.inputLang = orig.Language || f.inputLang
+  if (trans?.Language) f.outputLang = trans.Language
+  f.subtitleOn = !(orig.Hidden && (!trans || trans.Hidden))
+  f.subtitleFormat = trans && !orig.Hidden ? 'both' : 'translation'
+  f.rows = (trans || orig).MaxRowNumber ?? f.rows
+  f.order = (orig.ShowPriority ?? 0) >= (trans?.ShowPriority ?? 0) ? 'originalTop' : 'originalBottom'
+  if (sub.Position) {
+    f.marginLr = Math.round((sub.Position.MarginLr ?? 0.2) * 100)
+    f.marginTb = Math.round((sub.Position.MarginTb ?? 0.05) * 100)
+  }
+  if (f.mode === 'asr') {
+    f.transStyle = styleFromRule(orig)
+  } else {
+    f.transStyle = styleFromRule(trans)
+    f.origStyle = styleFromRule(orig)
+  }
+  f.glossaryPairs = mapToPairs(sub.GlossaryMap || rule.GlossaryMap)
+  f.replacePairs = mapToPairs(sub.ReplaceMap || rule.ReplaceMap)
+  f.hotWords = [...(sub.HotWords || rule.HotWords || [])]
+  return f
+}

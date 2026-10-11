@@ -47,6 +47,7 @@ const LiveRoomList = defineAsyncComponent(() => import('@/pages/live/LiveRoomLis
 const LiveRoomForm = defineAsyncComponent(() => import('@/pages/live/LiveRoomForm.vue'))
 const LiveRoomDetail = defineAsyncComponent(() => import('@/pages/live/LiveRoomDetail.vue'))
 const LiveTranslation = defineAsyncComponent(() => import('@/pages/live/LiveTranslation.vue'))
+const LiveSpeechTasks = defineAsyncComponent(() => import('@/pages/live/LiveSpeechTasks.vue'))
 const UserProfile = defineAsyncComponent(() => import('@/pages/system/UserProfile.vue'))
 const CompanyConfig = defineAsyncComponent(() => import('@/pages/system/CompanyConfig.vue'))
 const UserCenterPage = defineAsyncComponent(() => import('@/pages/system/UserCenterPage.vue'))
@@ -190,6 +191,7 @@ const componentRegistry: Record<string, Component> = {
   PullStreamTask,
   PullStreamTaskForm,
   LiveTemplates,
+  LiveSpeechTasks,
   LiveHighlightClips,
   LiveHighlightClipPreview,
   LiveRecordings,
@@ -385,6 +387,10 @@ async function loadComponent(path: string) {
     case '/live/templates':
       currentComponent.value = componentRegistry.LiveTemplates
       navigationStore.navigateTo('LiveTemplates', t('layout.liveTemplates'), {}, false)
+      break
+    case '/live/speech-tasks':
+      currentComponent.value = componentRegistry.LiveSpeechTasks
+      navigationStore.navigateTo('LiveSpeechTasks', t('layout.liveSpeechTasks'), {}, false)
       break
     case '/live/pull-stream':
     case '/live/distribution':

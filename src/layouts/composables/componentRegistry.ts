@@ -19,6 +19,7 @@ const componentLoaders: Record<string, () => Promise<any>> = {
   LivePreview: () => import('@/pages/live/LivePreview.vue'),
   PullStreamTask: () => import('@/pages/live/PullStreamTask.vue'),
   LiveTemplates: () => import('@/pages/live/LiveTemplates.vue'),
+  LiveSpeechTasks: () => import('@/pages/live/LiveSpeechTasks.vue'),
   PullStreamTaskForm: () => import('@/pages/live/PullStreamTaskForm.vue'),
   LiveHighlightClips: () => import('@/pages/live/LiveHighlightClips.vue'),
   LiveHighlightClipPreview: () => import('@/pages/live/LiveHighlightClipPreview.vue'),

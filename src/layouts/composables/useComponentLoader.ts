@@ -69,6 +69,7 @@ export function useComponentLoader(options: ComponentLoaderOptions) {
     '/live/streams': { componentKey: 'LiveStream', titleKey: 'layout.liveStreams' },
     '/live/pull-stream': { componentKey: 'PullStreamTask', titleKey: 'layout.pullStream' },
     '/live/templates': { componentKey: 'LiveTemplates', titleKey: 'layout.liveTemplates' },
+    '/live/speech-tasks': { componentKey: 'LiveSpeechTasks', titleKey: 'layout.liveSpeechTasks' },
     '/live/distribution': { componentKey: 'PullStreamTask', titleKey: 'layout.pullStream' },
     '/live/pull-stream/create': {
       componentKey: 'PullStreamTaskForm',

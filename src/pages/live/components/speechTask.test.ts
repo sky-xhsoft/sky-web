@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import dayjs from 'dayjs'
-import { buildSpeechTaskRule, defaultSpeechForm, delayRangeOf, parseGlossary, pipeOf, suggestedDelay, validateSpeechForm, validateSpeechFormDetail, applyPreset, mergePairs, glossaryLength, type SpeechForm, type TermPair } from './speechTask'
+import { ruleToSpeechForm, buildSpeechTaskRule, defaultSpeechForm, delayRangeOf, parseGlossary, pipeOf, suggestedDelay, validateSpeechForm, validateSpeechFormDetail, applyPreset, mergePairs, glossaryLength, type SpeechForm, type TermPair } from './speechTask'
 
 const base = (): SpeechForm => ({
   ...defaultSpeechForm(),
@@ -123,5 +123,27 @@ describe('延迟与校验', () => {
 
   it('关键词库解析兼容中文标点', () => {
     expect(parseGlossary('火山引擎：Volcengine，视频直播:Live\n坏数据')).toEqual({ 火山引擎: 'Volcengine', 视频直播: 'Live' })
+  })
+})
+
+describe('复制新建：Rule 还原为表单', () => {
+  it('还原后再组装的参数与原任务一致', () => {
+    const cases: Partial<SpeechForm>[] = [
+      { denoise: true, voiceMode: 'fixed', fixedVoice: 'tts_model:voice_id_123', lipSync: true, delay: 20, subtitleFormat: 'both', rows: 2, order: 'originalBottom', glossaryPairs: [{ from: '火山引擎', to: 'Volcengine' }], replacePairs: [{ from: 'Volcano', to: 'Volcengine' }] },
+      { mode: 'realtime', delay: 0, originalMode: 'translationOnly', bgVolume: 35, rows: 0 },
+      { mode: 'asr', outWordMode: 'sentence', delay: 10, hotWords: ['火山引擎'], rows: 2 },
+      { mode: 'asr', outWordMode: 'stream', delay: 0 },
+      { subtitleOn: false },
+    ]
+    for (const c of cases) {
+      const f = { ...base(), ...c } as SpeechForm
+      applyPreset(f.transStyle, 2)
+      f.transStyle.opacity = 45
+      const rule = buildSpeechTaskRule(f)
+      const back = ruleToSpeechForm(JSON.parse(JSON.stringify(rule)), 'zgbtest')
+      back.timeRange = f.timeRange
+      expect(buildSpeechTaskRule(back)).toEqual(rule)
+      expect(back.name).toBe('zgbtest-副本')
+    }
   })
 })
