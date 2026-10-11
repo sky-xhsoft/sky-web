@@ -459,3 +459,35 @@ export const listClips = (params?: ListClipsParams) => {
 export const listRecordings = (params?: ListRecordingsParams) => {
   return api.get('/live/recordings', { params }).then(res => res.data.data as { list: LiveRecording[]; pagination: { total: number; page: number; pageSize: number; totalPages: number } })
 }
+
+// ==================== 字幕同传：词库智能提取 ====================
+export interface GlossaryKeyword {
+  source: string
+  target: string
+  type: string
+  count: number
+}
+export interface GlossaryTypo {
+  wrong: string
+  correct: string
+  reason: string
+}
+export interface GlossaryExtractResult {
+  keywords: GlossaryKeyword[]
+  typos: GlossaryTypo[]
+  chunks: number
+  failed: number
+  elapsedMs: number
+}
+
+/** 整篇原文、译文由服务端调用火山方舟提取关键词与易错词（文章不保存） */
+export const extractSpeechGlossary = async (data: {
+  sourceText: string
+  targetText: string
+  sourceLang: string
+  targetLang: string
+  typoSide: 'source' | 'target'
+}) => {
+  const res = await api.post('/live/speech-tasks/glossary/extract', data, { timeout: 200000 })
+  return res.data?.data as GlossaryExtractResult
+}

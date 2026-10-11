@@ -113,6 +113,15 @@
               <div class="cc-label">区域</div>
               <a-input v-model="form.volcengineRegion" placeholder="例如 cn-north-1" class="cc-mono" />
             </div>
+            <div class="cc-field">
+              <div class="cc-label">火山方舟 API Key <span class="cc-hint-inline">（字幕同传词库智能提取）</span></div>
+              <a-input-password v-model="secretInputs.arkApiKey" :placeholder="secretPlaceholder('arkApiKey')" class="cc-mono" />
+            </div>
+            <div class="cc-field">
+              <div class="cc-label">火山方舟推理接入点</div>
+              <a-input v-model="form.arkModel" placeholder="例如 ep-20261011xxxxxx-xxxxx" class="cc-mono" />
+              <div class="cc-hint">在火山方舟控制台「在线推理」创建豆包模型接入点后填写</div>
+            </div>
           </div>
 
           <div class="cc-foot">
@@ -144,6 +153,7 @@ type SecretField =
   | 'tencentCosSecretKey'
   | 'volcengineAccessKeyId'
   | 'volcengineAccessKeySecret'
+  | 'arkApiKey'
 type TextField =
   | 'tencentCloudRegion'
   | 'storageType'
@@ -152,14 +162,15 @@ type TextField =
   | 'tencentCosRegion'
   | 'tencentCosCdnDomain'
   | 'volcengineRegion'
+  | 'arkModel'
 
 const SECRET_FIELDS: SecretField[] = [
   'tencentCloudSecretId', 'tencentCloudSecretKey', 'tencentCloudCallbackKey',
-  'tencentCosSecretId', 'tencentCosSecretKey', 'volcengineAccessKeyId', 'volcengineAccessKeySecret',
+  'tencentCosSecretId', 'tencentCosSecretKey', 'volcengineAccessKeyId', 'volcengineAccessKeySecret', 'arkApiKey',
 ]
 const TEXT_FIELDS: TextField[] = [
   'tencentCloudRegion', 'storageType', 'tencentCosBucketUrl', 'tencentCosBucketName',
-  'tencentCosRegion', 'tencentCosCdnDomain', 'volcengineRegion',
+  'tencentCosRegion', 'tencentCosCdnDomain', 'volcengineRegion', 'arkModel',
 ]
 
 const statusText: Record<Level, string> = { ok: '已配置', warn: '配置不完整', off: '未配置' }
@@ -277,7 +288,8 @@ const aiStatus = computed(() => {
   const key = has('volcengineAccessKeySecret')
   if (!id && !key) return { level: 'off' as Level, summary: isAdmin.value ? '需要火山引擎 Access Key' : '请联系管理员配置' }
   if (!id || !key) return { level: 'warn' as Level, summary: `缺少 ${id ? 'Access Key Secret' : 'Access Key ID'}` }
-  return { level: 'ok' as Level, summary: form.volcengineRegion || 'cn-north-1' }
+  const ark = has('arkApiKey') && !!form.arkModel ? '词库提取已开启' : '未配置词库提取'
+  return { level: 'ok' as Level, summary: `${form.volcengineRegion || 'cn-north-1'} · ${ark}` }
 })
 
 const sections = computed(() => [
@@ -458,6 +470,7 @@ defineExpose({ sections, payload })
   color: var(--text-secondary);
 }
 
+.cc-hint-inline { font-size: 12px; color: var(--color-text-3); font-weight: 400; }
 .cc-hint {
   margin-top: 4px;
   font-size: 12px;

@@ -1,0 +1,52 @@
+/* 字幕同传弹框：各步骤共用样式 */
+.ss-card { background: var(--color-bg-2); border: 1px solid var(--color-border-2); border-radius: 10px; padding: 16px 18px; }
+.ss-card + .ss-card { margin-top: 14px; }
+.ss-card-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+.ss-card-sub { font-size: 12px; font-weight: 400; color: var(--color-text-3); }
+.ss-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.ss-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ss-field-full { grid-column: 1 / -1; }
+.ss-label { font-size: 13px; color: var(--color-text-1); }
+.ss-req::before { content: '*'; color: rgb(var(--red-6)); margin-right: 4px; }
+.ss-tip { font-size: 12px; color: var(--color-text-3); line-height: 1.6; }
+.ss-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.ss-mode { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 12px 14px; border: 1px solid var(--color-border-2); border-radius: 8px; background: var(--color-bg-2); cursor: pointer; font: inherit; color: inherit; }
+.ss-mode:hover { border-color: rgb(var(--arcoblue-4)); }
+.ss-mode.is-active { border-color: rgb(var(--arcoblue-6)); background: rgb(var(--arcoblue-1)); }
+.ss-mode-title { font-weight: 600; }
+.ss-mode.is-active .ss-mode-title { color: rgb(var(--arcoblue-6)); }
+.ss-mode-desc { font-size: 12px; color: var(--color-text-2); }
+.ss-langs { display: flex; align-items: center; gap: 8px; }
+.ss-lang { flex: 1; min-width: 0; }
+.ss-swap { flex-shrink: 0; }
+.ss-sub-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; align-items: start; }
+.ss-box { border: 1px solid var(--color-border-2); border-radius: 8px; padding: 10px 14px; }
+.ss-box-wide { grid-column: 1 / -1; }
+.ss-box-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 28px; }
+.ss-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; min-height: 36px; border-top: 1px solid var(--color-border-1); }
+.ss-row > .arco-switch, .ss-row > .arco-checkbox { justify-self: start; }
+.ss-row-label { font-size: 13px; color: var(--color-text-2); }
+.ss-row-ctl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ss-voice { width: 200px; }
+.ss-slider { display: flex; align-items: center; gap: 12px; }
+.ss-slider :deep(.arco-slider) { flex: 1; min-width: 80px; }
+.ss-num { width: 92px; flex-shrink: 0; }
+.ss-seg :deep(.arco-radio-button) { padding: 0 12px; }
+.ss-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--color-border-2); margin-bottom: 8px; }
+.ss-tab { border: 0; background: none; font: inherit; padding: 8px 0; color: var(--color-text-2); cursor: pointer; }
+.ss-tab.is-active { color: rgb(var(--arcoblue-6)); font-weight: 600; box-shadow: inset 0 -2px 0 rgb(var(--arcoblue-6)); }
+.ss-presets { display: flex; gap: 8px; }
+.ss-preset { width: 40px; height: 34px; border: 1px solid var(--color-border-2); border-radius: 6px; background: var(--color-fill-2); font: 700 18px Arial, sans-serif; cursor: pointer; }
+.ss-preset.is-active { border-color: rgb(var(--arcoblue-6)); background: rgb(var(--arcoblue-1)); }
+.ss-colors { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--color-text-2); }
+.ss-color { width: 28px; height: 26px; padding: 0; border: 1px solid var(--color-border-2); border-radius: 6px; background: none; cursor: pointer; }
+.ss-small-num { width: 80px; }
+.ss-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ss-table th { text-align: left; font-weight: 500; color: var(--color-text-2); background: var(--color-fill-1); padding: 7px 8px; font-size: 12px; }
+.ss-table td { padding: 4px 6px; border-top: 1px solid var(--color-border-1); vertical-align: middle; }
+.ss-tag { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 4px; font-size: 11px; white-space: nowrap; background: var(--color-fill-2); color: var(--color-text-2); }
+.ss-tag-brand { background: rgb(var(--arcoblue-1)); color: rgb(var(--arcoblue-7)); }
+.ss-tag-typo { background: rgb(var(--orange-1)); color: rgb(var(--orange-7)); }
+@media (max-width: 900px) {
+  .ss-grid, .ss-modes, .ss-sub-grid { grid-template-columns: minmax(0, 1fr); }
+}

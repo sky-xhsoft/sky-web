@@ -3,6 +3,7 @@
  * 参数与火山控制台「新建任务」提交的 CreateSpeechTask Rule 一致。
  */
 import dayjs from 'dayjs'
+import type { InjectionKey } from 'vue'
 
 export type SpeechMode = 'si' | 'realtime' | 'asr'
 
@@ -16,6 +17,11 @@ export interface SpeechStyle {
   maxChar: number // 每行字数 1-200
   fontSize: number // 字号 1-100
   font: string
+}
+
+export interface TermPair {
+  from: string
+  to: string
 }
 
 export interface SpeechForm {
@@ -46,9 +52,9 @@ export interface SpeechForm {
   shareStyle: boolean
   transStyle: SpeechStyle
   origStyle: SpeechStyle
-  glossary: string
-  hotWords: string
-  replacePairs: { from: string; to: string }[]
+  glossaryPairs: TermPair[] // 关键词库：原文 → 译文
+  hotWords: string[] // 热词库（原文 ASR）
+  replacePairs: TermPair[] // 易错词：易错 → 纠正
   previewSize: string
   bgImage: string
   testMain: string
@@ -128,9 +134,9 @@ export const defaultSpeechForm = (): SpeechForm => {
     shareStyle: false,
     transStyle: defaultStyle(),
     origStyle: defaultStyle(),
-    glossary: '',
-    hotWords: '',
-    replacePairs: [{ from: '', to: '' }],
+    glossaryPairs: [],
+    hotWords: [],
+    replacePairs: [],
     previewSize: '1920x1080',
     bgImage: '',
     testMain: '',
@@ -168,6 +174,32 @@ export const pipeOf = (f: Pick<SpeechForm, 'mode' | 'outWordMode'>) =>
 
 const toISO = (v?: string) => (v ? dayjs(v).format('YYYY-MM-DDTHH:mm:ssZ') : '')
 
+/** 词对转为映射（忽略空项，后出现的覆盖先出现的） */
+export const pairsToMap = (pairs: TermPair[]): Record<string, string> => {
+  const map: Record<string, string> = {}
+  for (const p of pairs) {
+    if (p.from.trim() && p.to.trim()) map[p.from.trim()] = p.to.trim()
+  }
+  return map
+}
+
+/** 关键词库所占字符数（按控制台「原文:译文,」计算，上限 30000） */
+export const glossaryLength = (pairs: TermPair[]) => Object.entries(pairsToMap(pairs)).reduce((n, [k, v]) => n + k.length + v.length + 2, 0)
+
+/** 加入词对：按左侧词去重（不区分大小写），返回新增条数 */
+export const mergePairs = (list: TermPair[], add: TermPair[], limit = Infinity) => {
+  const seen = new Set(list.map((p) => p.from.trim().toLowerCase()))
+  let added = 0
+  for (const p of add) {
+    const key = p.from.trim().toLowerCase()
+    if (!key || !p.to.trim() || seen.has(key) || list.length >= limit) continue
+    list.push({ from: p.from.trim(), to: p.to.trim() })
+    seen.add(key)
+    added++
+  }
+  return added
+}
+
 /** 关键词库：原文:译文，逗号分隔（兼容中文标点、换行） */
 export const parseGlossary = (text: string): Record<string, string> => {
   const map: Record<string, string> = {}
@@ -201,10 +233,7 @@ const styleOut = (st: SpeechStyle, lang: string, rows: number, hidden: boolean, 
 export const buildSpeechTaskRule = (f: SpeechForm) => {
   const [start, end] = f.timeRange || []
   const pipe = pipeOf(f)
-  const replaceMap: Record<string, string> = {}
-  for (const p of f.replacePairs) {
-    if (p.from.trim() && p.to.trim()) replaceMap[p.from.trim()] = p.to.trim()
-  }
+  const replaceMap = pairsToMap(f.replacePairs)
   const rule: Record<string, any> = {
     Source: { Url: f.sourceUrl.trim() },
     Output: { Url: [f.targetUrl.trim()] },
@@ -232,7 +261,7 @@ export const buildSpeechTaskRule = (f: SpeechForm) => {
 
   const position = { MarginLr: f.marginLr / 100, MarginTb: f.marginTb / 100 }
   if (f.mode === 'asr') {
-    const hot = (f.hotWords || '').split('\n').map((s) => s.trim()).filter(Boolean)
+    const hot = f.hotWords.map((s) => s.trim()).filter(Boolean)
     rule.Subtitle = {
       Position: position,
       Original: styleOut(f.transStyle, f.inputLang, f.rows, !f.subtitleOn, 0, 0.7),
@@ -248,7 +277,7 @@ export const buildSpeechTaskRule = (f: SpeechForm) => {
       Position: position,
       // 显示优先级只由字幕排序决定（与控制台一致）：原文在上时原文 100、译文 0
       Original: styleOut(origStyle, f.inputLang, f.rows, !f.subtitleOn || !both, top ? 100 : 0, 0.7),
-      GlossaryMap: parseGlossary(f.glossary),
+      GlossaryMap: pairsToMap(f.glossaryPairs),
       ReplaceMap: replaceMap,
       Translation: [styleOut(f.transStyle, f.outputLang, f.rows, !f.subtitleOn, top ? 0 : 100, 0.5)],
     }
@@ -257,7 +286,23 @@ export const buildSpeechTaskRule = (f: SpeechForm) => {
 }
 
 /** 表单校验，返回第一条错误（与火山控制台规则一致） */
-export const validateSpeechForm = (f: SpeechForm): string | null => {
+export const validateSpeechForm = (f: SpeechForm): string | null => validateSpeechFormDetail(f)?.message ?? null
+
+/** 表单校验，返回第一条错误及所在步骤（1 基本信息、2 同传模式与声音、3 字幕样式、4 词库） */
+export const validateSpeechFormDetail = (f: SpeechForm): { step: number; message: string } | null => {
+  const s1 = validateStep1(f)
+  if (s1) return { step: 1, message: s1 }
+  const s2 = validateStep2(f)
+  if (s2) return { step: 2, message: s2 }
+  const s4 = validateStep4(f)
+  if (s4) return { step: 4, message: s4 }
+  return null
+}
+
+/** 第 1 步（基本信息）是否填写完整 */
+export const isStep1Valid = (f: SpeechForm) => validateStep1(f) === null
+
+const validateStep1 = (f: SpeechForm): string | null => {
   if (!f.name.trim()) return '请输入标题'
   if (!/^[一-龥A-Za-z0-9_-]{1,20}$/.test(f.name.trim())) return '标题支持中文、大小写字母、数字、-、_组合，不超过20个字符'
   const [start, end] = f.timeRange || []
@@ -271,14 +316,34 @@ export const validateSpeechForm = (f: SpeechForm): string | null => {
   if (!dst) return '请输入转推地址'
   if (!/^rtmps?:\/\//i.test(dst)) return '转推地址仅支持 RTMP 地址'
   if (src === dst) return '转推地址不能与源流地址相同'
+  return null
+}
+
+const validateStep2 = (f: SpeechForm): string | null => {
   const range = delayRangeOf(f)
   if (!range.fixed && (!Number.isInteger(f.delay) || f.delay < range.min || f.delay > range.max)) return `播出延迟需在 ${range.min}-${range.max}s 之间`
   if (f.mode !== 'asr' && (!f.outputLang || f.outputLang === f.inputLang)) return '请选择与输入语言不同的输出语言'
   if (f.mode === 'si' && f.voiceOn && f.voiceMode === 'fixed' && !/^[^:]+:[^:]+$/.test(f.fixedVoice.trim())) return '固定音色需为"xxx:yyy"格式，请用英文冒号分隔两段'
-  if ((f.glossary || '').length > MAX_GLOSSARY) return `关键词库不能超过 ${MAX_GLOSSARY} 个字符`
+  return null
+}
+
+const validateStep4 = (f: SpeechForm): string | null => {
+  if (glossaryLength(f.glossaryPairs) > MAX_GLOSSARY) return `关键词库不能超过 ${MAX_GLOSSARY} 个字符`
   const pairs = f.replacePairs.filter((p) => p.from.trim() || p.to.trim())
   if (pairs.length > MAX_REPLACE) return `易错词最多 ${MAX_REPLACE} 个`
   if (pairs.some((p) => !p.from.trim() || !p.to.trim())) return '易错词需同时填写原词与纠正词'
   if (pairs.some((p) => p.from.length > 50 || p.to.length > 50)) return '易错词单词不超过 50 个字'
   return null
 }
+
+/** 弹框各步骤组件共享同一个表单 */
+export const SPEECH_FORM_KEY: InjectionKey<SpeechForm> = Symbol('speechForm')
+
+export const STEPS = [
+  { key: 1, title: '基本信息' },
+  { key: 2, title: '同传模式与声音' },
+  { key: 3, title: '字幕样式' },
+  { key: 4, title: '词库' },
+]
+
+export const langLabel = (code: string) => [...INPUT_LANGS, ...OUTPUT_LANGS].find((o) => o.value === code)?.label || code

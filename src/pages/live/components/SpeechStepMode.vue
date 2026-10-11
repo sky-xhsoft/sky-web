@@ -1,0 +1,136 @@
+<template>
+  <section class="ss-card" aria-label="同传模式与声音">
+    <div class="ss-card-title">同传模式与声音</div>
+    <div class="ss-modes" role="radiogroup" aria-label="选择模式">
+      <button
+        v-for="m in MODES"
+        :key="m.value"
+        type="button"
+        role="radio"
+        :aria-checked="form.mode === m.value"
+        class="ss-mode"
+        :class="{ 'is-active': form.mode === m.value }"
+        @click="setMode(m.value)"
+      >
+        <span class="ss-mode-title">{{ m.title }}</span>
+        <span class="ss-mode-desc">{{ m.desc }}</span>
+      </button>
+    </div>
+
+    <div class="ss-grid">
+      <div class="ss-field">
+        <label class="ss-label ss-req" for="ss-delay">播出延迟</label>
+        <a-input-number id="ss-delay" v-model="form.delay" :min="range.min" :max="range.max" :disabled="range.fixed" :precision="0" @change="form.delayTouched = true">
+          <template #suffix>s</template>
+        </a-input-number>
+        <div v-if="form.mode === 'si'" class="ss-tip">支持 1-60s · 建议：口型、声音、字幕 20s / 声音、字幕 12s / 仅字幕 8s</div>
+        <div v-else-if="range.fixed" class="ss-tip">{{ form.mode === 'realtime' ? '实时同传' : '实时流式出字' }}无需播出延迟</div>
+        <div v-else class="ss-tip">支持 0-20s，建议 10s</div>
+      </div>
+      <div class="ss-field">
+        <span class="ss-label ss-req">{{ form.mode === 'asr' ? '原文语言' : '翻译语言' }}</span>
+        <div class="ss-langs">
+          <a-select v-model="form.inputLang" class="ss-lang" aria-label="输入语言" @change="onInputLangChange">
+            <template #prefix>输入</template>
+            <a-option v-for="o in INPUT_LANGS" :key="o.value" :value="o.value">{{ o.label }}</a-option>
+          </a-select>
+          <template v-if="form.mode !== 'asr'">
+            <a-tooltip content="交换输入、输出语言">
+              <a-button shape="circle" class="ss-swap" :disabled="!canSwap" aria-label="交换输入、输出语言" @click="swapLangs"><icon-swap /></a-button>
+            </a-tooltip>
+            <a-select v-model="form.outputLang" class="ss-lang" aria-label="输出语言">
+              <template #prefix>输出</template>
+              <a-option v-for="o in outputLangOptions" :key="o.value" :value="o.value">{{ o.label }}</a-option>
+            </a-select>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="form.mode !== 'asr'" class="ss-sub-grid">
+      <div v-if="form.mode === 'si'" class="ss-box">
+        <div class="ss-box-head">
+          <b>数字人口型</b>
+          <a-switch v-model="form.lipSync" aria-label="数字人口型" @change="applySuggestedDelay" />
+        </div>
+        <div class="ss-tip">开启后播出延迟建议改为 20s</div>
+      </div>
+      <div class="ss-box" :class="{ 'ss-box-wide': form.mode === 'realtime' }">
+        <div class="ss-box-head">
+          <b>同传声音</b>
+          <a-switch v-model="form.voiceOn" aria-label="同传声音" @change="applySuggestedDelay" />
+        </div>
+        <template v-if="form.voiceOn">
+          <div class="ss-row">
+            <span class="ss-row-label">音色</span>
+            <div class="ss-row-ctl">
+              <a-radio-group v-model="form.voiceMode">
+                <a-radio value="auto">自动复制</a-radio>
+                <a-radio v-if="form.mode === 'si'" value="fixed">固定音色</a-radio>
+              </a-radio-group>
+              <a-input v-if="form.mode === 'si' && form.voiceMode === 'fixed'" v-model="form.fixedVoice" placeholder="xxx:yyy" class="ss-voice" aria-label="固定音色" />
+            </div>
+          </div>
+          <template v-if="form.mode === 'realtime'">
+            <div class="ss-row">
+              <span class="ss-row-label">原声配置</span>
+              <a-radio-group v-model="form.originalMode">
+                <a-radio value="mix">原声自动叠加翻译</a-radio>
+                <a-radio value="translationOnly">仅保留翻译音频</a-radio>
+              </a-radio-group>
+            </div>
+            <div class="ss-row">
+              <span class="ss-row-label">{{ form.originalMode === 'mix' ? '原声音量' : '背景音' }}</span>
+              <div class="ss-slider">
+                <a-slider v-model="form.bgVolume" :min="0" :max="100" />
+                <a-input-number v-model="form.bgVolume" :min="0" :max="100" :precision="0" class="ss-num" :aria-label="form.originalMode === 'mix' ? '原声音量' : '背景音'"><template #suffix>%</template></a-input-number>
+              </div>
+            </div>
+          </template>
+          <div v-if="form.mode === 'si' || form.originalMode === 'translationOnly'" class="ss-row">
+            <span class="ss-row-label">降噪</span>
+            <a-switch v-model="form.denoise" aria-label="降噪" />
+          </div>
+          <div class="ss-row">
+            <span class="ss-row-label">音量均衡</span>
+            <a-switch v-model="form.audioEnhance" aria-label="音量均衡" />
+          </div>
+        </template>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script setup lang="ts">
+import { computed, inject } from 'vue'
+import { IconSwap } from '@arco-design/web-vue/es/icon'
+import { INPUT_LANGS, MODES, OUTPUT_LANGS, SPEECH_FORM_KEY, delayRangeOf, suggestedDelay, type SpeechMode } from './speechTask'
+
+const form = inject(SPEECH_FORM_KEY)!
+
+const range = computed(() => delayRangeOf(form))
+const applySuggestedDelay = () => {
+  if (range.value.fixed || !form.delayTouched) form.delay = suggestedDelay(form)
+}
+const setMode = (m: SpeechMode) => {
+  if (form.mode === m) return
+  form.mode = m
+  form.delayTouched = false
+  if (m !== 'si' && form.voiceMode === 'fixed') form.voiceMode = 'auto'
+  applySuggestedDelay()
+}
+defineExpose({ applySuggestedDelay })
+
+const outputLangOptions = computed(() => OUTPUT_LANGS.filter((o) => o.value !== form.inputLang))
+const onInputLangChange = () => {
+  if (form.outputLang === form.inputLang) form.outputLang = outputLangOptions.value[0]?.value || ''
+}
+const canSwap = computed(() => INPUT_LANGS.some((o) => o.value === form.outputLang))
+const swapLangs = () => {
+  const i = form.inputLang
+  form.inputLang = form.outputLang
+  form.outputLang = i
+}
+</script>
+
+<style scoped src="./speechStep.css"></style>

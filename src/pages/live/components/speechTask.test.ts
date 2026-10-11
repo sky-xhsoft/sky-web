@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import dayjs from 'dayjs'
-import { buildSpeechTaskRule, defaultSpeechForm, delayRangeOf, parseGlossary, pipeOf, suggestedDelay, validateSpeechForm, applyPreset, type SpeechForm } from './speechTask'
+import { buildSpeechTaskRule, defaultSpeechForm, delayRangeOf, parseGlossary, pipeOf, suggestedDelay, validateSpeechForm, validateSpeechFormDetail, applyPreset, mergePairs, glossaryLength, type SpeechForm, type TermPair } from './speechTask'
 
 const base = (): SpeechForm => ({
   ...defaultSpeechForm(),
@@ -28,7 +28,7 @@ describe('buildSpeechTaskRule', () => {
 
   it('声影同传：降噪、固定音色、口型、原文+译文、2 行、原文在下、词库', () => {
     const f = base()
-    Object.assign(f, { denoise: true, voiceMode: 'fixed', fixedVoice: 'tts_model:voice_id_123', lipSync: true, subtitleFormat: 'both', rows: 2, order: 'originalBottom', glossary: '火山引擎:Volcengine,视频直播:Live', replacePairs: [{ from: 'Volcano', to: 'Volcengine' }] })
+    Object.assign(f, { denoise: true, voiceMode: 'fixed', fixedVoice: 'tts_model:voice_id_123', lipSync: true, subtitleFormat: 'both', rows: 2, order: 'originalBottom', glossaryPairs: [{ from: '火山引擎', to: 'Volcengine' }, { from: '视频直播', to: 'Live' }], replacePairs: [{ from: 'Volcano', to: 'Volcengine' }] })
     f.delay = suggestedDelay(f)
     const r = buildSpeechTaskRule(f)
     expect(r.Delay).toBe(20)
@@ -55,7 +55,7 @@ describe('buildSpeechTaskRule', () => {
   })
 
   it('原文 ASR：整句为 mix、实时流式为 realtime，无译文，热词与易错词放在字幕下', () => {
-    const f = { ...base(), mode: 'asr' as const, rows: 2, hotWords: '火山引擎\n声影同传\n', replacePairs: [{ from: 'Volcano', to: 'Volcengine' }] }
+    const f = { ...base(), mode: 'asr' as const, rows: 2, hotWords: ['火山引擎', '声影同传', ' '], replacePairs: [{ from: 'Volcano', to: 'Volcengine' }] }
     f.delay = suggestedDelay(f)
     let r = buildSpeechTaskRule(f)
     expect(r.Pipe).toBe('mix')
@@ -105,6 +105,20 @@ describe('延迟与校验', () => {
     expect(validateSpeechForm({ ...base(), outputLang: 'zh' })).toContain('输出语言')
     expect(validateSpeechForm({ ...base(), replacePairs: [{ from: 'a', to: '' }] })).toContain('易错词')
     expect(validateSpeechForm({ ...base(), timeRange: ['2020-01-01 00:00:00', '2020-01-02 00:00:00'] })).toContain('当前时间')
+  })
+
+  it('错误定位到所在步骤', () => {
+    expect(validateSpeechFormDetail({ ...base(), targetUrl: '' })?.step).toBe(1)
+    expect(validateSpeechFormDetail({ ...base(), delay: 0 })?.step).toBe(2)
+    expect(validateSpeechFormDetail({ ...base(), replacePairs: [{ from: 'a', to: '' }] })?.step).toBe(4)
+    expect(validateSpeechFormDetail(base())).toBeNull()
+  })
+
+  it('加入词对去重、限制数量；词库字数', () => {
+    const list: TermPair[] = [{ from: 'Zigebo', to: 'Zigebo' }]
+    expect(mergePairs(list, [{ from: 'zigebo', to: 'x' }, { from: '火山引擎', to: 'Volcengine' }, { from: '', to: 'a' }, { from: 'b', to: 'c' }], 2)).toBe(1)
+    expect(list.map((p) => p.from)).toEqual(['Zigebo', '火山引擎'])
+    expect(glossaryLength([{ from: '火山引擎', to: 'Volcengine' }])).toBe(16)
   })
 
   it('关键词库解析兼容中文标点', () => {
