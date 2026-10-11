@@ -203,8 +203,9 @@ const onTargetRoomChange = async (id: unknown) => {
     const pushUrl = (resp?.data?.data || resp?.data)?.pushUrl || ''
     if (pushUrl) form.targetUrl = pushUrl
     else Message.warning('未获取到推流地址，请检查推流域名配置')
-  } catch {
-    Message.error('获取推流地址失败')
+  } catch (e: any) {
+    // 显示后端原因，如「当前公司未配置推流域名」
+    Message.error(e?.response?.data?.message || '获取推流地址失败')
   }
 }
 

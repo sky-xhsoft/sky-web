@@ -49,4 +49,16 @@ describe('SpeechTaskModal 直播间下拉', () => {
     await flushPromises()
     expect((wrapper.vm as any).rooms.map((r: any) => r.id)).toEqual([100])
   })
+
+  it('转推直播间排除已结束的和源直播间', async () => {
+    vi.mocked(api.post).mockResolvedValueOnce(roomsResponse([
+      { ID: 1, ROOM_NAME: '源', STATUS: 'live' },
+      { ID: 2, ROOM_NAME: '草稿', STATUS: 'draft' },
+      { ID: 3, ROOM_NAME: '已结束', STATUS: 'ended' },
+      { ID: 4, ROOM_NAME: '直播中', STATUS: 'live' },
+    ]) as any)
+    const wrapper = mount(SpeechTaskModal, { props: { visible: true, record: { id: 1, roomName: '源' } }, global: { stubs } })
+    await flushPromises()
+    expect((wrapper.vm as any).targetRooms.map((r: any) => r.id)).toEqual([2, 4])
+  })
 })
