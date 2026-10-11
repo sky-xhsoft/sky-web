@@ -18,8 +18,20 @@
         <a-form-item field="description" label="描述">
           <a-input v-model="form.description" :max-length="1024" />
         </a-form-item>
-        <a-form-item field="cosBucket" label="COS 存储桶" :rules="[{ required: true, message: '请输入存储桶' }]">
-          <a-input v-model="form.cosBucket" placeholder="不含 -appid，如 zigebo" />
+        <a-form-item field="cosBucket" label="COS 存储桶" :rules="[{ required: true, message: '请选择存储桶' }]">
+          <a-select
+            v-model="bucketKey"
+            :loading="bucketsLoading"
+            :options="bucketOptions"
+            allow-search
+            allow-create
+            placeholder="选择存储桶，或输入名称（不含 -appid）"
+            @change="onBucketChange"
+          />
+          <template #extra>
+            <span v-if="bucketsError" class="rtm-warn">{{ bucketsError }}，可直接输入存储桶名称</span>
+            <span v-else-if="!bucketsLoading">本公司腾讯云账号下共 {{ buckets.length }} 个存储桶 <a-link :hoverable="false" @click="loadBuckets">刷新</a-link></span>
+          </template>
         </a-form-item>
         <a-form-item field="cosRegion" label="COS 地域" :rules="[{ required: true, message: '请输入地域' }]">
           <a-input v-model="form.cosRegion" placeholder="如 ap-shanghai" />
@@ -49,10 +61,10 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { V2Modal } from '@/components/ui'
-import { saveRecordTemplate, SYNC_STATUS, type RecordTemplate, type TemplateDefaults } from '@/api/liveTemplate'
+import { listCosBuckets, saveRecordTemplate, SYNC_STATUS, type CosBucketOption, type RecordTemplate, type TemplateDefaults } from '@/api/liveTemplate'
 
 const props = defineProps<{ visible: boolean; template?: RecordTemplate | null; defaults?: TemplateDefaults | null }>()
 const emit = defineEmits<{ 'update:visible': [boolean]; saved: [RecordTemplate] }>()
@@ -60,6 +72,50 @@ const emit = defineEmits<{ 'update:visible': [boolean]; saved: [RecordTemplate] 
 const formRef = ref()
 const saving = ref(false)
 const form = reactive({ name: '', description: '', cosBucket: '', cosRegion: '', cosPath: '', minutes: 30, removeWatermark: 'Y' as 'Y' | 'N' })
+
+// ---------- 存储桶：从公司腾讯云账号拉取，选中后带出地域；拉取失败时仍可手动输入 ----------
+const buckets = ref<CosBucketOption[]>([])
+const bucketsLoading = ref(false)
+const bucketsError = ref('')
+// 选项值为「存储桶|地域」，同名存储桶可能在不同地域
+const keyOf = (bucket: string, region: string) => `${bucket}|${region}`
+const bucketOptions = computed(() => {
+  const opts = buckets.value.map((b) => ({ value: keyOf(b.bucket, b.region), label: `${b.bucket}（${b.region}）${b.company ? ' · 公司默认' : ''}` }))
+  // 当前值不在账号的存储桶中（如手动输入或已删除）时也显示出来
+  if (form.cosBucket && !buckets.value.some((b) => b.bucket === form.cosBucket && b.region === form.cosRegion)) {
+    opts.unshift({ value: keyOf(form.cosBucket, form.cosRegion), label: `${form.cosBucket}${form.cosRegion ? `（${form.cosRegion}）` : ''}` })
+  }
+  return opts
+})
+const bucketKey = computed({
+  get: () => (form.cosBucket ? keyOf(form.cosBucket, form.cosRegion) : ''),
+  set: () => {},
+})
+const onBucketChange = (v: unknown) => {
+  const s = String(v ?? '').trim()
+  const found = buckets.value.find((b) => keyOf(b.bucket, b.region) === s)
+  if (found) {
+    form.cosBucket = found.bucket
+    form.cosRegion = found.region
+    return
+  }
+  // 手动输入：可带 -appid，地域保留原值
+  const [bucket, region] = s.split('|')
+  form.cosBucket = (bucket || '').replace(/-\d+$/, '')
+  if (region) form.cosRegion = region
+}
+const loadBuckets = async () => {
+  bucketsLoading.value = true
+  bucketsError.value = ''
+  try {
+    buckets.value = await listCosBuckets()
+  } catch (e: any) {
+    buckets.value = []
+    bucketsError.value = e?.response?.data?.message || e?.message || '获取存储桶失败'
+  } finally {
+    bucketsLoading.value = false
+  }
+}
 
 const nameRules = [
   { required: true, message: '请输入模板名称' },
@@ -89,6 +145,7 @@ watch(
     form.cosPath = t?.cosPath || d?.cosPath || '/video/live/{StreamID}/{StartYear}{StartMonth}{StartDay}/'
     form.minutes = Math.round((t?.recordInterval || d?.recordInterval || 1800) / 60)
     form.removeWatermark = t?.removeWatermark || 'Y'
+    loadBuckets()
   },
   { immediate: true },
 )
@@ -114,6 +171,7 @@ const submit = async () => {
 <style scoped>
 .rtm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
 .rtm-mono :deep(input) { font-family: Consolas, 'Cascadia Mono', monospace; }
+.rtm-warn { color: rgb(var(--warning-6)); }
 .rtm-info { padding: 10px 14px; border-radius: 6px; background: var(--color-fill-1); color: var(--color-text-2); font-size: 13px; line-height: 1.7; }
 @media (max-width: 640px) {
   .rtm-grid { grid-template-columns: minmax(0, 1fr); }

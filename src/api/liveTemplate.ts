@@ -70,6 +70,15 @@ export interface TemplateDefaults {
   tencentConfigured: boolean
 }
 
+/** 公司腾讯云账号下的 COS 存储桶 */
+export interface CosBucketOption {
+  bucket: string // 不含 -appid
+  fullName: string
+  region: string
+  creationDate: string
+  company: boolean // 公司配置中的存储桶
+}
+
 export interface DomainRuleView extends TemplateSync {
   appName: string
   streamName: string
@@ -123,6 +132,8 @@ export interface StandardStepResult {
 const unwrap = <T>(res: any): T => res.data?.data as T
 
 export const getTemplateDefaults = async () => unwrap<TemplateDefaults>(await api.get('/live/templates/defaults'))
+
+export const listCosBuckets = async () => unwrap<CosBucketOption[]>(await api.get('/live/templates/cos-buckets')) || []
 
 export const listCallbackTemplates = async () =>
   unwrap<TemplateList<CallbackTemplate>>(await api.get('/live/templates', { params: { kind: 'callback' } }))
