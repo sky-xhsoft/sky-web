@@ -30,7 +30,9 @@
         <span v-else-if="bucketsError" class="rtm-warn">{{ bucketsError }}</span>
         <span v-else>本公司腾讯云账号下共 {{ buckets.length }} 个存储桶</span>
         <a-link v-if="!bucketsLoading" :hoverable="false" @click="loadBuckets">刷新</a-link>
+        <a-link v-if="!bucketsLoading" :hoverable="false" @click="createOpen = true">新建存储桶</a-link>
       </div>
+      <CreateCosBucketModal v-model:visible="createOpen" :default-region="form.cosRegion || defaults?.cosRegion" :app-id="appId" :regions="accountRegions" @created="onBucketCreated" />
       <a-form-item field="cosPath" label="存储路径" :rules="pathRules">
         <a-input v-model="form.cosPath" class="rtm-mono" />
         <template #extra>须以 / 开头，并包含时间占位符（如 {StartYear}）或 {RandomID}，否则录制文件会重名覆盖</template>
@@ -58,6 +60,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { V2Modal } from '@/components/ui'
+import CreateCosBucketModal from './CreateCosBucketModal.vue'
 import { listCosBuckets, saveRecordTemplate, SYNC_STATUS, type CosBucketOption, type RecordTemplate, type TemplateDefaults } from '@/api/liveTemplate'
 
 const props = defineProps<{ visible: boolean; template?: RecordTemplate | null; defaults?: TemplateDefaults | null }>()
@@ -96,6 +99,20 @@ const onRegionChange = () => {
 const onBucketChange = () => {
   const found = buckets.value.find((b) => b.bucket === form.cosBucket && (!form.cosRegion || b.region === form.cosRegion))
   if (found) form.cosRegion = found.region
+}
+// 新建存储桶：建好后刷新列表并选中
+const createOpen = ref(false)
+const appId = computed(() => {
+  const b = buckets.value.find((x) => x.fullName.length > x.bucket.length)
+  return b ? b.fullName.slice(b.bucket.length + 1) : ''
+})
+const accountRegions = computed(() => [...new Set(buckets.value.map((b) => b.region))])
+const onBucketCreated = async (b: CosBucketOption) => {
+  await loadBuckets()
+  // 列表可能稍有延迟，未出现时先加进去
+  if (!buckets.value.some((x) => x.fullName === b.fullName)) buckets.value = [...buckets.value, b]
+  form.cosRegion = b.region
+  form.cosBucket = b.bucket
 }
 const loadBuckets = async () => {
   bucketsLoading.value = true

@@ -135,6 +135,10 @@ export const getTemplateDefaults = async () => unwrap<TemplateDefaults>(await ap
 
 export const listCosBuckets = async () => unwrap<CosBucketOption[]>(await api.get('/live/templates/cos-buckets')) || []
 
+/** 在公司腾讯云账号下新建存储桶（公开读写 + CORS 全部允许）；bucket 可不带 -APPID */
+export const createCosBucket = async (data: { bucket: string; region: string }) =>
+  unwrap<CosBucketOption>(await api.post('/live/templates/cos-buckets', data))
+
 export const listCallbackTemplates = async () =>
   unwrap<TemplateList<CallbackTemplate>>(await api.get('/live/templates', { params: { kind: 'callback' } }))
 
