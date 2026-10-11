@@ -1,298 +1,456 @@
 <template>
   <a-modal
     :visible="visible"
-    :title="title"
-    width="1280px"
-    :body-style="{ maxHeight: 'calc(92vh - 120px)', overflow: 'auto', padding: '18px 22px' }"
-    :ok-text="okText"
-    :cancel-text="t('common.cancel')"
-    :confirm-loading="submitting"
-    :on-before-ok="handleSubmit"
-    :wrap-class-name="'speech-modal-page'"
+    :title="title || '新建字幕同传任务'"
+    width="1180px"
+    :body-style="{ maxHeight: 'calc(92vh - 120px)', overflow: 'auto', padding: '16px 24px' }"
+    :mask-closable="false"
+    unmount-on-close
     @cancel="handleCancel"
   >
-    <a-form :model="form" layout="vertical" size="small" class="speech-form">
-      <div class="modal-cfg-layout">
-        <!-- 左栏: 基础任务字段 -->
-        <div class="modal-left">
-          <a-form-item :label="t('speechTask.name')" required>
-            <a-input v-model="form.name" :max-length="20" allow-clear :placeholder="t('speechTask.namePlaceholder')" />
-          </a-form-item>
-
-          <a-form-item :label="t('speechTask.mode')" required>
-            <a-radio-group v-model="form.mode" type="button">
-              <a-radio value="mix">
-                <a-tooltip :content="t('speechTask.modeMixDesc')"><span>{{ t('speechTask.modeMix') }}</span></a-tooltip>
-              </a-radio>
-              <a-radio value="si">
-                <a-tooltip :content="t('speechTask.modeSiDesc')"><span>{{ t('speechTask.modeSi') }}</span></a-tooltip>
-              </a-radio>
-              <a-radio value="realtime">
-                <a-tooltip :content="t('speechTask.modeRealtimeDesc')"><span>{{ t('speechTask.modeRealtime') }}</span></a-tooltip>
-              </a-radio>
-            </a-radio-group>
-          </a-form-item>
-
-          <a-form-item :label="t('speechTask.relayTime')" required>
-            <a-range-picker v-model="form.timeRange" show-time format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
-          </a-form-item>
-
-          <a-form-item :label="t('speechTask.sourceUrl')" required>
-            <a-input :model-value="String(form.sourceUrl || '')" disabled :placeholder="t('speechTask.sourceUrlPlaceholder')" />
-            <div class="form-tip">{{ t('speechTask.srcSelectTip', { name: record && record.roomName ? record.roomName : '' }) }}</div>
-          </a-form-item>
-
-          <a-form-item :label="t('speechTask.targetUrl')" required>
-            <a-select v-model="form.targetUrl" allow-clear :placeholder="t('speechTask.targetUrlPlaceholder')" @change="onTargetChange">
-                          <a-option v-for="r in notEndedRooms" :key="'t'+r.id" :value="String(r.id)">{{ r.roomName || ('直播间'+r.id) }}</a-option>
-                        </a-select>
-            <div class="form-tip">{{ t('speechTask.tgtSelectTip') }}</div>
-          </a-form-item>
-
-          <a-form-item v-if="form.mode === 'si'" :label="t('speechTask.delay')">
-            <a-input-number v-model="form.delay" :min="1" :max="300" style="width: 120px" @change="delayStroked = true"><template #suffix>s</template></a-input-number>
-            <div class="form-tip">{{ t('speechTask.delayTip') }}</div>
-          </a-form-item>
-
-          <a-form-item :label="t('speechTask.inputLang')" required>
-                      <a-select v-model="form.inputLang">
-                        <a-option v-for="o in LANG_OPTIONS" :key="o.value" :value="o.value">{{ o.label }}</a-option>
-                      </a-select>
-                    </a-form-item>
-
-                    <a-form-item v-if="form.mode !== 'mix'" :label="t('speechTask.outputLangs')">
-            <a-select v-model="form.outputLang" allow-clear>
-                          <a-option v-for="o in otherLangs" :key="o.value" :value="o.value">{{ o.label }}</a-option>
-                        </a-select>
-                        <div class="form-tip">{{ t('speechTask.outputLangsTip') }}</div>
-          </a-form-item>
-
-          <a-form-item :label="t('speechTask.subtitleEnabled')">
-            <a-switch v-model="form.subtitleEnabled" type="round" />
-          </a-form-item>
+    <div class="stm">
+      <!-- ==================== 基本配置 ==================== -->
+      <div class="stm-section-title">基本配置</div>
+      <div class="stm-grid2">
+        <div class="stm-field">
+          <label class="stm-label stm-req" for="stm-name">标题</label>
+          <a-input id="stm-name" v-model="form.name" placeholder="请输入标题" :max-length="20" show-word-limit allow-clear />
+          <div class="stm-tip">支持中文、大小写字母、数字、-、_组合，不超过20个字符</div>
         </div>
+        <div class="stm-field">
+          <span class="stm-label stm-req">转推时间</span>
+          <a-range-picker v-model="form.timeRange" show-time format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" :disabled-date="isPastDate" style="width: 100%" />
+        </div>
+      </div>
 
-        <!-- 右栏: 字幕配置 + 预览 -->
-        <div class="modal-right" v-if="form.subtitleEnabled">
-          <div class="right-title">{{ t('speechTask.subtitleConfig') }}</div>
-          <div class="subtitle-cfg-layout">
-            <!-- 左: 配置字段 -->
-            <div class="subtitle-cfg-fields">
-              <div class="subtitle-cfg-grid">
+      <div class="stm-field">
+        <span class="stm-label stm-req">直播地址</span>
+        <a-input v-model="form.sourceUrl" placeholder="请输入拉流地址" allow-clear>
+          <template #prepend>源流地址</template>
+        </a-input>
+        <div class="stm-tip">需要拉取的原始流地址，支持 RTMP、FLV 地址{{ record?.roomName ? `，默认为直播间「${record.roomName}」的播放地址` : '' }}</div>
+        <a-input v-model="form.targetUrl" placeholder="请输入转推的推流地址" allow-clear class="stm-mt8">
+          <template #prepend>转推地址</template>
+          <template #append>
+            <a-select v-model="targetRoomId" placeholder="从直播间选择" allow-clear :style="{ width: '170px' }" :bordered="false" @change="onTargetRoomChange">
+              <a-option v-for="r in targetRooms" :key="r.id" :value="String(r.id)">{{ r.roomName || `直播间${r.id}` }}</a-option>
+            </a-select>
+          </template>
+        </a-input>
+        <div class="stm-tip">同传后转推的地址，支持 RTMP 地址；也可以从直播间选择，自动生成其推流地址</div>
+      </div>
 
-                <!-- 出字方式(仅字幕模式显示) -->
-                <div class="cfg-item cfg-full" v-if="form.mode === 'mix'">
-                  <span class="cfg-label">{{ t('speechTask.outWordMode') }}</span>
-                  <a-radio-group v-model="form.outWordMode" type="button" size="small">
-                    <a-radio value="sentence">{{ t('speechTask.outWordSentence') }}</a-radio>
-                    <a-radio value="realtime">{{ t('speechTask.outWordRealtime') }}</a-radio>
-                  </a-radio-group>
+      <div class="stm-field">
+        <span class="stm-label stm-req">选择模式</span>
+        <div class="stm-modes" role="radiogroup" aria-label="选择模式">
+          <button
+            v-for="m in MODES"
+            :key="m.value"
+            type="button"
+            role="radio"
+            :aria-checked="form.mode === m.value"
+            class="stm-mode"
+            :class="{ 'is-active': form.mode === m.value }"
+            @click="setMode(m.value)"
+          >
+            <span class="stm-mode-title">{{ m.title }}</span>
+            <span class="stm-mode-desc">{{ m.desc }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="stm-field">
+        <label class="stm-label stm-req" for="stm-delay">播出延迟</label>
+        <a-input-number id="stm-delay" v-model="form.delay" :min="delayRange.min" :max="delayRange.max" :disabled="delayRange.fixed" :precision="0" @change="form.delayTouched = true">
+          <template #suffix>s</template>
+        </a-input-number>
+        <div v-if="form.mode === 'si'" class="stm-tip">
+          声影同传下处理延迟时长，支持输入 1-60s；
+          <ul class="stm-tip-list">
+            <li>口型、声音、字幕建议输入 20s；</li>
+            <li>声音、字幕建议输入 12s；</li>
+            <li>仅字幕建议输入 8s；</li>
+          </ul>
+        </div>
+        <div v-else-if="delayRange.fixed" class="stm-tip">{{ form.mode === 'realtime' ? '实时同传' : '实时流式出字' }}无需播出延迟</div>
+        <div v-else class="stm-tip">原文 ASR 字幕处理延迟时长，支持输入 0-20s</div>
+      </div>
+
+      <div class="stm-field">
+        <span class="stm-label stm-req">{{ form.mode === 'asr' ? '原文语言' : '翻译语言' }}</span>
+        <div class="stm-langs">
+          <a-select v-model="form.inputLang" class="stm-lang" @change="onInputLangChange">
+            <template #prefix>输入 |</template>
+            <a-option v-for="o in INPUT_LANGS" :key="o.value" :value="o.value">{{ o.label }}</a-option>
+          </a-select>
+          <template v-if="form.mode !== 'asr'">
+            <a-tooltip content="交换输入、输出语言">
+              <a-button shape="circle" :disabled="!canSwap" aria-label="交换输入、输出语言" @click="swapLangs"><icon-swap /></a-button>
+            </a-tooltip>
+            <a-select v-model="form.outputLang" class="stm-lang">
+              <template #prefix>输出 |</template>
+              <a-option v-for="o in outputLangOptions" :key="o.value" :value="o.value">{{ o.label }}</a-option>
+            </a-select>
+          </template>
+        </div>
+        <div class="stm-tip">{{ form.mode === 'asr' ? '选择直播输入语言' : '选择直播输入语言和输出语言' }}</div>
+      </div>
+
+      <!-- 数字人口型：声影同传 -->
+      <div v-if="form.mode === 'si'" class="stm-card">
+        <div class="stm-card-head">
+          <span class="stm-label stm-req">数字人口型</span>
+          <a-switch v-model="form.lipSync" aria-label="数字人口型" @change="applySuggestedDelay" />
+        </div>
+      </div>
+
+      <!-- 同传声音：声影同传、实时同传 -->
+      <div v-if="form.mode !== 'asr'" class="stm-card">
+        <div class="stm-card-head">
+          <span class="stm-label stm-req">同传声音</span>
+          <a-switch v-model="form.voiceOn" aria-label="同传声音" @change="applySuggestedDelay" />
+        </div>
+        <div v-if="form.voiceOn" class="stm-card-body">
+          <div class="stm-row">
+            <span class="stm-row-label">音色配置</span>
+            <div class="stm-row-ctl">
+              <a-radio-group v-model="form.voiceMode">
+                <a-radio value="auto">自动复制</a-radio>
+                <a-radio v-if="form.mode === 'si'" value="fixed">固定音色</a-radio>
+              </a-radio-group>
+              <a-input v-if="form.mode === 'si' && form.voiceMode === 'fixed'" v-model="form.fixedVoice" placeholder="请输入固定音色" class="stm-voice" />
+            </div>
+          </div>
+          <template v-if="form.mode === 'realtime'">
+            <div class="stm-row">
+              <span class="stm-row-label">原声配置</span>
+              <a-radio-group v-model="form.originalMode">
+                <a-radio value="mix">原声自动叠加翻译</a-radio>
+                <a-radio value="translationOnly">仅保留翻译音频</a-radio>
+              </a-radio-group>
+            </div>
+            <div class="stm-row">
+              <span class="stm-row-label">{{ form.originalMode === 'mix' ? '原声音量' : '背景音' }}</span>
+              <div class="stm-slider">
+                <a-slider v-model="form.bgVolume" :min="0" :max="100" />
+                <a-input-number v-model="form.bgVolume" :min="0" :max="100" :precision="0" class="stm-num"><template #suffix>%</template></a-input-number>
+              </div>
+            </div>
+          </template>
+          <div v-if="form.mode === 'si' || form.originalMode === 'translationOnly'" class="stm-row">
+            <span class="stm-row-label">降噪开关</span>
+            <a-switch v-model="form.denoise" aria-label="降噪开关" />
+          </div>
+          <div class="stm-row">
+            <span class="stm-row-label">音量均衡</span>
+            <a-switch v-model="form.audioEnhance" aria-label="音量均衡" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 字幕配置 ==================== -->
+      <div class="stm-section-title">字幕配置</div>
+      <div class="stm-card">
+        <div class="stm-card-head">
+          <span class="stm-label stm-req">添加字幕配置</span>
+          <a-switch v-model="form.subtitleOn" aria-label="添加字幕配置" />
+        </div>
+        <div v-if="form.subtitleOn" class="stm-sub">
+          <!-- 左：字幕参数 -->
+          <div class="stm-sub-cfg">
+            <div v-if="form.mode === 'asr'" class="stm-row">
+              <span class="stm-row-label">出字方式</span>
+              <a-radio-group v-model="form.outWordMode" @change="applySuggestedDelay">
+                <a-radio value="sentence">整句</a-radio>
+                <a-radio value="stream">实时流式</a-radio>
+              </a-radio-group>
+            </div>
+            <div class="stm-row">
+              <span class="stm-row-label">字幕格式</span>
+              <a-radio-group v-if="form.mode !== 'asr'" v-model="form.subtitleFormat">
+                <a-radio value="both">原文+译文</a-radio>
+                <a-radio value="translation">译文</a-radio>
+              </a-radio-group>
+              <a-radio-group v-else :model-value="'original'"><a-radio value="original">原文</a-radio></a-radio-group>
+            </div>
+            <div class="stm-row">
+              <span class="stm-row-label">字幕行数</span>
+              <a-radio-group v-model="form.rows">
+                <a-radio :value="1">1行</a-radio>
+                <a-radio :value="2">2行</a-radio>
+                <a-radio :value="0">自适应</a-radio>
+              </a-radio-group>
+            </div>
+            <div v-if="showBoth" class="stm-row">
+              <span class="stm-row-label">字幕排序</span>
+              <a-select v-model="form.order" class="stm-order">
+                <a-option value="originalTop">原文在上</a-option>
+                <a-option value="originalBottom">原文在下</a-option>
+              </a-select>
+            </div>
+            <div class="stm-row">
+              <span class="stm-row-label">左右边距</span>
+              <div class="stm-slider">
+                <a-slider v-model="form.marginLr" :min="1" :max="30" />
+                <a-input-number v-model="form.marginLr" :min="1" :max="30" :precision="0" class="stm-num"><template #suffix>%</template></a-input-number>
+              </div>
+            </div>
+            <div class="stm-row">
+              <span class="stm-row-label">底部边距</span>
+              <div class="stm-slider">
+                <a-slider v-model="form.marginTb" :min="1" :max="50" />
+                <a-input-number v-model="form.marginTb" :min="1" :max="50" :precision="0" class="stm-num"><template #suffix>%</template></a-input-number>
+              </div>
+            </div>
+            <div v-if="showBoth" class="stm-row">
+              <span class="stm-row-label stm-row-label-wide">原文字幕与译文字幕样式共享</span>
+              <a-checkbox v-model="form.shareStyle" aria-label="原文字幕与译文字幕样式共享" />
+            </div>
+
+            <div v-for="g in styleGroups" :key="g.key" class="stm-style">
+              <div class="stm-style-title">{{ g.title }}</div>
+              <div class="stm-row">
+                <span class="stm-row-label">每行字数</span>
+                <div class="stm-slider">
+                  <a-slider v-model="g.style.maxChar" :min="1" :max="200" />
+                  <a-input-number v-model="g.style.maxChar" :min="1" :max="200" :precision="0" class="stm-num" />
                 </div>
-
-                <div class="cfg-item" v-if="form.mode !== 'mix'">
-                  <span class="cfg-label">{{ t('speechTask.subFormat') }}</span>
-                  <a-radio-group v-model="form.subtitleFormat" type="button" size="small">
-                    <a-radio value="both">{{ t('speechTask.subFormatBoth') }}</a-radio>
-                    <a-radio value="translation" :disabled="form.mode === 'mix'">{{ t('speechTask.subFormatTranslation') }}</a-radio>
-                  </a-radio-group>
+              </div>
+              <div class="stm-row">
+                <span class="stm-row-label">字号</span>
+                <div class="stm-slider">
+                  <a-slider v-model="g.style.fontSize" :min="1" :max="100" />
+                  <a-input-number v-model="g.style.fontSize" :min="1" :max="100" :precision="0" class="stm-num" />
                 </div>
-
-                <div class="cfg-item">
-                  <span class="cfg-label">{{ t('speechTask.subRows') }}</span>
-                  <a-radio-group v-model="form.subtitleRows" type="button" size="small">
-                    <a-radio :value="1">1</a-radio>
-                    <a-radio :value="2">2</a-radio>
-                    <a-radio :value="0">{{ t('speechTask.subRowsAuto') }}</a-radio>
-                  </a-radio-group>
-                </div>
-
-                <div class="cfg-item">
-                  <span class="cfg-label">{{ t('speechTask.marginLr') }}</span>
-                  <a-input-number v-model="form.marginLr" :min="0" :max="40" size="small" style="width: 110px"><template #suffix>%</template></a-input-number>
-                </div>
-
-                <div class="cfg-item">
-                  <span class="cfg-label">{{ t('speechTask.marginTb') }}</span>
-                  <a-input-number v-model="form.marginTb" :min="0" :max="90" size="small" style="width: 110px"><template #suffix>%</template></a-input-number>
-                </div>
-
-                <div class="cfg-group-title cfg-full">{{ t('speechTask.subStyleGroup') }}</div>
-
-                <div class="cfg-item">
-                  <span class="cfg-label">{{ t('speechTask.bgColor') }}</span>
-                  <div class="color-row">
-                    <input type="color" v-model="form.fontBGColor" class="color-input" />
-                    <a-input v-model="form.fontBGColor" size="small" style="width: 92px" />
-                  </div>
-                </div>
-
-                <div class="cfg-item">
-                  <span class="cfg-label">{{ t('speechTask.fontColor') }}</span>
-                  <div class="color-row">
-                    <input type="color" v-model="form.fontColor" class="color-input" />
-                    <a-input v-model="form.fontColor" size="small" style="width: 92px" />
-                  </div>
-                </div>
-
-                <div class="cfg-item">
-                  <span class="cfg-label">{{ t('speechTask.textEffect') }}</span>
-                  <div class="effect-row">
-                    <a-checkbox v-model="form.fontBold">{{ t('speechTask.bold') }}</a-checkbox>
-                    <a-checkbox v-model="form.fontShadow">{{ t('speechTask.shadow') }}</a-checkbox>
-                  </div>
-                </div>
-
-                <div class="cfg-item">
-                  <span class="cfg-label">{{ t('speechTask.fontSize') }}</span>
-                  <a-input-number v-model="form.fontSize" :min="8" :max="72" size="small" style="width: 100px" />
-                </div>
-
-                <div class="cfg-item">
-                                  <span class="cfg-label">{{ t('speechTask.fontFamily') }}</span>
-                                  <a-select v-model="form.fontFamily" size="small" allow-search style="width: 150px">
-                                    <a-option value="arial">Arial</a-option>
-                                  </a-select>
-                                </div>
-
-                <div class="cfg-item">
-                  <span class="cfg-label">{{ t('speechTask.maxChar') }}</span>
-                  <a-input-number v-model="form.maxCharNumber" :min="10" :max="200" size="small" style="width: 100px" />
-                  <div class="cfg-tip">{{ t('speechTask.maxCharTip') }}</div>
-                </div>
-
-                <div class="cfg-item cfg-full" v-if="form.mode === 'mix' && form.outWordMode === 'realtime'">
-                  <span class="cfg-tip">{{ t('speechTask.realtimeTip') }}</span>
-                </div>
-
-                <div class="cfg-item cfg-full">
-                  <span class="cfg-label">{{ t('speechTask.glossaryMap') }}</span>
-                  <a-textarea v-model="form.glossaryMap" :placeholder="t('speechTask.glossaryMapPlaceholder')" :max-length="30000" :auto-size="{ minRows: 2, maxRows: 3 }" />
-                </div>
-
-                <div class="cfg-item cfg-full">
-                  <span class="cfg-label">{{ t('speechTask.replaceMap') }}</span>
-                  <a-textarea v-model="form.replaceMap" :placeholder="t('speechTask.replaceMapPlaceholder')" :max-length="500" :auto-size="{ minRows: 2, maxRows: 3 }" />
+              </div>
+              <div class="stm-row">
+                <span class="stm-row-label">字体</span>
+                <div class="stm-font">
+                  <a-select v-model="g.style.font" class="stm-font-select">
+                    <a-option value="arial">Arial</a-option>
+                  </a-select>
+                  <a-popover trigger="click" position="right">
+                    <a-button :aria-label="`${g.title}：文字样式`"><icon-font-colors /></a-button>
+                    <template #content>
+                      <div class="stm-pop">
+                        <div class="stm-pop-title">预设样式</div>
+                        <div class="stm-presets">
+                          <button
+                            v-for="(p, i) in PRESETS"
+                            :key="i"
+                            type="button"
+                            class="stm-preset"
+                            :class="{ 'is-active': g.style.preset === i }"
+                            :aria-label="p.label"
+                            :title="p.label"
+                            :style="{ color: p.font, textShadow: textStroke(p.border, 1) }"
+                            @click="applyPreset(g.style, i)"
+                          >T</button>
+                        </div>
+                        <div class="stm-pop-title">其他样式</div>
+                        <div class="stm-pop-row">
+                          <label class="stm-pop-field">底色
+                            <input v-model="g.style.boxColor" type="color" class="stm-color" aria-label="底色" />
+                            <span class="stm-mono">{{ g.style.boxColor.toUpperCase() }}</span>
+                          </label>
+                          <label class="stm-pop-field">边距
+                            <a-input-number v-model="g.style.boxW" :min="0" :max="20" :precision="0" size="small" class="stm-pop-num" />
+                          </label>
+                        </div>
+                        <div class="stm-pop-title">透明度</div>
+                        <div class="stm-slider">
+                          <a-slider v-model="g.style.opacity" :min="0" :max="100" />
+                          <a-input-number v-model="g.style.opacity" :min="0" :max="100" :precision="0" size="small" class="stm-num"><template #suffix>%</template></a-input-number>
+                        </div>
+                        <div class="stm-pop-title">更多颜色</div>
+                        <label class="stm-pop-field">文字颜色
+                          <input v-model="g.style.fontColor" type="color" class="stm-color" aria-label="文字颜色" @input="g.style.preset = -1" />
+                          <span class="stm-mono">{{ g.style.fontColor.toUpperCase() }}</span>
+                        </label>
+                      </div>
+                    </template>
+                  </a-popover>
                 </div>
               </div>
             </div>
 
-            <!-- 右: 实时预览 -->
-            <div class="subtitle-cfg-preview">
-              <div class="preview-head">
-                <div class="preview-label">{{ t('speechTask.preview') }}</div>
-                <a-button size="mini" @click="triggerBgUpload">{{ form.bgImage ? t('speechTask.changeBg') : t('speechTask.uploadBg') }}</a-button>
-                <input ref="bgFileInput" type="file" accept="image/*" style="display:none" @change="onBgUpload" />
+            <div v-if="form.mode !== 'asr'" class="stm-field">
+              <label class="stm-label" for="stm-glossary">关键词库</label>
+              <a-textarea id="stm-glossary" v-model="form.glossary" :max-length="30000" show-word-limit :auto-size="{ minRows: 3, maxRows: 6 }" placeholder="按 原文:译文 方式排列，用逗号隔开，例如“火山引擎:Volcengine,视频直播:Live”" />
+            </div>
+            <div v-else class="stm-field">
+              <label class="stm-label" for="stm-hotwords">热词库</label>
+              <a-textarea id="stm-hotwords" v-model="form.hotWords" :auto-size="{ minRows: 3, maxRows: 6 }" placeholder="请输入热词，按换行分隔" />
+            </div>
+
+            <div class="stm-field">
+              <span class="stm-label">易错词</span>
+              <div class="stm-tip">根据{{ form.mode === 'asr' ? '原文' : '译文' }}关键词进行强制纠错，单词不超50个字，最多添加{{ MAX_REPLACE }}个纠错词，建议根据实际效果调整。</div>
+              <div v-for="(p, i) in form.replacePairs" :key="i" class="stm-pair">
+                <a-input v-model="p.from" :max-length="50" :placeholder="form.mode === 'asr' ? '原文' : '译文'" />
+                <a-input v-model="p.to" :max-length="50" placeholder="纠正" />
+                <a-button type="text" :aria-label="`删除第 ${i + 1} 个易错词`" @click="removePair(i)"><icon-delete /></a-button>
               </div>
-              <div class="preview-res-select">
-                <span class="preview-label">{{ t('speechTask.previewTip') }}</span>
-                <a-select v-model="form.sourceResolution" size="small" style="width: 190px">
-                  <a-option value="1920x1080">1920 × 1080 (16:9)</a-option>
-                  <a-option value="1280x720">1280 × 720 (16:9)</a-option>
-                  <a-option value="720x1280">720 × 1280 (9:16)</a-option>
-                  <a-option value="1080x1920">1080 × 1920 (9:16)</a-option>
-                </a-select>
+              <div class="stm-add">
+                <a-button type="text" size="small" :disabled="form.replacePairs.length >= MAX_REPLACE" @click="addPair"><template #icon><icon-plus-circle /></template>添加易错词</a-button>
+                <span class="stm-tip">还可以添加{{ MAX_REPLACE - form.replacePairs.length }}个标签</span>
               </div>
-              <div class="preview-stage">
-                <div class="canvasWrap" :style="stageStyle">
-                  <canvas ref="previewCanvas" :width="srcW" :height="srcH" class="canvas-core"></canvas>
-                  <div class="preview-watermark">{{ previewClock }}</div>
-                </div>
+            </div>
+          </div>
+
+          <!-- 右：预览效果 -->
+          <div class="stm-preview">
+            <div class="stm-label">预览效果</div>
+            <div class="stm-tip">请选择源流尺寸，转码字幕会按源流尺寸等比缩放</div>
+            <div class="stm-preview-bar">
+              <a-select v-model="form.previewSize" class="stm-size">
+                <template #prefix><icon-desktop /></template>
+                <a-option v-for="s in SIZES" :key="s.value" :value="s.value">{{ s.label }}</a-option>
+              </a-select>
+              <a-button @click="triggerBgUpload"><template #icon><icon-upload /></template>上传背景图</a-button>
+              <a-button v-if="form.bgImage" type="text" @click="form.bgImage = ''">移除</a-button>
+              <input ref="bgInput" type="file" accept="image/*" class="stm-hidden" aria-label="上传背景图" @change="onBgUpload" />
+            </div>
+            <div ref="stageRef" class="stm-stage" :style="stageStyle">
+              <div v-if="form.subtitleOn" class="stm-subs" :style="subsStyle">
+                <div v-for="line in previewLines" :key="line.key" class="stm-sub-line" :style="line.style">{{ line.text }}</div>
               </div>
+            </div>
+            <div class="stm-test">
+              <a-input v-model="form.testMain" :max-length="200" :placeholder="mainTestLabel">
+                <template #suffix><span class="stm-count">{{ (form.testMain || '').length }}/{{ form.rows || '自适应' }}</span></template>
+              </a-input>
+              <a-input v-if="showBoth" v-model="form.testOriginal" :max-length="200" placeholder="请输入原文字幕测试内容" class="stm-mt8" />
+              <div class="stm-tip">超出显示范围时，内容将会被截断</div>
             </div>
           </div>
         </div>
       </div>
-    </a-form>
+    </div>
+
+    <template #footer>
+      <a-button @click="handleCancel">取消</a-button>
+      <a-button type="primary" :loading="submitting" @click="handleSubmit">{{ okText || '创建' }}</a-button>
+    </template>
   </a-modal>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed, nextTick, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
+import { IconSwap, IconFontColors, IconDelete, IconPlusCircle, IconDesktop, IconUpload } from '@arco-design/web-vue/es/icon'
+import dayjs from 'dayjs'
 import api from '../../../api/http'
 import { listDomains, generatePushURLByRoom } from '../../../api/live'
-import { useI18n } from 'vue-i18n'
-import dayjs from 'dayjs'
+import {
+  INPUT_LANGS, OUTPUT_LANGS, MODES, PRESETS, SIZES, MAX_REPLACE,
+  buildSpeechTaskRule, defaultSpeechForm, suggestedDelay, delayRangeOf, validateSpeechForm, applyPreset, textStroke,
+  type SpeechForm, type SpeechStyle, type SpeechMode,
+} from './speechTask'
 
-const { t } = useI18n()
+const props = defineProps<{ visible: boolean; record: any; title?: string; okText?: string }>()
+const emit = defineEmits<{ (e: 'update:visible', v: boolean): void; (e: 'success'): void; (e: 'cancel'): void }>()
 
-const LANG_OPTIONS = [
-  { value: 'zh', label: '中文' },
-  { value: 'en', label: 'English' },
-  { value: 'ja', label: '日本語' },
-  { value: 'ko', label: '한국어' },
-  { value: 'es', label: 'Español' }
-]
-
-const props = defineProps<{
-  visible: boolean
-  record: any
-  title: string
-  okText?: string
-}>()
-const emit = defineEmits<{
-  (e: 'update:visible', v: boolean): void
-  (e: 'success'): void
-  (e: 'cancel'): void
-}>()
-
+const form = reactive<SpeechForm>(defaultSpeechForm())
 const submitting = ref(false)
-const liveRooms = ref<any[]>([])
+
+// ---------- 直播间与地址 ----------
+const rooms = ref<{ id: number; roomName: string; status: string }[]>([])
 const playDomain = ref('')
-const pushDomain = ref('')
-const loadLiveRooms = async () => {
+const targetRoomId = ref<string>()
+const loadRooms = async () => {
   try {
     const [roomRes, domRes] = await Promise.all([
-      api.post('/data/LIVE_ROOM/query', { page: 1, pageSize: 100, keyword: '', filters: { IS_ACTIVE: 'Y' } }),
-      listDomains(undefined)
+      api.post('/data/LIVE_ROOM/query', { page: 1, pageSize: 200, filters: { IS_ACTIVE: 'Y' } }),
+      listDomains(undefined),
     ])
-    const rooms = roomRes.data?.data?.data || []
-    liveRooms.value = (Array.isArray(rooms) ? rooms : []).map((it: any) => ({
-      id: it.ID,
-      roomName: it.ROOM_NAME || '',
-      streamName: it.STREAM_NAME || String(it.ID || ''),
-      status: it.STATUS || 'draft',
-      endTime: it.END_TIME || ''
-    }))
+    const list = roomRes.data?.data?.data || []
+    rooms.value = (Array.isArray(list) ? list : []).map((it: any) => ({ id: it.ID, roomName: it.ROOM_NAME || '', status: it.STATUS || '' }))
     const ds = domRes.data?.data?.domains || []
-        const play = (Array.isArray(ds) ? ds : []).find((d: any) => d.Type === 1)
-        playDomain.value = play?.Name || ''
-        const push = (Array.isArray(ds) ? ds : []).find((d: any) => d.Type === 0)
-        pushDomain.value = push?.Name || ''
-  } catch (error: any) {
-    console.error('加载直播间失败:', error)
+    playDomain.value = (Array.isArray(ds) ? ds : []).find((d: any) => d.Type === 1)?.Name || ''
+    if (props.visible && !form.sourceUrl) form.sourceUrl = defaultSource()
+  } catch (e) {
+    console.error('加载直播间失败:', e)
   }
 }
-const notEndedRooms = computed(() => {
-  const curId = props.record?.id
-  return liveRooms.value.filter(r => r.status !== 'ended' && Number(r.id) !== Number(curId))
-})
-// 选择目标直播间后，调用后端接口获取该直播间的推流地址
-const onTargetChange = async (roomId: string | number | undefined | null) => {
-  if (roomId === undefined || roomId === null || roomId === '') {
-    form.targetUrl = ''
-    return
-  }
+onMounted(loadRooms)
+const targetRooms = computed(() => rooms.value.filter((r) => r.status !== 'ended' && Number(r.id) !== Number(props.record?.id)))
+const defaultSource = () => (props.record?.id && playDomain.value ? `rtmp://${playDomain.value}/live/${props.record.id}` : props.record?.sourceUrlHint || '')
+
+const onTargetRoomChange = async (id: unknown) => {
+  if (!id) return
   try {
-    const resp: any = await generatePushURLByRoom(roomId)
-    const data = resp?.data?.data || resp?.data
-    const pushUrl = data?.pushUrl || ''
-    form.targetUrl = pushUrl || String(roomId)
-    if (!pushUrl) {
-      Message.warning('未获取到推流地址，请检查推流域名配置')
-    }
-  } catch (e: any) {
-    console.error('获取推流地址失败:', e)
+    const resp: any = await generatePushURLByRoom(String(id))
+    const pushUrl = (resp?.data?.data || resp?.data)?.pushUrl || ''
+    if (pushUrl) form.targetUrl = pushUrl
+    else Message.warning('未获取到推流地址，请检查推流域名配置')
+  } catch {
     Message.error('获取推流地址失败')
   }
 }
-onMounted(loadLiveRooms)
 
-const bgFileInput = ref<HTMLInputElement | null>(null)
-const triggerBgUpload = () => bgFileInput.value?.click()
+watch(
+  () => props.visible,
+  (open) => {
+    if (!open) return
+    Object.assign(form, defaultSpeechForm())
+    targetRoomId.value = undefined
+    if (props.record?.roomName) form.name = `${props.record.roomName}-同传`.slice(0, 20)
+    form.sourceUrl = defaultSource()
+    if (props.record?.targetUrlHint) form.targetUrl = props.record.targetUrlHint
+  },
+  { immediate: true },
+)
+
+const isPastDate = (current?: Date) => !!current && dayjs(current).isBefore(dayjs(), 'day')
+
+// ---------- 模式、延迟、语言 ----------
+const setMode = (m: SpeechMode) => {
+  if (form.mode === m) return
+  form.mode = m
+  form.delayTouched = false
+  if (m !== 'si' && form.voiceMode === 'fixed') form.voiceMode = 'auto'
+  applySuggestedDelay()
+}
+const delayRange = computed(() => delayRangeOf(form))
+const applySuggestedDelay = () => {
+  if (delayRange.value.fixed || !form.delayTouched) form.delay = suggestedDelay(form)
+}
+const outputLangOptions = computed(() => OUTPUT_LANGS.filter((o) => o.value !== form.inputLang))
+const onInputLangChange = () => {
+  if (form.outputLang === form.inputLang) form.outputLang = outputLangOptions.value[0]?.value || ''
+}
+const canSwap = computed(() => INPUT_LANGS.some((o) => o.value === form.outputLang))
+const swapLangs = () => {
+  const i = form.inputLang
+  form.inputLang = form.outputLang
+  form.outputLang = i
+}
+
+// ---------- 字幕样式 ----------
+const showBoth = computed(() => form.mode !== 'asr' && form.subtitleFormat === 'both')
+const styleGroups = computed<{ key: string; title: string; style: SpeechStyle }[]>(() => {
+  if (form.mode === 'asr') return [{ key: 'o', title: '原文字幕样式', style: form.transStyle }]
+  if (!showBoth.value) return [{ key: 't', title: '译文字幕样式', style: form.transStyle }]
+  if (form.shareStyle) return [{ key: 'b', title: '原文+译文字幕样式', style: form.transStyle }]
+  return [
+    { key: 'o', title: '原文字幕样式', style: form.origStyle },
+    { key: 't', title: '译文字幕样式', style: form.transStyle },
+  ]
+})
+
+const addPair = () => form.replacePairs.push({ from: '', to: '' })
+const removePair = (i: number) => {
+  form.replacePairs.splice(i, 1)
+  if (!form.replacePairs.length) addPair()
+}
+
+// ---------- 预览 ----------
+const bgInput = ref<HTMLInputElement | null>(null)
+const triggerBgUpload = () => bgInput.value?.click()
 const onBgUpload = (e: Event) => {
   const input = e.target as HTMLInputElement
-  const file = input?.files?.[0]
+  const file = input.files?.[0]
   if (!file) return
   const reader = new FileReader()
   reader.onload = () => {
@@ -302,292 +460,74 @@ const onBgUpload = (e: Event) => {
   reader.readAsDataURL(file)
 }
 
-const defaultForm = () => ({
-  name: '',
-  mode: 'mix',
-  timeRange: [] as any[],
-  sourceUrl: '',
-  targetUrl: '',
-  delay: 12,
-  inputLang: 'zh',
-    outputLang: 'en' as string,
-  subtitleEnabled: true,
-  // ---- 字幕配置 ----
-  subtitleFormat: 'both',
-  subtitleRows: 1,
-  sourceResolution: '1920x1080',
-  subtitleOrder: 'originalTop',
-  bgImage: '',
-  outWordMode: 'sentence',
-  fontBGColor: '#000000',
-  fontBold: false,
-  fontShadow: false,
-  marginLr: 2,
-  marginTb: 5,
-  fontSize: 24,
-  fontFamily: 'arial',
-  fontColor: '#FFFFFF',
-  maxCharNumber: 50,
-  glossaryMap: '',
-  replaceMap: ''
+const stageRef = ref<HTMLElement | null>(null)
+const stageWidth = 480
+const srcSize = computed(() => {
+  const [w, h] = form.previewSize.split('x').map(Number)
+  return { w: w || 1920, h: h || 1080 }
 })
-
-const form = reactive(defaultForm())
-
-// ---- 字幕实时预览 ----
-const previewOriginal = '你好，欢迎来到直播间 Volcengine Live'
-const previewTransPrefix: Record<string, string> = {
-  en: 'Hello! Welcome to the live room.',
-  ja: 'こんにちは、ライブルームへようこそ。',
-  ko: '안녕하세요, 라이브 룸에 오신 것을 환영합니다.',
-  es: '¡Hola! Bienvenidos a la sala en vivo.',
-  zh: '你好，欢迎来到直播间'
+const scale = computed(() => stageWidth / srcSize.value.w)
+const stageStyle = computed(() => ({
+  width: `${stageWidth}px`,
+  height: `${Math.round((stageWidth * srcSize.value.h) / srcSize.value.w)}px`,
+  backgroundImage: form.bgImage ? `url(${form.bgImage})` : 'linear-gradient(180deg, #1d2b44 0%, #0f1a2e 100%)',
+}))
+const subsStyle = computed(() => ({
+  left: `${form.marginLr}%`,
+  right: `${form.marginLr}%`,
+  bottom: `${form.marginTb}%`,
+}))
+const hexToRgba = (hex: string, alpha: number) => {
+  const h = hex.replace('#', '')
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16)
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
 }
-const previewClock = computed(() => {
-  const d = new Date()
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
-})
-const previewTranslation = (lang: string) => previewTransPrefix[lang] || `[${lang}] live subtitle sample text`
-
-const srcDims = computed(() => {
-  const [w, h] = (form.sourceResolution || '1920x1080').split('x')
-  return { w: Number(w) || 1920, h: Number(h) || 1080 }
-})
-const srcW = computed(() => srcDims.value.w)
-const srcH = computed(() => srcDims.value.h)
-const previewCanvas = ref<HTMLCanvasElement | null>(null)
-const drawPreview = () => {
-  const cv = previewCanvas.value
-  if (!cv) return
-  const ctx = cv.getContext('2d')
-  if (!ctx) return
-  const W = srcW.value, H = srcH.value
-  ctx.clearRect(0, 0, W, H)
-  // 背景
-  if (form.bgImage) {
-    const img = new Image()
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, W, H)
-      drawSubs(ctx, W, H)
-    }
-    img.src = form.bgImage
-  } else {
-    const g = ctx.createLinearGradient(0, 0, 0, H)
-    g.addColorStop(0, '#1a1a2e')
-    g.addColorStop(0.6, '#16213e')
-    g.addColorStop(1, '#0f3460')
-    ctx.fillStyle = g
-    ctx.fillRect(0, 0, W, H)
-    drawSubs(ctx, W, H)
-  }
-}
-const drawSubs = (ctx: CanvasRenderingContext2D, W: number, H: number) => {
-  const px = W / 1920 // 按源流基准缩放
-  const hasBg = form.fontBGColor && form.fontBGColor !== '#000000' && form.fontBGColor !== 'transparent'
-  ctx.font = `${form.fontBold ? '700' : '400'} ${Math.round(form.fontSize * px)}px ${form.fontFamily || 'arial'}`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  const lineH = form.fontSize * px * 1.5
-  const bottomY = H - (form.marginTb / 100) * H - lineH / 2
-  const drawLine = (text: string, yy: number) => {
-    if (hasBg) {
-      const tw = ctx.measureText(text).width
-      const pad = 12 * px
-      ctx.fillStyle = form.fontBGColor
-      ctx.beginPath()
-      roundRect(ctx, W / 2 - tw / 2 - pad, yy - lineH / 2 + lineH * 0.15, tw + pad * 2, lineH * 0.8, 6 * px)
-      ctx.fill()
-    }
-    ctx.fillStyle = form.fontColor || '#FFFFFF'
-    ctx.shadowColor = form.fontShadow ? 'rgba(0,0,0,0.8)' : 'transparent'
-    ctx.shadowBlur = form.fontShadow ? 8 * px : 0
-    ctx.fillText(text, W / 2, yy)
-    ctx.shadowBlur = 0
-  }
-  if (form.mode === 'mix') {
-    // 仅字幕: 单条原文字幕居中大字号
-    ctx.font = `${form.fontBold ? '700' : '400'} ${Math.round(form.fontSize * 1.2 * px)}px ${form.fontFamily || 'arial'}`
-    const yyFinal = form.outWordMode === 'realtime' ? H * 0.15 : bottomY
-    drawLine(previewOriginal, yyFinal)
-  } else if (form.subtitleFormat === 'both') {
-    const origY = form.subtitleOrder === 'originalTop' ? bottomY - lineH : bottomY
-    const transY = form.subtitleOrder === 'originalTop' ? bottomY : bottomY - lineH
-        drawLine(previewOriginal, origY)
-        ctx.font = `${Math.round(form.fontSize * 0.9 * px)}px ${form.fontFamily || 'arial'}`
-        drawLine(form.outputLang ? previewTranslation(form.outputLang) : '', transY)
-      } else {
-        // 仅译文
-        ctx.font = `${Math.round(form.fontSize * px)}px ${form.fontFamily || 'arial'}`
-        drawLine(form.outputLang ? previewTranslation(form.outputLang) : '', bottomY)
-  }
-}
-const roundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.arcTo(x + w, y, x + w, y + h, r)
-  ctx.arcTo(x + w, y + h, x, y + h, r)
-  ctx.arcTo(x, y + h, x, y, r)
-  ctx.arcTo(x, y, x + w, y, r)
-  ctx.closePath()
-}
-watch(
-  () => [form.mode, form.subtitleFormat, form.subtitleOrder, form.sourceResolution, form.bgImage,
-    form.outWordMode, form.fontBGColor, form.fontColor, form.fontBold, form.fontShadow,
-    form.fontSize, form.fontFamily, form.marginLr, form.marginTb, JSON.stringify(form.outputLang)],
-  () => { nextTick(drawPreview) },
-  { deep: false }
-)
-const stageStyle = computed(() => {
-  const [w, h] = (form.sourceResolution || '1920x1080').split('x')
-  const nw = Number(w), nh = Number(h)
-  const ratio = nh / nw
-  // 横屏/竖屏按分辨率分级宽度, 让不同分辨率切换有可见大小差; 高度严格按宽高比
-  const longSide = Math.max(nw, nh)
-  let bw
-  if (ratio < 1) {
-    bw = longSide >= 1920 ? 340 : longSide >= 1280 ? 300 : 250   // 横屏 (高<宽)
-  } else {
-    bw = longSide >= 1920 ? 210 : longSide >= 1280 ? 185 : 155   // 竖屏
-  }
-  const bh = Math.round(bw * ratio)
-  return { width: bw + 'px', height: bh + 'px', margin: '0 auto' }
-})
-const otherLangs = computed(() => LANG_OPTIONS.filter(o => o.value !== form.inputLang))
-
-watch(
-  () => props.visible,
-  (v) => {
-    if (v) {
-      Object.assign(form, defaultForm())
-      const rec = props.record
-      if (rec) {
-        form.name = rec.roomName ? `${rec.roomName}-同传` : ''
-                // 源地址(拉流)默认用该直播间的播放流 RTMP 地址
-                const streamName = String(rec.id || '')
-                const sourceRtmp = playDomain.value ? `rtmp://${playDomain.value}/live/${streamName}` : (props.record.sourceUrlHint || '')
-                form.sourceUrl = sourceRtmp
-                if (props.record.targetUrlHint) form.targetUrl = props.record.targetUrlHint
-        const now = dayjs()
-        form.timeRange = [now.format('YYYY-MM-DD HH:mm:ss'), now.add(1, 'hour').format('YYYY-MM-DD HH:mm:ss')]
-      }
-    }
-  }
-)
-
-// 字幕颜色: 火山要求 #FFFFFF@0.8(带透明度), 若用户未带透明度则补默认 @1.0
-const subColor = (c: string): string | undefined => {
-  if (!c || c === 'transparent') return undefined
-  const t = c.trim()
-  if (t.includes('@')) return t
-  return `${t}@1.0`
-}
-
-// 按最终 Pipe 返回建议的播出延迟(火山文档建议值), 用户显式设置过(delayStroked)则用其值
-const delayStroked = ref(false)
-const effectiveDelay = (): number => {
-  if (delayStroked.value) return form.delay
-  const pipe = form.mode === 'mix' && form.outWordMode === 'realtime' ? 'realtime' : form.mode
-  // si:数字人+声音+字幕=20, 声音+字幕=12; mix整句=15; 字幕翻译=8; realtime=2
-  if (pipe === 'si') return form.delay >= 20 ? form.delay : 20
-  if (pipe === 'realtime') return 2
-  if (form.outputLang) return 8 // mix 字幕翻译
-  return 15 // mix 整句原文ASR
-}
-
-const buildPayload = () => {
-  const [start, end] = form.timeRange || []
-  const hasSubBg = form.fontBGColor && form.fontBGColor !== '#000000' && form.fontBGColor !== 'transparent'
+const lineStyle = (st: SpeechStyle) => {
+  const px = Math.max(8, st.fontSize * scale.value)
   return {
-    name: form.name,
-    roomId: props.record?.id,
-    roomName: props.record?.roomName,
-    rule: {
-      pipe: form.mode === 'mix' && form.outWordMode === 'realtime' ? 'realtime' : form.mode,
-            delay: effectiveDelay(),
-            source: { url: form.sourceUrl },
-            startTime: start ? dayjs(start).format('YYYY-MM-DDTHH:mm:ss+08:00') : '',
-            endTime: end ? dayjs(end).format('YYYY-MM-DDTHH:mm:ss+08:00') : '',
-            output: { url: Array.isArray(form.targetUrl) ? form.targetUrl.filter(Boolean) : form.targetUrl ? [form.targetUrl] : [] },
-            si: form.mode === 'si' ? { lipSync: true } : undefined,
-            realTime: form.mode === 'realtime' ? { voiceShow: true } : undefined,
-            subtitle: form.subtitleEnabled
-              ? {
-                  position: {
-                    relative: form.marginTb >= 50 ? 'top' : 'bottom',
-                    marginTb: form.marginTb / 100,
-                    marginLr: form.marginLr / 100
-                  },
-                  original: {
-                    language: form.inputLang,
-                    fontSize: form.fontSize,
-                    fontColor: subColor(form.fontColor),
-                    font: form.fontFamily,
-                    maxRowNumber: form.subtitleRows,
-                    maxCharNumber: form.maxCharNumber,
-                    hidden: false,
-                    showPriority: form.subtitleOrder === 'originalTop' ? 1 : 2,
-                    box: hasSubBg ? { W: 1, color: form.fontBGColor } : undefined
-                  },
-                  translation: form.mode !== 'mix' && form.outputLang ? [{
-                    language: form.outputLang,
-                    fontSize: form.fontSize,
-                    fontColor: subColor(form.fontColor),
-                    font: form.fontFamily,
-                    maxRowNumber: form.subtitleRows,
-                    maxCharNumber: form.maxCharNumber,
-                    showPriority: form.subtitleOrder === 'originalTop' ? 2 : 1
-                  }] : undefined
-                }
-              : undefined,
-      glossaryMap: parseGlossary(form.glossaryMap),
-      replaceMap: parseGlossary(form.replaceMap)
-    }
+    color: st.fontColor,
+    fontFamily: 'Arial, sans-serif',
+    fontSize: `${px}px`,
+    lineHeight: 1.3,
+    textShadow: textStroke(st.borderColor, Math.max(1, scale.value * 2)),
+    background: hexToRgba(st.boxColor, st.opacity / 100),
+    padding: `${Math.round(st.boxW * scale.value * 4)}px ${Math.round(st.boxW * scale.value * 8)}px`,
+    maxWidth: `${st.maxChar * px * 0.6}px`,
+    WebkitLineClamp: form.rows || 'none',
   }
 }
+const mainTestLabel = computed(() => (form.mode === 'asr' ? '请输入原文字幕测试内容' : '请输入译文字幕测试内容'))
+const previewLines = computed(() => {
+  const main = { key: 'main', text: form.testMain || '这是一条默认字幕', style: lineStyle(styleGroups.value[styleGroups.value.length - 1].style) }
+  if (!showBoth.value) return [main]
+  const original = { key: 'orig', text: form.testOriginal || '原文字幕示例', style: lineStyle(form.shareStyle ? form.transStyle : form.origStyle) }
+  return form.order === 'originalTop' ? [original, main] : [main, original]
+})
 
-const parseGlossary = (text: string): Record<string, string> => {
-  const map: Record<string, string> = {}
-  if (!text) return map
-  text.split(/[,\n，]/).forEach(seg => {
-    const parts = seg.split(/[:：]/)
-    if (parts.length === 2 && parts[0].trim() && parts[1].trim()) {
-      map[parts[0].trim()] = parts[1].trim()
-    }
-  })
-  return map
-}
-
-const validate = (): string | null => {
-  if (!form.name.trim()) return t('speechTask.nameRequired')
-  if (!form.timeRange || form.timeRange.length < 2) return t('speechTask.relayTimeRequired')
-  if (!form.sourceUrl.trim()) return t('speechTask.sourceUrlRequired')
-  const tgtOk = Array.isArray(form.targetUrl) ? form.targetUrl.some(x => x && String(x).trim()) : Boolean(String(form.targetUrl || '').trim())
-  if (!tgtOk) return t('speechTask.targetUrlRequired')
-  return null
-}
-
-const handleSubmit = async (): Promise<boolean> => {
-  const err = validate()
+// ---------- 提交 ----------
+const handleSubmit = async () => {
+  const err = validateSpeechForm(form)
   if (err) {
     Message.warning(err)
-    return false
+    return
   }
   submitting.value = true
   try {
-    const payload = buildPayload()
-    const resp = await api.post('/live/speech-tasks', payload)
-    if (resp.data && (resp.data.code === 0 || resp.data.success)) {
-      Message.success(t('speechTask.createSuccess'))
+    const resp = await api.post('/live/speech-tasks', {
+      Name: form.name.trim(),
+      Rule: buildSpeechTaskRule(form),
+      roomId: props.record?.id ? String(props.record.id) : '',
+      roomName: props.record?.roomName || '',
+    })
+    if (resp.data && (resp.data.code === 0 || resp.data.code === 200 || resp.data.success)) {
+      Message.success('字幕同传任务已创建')
       emit('success')
       emit('update:visible', false)
-      return true
+      return
     }
-    Message.error(resp.data?.message || t('speechTask.createFailed'))
-    return false
+    Message.error(resp.data?.message || '创建失败')
   } catch (e: any) {
-    Message.error(e?.response?.data?.message || t('speechTask.createFailed'))
-    return false
+    Message.error(e?.response?.data?.message || e?.message || '创建失败')
   } finally {
     submitting.value = false
   }
@@ -600,180 +540,68 @@ const handleCancel = () => {
 </script>
 
 <style scoped>
-.modal-cfg-layout {
-  display: flex;
-  gap: 20px;
-  width: 100%;
-  align-items: flex-start;
-}
-.modal-left {
-  flex: 0 0 400px;
-  max-width: 420px;
-  min-width: 0;
-}
-.modal-right {
-  flex: 1;
-  max-width: 860px;
-  min-width: 0;
-  border-left: 1px solid var(--color-border-2, #e5e6eb);
-  padding-left: 20px;
-}
-.right-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary, #1d2129);
-  margin-bottom: 12px;
-}
-.subtitle-cfg-layout {
-  display: flex;
-  gap: 16px;
-  width: 100%;
-}
-.subtitle-cfg-fields {
-  flex: 1.15;
-  min-width: 0;
-}
-.subtitle-cfg-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px 16px;
-}
-.cfg-item {
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 4px;
-}
-.cfg-label {
-  font-size: 12px;
-  color: var(--text-secondary, #4e5969);
-  white-space: nowrap;
-}
-.cfg-tip {
-  font-size: 11px;
-  color: var(--text-tertiary, #86909c);
-}
-.cfg-full {
-  grid-column: 1 / -1;
-}
-.cfg-group-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary, #1d2129);
-  border-bottom: 1px solid var(--color-border-2, #e5e6eb);
-  padding-bottom: 4px;
-  margin-top: 4px;
-}
-.color-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.color-input {
-  width: 32px;
-  height: 28px;
-  padding: 0;
-  border: 1px solid var(--color-border-2, #e5e6eb);
-  border-radius: 4px;
-  background: none;
-  cursor: pointer;
-}
-.effect-row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-.subtitle-cfg-preview {
-  flex: 1.2;
-  min-width: 0;
-  border: 1px solid var(--color-border-2, #e5e6eb);
-  border-radius: 8px;
-  padding: 10px;
-  background: var(--color-fill-1, #f7f8fa);
-}
-.preview-res-select {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-.preview-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-.preview-label {
-  font-size: 12px;
-  color: var(--text-secondary, #4e5969);
-}
-.preview-stage {
-  position: relative;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.preview-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.preview-meta {
-  color: #86909c;
-  font-size: 12px;
-  font-family: monospace;
-}
-.canvasWrap {
-  position: relative;
-  margin: 0 auto;
-  background: #000;
-  border-radius: 6px;
-  overflow: hidden;
-}
-.canvas-core {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-}
-.preview-watermark {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  color: rgba(255,255,255,0.5);
-  font-size: 12px;
-  font-family: monospace;
-}
-.subtitle-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  text-align: center;
-  padding: 2px 0;
-  z-index: 2;
-}
-.orig-line { margin-bottom: 2px; }
-.trans-line { margin-top: 2px; opacity: 0.95; }
-.mix-line {
-  left: 10%;
-  right: 10%;
-  text-align: center;
-  font-weight: 700;
-  z-index: 2;
-}
-.mix-note {
-  position: absolute;
-  bottom: 10px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 12px;
-  color: rgba(255,255,255,0.5);
-}
-.form-tip {
-  font-size: 12px;
-  color: var(--text-tertiary, #86909c);
-  margin-top: 2px;
+.stm { display: flex; flex-direction: column; gap: 16px; }
+.stm-section-title { font-size: 15px; font-weight: 600; padding-left: 8px; border-left: 3px solid rgb(var(--arcoblue-6)); line-height: 1.2; }
+.stm-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.stm-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.stm-label { font-size: 14px; color: var(--color-text-1); }
+.stm-req::before { content: '*'; color: rgb(var(--red-6)); margin-right: 4px; }
+.stm-tip { font-size: 12px; color: var(--color-text-3); line-height: 1.7; }
+.stm-tip-list { margin: 0; padding-left: 16px; }
+.stm-mt8 { margin-top: 8px; }
+.stm-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.stm-mode { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 14px 16px; border: 1px solid var(--color-border-2); border-radius: 6px; background: var(--color-bg-2); cursor: pointer; font: inherit; color: inherit; }
+.stm-mode:hover { border-color: rgb(var(--arcoblue-4)); }
+.stm-mode.is-active { border-color: rgb(var(--arcoblue-6)); background: rgb(var(--arcoblue-1)); }
+.stm-mode-title { font-weight: 600; }
+.stm-mode.is-active .stm-mode-title { color: rgb(var(--arcoblue-6)); }
+.stm-mode-desc { font-size: 12px; color: var(--color-text-2); }
+.stm-langs { display: flex; align-items: center; gap: 12px; }
+.stm-lang { flex: 1; min-width: 0; }
+.stm-card { border: 1px solid var(--color-border-2); border-radius: 6px; overflow: hidden; }
+.stm-card-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--color-fill-1); }
+.stm-card-body { padding: 8px 14px 12px; }
+.stm-row { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px; align-items: center; min-height: 36px; }
+.stm-row-label { font-size: 13px; color: var(--color-text-2); }
+.stm-row > .arco-switch, .stm-row > .arco-checkbox { justify-self: start; }
+.stm-langs :deep(.arco-btn) { flex-shrink: 0; }
+.stm-row-label-wide { grid-column: span 1; white-space: normal; }
+.stm-row-ctl { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.stm-voice { width: 240px; }
+.stm-slider { display: flex; align-items: center; gap: 12px; }
+.stm-slider :deep(.arco-slider) { flex: 1; min-width: 80px; }
+.stm-num { width: 96px; flex-shrink: 0; }
+.stm-sub { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; padding: 12px 14px 16px; }
+.stm-sub-cfg { display: flex; flex-direction: column; gap: 8px; padding-right: 20px; border-right: 1px dashed var(--color-border-2); }
+.stm-order { width: 100%; }
+.stm-style { border: 1px solid var(--color-border-2); border-radius: 6px; overflow: hidden; }
+.stm-style-title { padding: 8px 12px; background: var(--color-fill-1); font-size: 13px; font-weight: 600; }
+.stm-style .stm-row { padding: 0 12px; }
+.stm-font { display: flex; gap: 8px; }
+.stm-font-select { flex: 1; min-width: 0; }
+.stm-pop { width: 280px; display: flex; flex-direction: column; gap: 8px; }
+.stm-pop-title { font-size: 12px; color: var(--color-text-2); }
+.stm-presets { display: flex; gap: 8px; }
+.stm-preset { width: 36px; height: 32px; border: 1px solid var(--color-border-2); border-radius: 4px; background: var(--color-fill-2); font: 700 18px Arial, sans-serif; cursor: pointer; }
+.stm-preset.is-active { border-color: rgb(var(--arcoblue-6)); }
+.stm-pop-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.stm-pop-field { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-text-2); }
+.stm-pop-num { width: 80px; }
+.stm-color { width: 28px; height: 24px; padding: 0; border: 1px solid var(--color-border-2); border-radius: 4px; background: none; cursor: pointer; }
+.stm-mono { font-family: Consolas, monospace; font-size: 12px; }
+.stm-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.stm-add { display: flex; align-items: center; gap: 4px; }
+.stm-preview { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.stm-preview-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+.stm-size { width: 210px; }
+.stm-hidden { display: none; }
+.stm-stage { position: relative; max-width: 100%; background-size: cover; background-position: center; border-radius: 4px; overflow: hidden; }
+.stm-subs { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.stm-sub-line { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; text-align: center; border-radius: 2px; word-break: break-all; }
+.stm-test { max-width: 480px; }
+.stm-count { font-size: 12px; color: var(--color-text-3); }
+@media (max-width: 900px) {
+  .stm-grid2, .stm-modes, .stm-sub { grid-template-columns: minmax(0, 1fr); }
+  .stm-sub-cfg { padding-right: 0; border-right: 0; }
 }
 </style>
