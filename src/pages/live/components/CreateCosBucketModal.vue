@@ -15,7 +15,7 @@
         <a-input v-model="form.bucket" placeholder="小写字母、数字和 -，如 live-record" :max-length="50" allow-clear>
           <template v-if="appId" #suffix><span class="ccb-suffix">-{{ appId }}</span></template>
         </a-input>
-        <template #extra>全局唯一，创建后不能修改</template>
+        <template #extra>全局唯一，创建后不能修改{{ appId ? '' : '。账号下还没有存储桶，创建时自动补上账号 APPID' }}</template>
       </a-form-item>
       <a-form-item field="region" label="地域" :rules="[{ required: true, message: '请选择地域' }]">
         <a-select v-model="form.region" :options="regionOptions" allow-search placeholder="选择地域" />
@@ -38,7 +38,7 @@ import { createCosBucket } from '@/api/liveTemplate'
 // 新建结果：fullName 为含 -APPID 的完整名称（云盘接口直接返回完整名称 bucket）
 type CreatedBucket = { bucket: string; region: string; fullName?: string }
 
-// appId：账号 APPID（取自现有存储桶，没有时用户需输入完整名称）；regions：账号已有存储桶的地域；
+// appId：账号 APPID（取自现有存储桶；没有存储桶时由服务端向云平台查询并补上，也可输入完整名称）；regions：账号已有存储桶的地域；
 // create：创建接口，默认录制模板的接口（公司直播密钥），公司配置传入云盘存储的接口
 const props = defineProps<{
   visible: boolean
@@ -69,7 +69,6 @@ const nameRules = [
   {
     validator: (v: string, cb: (e?: string) => void) => {
       if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test((v || '').trim())) return cb('只能包含小写字母、数字和 -，且不能以 - 开头或结尾')
-      if (!props.appId && !/-\d{10}$/.test(v.trim())) return cb('账号下还没有存储桶，请输入完整名称（名称-APPID）')
       cb()
     },
   },

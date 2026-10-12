@@ -35,4 +35,12 @@ describe('CreateCosBucketModal 新建存储桶', () => {
     expect(wrapper.emitted('created')?.[0]).toEqual([created])
     expect(wrapper.emitted('update:visible')?.[0]).toEqual([false])
   })
+
+  it('账号下还没有存储桶时不要求输入 -APPID（服务端自动补上）', () => {
+    const wrapper = mountModal({})
+    const rule = (wrapper.vm as any).nameRules[1]
+    const errs: (string | undefined)[] = []
+    rule.validator('first', (e?: string) => errs.push(e))
+    expect(errs).toEqual([undefined])
+  })
 })
