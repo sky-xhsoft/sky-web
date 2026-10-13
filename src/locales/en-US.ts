@@ -1005,11 +1005,6 @@ export default {
     title: 'Domain Management',
     desc: 'Manage push/play domains and CNAME configuration',
     pageTitle: 'Live Domain Management',
-    pageNotice: {
-      pushDomain: 'About push domain: The push domain provided by the system is for testing only. There are many limitations. We recommend that you add your own domain as soon as possible.',
-      playDomain: 'About playback domain: To play live streams under your own domain, you need to first add a playback domain and complete the CNAME configuration.',
-      domainOwner: 'You have added a domain that includes the streamer push domain.'
-    },
     searchPlaceholder: 'Enter keyword to search domains',
     addDomain: 'Add Domain',
     domainTable: {

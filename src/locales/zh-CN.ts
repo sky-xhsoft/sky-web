@@ -1007,11 +1007,6 @@ export default {
     title: '域名管理',
     desc: '管理推流/播放域名及 CNAME 配置',
     pageTitle: '直播域名管理',
-    pageNotice: {
-      pushDomain: '关于推流域名：系统提供的推流域名仅供测试使用，使用上有诸多限制，建议您尽快添加自有域名。',
-      playDomain: '关于播放域名：若需要在您自有域名下播放直播流，需要先添加播放域名，并完成域名CNAME配置。',
-      domainOwner: '您当前已添加域名归属中包含主播推流的域名。'
-    },
     searchPlaceholder: '输入关键词搜索域名',
     addDomain: '添加域名',
     domainTable: {

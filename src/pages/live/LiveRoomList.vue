@@ -77,7 +77,7 @@
           <a-card :bordered="false" hoverable class="room-card">
             <template #cover>
               <div class="room-card-cover" @click="handleManage(record)">
-                <a-image :src="record.coverImage || '/default-cover.png'" fit="cover" class="room-card-img" />
+                <a-image :src="record.coverImage || '/default-cover.png'" fit="cover" :preview="false" class="room-card-img" />
                 <a-tag class="status-badge" :color="getStatusColor(record.status)">{{ getStatusText(record.status) }}</a-tag>
               </div>
             </template>

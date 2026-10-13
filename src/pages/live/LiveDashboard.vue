@@ -118,25 +118,12 @@ import { describeActivity } from '@/utils/activity'
 const { t, locale } = useI18n()
 const navigationStore = useNavigationStore()
 
-// ===== 数据状态（真实 API + mock 兜底）=====
+// ===== 数据状态（只显示真实数据：没有数据显示 0 / 空，接口失败显示 --，不再用演示数据兜底）=====
 const loading = ref(false)
 const statsData = ref<DashboardStats | null>(null)
 const trendData = ref<DashboardTrend | null>(null)
 const recentRoomData = ref<ApiRecentRoom[] | null>(null)
 const activityData = ref<ApiActivity[] | null>(null)
-
-// mock 兜底数据
-const mockStats = () => ({
-  totalRooms: 128,
-  todayLiveSessions: 12,
-  recordingStorage: 137710093112 + 22222222222,
-})
-const mockRecentRooms: ApiRecentRoom[] = [
-  { id: 101, roomName: '2026 秋季新品发布会', status: 'living', viewerCount: 1286, startTime: '2026-09-06 14:00' as any },
-  { id: 102, roomName: '前端技术分享会', status: 'living', viewerCount: 862, startTime: '2026-09-06 15:30' as any },
-  { id: 103, roomName: '产品周会 · 第 38 期', status: 'ended', viewerCount: 305, startTime: '2026-09-05 10:00' as any },
-  { id: 104, roomName: '客户培训 · 云盘专题', status: 'ended', viewerCount: 178, startTime: '2026-09-04 16:00' as any },
-]
 
 function formatBytes(bytes: number): string {
   if (!bytes) return '0 GB'
@@ -156,7 +143,7 @@ async function loadDashboard() {
     ])
     if (stats.status === 'fulfilled') statsData.value = stats.value
     if (trend.status === 'fulfilled') trendData.value = trend.value
-    if (rooms.status === 'fulfilled' && rooms.value.length) recentRoomData.value = rooms.value
+    if (rooms.status === 'fulfilled') recentRoomData.value = rooms.value
     if (acts.status === 'fulfilled' && acts.value.length) activityData.value = acts.value
   } finally {
     loading.value = false
@@ -167,9 +154,9 @@ async function loadDashboard() {
 const statCards = computed(() => {
   const s = statsData.value
   return [
-    { label: t('dashboard.stats.totalRooms'), value: s ? s.totalRooms : mockStats().totalRooms, trend: t('dashboard.stats.totalRoomsDesc'), icon: IconVideoCamera },
-    { label: t('dashboard.stats.todayLiveSessions'), value: s ? s.todayLiveSessions : mockStats().todayLiveSessions, trend: t('dashboard.stats.todayLiveSessionsDesc'), icon: IconLiveBroadcast },
-    { label: t('dashboard.stats.recordingStorage'), value: s ? formatBytes(s.recordingStorage) : formatBytes(mockStats().recordingStorage), trend: t('dashboard.stats.recordingStorageDesc'), icon: IconCloud },
+    { label: t('dashboard.stats.totalRooms'), value: s ? s.totalRooms : '--', trend: t('dashboard.stats.totalRoomsDesc'), icon: IconVideoCamera },
+    { label: t('dashboard.stats.todayLiveSessions'), value: s ? s.todayLiveSessions : '--', trend: t('dashboard.stats.todayLiveSessionsDesc'), icon: IconLiveBroadcast },
+    { label: t('dashboard.stats.recordingStorage'), value: s ? formatBytes(s.recordingStorage) : '--', trend: t('dashboard.stats.recordingStorageDesc'), icon: IconCloud },
   ]
 })
 
@@ -188,7 +175,7 @@ const modules = computed(() => [
 ])
 
 const recentRooms = computed(() => {
-  const list = recentRoomData.value || mockRecentRooms
+  const list = recentRoomData.value || []
   return list.map(r => ({
     id: r.id,
     name: r.roomName,
@@ -223,20 +210,23 @@ const activities = computed(() =>
 // ===== 趋势图 =====
 const chartEl = ref<HTMLDivElement | null>(null)
 let chart: echarts.ECharts | null = null
-const trend = ref({
-  dates: ['09-01', '09-02', '09-03', '09-04', '09-05', '09-06', '09-07'],
-  views: [3200, 4100, 3800, 5200, 6100, 4800, 5600],
-  lives: [12, 15, 14, 18, 22, 17, 26],
-})
+// 趋势：lives 为直播场次，records 为录制文件数；接口失败时画最近 7 天全为 0 的空图
+function emptyTrend() {
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(Date.now() - (6 - i) * 86400000)
+    return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })
+  return { dates, lives: dates.map(() => 0), records: dates.map(() => 0) }
+}
 function activeTrend() {
   if (trendData.value) {
     return {
       dates: trendData.value.dates.map(d => d.slice(5)),
-      views: trendData.value.recordings,
       lives: trendData.value.liveSessions,
+      records: trendData.value.recordings,
     }
   }
-  return trend.value
+  return emptyTrend()
 }
 
 function initChart() {
@@ -257,9 +247,9 @@ function initChart() {
       { type: 'value', splitLine: { show: false }, axisLabel: { color: ts } },
     ],
     series: [
-      { name: t('dashboard.trend.liveSessions'), type: 'line', smooth: true, data: activeTrend().views, lineStyle: { color: blue }, itemStyle: { color: blue },
+      { name: t('dashboard.trend.liveSessions'), type: 'line', smooth: true, data: activeTrend().lives, lineStyle: { color: blue }, itemStyle: { color: blue },
         areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: `${blue}30` }, { offset: 1, color: `${blue}00` }] } } },
-      { name: t('dashboard.trend.recordings'), type: 'line', smooth: true, data: activeTrend().lives, lineStyle: { color: green }, itemStyle: { color: green } },
+      { name: t('dashboard.trend.recordings'), type: 'line', smooth: true, data: activeTrend().records, lineStyle: { color: green }, itemStyle: { color: green } },
     ],
   })
 }

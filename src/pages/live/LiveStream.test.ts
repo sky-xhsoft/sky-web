@@ -60,6 +60,50 @@ describe('LiveStream (页面组件挂载)', () => {
     expect(getOnlineStreams).toHaveBeenCalled()
   })
 
+  it('切到历史流后总数取自历史流；请求失败时清零，不沿用在线流的总数', async () => {
+    const { getHistoryStreams } = await import('@/api/live')
+    vi.mocked(getOnlineStreams).mockResolvedValueOnce({
+      data: { code: 200, data: { onlineInfo: [], totalNum: 50 } },
+    } as any)
+    const wrapper = mountPage()
+    await flushPromises()
+    const vm = wrapper.vm as any
+    expect(vm.pagination.total).toBe(50)
+
+    vi.mocked(getHistoryStreams).mockResolvedValueOnce({
+      data: { code: 200, data: { historyInfo: [{ streamName: 'h1' }, { streamName: 'h2' }], totalNum: 2 } },
+    } as any)
+    vm.activeTab = 'history'
+    vm.handleTabChange()
+    await flushPromises()
+    expect(vm.pagination.total).toBe(2)
+
+    vm.activeTab = 'online'
+    vm.handleTabChange()
+    await flushPromises()
+    vi.mocked(getHistoryStreams).mockRejectedValueOnce(new Error('boom'))
+    vm.activeTab = 'history'
+    vm.handleTabChange()
+    await flushPromises()
+    expect(vm.pagination.total).toBe(0)
+  })
+
+  it('历史流停在超出范围的空页时回到最后一页', async () => {
+    const { getHistoryStreams } = await import('@/api/live')
+    const wrapper = mountPage()
+    await flushPromises()
+    const vm = wrapper.vm as any
+    vm.activeTab = 'history'
+    vm.pagination.current = 5
+    vi.mocked(getHistoryStreams)
+      .mockResolvedValueOnce({ data: { code: 200, data: { historyInfo: [], totalNum: 12 } } } as any)
+      .mockResolvedValueOnce({ data: { code: 200, data: { historyInfo: [{ streamName: 'h11' }, { streamName: 'h12' }], totalNum: 12 } } } as any)
+    vm.loadData()
+    await flushPromises()
+    expect(vm.pagination.current).toBe(2)
+    expect(vm.historyStreams).toHaveLength(2)
+  })
+
   it('指标弹窗/按钮已移除(回归: 页面不再展示假的流指标)', async () => {
     const wrapper = mountPage()
     await flushPromises()

@@ -162,6 +162,7 @@ import { Message } from '@arco-design/web-vue'
 import { IconCheckCircle, IconExclamationCircle } from '@arco-design/web-vue/es/icon'
 import { V2Card, V2Button, V2Tag } from '@/components/ui'
 import { formatDateTime } from '@/utils/date'
+import { copyText } from '@/utils/clipboard'
 import {
   getDomainTemplates, getTemplateDefaults, importTemplates, unbindTemplate, SYNC_STATUS,
   type CallbackTemplate, type DomainRuleView, type DomainTemplateOverview, type RecordTemplate, type TemplateDefaults, type TemplateKind,
@@ -271,12 +272,8 @@ const unbind = async (kind: TemplateKind, r: DomainRuleView) => {
 }
 
 const copy = async (text: string) => {
-  try {
-    await navigator.clipboard.writeText(text)
-    Message.success('已复制')
-  } catch {
-    Message.error('复制失败，请手动复制')
-  }
+  if (await copyText(text)) Message.success('已复制')
+  else Message.error('复制失败，请手动复制')
 }
 
 onMounted(load)

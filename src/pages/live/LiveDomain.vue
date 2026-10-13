@@ -1,17 +1,5 @@
 <template>
   <div class="live-domain-page">
-    <V2Card class="page-notice" :padding="true" style="margin-bottom: 20px;">
-      <div class="notice-item">
-        <strong>{{ t('liveDomain.pageNotice.pushDomain') }}</strong>
-        系统提供的推流域名仅供测试使用，<a href="#" target="_blank">使用上有诸多限制</a>，建议您尽快添加自有域名。
-      </div>
-      <div class="notice-item">
-        <strong>{{ t('liveDomain.pageNotice.playDomain') }}</strong>
-        若需要在您自有域名下播放直播流，需要先添加播放域名，并完成域名CNAME配置。<a href="#" target="_blank">域名管理</a> 或 <a href="#" target="_blank">CNAME配置</a>
-      </div>
-      <div class="notice-item">{{ t('liveDomain.pageNotice.domainOwner') }}</div>
-    </V2Card>
-
     <V2PageHeader
       :title="t('liveDomain.title') || '域名管理'"
       :description="t('liveDomain.desc') || '管理推流/播放域名及 CNAME 配置'"
@@ -239,11 +227,6 @@ function handleManage(row: DomainInfo) {
 
 <style scoped>
 .live-domain-page { padding: 12px; background: var(--bg-page); min-height: 100%; overflow-y: auto; }
-.page-notice { background: var(--info-bg); border: 1px solid rgba(22, 93, 255, 0.2); font-size: 14px; line-height: 1.8; }
-.notice-item { margin-bottom: 8px; }
-.notice-item:last-child { margin-bottom: 0; }
-.notice-item strong { font-weight: 600; color: var(--text-primary); }
-.notice-item a { color: var(--brand-blue); text-decoration: none; }
 .domain-cell, .cname-cell { display: flex; align-items: center; gap: 8px; }
 .copy-icon { cursor: pointer; color: var(--text-secondary); font-size: 14px; }
 .copy-icon:hover { color: var(--brand-blue); }

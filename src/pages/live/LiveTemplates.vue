@@ -30,24 +30,24 @@
       </div>
 
       <div class="lt-table-wrap">
-        <a-table :loading="loading" :data="rows" :pagination="false" row-key="id" :scroll="{ x: 1100 }">
+        <a-table :loading="loading" :data="rows" :pagination="false" row-key="id" table-layout-fixed :scroll="{ x: isNarrow ? 760 : 1100 }">
           <template #columns>
-            <a-table-column title="模板名称" :width="220">
+            <a-table-column title="模板名称" :width="isNarrow ? 160 : 220" fixed="left">
               <template #cell="{ record }">
-                <div class="lt-name">{{ record.name }}</div>
-                <div class="lt-sub">{{ sourceLabel(record.source) }}<template v-if="record.description"> · {{ record.description }}</template></div>
+                <div class="lt-name lt-ellipsis" :title="record.name">{{ record.name }}</div>
+                <div class="lt-sub lt-ellipsis" :title="subText(record)">{{ subText(record) }}</div>
               </template>
             </a-table-column>
-            <a-table-column title="云端 ID" :width="110">
-              <template #cell="{ record }"><span :class="record.cloudTemplateId ? 'lt-mono' : 'lt-muted'">{{ record.cloudTemplateId || '—' }}</span></template>
+            <a-table-column v-if="!isNarrow" title="云端 ID" :width="110">
+              <template #cell="{ record }"><span class="lt-nowrap" :class="record.cloudTemplateId ? 'lt-mono' : 'lt-muted'">{{ record.cloudTemplateId || '—' }}</span></template>
             </a-table-column>
-            <a-table-column :title="tab === 'callback' ? '已配置回调' : '录制配置'">
+            <a-table-column :title="tab === 'callback' ? '已配置回调' : '录制配置'" :min-width="180">
               <template #cell="{ record }">
                 <template v-if="tab === 'callback'">
                   <span v-for="k in callbackKinds(record)" :key="k" class="lt-chip">{{ k }}</span>
                 </template>
                 <template v-else>
-                  <div v-if="record.cosStore === 'Y'">存储桶 · <span class="lt-mono">{{ record.cosBucket }} · {{ record.cosRegion }}</span></div>
+                  <div v-if="record.cosStore === 'Y'" class="lt-ellipsis" :title="`${record.cosBucket} · ${record.cosRegion}`">存储桶 · <span class="lt-mono">{{ record.cosBucket }} · {{ record.cosRegion }}</span></div>
                   <div v-else>云点播 VOD</div>
                   <div class="lt-sub">{{ (record.formats || 'mp4').toUpperCase() }} · 每 {{ Math.round(record.recordInterval / 60) }} 分钟一段</div>
                 </template>
@@ -56,22 +56,22 @@
             <a-table-column title="绑定域名" :width="220">
               <template #cell="{ record }">
                 <div v-if="!record.rules?.length" class="lt-muted">未绑定</div>
-                <div v-for="r in record.rules" :key="`${r.domainName}/${r.appName}/${r.streamName}`">
+                <div v-for="r in record.rules" :key="`${r.domainName}/${r.appName}/${r.streamName}`" class="lt-ellipsis" :title="`${r.domainName} · ${r.appName || '（空）'}${r.streamName ? ` / ${r.streamName}` : ''}`">
                   <a class="lt-link" @click="openDomain(r.domainName)">{{ r.domainName }}</a>
                   <span class="lt-muted"> · {{ r.appName || '（空）' }}{{ r.streamName ? ` / ${r.streamName}` : '' }}</span>
                 </div>
               </template>
             </a-table-column>
-            <a-table-column title="同步状态" :width="230">
+            <a-table-column title="同步状态" :width="isNarrow ? 160 : 230">
               <template #cell="{ record }">
                 <V2Tag :type="SYNC_STATUS[record.syncStatus as TemplateSyncStatus]?.type || 'neutral'">{{ SYNC_STATUS[record.syncStatus as TemplateSyncStatus]?.label || record.syncStatus }}</V2Tag>
-                <div v-if="record.syncError" class="lt-sync-error" :class="`lt-sync-error--${record.syncStatus}`">{{ record.syncError }}</div>
+                <div v-if="record.syncError" class="lt-sync-error lt-clamp" :class="`lt-sync-error--${record.syncStatus}`" :title="record.syncError">{{ record.syncError }}</div>
               </template>
             </a-table-column>
-            <a-table-column title="最后同步" :width="170">
+            <a-table-column v-if="!isNarrow" title="最后同步" :width="170">
               <template #cell="{ record }"><span class="lt-muted lt-nowrap">{{ record.syncTime ? formatDateTime(record.syncTime) : '—' }}</span></template>
             </a-table-column>
-            <a-table-column title="操作" :width="250" fixed="right">
+            <a-table-column title="操作" :width="isNarrow ? 130 : 250" fixed="right">
               <template #cell="{ record }">
                 <div class="lt-ops">
                   <template v-if="record.syncStatus === 'drift'">
@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { IconPlus } from '@arco-design/web-vue/es/icon'
 import { V2PageHeader, V2Card, V2Button, V2Tag } from '@/components/ui'
@@ -255,6 +255,16 @@ const openDomain = (domainName: string) => {
 }
 
 onMounted(load)
+
+// 第二行说明：来源 · 描述
+const subText = (r: Row) => `${sourceLabel(r.source)}${r.description ? ` · ${r.description}` : ''}`
+
+// 小屏（≤768px）：隐藏次要列、收窄表格
+const narrowQuery = typeof window.matchMedia === 'function' ? window.matchMedia('(max-width: 768px)') : null
+const isNarrow = ref(narrowQuery?.matches ?? false)
+const onNarrowChange = (e: MediaQueryListEvent) => { isNarrow.value = e.matches }
+narrowQuery?.addEventListener('change', onNarrowChange)
+onBeforeUnmount(() => narrowQuery?.removeEventListener('change', onNarrowChange))
 </script>
 
 <style scoped>
@@ -278,9 +288,19 @@ onMounted(load)
 .lt-sync-error--failed { color: rgb(var(--red-6)); }
 .lt-sync-error--drift { color: rgb(var(--orange-7)); }
 .lt-ops { display: flex; flex-wrap: wrap; gap: 2px; }
+.lt-ops :deep(.v2-btn), .lt-ops :deep(button) { white-space: nowrap; }
+.lt-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.lt-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
 .lt-danger { color: rgb(var(--red-6)) !important; }
 .lt-empty { padding: 32px 0; color: var(--color-text-3); }
+@media (max-width: 768px) {
+  .live-templates-page :deep(.v2-page-header) { flex-wrap: wrap; }
+  .live-templates-page :deep(.v2-page-header__actions) { flex-wrap: wrap; }
+  .lt-toolbar { padding: 0 12px; }
+  .lt-filters { width: 100%; }
+  .lt-search { flex: 1; min-width: 0; width: auto; }
+}
 @media (max-width: 640px) {
-  .lt-search { width: 100%; }
+  .lt-search { width: 100%; flex-basis: 100%; }
 }
 </style>

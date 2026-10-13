@@ -231,11 +231,15 @@ const loadOnlineStreams = async () => {
         publishTime: Array.isArray(s.publishTime) && s.publishTime.length > 0 ? s.publishTime[0] : ''
       }))
       pagination.total = result.data.totalNum || 0
+    } else {
+      onlineStreams.value = []
+      pagination.total = 0
     }
   } catch (error: any) {
     console.error('加载在线流列表失败:', error)
     Message.error(error.response?.data?.message || '加载在线流列表失败')
     onlineStreams.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
   }
@@ -254,6 +258,8 @@ const loadHistoryStreams = async () => {
     // 如果还是没有域名，提示用户
     if (!domainName) {
       Message.warning('没有可用的域名，请先添加域名')
+      historyStreams.value = []
+      pagination.total = 0
       loading.value = false
       return
     }
@@ -287,11 +293,22 @@ const loadHistoryStreams = async () => {
         endTime: s.streamEndTime || ''
       }))
       pagination.total = result.data.totalNum || 0
+    } else {
+      historyStreams.value = []
+      pagination.total = 0
+    }
+    // 当前页超出总页数（如数据减少后停在空页）：回到最后一页
+    const lastPage = Math.max(1, Math.ceil(pagination.total / pagination.pageSize))
+    if (!historyStreams.value.length && pagination.current > lastPage) {
+      pagination.current = lastPage
+      await loadHistoryStreams()
+      return
     }
   } catch (error: any) {
     console.error('加载历史流列表失败:', error)
     Message.error(error.response?.data?.message || '加载历史流列表失败')
     historyStreams.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
   }
@@ -311,7 +328,9 @@ const loadData = () => {
 
 // 标签页切换
 const handleTabChange = () => {
+  // 两个列表共用分页：切换时清掉上一个列表的总数，避免请求返回前显示旧值
   pagination.current = 1
+  pagination.total = 0
   loadData()
 }
 

@@ -238,6 +238,8 @@ const navigationStore = useNavigationStore()
 const roomId = String(navigationStore.current.params?.id || route.params.id || '')
 
 type RoomInfo = Partial<LiveRoomDetail> & {
+  /** 后端按服务器时钟算好的直播时长（秒） */
+  elapsedSeconds?: number
   isRecord?: string
   isClip?: string
   createBy?: string
@@ -261,7 +263,9 @@ const metrics = ref<Record<string, any> | null>(null)
 const metricsSupported = ref(true)
 const clipCount = ref<number | undefined>()
 const recordingCount = ref<number | undefined>()
-const now = ref(Date.now())
+// 用单调时钟计时：只算「取到详情之后又过了几秒」，不受本机时间快慢或被调整的影响
+const now = ref(performance.now())
+const fetchedAt = ref(performance.now())
 
 // ---------- 状态 ----------
 const status = computed(() => roomInfo.value.status || 'draft')
@@ -284,8 +288,10 @@ const optionText = (group: string, value?: string) => (value ? t(`liveRoomDetail
 
 // ---------- 指标卡 ----------
 const elapsedSeconds = computed(() => {
-  if (isLive.value && roomInfo.value.startTime) return Math.floor((now.value - dayjs(roomInfo.value.startTime).valueOf()) / 1000)
-  return roomInfo.value.duration || 0
+  // 直播时长以后端按实际开播时间算好的 elapsedSeconds 为准，直播中再加上取数之后经过的秒数
+  const base = roomInfo.value.elapsedSeconds ?? roomInfo.value.duration ?? 0
+  if (isLive.value) return base + Math.max(0, Math.floor((now.value - fetchedAt.value) / 1000))
+  return base
 })
 
 const kpis = computed(() => {
@@ -446,7 +452,7 @@ const startTimers = () => {
   if (!isLive.value) return
   loadMetrics()
   metricsTimer = setInterval(loadMetrics, 10000)
-  clockTimer = setInterval(() => { now.value = Date.now() }, 1000)
+  clockTimer = setInterval(() => { now.value = performance.now() }, 1000)
 }
 const stopTimers = () => {
   if (metricsTimer) clearInterval(metricsTimer)
@@ -525,6 +531,7 @@ const fetchRoomInfo = async () => {
   try {
     const response = await api.get(`/live/rooms/${roomId}`)
     roomInfo.value = response.data.data || {}
+    fetchedAt.value = now.value = performance.now()
     await loadUrls()
     loadCounts()
     startTimers()

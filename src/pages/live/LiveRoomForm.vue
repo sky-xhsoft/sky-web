@@ -23,8 +23,10 @@
           <div class="lrf-card">
             <div class="lrf-card-title">{{ t('liveRoomForm.sectionBasic') }}</div>
             <a-form-item :label="t('liveRoomForm.roomName')" field="roomName" required>
+              <!-- 直播间名称创建后不能修改：云盘的录制、切片目录按名称建立 -->
               <a-input
                 v-model="formData.roomName"
+                :disabled="isEditMode"
                 :placeholder="t('liveRoomForm.roomNamePlaceholder')"
                 :max-length="100"
                 show-word-limit
@@ -366,7 +368,8 @@ const handleSubmit = async () => {
       CLIP_FOLDER_ID: formData.clipFolderId || null,
       DESCRIPTION: formData.description,    }
     if (isEditMode.value) {
-      // 编辑时不动这些通用/状态字段，避免重置直播阶段/观看·回放方式/状态
+      // 编辑时不动这些通用/状态字段，避免重置直播阶段/观看·回放方式/状态；直播间名称不允许修改
+      delete (requestData as any).ROOM_NAME
       delete (requestData as any).ROOM_STAGE
       delete (requestData as any).VIEWING_METHOD
       delete (requestData as any).PLAYBACK_METHOD

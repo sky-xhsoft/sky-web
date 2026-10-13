@@ -14,8 +14,6 @@
       <span class="up-val">{{ companyName }}</span>
       <span class="up-key">{{ t('userCenter.phone') }}</span>
       <span class="up-val">{{ user?.phone || '--' }}</span>
-      <span class="up-key">{{ t('userCenter.email') }}</span>
-      <span class="up-val">{{ user?.email || '--' }}</span>
     </div>
 
     <div class="up-section">

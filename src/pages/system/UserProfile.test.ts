@@ -69,6 +69,15 @@ describe('UserProfile（个人信息与账号卡片）', () => {
     expect(wrapper.find('.up-kv').text()).toContain('安徽先桦科技有限公司')
   })
 
+  it('不显示邮箱', async () => {
+    const auth = useAuthStore()
+    auth.user = { id: 30, username: 'CLX', trueName: '陈立新', isAdmin: 'Y', email: 'clx@example.com' } as any
+    const wrapper = mountPage()
+    await flushPromises()
+    expect(wrapper.find('.up-kv').text()).not.toContain('userCenter.email')
+    expect(wrapper.find('.up-kv').text()).not.toContain('clx@example.com')
+  })
+
   it('IS_ADMIN 为 N 时显示为成员（原先非空即判为管理员）', async () => {
     useAuthStore().user = { id: 31, username: 'lisi', isAdmin: 'N' } as any
     const wrapper = mountPage()

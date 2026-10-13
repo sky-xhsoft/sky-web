@@ -5,6 +5,7 @@
 import { ref, reactive, computed } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { generatePushURL, getDomainAuthKey } from '@/api/live'
+import { copyText } from '@/utils/clipboard'
 
 export function useLiveStreamUrl(domainName: () => string, domainType?: () => number) {
   // 推流鉴权密钥（从腾讯云接口获取，fallback 空）
@@ -122,11 +123,10 @@ export function useLiveStreamUrl(domainName: () => string, domainType?: () => nu
   }
 
   // 复制
-  function copyToClipboard(text: string) {
+  async function copyToClipboard(text: string) {
     if (!text) return
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).then(() => Message.success('复制成功'), () => Message.error('复制失败'))
-    }
+    if (await copyText(text)) Message.success('复制成功')
+    else Message.error('复制失败，请手动复制')
   }
 
   return {

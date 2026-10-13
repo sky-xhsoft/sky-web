@@ -123,9 +123,9 @@
       </a-table>
     </V2Card>
 
-    <a-modal v-model:visible="previewVisible" title="录制预览" :footer="false" width="720px">
+    <a-modal v-model:visible="previewVisible" unmount-on-close @before-close="stopPreview" title="录制预览" :footer="false" width="720px">
       <div class="preview-wrapper">
-        <video v-if="previewUrl" :src="previewUrl" controls style="width: 100%; max-height: 420px;" />
+        <video v-if="previewUrl" ref="previewVideoRef" :src="previewUrl" controls style="width: 100%; max-height: 420px;" />
         <div v-else class="preview-empty">
           <a-empty description="无可播放视频" />
         </div>
@@ -175,6 +175,12 @@ const statCards = computed(() => [
 
 const previewVisible = ref(false)
 const previewUrl = ref('')
+const previewVideoRef = ref<HTMLVideoElement | null>(null)
+
+// 弹窗关闭时只是隐藏，<video> 仍在页面里会继续播放，要先暂停
+const stopPreview = () => {
+  previewVideoRef.value?.pause()
+}
 
 const getFormatType = (type: string) => {
   const map: Record<string, any> = { flv: 'info', mp4: 'success', hls: 'warning', aac: 'neutral' }
