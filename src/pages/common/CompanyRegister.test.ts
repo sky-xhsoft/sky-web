@@ -43,3 +43,61 @@ describe('CompanyRegister (页面组件挂载)', () => {
     expect(wrapper.find('.register-card').exists()).toBe(true)
   })
 })
+describe('CompanyRegister 手机号与用户名校验', () => {
+  let api: any
+  beforeEach(async () => {
+    setActivePinia(createPinia())
+    api = (await import('@/api/http')).default
+    vi.mocked(api.get).mockReset()
+    vi.mocked(api.post).mockReset()
+  })
+
+  function availability(data: Record<string, boolean>) {
+    return { data: { code: 0, data: { usernameTaken: false, phoneValid: true, phoneTaken: false, ...data } } }
+  }
+
+  it('手机号格式不对时不查询、不发验证码，并提示', async () => {
+    const wrapper = mountPage()
+    const vm: any = wrapper.vm
+    vm.companyForm.phone = '88888888888'
+    await vm.sendSmsCode()
+    expect(api.get).not.toHaveBeenCalled()
+    expect(api.post).not.toHaveBeenCalled()
+    expect(vm.phoneError).toBe('register.company.phoneInvalid')
+  })
+
+  it('手机号已注册时不发验证码、不能进入下一步', async () => {
+    vi.mocked(api.get).mockResolvedValue(availability({ phoneTaken: true }))
+    const wrapper = mountPage()
+    const vm: any = wrapper.vm
+    vm.companyForm.phone = '13800000000'
+    vm.companyForm.smsVerifyCode = '123456'
+    await vm.sendSmsCode()
+    expect(api.post).not.toHaveBeenCalled()
+    await vm.handleNext()
+    expect(vm.step).toBe(0)
+    expect(vm.phoneError).toBe('register.company.phoneTaken')
+  })
+
+  it('手机号可用时发送验证码', async () => {
+    vi.mocked(api.get).mockResolvedValue(availability({}))
+    vi.mocked(api.post).mockResolvedValue({ data: { code: 0 } })
+    const wrapper = mountPage()
+    const vm: any = wrapper.vm
+    vm.companyForm.phone = ' 13800000000 '
+    await vm.sendSmsCode()
+    expect(api.get).toHaveBeenCalledWith('/company/register/check', { params: { phone: '13800000000' } })
+    expect(api.post).toHaveBeenCalledWith('/sms/send-code', { phone: '13800000000' })
+  })
+
+  it('用户名已被使用时不提交注册', async () => {
+    vi.mocked(api.get).mockResolvedValue(availability({ usernameTaken: true }))
+    const wrapper = mountPage()
+    const vm: any = wrapper.vm
+    vm.adminForm.username = 'sajida'
+    vm.adminForm.password = vm.adminForm.confirmPassword = 'Pass123!'
+    await vm.handleSubmit()
+    expect(api.post).not.toHaveBeenCalled()
+    expect(vm.usernameError).toBe('register.admin.usernameTaken')
+  })
+})

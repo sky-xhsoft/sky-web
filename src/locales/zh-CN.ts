@@ -786,11 +786,13 @@ export default {
       codeRetry: '{n}s',
       verifyCode: '验证码',
       verifyCodePlaceholder: '6位验证码',
-      codeSent: '验证码已发送（模拟）',
-      codeRequired: '请先输入企业邮箱',
+      codeSent: '验证码已发送',
+      codeRequired: '请先输入手机号',
       codeInvalid: '请输入6位验证码',
       codeSendFailed: '验证码发送失败',
       phoneRequired: '请先输入手机号',
+      phoneInvalid: '请输入正确的 11 位手机号',
+      phoneTaken: '该手机号已注册，请直接登录或更换手机号',
       getSmsCode: '获取短信验证码',
       smsVerifyCode: '短信验证码',
       contact: '联系人',
@@ -811,7 +813,9 @@ export default {
       adminNamePlaceholder: '真实姓名',
       prev: '上一步',
       submit: '提交注册',
-      passwordMismatch: '两次密码不一致'
+      passwordMismatch: '两次密码不一致',
+      usernameRequired: '请输入用户名',
+      usernameTaken: '该用户名已被使用，请更换'
     },
     complete: {
       title: '注册成功！',

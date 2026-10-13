@@ -28,9 +28,11 @@
         <a-form-item field="code" :label="t('register.company.code')" required>
           <a-input v-model="companyForm.code" :placeholder="t('register.company.codePlaceholder')" :max-length="20" class="v2-form-input" />
         </a-form-item>
-        <a-form-item field="phone" :label="t('register.company.phone')" required>
+        <a-form-item field="phone" :label="t('register.company.phone')" required
+          :validate-status="phoneError ? 'error' : undefined" :help="phoneError || undefined">
           <div class="email-row">
-            <a-input v-model="companyForm.phone" :placeholder="t('register.company.phonePlaceholder')" :max-length="11" class="v2-form-input" />
+            <a-input v-model="companyForm.phone" :placeholder="t('register.company.phonePlaceholder')" :max-length="11" class="v2-form-input"
+              @input="phoneError = ''" @blur="checkPhone" />
             <V2Button type="primary" size="sm" @click="sendSmsCode" :disabled="smsCountdown > 0">
               {{ smsCountdown > 0 ? t('register.company.codeRetry', {n: smsCountdown}) : t('register.company.getSmsCode') }}
             </V2Button>
@@ -55,8 +57,10 @@
       <!-- Step 2: Admin Account -->
       <a-form v-if="step === 1" :model="adminForm" layout="vertical" @submit="handleSubmit">
         <div class="step-desc">{{ t('register.admin.desc', {name: companyForm.name}) }}</div>
-        <a-form-item field="username" :label="t('register.admin.username')" required>
-          <a-input v-model="adminForm.username" :placeholder="t('register.admin.usernamePlaceholder')" class="v2-form-input" />
+        <a-form-item field="username" :label="t('register.admin.username')" required
+          :validate-status="usernameError ? 'error' : undefined" :help="usernameError || undefined">
+          <a-input v-model="adminForm.username" :placeholder="t('register.admin.usernamePlaceholder')" class="v2-form-input"
+            @input="usernameError = ''" @blur="checkUsername" />
         </a-form-item>
         <a-form-item field="password" :label="t('register.admin.password')" required>
           <a-input-password v-model="adminForm.password" :placeholder="t('register.admin.passwordPlaceholder')" class="v2-form-input" />
@@ -98,6 +102,61 @@ const { t } = useI18n()
 const step = ref(0)
 const submitting = ref(false)
 const smsCountdown = ref(0)
+const phoneError = ref('')
+const usernameError = ref('')
+
+/** 中国大陆手机号：1 开头、第二位 3～9、共 11 位（与后端一致） */
+const PHONE_PATTERN = /^1[3-9]\d{9}$/
+
+interface RegisterAvailability { usernameTaken: boolean; phoneValid: boolean; phoneTaken: boolean }
+
+/** 查询用户名 / 手机号是否已被使用；接口失败时不拦截，由注册接口兜底校验 */
+async function fetchAvailability(params: { username?: string; phone?: string }): Promise<RegisterAvailability | null> {
+  try {
+    const res: any = await api.get('/company/register/check', { params })
+    return (res?.data?.data ?? null) as RegisterAvailability | null
+  } catch {
+    return null
+  }
+}
+
+/** 校验手机号格式与是否已注册，不通过时在输入框下方提示 */
+async function checkPhone(): Promise<boolean> {
+  const phone = companyForm.phone.trim()
+  companyForm.phone = phone
+  if (!phone) {
+    phoneError.value = t('register.company.phoneRequired')
+    return false
+  }
+  if (!PHONE_PATTERN.test(phone)) {
+    phoneError.value = t('register.company.phoneInvalid')
+    return false
+  }
+  const res = await fetchAvailability({ phone })
+  if (res?.phoneTaken) {
+    phoneError.value = t('register.company.phoneTaken')
+    return false
+  }
+  phoneError.value = ''
+  return true
+}
+
+/** 校验用户名是否已被使用（用户名全局唯一） */
+async function checkUsername(): Promise<boolean> {
+  const username = adminForm.username.trim()
+  adminForm.username = username
+  if (!username) {
+    usernameError.value = t('register.admin.usernameRequired')
+    return false
+  }
+  const res = await fetchAvailability({ username })
+  if (res?.usernameTaken) {
+    usernameError.value = t('register.admin.usernameTaken')
+    return false
+  }
+  usernameError.value = ''
+  return true
+}
 
 const companyForm = reactive({
   name: '', code: '',
@@ -121,10 +180,7 @@ function startCountdown(target: { value: number }) {
 }
 
 async function sendSmsCode() {
-  if (!companyForm.phone) {
-    Message.warning(t('register.company.codeRequired'))
-    return
-  }
+  if (!(await checkPhone())) return
   try {
     await api.post('/sms/send-code', { phone: companyForm.phone })
     Message.success(t('register.company.codeSent'))
@@ -134,11 +190,8 @@ async function sendSmsCode() {
   }
 }
 
-function handleNext() {
-  if (!companyForm.phone) {
-    Message.warning(t('register.company.phoneRequired'))
-    return
-  }
+async function handleNext() {
+  if (!(await checkPhone())) return
   if (companyForm.smsVerifyCode.length !== 6) {
     Message.warning(t('register.company.codeInvalid'))
     return
@@ -147,6 +200,7 @@ function handleNext() {
 }
 
 async function handleSubmit() {
+  if (!(await checkUsername())) return
   if (adminForm.password !== adminForm.confirmPassword) {
     Message.warning(t('register.admin.passwordMismatch'))
     return
@@ -160,7 +214,17 @@ async function handleSubmit() {
     Message.success(t('register.success'))
     step.value = 2
   } catch (e: any) {
-    Message.error(e?.response?.data?.message || t('register.error'))
+    const message = e?.response?.data?.message || t('register.error')
+    // 409：提交前被他人抢先使用，回到对应输入框提示
+    if (e?.response?.status === 409) {
+      if (String(message).includes('手机号')) {
+        phoneError.value = t('register.company.phoneTaken')
+        step.value = 0
+      } else {
+        usernameError.value = t('register.admin.usernameTaken')
+      }
+    }
+    Message.error(message)
   } finally {
     submitting.value = false
   }

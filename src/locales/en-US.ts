@@ -784,11 +784,13 @@ export default {
       codeRetry: '{n}s',
       verifyCode: 'Verification Code',
       verifyCodePlaceholder: '6-digit code',
-      codeSent: 'Verification code sent (simulated)',
-      codeRequired: 'Please enter company email first',
+      codeSent: 'Verification code sent',
+      codeRequired: 'Please enter your phone number first',
       codeInvalid: 'Please enter 6-digit verification code',
       codeSendFailed: 'Failed to send verification code',
       phoneRequired: 'Please enter your phone number first',
+      phoneInvalid: 'Please enter a valid 11-digit mobile number',
+      phoneTaken: 'This phone number is already registered. Please sign in or use another number',
       getSmsCode: 'Send SMS Code',
       smsVerifyCode: 'SMS Code',
       contact: 'Contact Person',
@@ -809,7 +811,9 @@ export default {
       adminNamePlaceholder: 'Full name',
       prev: 'Previous',
       submit: 'Submit Registration',
-      passwordMismatch: 'Passwords do not match'
+      passwordMismatch: 'Passwords do not match',
+      usernameRequired: 'Please enter a username',
+      usernameTaken: 'This username is already taken'
     },
     complete: {
       title: 'Registration Successful!',
