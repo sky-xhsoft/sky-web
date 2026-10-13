@@ -106,11 +106,13 @@ const passwordRules = computed(() => ({
   ],
 }))
 
-function validateConfirmPassword(_rule: unknown, value: string) {
+// Arco 自定义校验的参数是 (value, callback)，必须调用 callback，否则 validate() 不会返回
+function validateConfirmPassword(value: string, callback: (error?: string) => void) {
   if (passwordForm.newPassword !== value) {
-    return Promise.reject(t('userProfile.changePasswordModal.validation.confirmPasswordMatch'))
+    callback(t('userProfile.changePasswordModal.validation.confirmPasswordMatch'))
+  } else {
+    callback()
   }
-  return Promise.resolve()
 }
 
 // 作为弹窗的 on-before-ok：返回 false 时弹窗保持打开（校验不通过或修改失败）
