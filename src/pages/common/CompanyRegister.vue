@@ -32,7 +32,7 @@
           :validate-status="phoneError ? 'error' : undefined" :help="phoneError || undefined">
           <div class="email-row">
             <a-input v-model="companyForm.phone" :placeholder="t('register.company.phonePlaceholder')" :max-length="11" class="v2-form-input"
-              @input="phoneError = ''" @blur="checkPhone" />
+              @input="phoneError = ''" @blur="checkPhoneFormat" />
             <V2Button type="primary" size="sm" @click="sendSmsCode" :disabled="smsCountdown > 0">
               {{ smsCountdown > 0 ? t('register.company.codeRetry', {n: smsCountdown}) : t('register.company.getSmsCode') }}
             </V2Button>
@@ -120,8 +120,8 @@ async function fetchAvailability(params: { username?: string; phone?: string }):
   }
 }
 
-/** 校验手机号格式与是否已注册，不通过时在输入框下方提示 */
-async function checkPhone(): Promise<boolean> {
+/** 校验手机号格式，不通过时在输入框下方提示 */
+function checkPhoneFormat(): boolean {
   const phone = companyForm.phone.trim()
   companyForm.phone = phone
   if (!phone) {
@@ -132,7 +132,14 @@ async function checkPhone(): Promise<boolean> {
     phoneError.value = t('register.company.phoneInvalid')
     return false
   }
-  const res = await fetchAvailability({ phone })
+  phoneError.value = ''
+  return true
+}
+
+/** 校验手机号格式与是否已注册（进入下一步前），不通过时在输入框下方提示 */
+async function checkPhone(): Promise<boolean> {
+  if (!checkPhoneFormat()) return false
+  const res = await fetchAvailability({ phone: companyForm.phone })
   if (res?.phoneTaken) {
     phoneError.value = t('register.company.phoneTaken')
     return false
@@ -180,7 +187,8 @@ function startCountdown(target: { value: number }) {
 }
 
 async function sendSmsCode() {
-  if (!(await checkPhone())) return
+  // 获取验证码只校验格式；是否已注册在「下一步」时检查
+  if (!checkPhoneFormat()) return
   try {
     await api.post('/sms/send-code', { phone: companyForm.phone })
     Message.success(t('register.company.codeSent'))

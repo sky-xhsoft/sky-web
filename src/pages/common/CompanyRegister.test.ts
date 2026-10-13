@@ -66,28 +66,31 @@ describe('CompanyRegister 手机号与用户名校验', () => {
     expect(vm.phoneError).toBe('register.company.phoneInvalid')
   })
 
-  it('手机号已注册时不发验证码、不能进入下一步', async () => {
+  it('手机号已注册时仍可获取验证码，但不能进入下一步', async () => {
     vi.mocked(api.get).mockResolvedValue(availability({ phoneTaken: true }))
+    vi.mocked(api.post).mockResolvedValue({ data: { code: 0 } })
     const wrapper = mountPage()
     const vm: any = wrapper.vm
     vm.companyForm.phone = '13800000000'
     vm.companyForm.smsVerifyCode = '123456'
     await vm.sendSmsCode()
-    expect(api.post).not.toHaveBeenCalled()
+    expect(api.get).not.toHaveBeenCalled()
+    expect(api.post).toHaveBeenCalledWith('/sms/send-code', { phone: '13800000000' })
     await vm.handleNext()
+    expect(api.get).toHaveBeenCalledWith('/company/register/check', { params: { phone: '13800000000' } })
     expect(vm.step).toBe(0)
     expect(vm.phoneError).toBe('register.company.phoneTaken')
   })
 
-  it('手机号可用时发送验证码', async () => {
+  it('手机号未注册时进入下一步', async () => {
     vi.mocked(api.get).mockResolvedValue(availability({}))
-    vi.mocked(api.post).mockResolvedValue({ data: { code: 0 } })
     const wrapper = mountPage()
     const vm: any = wrapper.vm
     vm.companyForm.phone = ' 13800000000 '
-    await vm.sendSmsCode()
+    vm.companyForm.smsVerifyCode = '123456'
+    await vm.handleNext()
     expect(api.get).toHaveBeenCalledWith('/company/register/check', { params: { phone: '13800000000' } })
-    expect(api.post).toHaveBeenCalledWith('/sms/send-code', { phone: '13800000000' })
+    expect(vm.step).toBe(1)
   })
 
   it('用户名已被使用时不提交注册', async () => {
