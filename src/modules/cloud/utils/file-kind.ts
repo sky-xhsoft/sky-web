@@ -92,3 +92,14 @@ const KIND_LABELS: Record<FileKind, string> = {
 export function fileKindLabel(ext?: string | null, mime?: string | null): string {
   return KIND_LABELS[fileKindOf(ext, mime)]
 }
+
+/**
+ * 视频文件的对象存储直链（http/https）；不是视频或没有直链时返回空字符串。
+ * 云盘视频存在公开读的存储桶里，直链长期有效，可直接复制给外部使用。
+ */
+export function videoAccessUrl(file?: { FileExt?: string; FileType?: string; FileName?: string; AccessURL?: string; accessUrl?: string; accessURL?: string } | null): string {
+  if (!file) return ''
+  if (fileKindOf(file.FileExt || file.FileName || '', file.FileType) !== 'video') return ''
+  const url = file.accessUrl || file.accessURL || file.AccessURL || ''
+  return /^https?:\/\//i.test(url) ? url : ''
+}

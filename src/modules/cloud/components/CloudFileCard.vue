@@ -52,6 +52,10 @@
             <icon-download />
             {{ t('cloud.download') }}
           </a-doption>
+          <a-doption value="copyUrl" v-if="item.type === 'file' && videoAccessUrl(item.file)">
+            <icon-link />
+            {{ t('cloud.copyFileUrl') }}
+          </a-doption>
           <a-doption value="rename">
             <icon-edit />
             {{ t('cloud.rename') }}
@@ -88,11 +92,12 @@ import {
   IconShareAlt,
   IconSafe,
   IconDelete,
+  IconLink,
 } from '@arco-design/web-vue/es/icon'
 import { computed } from 'vue'
 import type { GridItem } from '@/modules/cloud/types'
 import CloudFileThumb from './CloudFileThumb.vue'
-import { extOf, fileKindOf, FILE_KIND_COLORS } from '@/modules/cloud/utils/file-kind'
+import { extOf, fileKindOf, FILE_KIND_COLORS, videoAccessUrl } from '@/modules/cloud/utils/file-kind'
 import { useI18n } from 'vue-i18n'
 import { V2Button } from '@/components/ui'
 

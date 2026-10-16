@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { fileKindOf, extOf } from './file-kind'
+import { fileKindOf, extOf, videoAccessUrl } from './file-kind'
 
 describe('fileKindOf', () => {
   it('按扩展名识别（带点、不带点、文件名、大小写）', () => {
@@ -28,5 +28,18 @@ describe('fileKindOf', () => {
     expect(extOf('A.B.MP4')).toBe('mp4')
     expect(extOf('.Pdf')).toBe('pdf')
     expect(extOf('')).toBe('')
+  })
+})
+
+describe('videoAccessUrl', () => {
+  it('视频有 http(s) 直链时返回直链', () => {
+    expect(videoAccessUrl({ FileExt: '.mp4', AccessURL: 'https://video-1.cos.ap-nanjing.myqcloud.com/a.mp4' })).toBe('https://video-1.cos.ap-nanjing.myqcloud.com/a.mp4')
+    expect(videoAccessUrl({ FileName: 'b.MOV', accessUrl: 'http://x.example.com/b.mov' })).toBe('http://x.example.com/b.mov')
+  })
+  it('非视频、没有直链或是相对地址时返回空', () => {
+    expect(videoAccessUrl({ FileExt: '.jpg', AccessURL: 'https://x.example.com/a.jpg' })).toBe('')
+    expect(videoAccessUrl({ FileExt: '.mp4' })).toBe('')
+    expect(videoAccessUrl({ FileExt: '.mp4', AccessURL: '/api/v1/files/access/abc' })).toBe('')
+    expect(videoAccessUrl(null)).toBe('')
   })
 })

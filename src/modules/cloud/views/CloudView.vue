@@ -280,6 +280,8 @@ import {
 
 // 导入store
 import { useCloudStore } from '@/modules/cloud/stores/cloudStore'
+import { videoAccessUrl } from '@/modules/cloud/utils/file-kind'
+import { copyText } from '@/utils/clipboard'
 import type { FileItem, GridItem, ShareCreateParams, ShareListItem } from '@/modules/cloud/types'
 import type { PreviewAction } from '@/modules/cloud/components/dialogs/FilePreviewDialog.vue'
 
@@ -531,6 +533,14 @@ async function handleItemAction(payload: { action: string; item: GridItem }) {
         await file.download(item.file)
       }
       break
+
+    case 'copyUrl': {
+      const url = videoAccessUrl(item.file)
+      if (!url) break
+      if (await copyText(url)) Message.success(t('cloud.fileUrlCopied'))
+      else Message.error(t('cloud.copyFailed'))
+      break
+    }
 
     case 'rename':
       currentRenameType.value = item.type as 'file' | 'folder'

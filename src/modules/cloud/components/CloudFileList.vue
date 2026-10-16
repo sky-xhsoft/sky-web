@@ -91,6 +91,16 @@
             <template #icon><icon-download /></template>
           </V2Button>
           <V2Button
+            v-if="record.type === 'file' && videoAccessUrl(record.file)"
+            size="sm"
+            type="text"
+            @click.stop="handleAction('copyUrl', record)"
+            :title="t('cloud.copyFileUrl')"
+            :aria-label="t('cloud.copyFileUrl')"
+          >
+            <template #icon><icon-link /></template>
+          </V2Button>
+          <V2Button
             size="sm"
             type="text"
             @click.stop="handleAction('rename', record)"
@@ -139,10 +149,12 @@ import {
   IconShareAlt,
   IconSafe,
   IconDelete,
+  IconLink,
 } from '@arco-design/web-vue/es/icon'
 import type { GridItem } from '@/modules/cloud/types'
 import type { TableRowSelection } from '@arco-design/web-vue'
 import { formatSize, formatDate } from '@/modules/cloud/utils/format'
+import { videoAccessUrl } from '@/modules/cloud/utils/file-kind'
 import CloudFileThumb from './CloudFileThumb.vue'
 import { useI18n } from 'vue-i18n'
 import { V2Button, V2Tag } from '@/components/ui'

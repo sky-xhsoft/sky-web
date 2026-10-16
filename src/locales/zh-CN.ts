@@ -516,6 +516,8 @@ export default {
     shareExpirationNever: '永久',
     copyLink: '复制链接',
     copySuccess: '链接已复制到剪贴板',
+    copyFileUrl: '复制视频地址',
+    fileUrlCopied: '视频地址已复制',
     editShare: '编辑分享',
     shareStats: '分享统计',
     viewCount: '查看次数',

@@ -514,6 +514,8 @@ export default {
     shareExpirationNever: 'Never Expire',
     copyLink: 'Copy Link',
     copySuccess: 'Link copied to clipboard',
+    copyFileUrl: 'Copy video URL',
+    fileUrlCopied: 'Video URL copied',
     editShare: 'Edit Share',
     shareStats: 'Share Statistics',
     viewCount: 'Views',
