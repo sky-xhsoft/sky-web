@@ -1,283 +1,240 @@
 ﻿<template>
-  <!-- 语言切换 -->
-  <div class="language-switcher">
-    <div class="language-label">{{ currentLang === 'zh' ? '中文' : 'English' }}</div>
-    <div class="language-switch" @click="toggleLanguage">
-      <div class="language-switch-slider" :class="{ active: currentLang === 'en' }">
-        <div class="language-switch-thumb"></div>
-      </div>
-    </div>
-  </div>
-
   <div class="share-page">
-    <div class="share-container" :class="{ 'verified-layout': verified }">
-      <!-- 封面区域（仅在未验证时显示） -->
-      <div v-if="!verified && !notFound" class="cover-section has-cover">
-        <img class="cover-image" src="/afb9e692c32dbeb268027dc114bba931.png" alt="Cover">
-        <div class="cover-gradient"></div>
+    <header class="share-topbar">
+      <span class="share-brand">{{ SHARE_BRAND }}</span>
+      <div class="lang-switch" role="group" :aria-label="t('share.language')">
+        <button type="button" :class="{ on: currentLang === 'zh' }" :aria-pressed="currentLang === 'zh'" @click="setLanguage('zh-CN')">中文</button>
+        <button type="button" :class="{ on: currentLang === 'en' }" :aria-pressed="currentLang === 'en'" @click="setLanguage('en-US')">EN</button>
       </div>
+    </header>
 
-      <div v-if="!notFound && !restricted" class="content-section" :class="{ 'verified-mode': verified }">
-        <!-- 密码验证表单 -->
-        <div v-if="!verified" id="passwordPage">
-          <div class="resource-card" v-if="shareInfo">
-            <div class="resource-icon">
-              <icon-file v-if="shareInfo.resourceType === 'file'" :size="36" />
-              <icon-folder v-else :size="36" />
-            </div>
-            <div class="resource-info">
-              <div class="resource-name">{{ getResourceName() }}</div>
-              <div class="resource-meta">
-                <span v-if="shareInfo.resourceType === 'file'">
-                  {{ formatFileSize(getFileSize()) }}
-                </span>
-                <span>{{ 'Chery International' }}</span>
-              </div>
-            </div>
-          </div>
+    <!-- 加载中 -->
+    <main v-if="initialLoading" class="share-card gate">
+      <div class="cover skeleton" />
+      <div class="gate-body">
+        <div class="sk-line w60" />
+        <div class="sk-line w40" />
+        <div class="sk-line h48" />
+      </div>
+    </main>
 
-          <div class="form-section">
-            <label class="form-label">{{ t('share.password.label') }}</label>
-            <div class="password-input-wrapper">
-              <a-input-password
-                  v-model="form.password"
-                  :placeholder="t('share.password.placeholder')"
-                  allow-clear
-                  @press-enter="handleVerify"
-                  class="password-input"
-                  :disabled="loading"
-              >
-              </a-input-password>
-              <a-button type="primary" :loading="loading" @click="handleVerify" class="submit-btn">
-                {{ t('share.password.accessBtn') }}
-              </a-button>
-            </div>
-            <div class="error-text" v-if="error" style="display: block;">{{ t('share.password.error') }}</div>
-          </div>
+    <!-- 分享不存在或已失效 -->
+    <main v-else-if="notFound" id="errorPage" class="share-card state">
+      <icon-exclamation-circle :size="56" class="state-icon" />
+      <h1>{{ t('share.notFound.title') }}</h1>
+      <p>{{ t('share.notFound.desc') }}</p>
+    </main>
+
+    <!-- 私密分享：未登录或非同公司成员 -->
+    <main v-else-if="restricted" id="restrictedPage" class="share-card state">
+      <icon-lock :size="56" class="state-icon" />
+      <h1>{{ t('share.privateTitle') }}</h1>
+      <p>{{ restrictedMessage }}</p>
+      <a-button v-if="restricted === 'login'" type="primary" size="large" @click="goLogin">{{ t('share.privateLogin') }}</a-button>
+    </main>
+
+    <!-- 提取码页 -->
+    <main v-else-if="!verified" id="passwordPage" class="share-card gate">
+      <img
+        class="cover"
+        src="/kv202610.jpg"
+        width="1600"
+        height="900"
+        alt=""
+        decoding="async"
+        fetchpriority="high"
+      >
+      <div class="gate-body">
+        <div class="sharer">{{ t('share.sharedBy', { name: SHARE_BRAND }) }}</div>
+        <div v-if="shareInfo" class="resource-row">
+          <span class="resource-icon" :class="resourceKind">
+            <icon-folder v-if="shareInfo.resourceType === 'folder'" />
+            <icon-file v-else />
+          </span>
+          <span class="resource-text">
+            <span class="resource-name" :title="resourceName">{{ resourceName }}</span>
+            <span class="resource-meta">{{ gateMeta }}</span>
+          </span>
         </div>
 
-        <!-- 分享内容展示 -->
-        <div v-else id="filesPage">
-          <div class="resource-card">
-            <div class="resource-icon">
-              <icon-file v-if="shareInfo.resourceType === 'file'" :size="36" />
-              <icon-folder v-else :size="36" />
-            </div>
-            <div class="resource-info">
-              <div class="resource-name">{{ getResourceName() }}</div>
-              <div class="resource-meta">
-                <span>{{ 'Chery International' }}</span>
-                <span v-if="shareInfo.share.expireTime">{{ formatDate(shareInfo.share.expireTime) }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 文件下载按钮 -->
-          <div class="action-section" v-if="shareInfo.resourceType === 'file'">
-            <a-button
-                type="primary"
-                :loading="downloading"
-                @click="handleDownload"
-                class="download-button"
-            >
-              <template #icon>
-                <icon-download />
-              </template>
-              {{ t('share.actions.download') }}
+        <form class="code-form" @submit.prevent="handleVerify">
+          <label class="code-label" for="share-code">{{ t('share.password.label') }}</label>
+          <div class="code-row">
+            <a-input-password
+              :input-attrs="{ id: 'share-code' }"
+              ref="codeInputRef"
+              v-model="form.password"
+              :placeholder="t('share.password.placeholder')"
+              :disabled="loading"
+              :error="!!error"
+              size="large"
+              allow-clear
+              autocomplete="off"
+              class="code-input"
+              @press-enter="handleVerify"
+              @input="error = ''"
+            />
+            <a-button type="primary" size="large" html-type="submit" :loading="loading" class="code-submit">
+              {{ t('share.password.accessBtn') }}
             </a-button>
           </div>
+          <div v-if="error" class="code-error" role="alert">{{ error }}</div>
+          <div v-else class="code-hint">{{ t('share.password.hint') }}</div>
+        </form>
+      </div>
+    </main>
 
-          <!-- 文件夹内容列表 -->
-          <div v-if="shareInfo.resourceType === 'folder'" class="folder-content">
-              <!-- 面包屑导航 -->
-              <div class="breadcrumb">
-                <a-breadcrumb>
-                  <a-breadcrumb-item
-                      v-for="(item, index) in folderPath"
-                      :key="index"
-                      @click="navigateToFolder(item.id)"
-                      style="cursor: pointer;"
-                  >
-                    {{ item.name }}
-                  </a-breadcrumb-item>
-                </a-breadcrumb>
-              </div>
+    <!-- 分享内容 -->
+    <main v-else id="filesPage" class="share-content">
+      <section class="content-head">
+        <span class="resource-icon lg" :class="resourceKind">
+          <icon-folder v-if="shareInfo?.resourceType === 'folder'" />
+          <icon-file v-else />
+        </span>
+        <div class="head-text">
+          <h1 class="head-title" :title="resourceName">{{ resourceName }}</h1>
+          <div class="head-meta">
+            <span>{{ t('share.sharedBy', { name: SHARE_BRAND }) }}</span>
+            <span v-for="m in contentMeta" :key="m">{{ m }}</span>
+          </div>
+        </div>
+        <a-button
+          v-if="shareInfo?.resourceType === 'file'"
+          type="primary"
+          size="large"
+          :loading="downloading"
+          @click="handleDownload"
+        >
+          <template #icon><icon-download /></template>
+          {{ t('share.actions.download') }}
+        </a-button>
+      </section>
 
-              <!-- 网格视图 -->
-              <div class="file-grid">
-                <div
-                    v-for="item in folderFiles"
-                    :key="item.id"
-                    class="file-card"
-                    :class="{ 'clickable': item.type === 'folder' || canPreview(item.name) }"
-                    @click="item.type === 'folder' ? navigateToFolder(item.id, item.name) : handleFileClick(item)"
-                >
-                  <!-- 图片预览 -->
-                  <div v-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'image'" class="file-thumb">
-                    <img
-                      :loading="'lazy'"
-                      :src="getAccessUrl(item)"
-                      :alt="item.name"
-                    />
-                    <div class="file-card-overlay">
-                      <icon-eye :size="32" />
-                    </div>
-                  </div>
-                  <!-- 视频预览（滚动到可见区域才加载封面） -->
-                  <div v-else-if="item.type === 'file' && hasAccessUrl(item) && getFileType(item.name) === 'video'" class="file-thumb video-preview">
-                    <video
-                      muted
-                      preload="none"
-                      :data-lazy="getAccessUrl(item)"
-                      @click.stop="handlePreviewFile(item)"
-                    >
-                    </video>
-                    <div class="file-card-overlay" @click.stop="handlePreviewFile(item)">
-                      <icon-play-circle :size="40" color="white" />
-                    </div>
-                  </div>
-                  <!-- 无访问URL的视频显示图标 -->
-                  <div v-else-if="item.type === 'file' && getFileType(item.name) === 'video'" class="file-thumb video-preview">
-                    <icon-video-camera :size="64" />
-                  </div>
-                  <!-- 其他类型显示图标 -->
-                  <div v-else class="file-thumb">
-                    <icon-folder v-if="item.type === 'folder'" :size="80" />
-                    <icon-image v-else-if="getFileType(item.name) === 'image'" :size="80" />
-                    <icon-video-camera v-else-if="getFileType(item.name) === 'video'" :size="80" />
-                    <icon-music v-else-if="getFileType(item.name) === 'audio'" :size="80" />
-                    <icon-file-pdf v-else-if="getFileType(item.name) === 'pdf'" :size="80" />
-                    <icon-file v-else :size="80" />
-                  </div>
-                  <div class="file-card-name" :title="item.displayName || item.name">{{ item.displayName || item.name }}</div>
-                  <div class="file-card-actions" v-if="item.type === 'file'">
-                    <a-button
-                        v-if="canPreview(item.name)"
-                        type="primary"
-                        size="small"
-                        @click.stop="handlePreviewFile(item)"
-                    >
-                      <template #icon>
-                        <icon-eye />
-                      </template>
-                      {{ t('share.actions.preview') }}
-                    </a-button>
-                    <a-button
-                        type="outline"
-                        size="small"
-                        @click.stop="handleDownloadFile(item)"
-                    >
-                      <template #icon>
-                        <icon-download />
-                      </template>
-                      {{ t('share.actions.downloadItem') }}
-                    </a-button>
-                  </div>
-                </div>
-                <div v-if="folderFiles.length === 0" class="empty-folder">
-                  <icon-folder :size="80" style="color: #e5e7eb;" />
-                  <p>{{ t('share.empty') }}</p>
-                </div>
-              </div>
+      <!-- 文件夹 -->
+      <template v-if="shareInfo?.resourceType === 'folder'">
+        <div v-if="folderPath.length > 1 || (!featured && folderFiles.length > 0)" class="folder-bar">
+          <nav v-if="folderPath.length > 1" class="crumbs" aria-label="breadcrumb">
+            <template v-for="(item, index) in folderPath" :key="index">
+              <span v-if="index > 0" class="crumb-sep">/</span>
+              <button
+                v-if="index < folderPath.length - 1"
+                type="button"
+                class="crumb"
+                @click="navigateToFolder(item.id)"
+              >{{ item.name }}</button>
+              <span v-else class="crumb current">{{ item.name }}</span>
+            </template>
+          </nav>
+          <span v-else />
+          <div v-if="!featured && folderFiles.length > 0" class="view-switch" role="group">
+            <button type="button" :class="{ on: viewMode === 'grid' }" :aria-pressed="viewMode === 'grid'" @click="setViewMode('grid')">{{ t('share.view.grid') }}</button>
+            <button type="button" :class="{ on: viewMode === 'list' }" :aria-pressed="viewMode === 'list'" @click="setViewMode('list')">{{ t('share.view.list') }}</button>
+          </div>
+        </div>
+
+        <div v-if="loadingFiles" class="file-grid">
+          <div v-for="n in 4" :key="n" class="file-card"><div class="thumb skeleton" /><div class="sk-line w60" /></div>
+        </div>
+
+        <!-- 只有一个可播放视频：直接内嵌播放 -->
+        <section v-else-if="featured" class="featured">
+          <video
+            class="featured-video"
+            controls
+            playsinline
+            preload="metadata"
+            :src="mediaUrl(featured)"
+          >{{ t('share.browserNotSupportVideo') }}</video>
+          <div class="featured-bar">
+            <div class="featured-text">
+              <div class="featured-name" :title="featured.displayName">{{ featured.displayName }}</div>
+              <div class="featured-meta">{{ formatFileSize(featured.size) }}</div>
             </div>
+            <a-button type="primary" size="large" @click="handleDownloadFile(featured)">
+              <template #icon><icon-download /></template>
+              {{ t('share.actions.downloadItem') }}
+            </a-button>
+          </div>
+        </section>
+
+        <div v-else-if="folderFiles.length === 0" class="share-card state slim">
+          <icon-folder :size="48" class="state-icon muted" />
+          <p>{{ t('share.empty') }}</p>
         </div>
 
-      </div>
-      <!-- 错误提示 - 优先显示 -->
-      <div v-if="notFound" id="errorPage" class="content-section">
-        <div class="error-state">
-          <div class="error-icon">
-            <icon-exclamation-circle :size="80" />
-          </div>
-          <h2>{{ t('share.notFound.title') }}</h2>
-          <p>{{ t('share.notFound.desc') }}</p>
+        <!-- 网格 -->
+        <div v-else-if="viewMode === 'grid'" class="file-grid">
+          <article
+            v-for="item in folderFiles"
+            :key="item.type + item.id"
+            class="file-card"
+          >
+            <button type="button" class="thumb" :aria-label="item.displayName" @click="openItem(item)">
+              <img v-if="isImage(item) && hasAccessUrl(item)" :src="getAccessUrl(item)" :alt="item.displayName" loading="lazy" decoding="async">
+              <video v-else-if="isVideo(item) && hasAccessUrl(item)" muted playsinline preload="none" :data-lazy="getAccessUrl(item)" />
+              <span v-else class="thumb-icon" :class="iconKind(item)">
+                <component :is="iconFor(item)" />
+              </span>
+              <span v-if="isVideo(item)" class="play-badge"><icon-play-arrow-fill /></span>
+            </button>
+            <div class="file-name" :title="item.displayName">{{ item.displayName }}</div>
+            <div class="file-foot">
+              <span class="file-size">{{ item.type === 'folder' ? t('share.resource.folder') : formatFileSize(item.size) }}</span>
+              <button v-if="item.type === 'file'" type="button" class="icon-btn" :aria-label="t('share.actions.downloadItem')" @click="handleDownloadFile(item)">
+                <icon-download />
+              </button>
+            </div>
+          </article>
         </div>
-      </div>
-      <!-- 私密分享：未登录或非同公司成员 -->
-      <div v-if="restricted" id="restrictedPage" class="content-section">
-        <div class="error-state">
-          <div class="error-icon">
-            <icon-exclamation-circle :size="80" />
-          </div>
-          <h2>{{ currentLang === 'zh' ? '私密分享' : 'Private share' }}</h2>
-          <p>{{ restrictedMessage }}</p>
-          <a-button v-if="restricted === 'login'" type="primary" @click="goLogin">
-            {{ currentLang === 'zh' ? '登录后访问' : 'Sign in to view' }}
-          </a-button>
-        </div>
-      </div>
-    </div>
 
-    <!-- 文件预览对话框 -->
+        <!-- 列表 -->
+        <ul v-else class="file-list">
+          <li v-for="item in folderFiles" :key="item.type + item.id" class="file-row">
+            <button type="button" class="row-main" @click="openItem(item)">
+              <span class="thumb-icon sm" :class="iconKind(item)"><component :is="iconFor(item)" /></span>
+              <span class="row-name" :title="item.displayName">{{ item.displayName }}</span>
+            </button>
+            <span class="row-size">{{ item.type === 'folder' ? '' : formatFileSize(item.size) }}</span>
+            <span class="row-actions">
+              <button v-if="item.type === 'file' && canPreview(item.name)" type="button" class="text-btn" @click="handlePreviewFile(item)">{{ t('share.actions.preview') }}</button>
+              <button v-if="item.type === 'file'" type="button" class="text-btn" @click="handleDownloadFile(item)">{{ t('share.actions.downloadItem') }}</button>
+            </span>
+          </li>
+        </ul>
+      </template>
+
+    </main>
+
+    <!-- 文件预览 -->
     <a-modal
-        v-model:visible="previewVisible"
-        :title="previewFile?.name"
-        :width="previewType === 'image' ? '80%' : '90%'"
-        unmount-on-close
-        @cancel="closePreview"
+      v-model:visible="previewVisible"
+      :title="previewFile?.displayName || previewFile?.name"
+      :width="previewType === 'image' ? 'min(1000px, 94vw)' : 'min(1200px, 96vw)'"
+      unmount-on-close
+      :footer="false"
+      modal-class="share-preview-modal"
+      @cancel="closePreview"
     >
       <div class="preview-container">
-        <!-- 图片预览 -->
-        <div v-if="previewType === 'image'" class="preview-image">
-          <img :src="previewUrl" :alt="previewFile?.name || ''" />
-        </div>
-
-        <!-- 视频预览 -->
-        <div v-else-if="previewType === 'video'" class="preview-video">
-          <video
-              ref="videoRef"
-              controls
-              :src="previewUrl"
-              style="width: 100%; max-height: 70vh;"
-          >
-            {{ t('share.browserNotSupportVideo') }}
-          </video>
-        </div>
-
-        <!-- 音频预览 -->
-        <div v-else-if="previewType === 'audio'" class="preview-audio">
-          <audio
-              ref="audioRef"
-              controls
-              :src="previewUrl"
-              style="width: 100%;"
-          >
-            {{ t('share.browserNotSupportAudio') }}
-          </audio>
-        </div>
-
-        <!-- PDF预览 -->
-        <div v-else-if="previewType === 'pdf'" class="preview-pdf">
-          <iframe :src="previewUrl" style="width: 100%; height: 70vh; border: none;"></iframe>
-        </div>
-
-        <!-- 文本预览 -->
-        <div v-else-if="previewType === 'text'" class="preview-text">
-          <pre>{{ previewFile?.content || t('share.loading') }}</pre>
-        </div>
+        <img v-if="previewType === 'image'" class="preview-image" :src="previewUrl" :alt="previewFile?.displayName || ''">
+        <video v-else-if="previewType === 'video'" ref="videoRef" class="preview-video" controls autoplay playsinline :src="previewUrl">{{ t('share.browserNotSupportVideo') }}</video>
+        <audio v-else-if="previewType === 'audio'" ref="audioRef" controls autoplay :src="previewUrl" style="width: 100%">{{ t('share.browserNotSupportAudio') }}</audio>
+        <iframe v-else-if="previewType === 'pdf'" :src="previewUrl" class="preview-pdf" />
+        <pre v-else-if="previewType === 'text'" class="preview-text">{{ previewFile?.content || t('share.loading') }}</pre>
       </div>
-
-      <template #footer>
-        <a-space>
-          <a-button @click="closePreview">{{ t('share.close') }}</a-button>
-          <a-button
-              v-if="previewFile"
-              type="primary"
-              @click="handleDownloadFile(previewFile)"
-          >
-            <template #icon>
-              <icon-download />
-            </template>
-            {{ t('share.actions.downloadItem') }}
-          </a-button>
-        </a-space>
-      </template>
+      <div class="preview-actions">
+        <a-button @click="closePreview">{{ t('share.close') }}</a-button>
+        <a-button v-if="previewFile" type="primary" @click="handleDownloadFile(previewFile)">
+          <template #icon><icon-download /></template>
+          {{ t('share.actions.downloadItem') }}
+        </a-button>
+      </div>
     </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Message } from '@arco-design/web-vue'
@@ -285,13 +242,13 @@ import {
   IconFile,
   IconFolder,
   IconDownload,
-  IconEye,
   IconExclamationCircle,
+  IconLock,
   IconImage,
   IconVideoCamera,
   IconMusic,
   IconFilePdf,
-  IconPlayCircle
+  IconPlayArrowFill
 } from '@arco-design/web-vue/es/icon'
 import { getShareInfo, accessShare, downloadShareFile, getShareDownloadUrl, getShareFolderContent } from '@/modules/cloud/api/share'
 import type { ShareInfo } from '@/modules/cloud/types'
@@ -299,22 +256,42 @@ import { useAuthStore } from '@/stores/auth'
 import { formatFileSize, formatDate } from '@/utils/format'
 import { getFileType, canPreview, hasAccessUrl, getAccessUrl, getFilePreviewUrl, getFileDownloadUrl } from '@/composables/useShareFileUtils'
 
+// 分享页展示的分享方名称（当前分享都来自同一客户，后端 sharer 为登录用户名，不适合对外展示）
+const SHARE_BRAND = 'Chery International'
+const VIEW_MODE_KEY = 'share.viewMode'
+
+interface ShareItem {
+  id: number
+  name: string          // 带扩展名的完整文件名，用于类型判断与下载
+  displayName: string   // 展示用名称
+  type: 'file' | 'folder'
+  size: number
+  updateTime: string
+  storageType: string
+  accessUrl: string
+  fileExt: string
+  content?: string
+}
+
 const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const shareCode = ref(route.params.code as string)
 
-// 语言切换
-const currentLang = computed(() => locale.value === 'zh-CN' ? 'zh' : 'en')
+// 分享页面向外部访客，默认英文（提取码页和文件列表都是）；页内切换只在本页生效，离开时恢复原语言，不改用户保存的语言设置
+const previousLocale = locale.value
+locale.value = 'en-US'
 
-function toggleLanguage() {
-  locale.value = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
+const currentLang = computed(() => (locale.value === 'zh-CN' ? 'zh' : 'en'))
+function setLanguage(lang: 'zh-CN' | 'en-US') {
+  locale.value = lang
 }
 
+const initialLoading = ref(true)
 const loading = ref(false)
 const downloading = ref(false)
-// 加密分享验证密码后签发的访问凭证（有效期 2 小时），下载/预览/浏览文件夹时携带
+// 加密分享验证提取码后签发的访问凭证（有效期 2 小时），下载/预览/浏览文件夹时携带
 const accessToken = ref('')
 const loadingFiles = ref(false)
 const verified = ref(false)
@@ -323,73 +300,156 @@ const notFound = ref(false)
 const restricted = ref<'' | 'login' | 'deny'>('')
 const restrictedMessage = ref('')
 const error = ref('')
-const showFolderContent = ref(false)
 
-const form = ref({
-  password: '',
-})
+const form = ref({ password: '' })
+const codeInputRef = ref<any>(null)
 
 const shareInfo = ref<ShareInfo | null>(null)
-const folderFiles = ref<any[]>([])
+const folderFiles = ref<ShareItem[]>([])
 const currentFolderId = ref<number | undefined>(undefined)
 const folderPath = ref<Array<{ id: number | undefined; name: string }>>([])
 
+const viewMode = ref<'grid' | 'list'>(readViewMode())
+
 const previewVisible = ref(false)
-const previewFile = ref<any>(null)
+const previewFile = ref<ShareItem | null>(null)
 const previewType = ref<'image' | 'video' | 'audio' | 'pdf' | 'text' | 'unknown'>('unknown')
 const previewUrl = ref<string>('')
 
 const videoRef = ref<HTMLVideoElement | null>(null)
-let videoObserver: IntersectionObserver | null = null
 const audioRef = ref<HTMLAudioElement | null>(null)
+let videoObserver: IntersectionObserver | null = null
 
+const resourceName = computed(() => {
+  const info = shareInfo.value
+  if (!info) return ''
+  if (info.resourceType === 'file') return info.file?.name || t('share.resource.file')
+  return info.folder?.name || t('share.resource.folder')
+})
 
-function getResourceName(): string {
-  if (!shareInfo.value) return ''
-  if (shareInfo.value.resourceType === 'file') {
-    return shareInfo.value.file?.name || t('share.resource.file')
-  }
-  return shareInfo.value.folder?.name || t('share.resource.folder')
+const resourceKind = computed(() => {
+  const info = shareInfo.value
+  if (!info || info.resourceType === 'folder') return 'k-folder'
+  return 'k-' + kindOfName(info.file?.name || '')
+})
+
+const expireText = computed(() => {
+  const exp = shareInfo.value?.share.expireTime
+  return exp ? t('share.meta.expires', { time: formatDate(exp) }) : t('share.meta.forever')
+})
+
+const downloadsLeftText = computed(() => {
+  const s = shareInfo.value?.share
+  if (!s || !s.maxDownloads) return ''
+  return t('share.meta.downloadsLeft', { n: Math.max(0, s.maxDownloads - (s.downloadCount || 0)) })
+})
+
+// 提取码页资源说明：文件显示大小，文件夹只显示类型（目录统计在验证后才可见）
+const gateMeta = computed(() => {
+  const info = shareInfo.value
+  if (!info) return ''
+  const parts = [info.resourceType === 'file' ? formatFileSize(info.file?.fileSize || 0) : t('share.resource.folder'), expireText.value]
+  return parts.filter(Boolean).join(' · ')
+})
+
+const contentMeta = computed(() => {
+  const info = shareInfo.value
+  if (!info) return []
+  const parts: string[] = []
+  if (info.resourceType === 'file') parts.push(formatFileSize(info.file?.fileSize || 0))
+  else if (!loadingFiles.value) parts.push(t('share.meta.items', { n: folderFiles.value.length }, folderFiles.value.length))
+  parts.push(expireText.value)
+  if (downloadsLeftText.value) parts.push(downloadsLeftText.value)
+  return parts
+})
+
+// 当前目录只有一个视频（且有可访问地址或可走预览接口）时直接内嵌播放
+const featured = computed<ShareItem | null>(() => {
+  if (folderFiles.value.length !== 1) return null
+  const only = folderFiles.value[0]
+  return only.type === 'file' && isVideo(only) ? only : null
+})
+
+function kindOfName(name: string): string {
+  const k = getFileType(name)
+  return k === 'unknown' || k === 'text' ? 'doc' : k
 }
 
-function getFileSize(): number {
-  if (!shareInfo.value || shareInfo.value.resourceType !== 'file') return 0
-  return shareInfo.value.file?.fileSize || 0
+function isImage(item: ShareItem) {
+  return item.type === 'file' && getFileType(item.name) === 'image'
+}
+
+function isVideo(item: ShareItem) {
+  return item.type === 'file' && getFileType(item.name) === 'video'
+}
+
+function iconKind(item: ShareItem) {
+  return item.type === 'folder' ? 'k-folder' : 'k-' + kindOfName(item.name)
+}
+
+function iconFor(item: ShareItem) {
+  if (item.type === 'folder') return IconFolder
+  switch (getFileType(item.name)) {
+    case 'image': return IconImage
+    case 'video': return IconVideoCamera
+    case 'audio': return IconMusic
+    case 'pdf': return IconFilePdf
+    default: return IconFile
+  }
+}
+
+function mediaUrl(item: ShareItem) {
+  const url = getAccessUrl(item)
+  return hasAccessUrl(item) ? url : getFilePreviewUrl(shareCode.value, item.id, accessToken.value)
+}
+
+function readViewMode(): 'grid' | 'list' {
+  try {
+    return localStorage.getItem(VIEW_MODE_KEY) === 'list' ? 'list' : 'grid'
+  } catch {
+    return 'grid'
+  }
+}
+
+function setViewMode(mode: 'grid' | 'list') {
+  viewMode.value = mode
+  try {
+    localStorage.setItem(VIEW_MODE_KEY, mode)
+  } catch {
+    // 无痕模式等禁用存储时忽略
+  }
+  if (mode === 'grid') nextTick(initVideoLazyLoad)
 }
 
 function initVideoLazyLoad() {
-  // 先清理之前的 observer
-  if (videoObserver) {
-    videoObserver.disconnect()
-  }
-
-  // 创建 IntersectionObserver
+  videoObserver?.disconnect()
   videoObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const video = entry.target as HTMLVideoElement
-          const lazySrc = video.getAttribute('data-lazy')
-          if (lazySrc) {
-            video.src = lazySrc
-            video.preload = 'metadata' // 只加载元数据（封面）
-            video.removeAttribute('data-lazy')
-            videoObserver?.unobserve(video)
-          }
+        if (!entry.isIntersecting) return
+        const video = entry.target as HTMLVideoElement
+        const lazySrc = video.getAttribute('data-lazy')
+        if (lazySrc) {
+          // 只加载元数据，用首帧作为封面
+          video.preload = 'metadata'
+          video.src = lazySrc + '#t=0.5'
+          video.removeAttribute('data-lazy')
         }
+        videoObserver?.unobserve(video)
       })
     },
-    {
-      rootMargin: '100px 0px', // 提前100px开始加载
-      threshold: 0.1
-    }
+    { rootMargin: '200px 0px', threshold: 0.01 }
   )
+  document.querySelectorAll('.share-page video[data-lazy]').forEach((v) => videoObserver?.observe(v))
+}
 
-  // 观察所有视频元素
-  const videos = document.querySelectorAll('video[data-lazy]')
-  videos.forEach((video) => {
-    videoObserver.observe(video)
-  })
+function enterContent(info: ShareInfo) {
+  verified.value = true
+  if (info.resourceType === 'folder') {
+    folderPath.value = [{ id: undefined, name: info.folder?.name || t('share.root') }]
+    currentFolderId.value = undefined
+    loadFolderContent()
+  }
 }
 
 async function loadShareInfo() {
@@ -398,21 +458,15 @@ async function loadShareInfo() {
   try {
     const info = await getShareInfo(shareCode.value)
     shareInfo.value = info
-
     // 公开分享直接可看；私密分享能取到信息即说明已通过同公司校验，并已签发访问凭证
     if (info.share.shareType === 'public' || info.share.shareType === 'private') {
-      verified.value = true
       accessToken.value = info.accessToken || ''
-      if (info.resourceType === 'folder') {
-        showFolderContent.value = true
-        folderPath.value = [{ id: undefined, name: info.folder?.name || (currentLang.value === 'zh' ? '根目录' : 'Root') }]
-        currentFolderId.value = undefined
-        await loadFolderContent()
-      }
+      enterContent(info)
+    } else {
+      nextTick(() => codeInputRef.value?.focus?.())
     }
   } catch (e: any) {
     console.error('获取分享信息失败:', e)
-    // 判断是否是分享不存在或已失效的错误（无论状态码）
     const errorMessage = e?.message || ''
     if (e?.response?.status === 403) {
       restricted.value = authStore.isAuthenticated ? 'deny' : 'login'
@@ -426,84 +480,48 @@ async function loadShareInfo() {
     }
   } finally {
     loading.value = false
+    initialLoading.value = false
   }
 }
 
-/**
- * 跳转登录，登录后回到本分享页
- */
 function goLogin() {
   router.push({ path: '/login', query: { redirect: route.fullPath } })
 }
 
 /**
- * 访问凭证缺失或过期（后端返回 403）：回到密码输入界面重新验证
+ * 访问凭证缺失或过期（后端返回 403）：回到提取码页重新验证
  */
 function handleAccessExpired(e: any): boolean {
   if (e?.status !== 403 && e?.response?.status !== 403) return false
   accessToken.value = ''
-  // 私密分享无需密码：重新获取分享信息即可重新签发凭证
   if (shareInfo.value?.share.shareType === 'private') {
     loadShareInfo()
     return true
   }
   verified.value = false
-  showFolderContent.value = false
-  error.value = e?.response?.data?.message || e?.message || t('share.password.error')
+  error.value = t('share.expired')
+  nextTick(() => codeInputRef.value?.focus?.())
   return true
 }
 
 async function handleVerify() {
+  if (loading.value) return
   if (!form.value.password.trim()) {
     error.value = t('share.error.passwordRequired')
     return
   }
-
   loading.value = true
   error.value = ''
   try {
-    const info = await accessShare(shareCode.value, form.value.password)
+    const info = await accessShare(shareCode.value, form.value.password.trim())
     shareInfo.value = info
     accessToken.value = info.accessToken || ''
-    verified.value = true
-    Message.success(t('share.verifyingSuccess'))
-
-    if (info.resourceType === 'folder') {
-      showFolderContent.value = true
-      folderPath.value = [{ id: undefined, name: info.folder?.name || t('share.resource.folder') }]
-      currentFolderId.value = undefined
-      await loadFolderContent()
-    }
+    enterContent(info)
   } catch (e: any) {
     console.error('访问分享失败:', e)
-    error.value = e?.message || t('share.password.error')
+    error.value = t('share.password.error')
   } finally {
     loading.value = false
-  }
-}
-
-async function handleDownload() {
-  if (!shareInfo.value || shareInfo.value.resourceType !== 'file') return
-
-  downloading.value = true
-  try {
-    // 先由后端校验并计入下载次数（达到上限会报错），再用返回的直链下载
-    const { url } = await getShareDownloadUrl(shareCode.value, accessToken.value)
-    const filename = shareInfo.value.file?.name || `file-${Date.now()}`
-    if (url) {
-      clickDownloadLink(url, filename, true)
-      Message.success(t('share.actions.startDownload'))
-      return
-    }
-    // 没有直链：走后端流式下载（该接口自己计数）
-    await downloadShareFile(shareCode.value, filename, accessToken.value)
-    Message.success('开始下载')
-  } catch (e: any) {
-    console.error('下载失败:', e)
-    if (handleAccessExpired(e)) return
-    Message.error(e?.message || '下载失败')
-  } finally {
-    downloading.value = false
   }
 }
 
@@ -522,117 +540,142 @@ function clickDownloadLink(href: string, filename: string, newTab: boolean) {
   document.body.removeChild(link)
 }
 
+async function handleDownload() {
+  if (!shareInfo.value || shareInfo.value.resourceType !== 'file') return
+  downloading.value = true
+  try {
+    // 先由后端校验并计入下载次数（达到上限会报错），再用返回的直链下载
+    const { url } = await getShareDownloadUrl(shareCode.value, accessToken.value)
+    const filename = shareInfo.value.file?.name || `file-${Date.now()}`
+    if (url) {
+      clickDownloadLink(url, filename, true)
+    } else {
+      // 没有直链：走后端流式下载（该接口自己计数）
+      await downloadShareFile(shareCode.value, filename, accessToken.value)
+    }
+    Message.success(t('share.downloadStarted'))
+  } catch (e: any) {
+    console.error('下载失败:', e)
+    if (handleAccessExpired(e)) return
+    Message.error(e?.message || t('share.downloadFailed'))
+  } finally {
+    downloading.value = false
+  }
+}
+
+async function handleDownloadFile(file: ShareItem) {
+  try {
+    const { url } = await getShareDownloadUrl(shareCode.value, accessToken.value, file.id)
+    if (url) {
+      clickDownloadLink(url, file.name, true)
+    } else {
+      clickDownloadLink(getFileDownloadUrl(shareCode.value, file.id, accessToken.value), file.name, false)
+    }
+    Message.success(t('share.downloadStarted'))
+  } catch (e: any) {
+    console.error('下载失败:', e)
+    if (handleAccessExpired(e)) return
+    Message.error(e?.message || t('share.downloadFailed'))
+  }
+}
+
+/** 后端文件名可能已带扩展名，只有不带时才补，避免出现 a.mp4.mp4 */
+function fullFileName(baseName: string, fileExt: string): string {
+  if (!fileExt) return baseName
+  return baseName.toLowerCase().endsWith(fileExt.toLowerCase()) ? baseName : baseName + fileExt
+}
+
 async function loadFolderContent(parentId?: number) {
   loadingFiles.value = true
   try {
     const content = await getShareFolderContent(shareCode.value, parentId, accessToken.value)
-    const items: any[] = []
-
-    if (content.folders && content.folders.length > 0) {
-      content.folders.forEach((folder: any) => {
-        items.push({
-          id: folder.id,
-          name: folder.name,
-          type: 'folder',
-          size: 0,
-          updateTime: folder.updateTime || '',
-        })
+    const items: ShareItem[] = []
+    ;(content.folders || []).forEach((folder: any) => {
+      items.push({
+        id: folder.id,
+        name: folder.name,
+        displayName: folder.name,
+        type: 'folder',
+        size: 0,
+        updateTime: folder.updateTime || '',
+        storageType: '',
+        accessUrl: '',
+        fileExt: '',
       })
-    }
-
-    if (content.files && content.files.length > 0) {
-      content.files.forEach((file: any) => {
-        const baseName = file.name || file.Name || file.fileName || file.FileName || ''
-        let fileExt = file.fileExt || file.FileExt || ''
-        if (fileExt && !fileExt.startsWith('.')) {
-          fileExt = '.' + fileExt
-        }
-        const fullName = baseName + fileExt
-
-        const item = {
-          id: file.id || file.ID || 0,
-          name: fullName,
-          displayName: baseName,
-          type: file.type || file.Type || 'file',
-          size: (file.fileSize || file.FileSize || file.size || file.Size || 0),
-          updateTime: file.updateTime || file.UpdateTime || file.createTime || file.CreateTime || '',
-          storageType: file.storageType || file.StorageType || '',
-          accessUrl: file.accessUrl || file.accessURL || file.AccessURL || file.AccessUrl || '',
-          fileExt: fileExt,
-        }
-        items.push(item)
-      })
-    }
-
-    folderFiles.value = items
-    // 初始化视频懒加载
-    nextTick(() => {
-      initVideoLazyLoad()
     })
+    ;(content.files || []).forEach((file: any) => {
+      const baseName = file.name || file.Name || file.fileName || file.FileName || ''
+      let fileExt = file.fileExt || file.FileExt || ''
+      if (fileExt && !fileExt.startsWith('.')) fileExt = '.' + fileExt
+      const name = fullFileName(baseName, fileExt)
+      items.push({
+        id: file.id || file.ID || 0,
+        name,
+        displayName: name,
+        type: (file.type || file.Type || 'file') === 'folder' ? 'folder' : 'file',
+        size: file.fileSize || file.FileSize || file.size || file.Size || 0,
+        updateTime: file.updateTime || file.UpdateTime || file.createTime || file.CreateTime || '',
+        storageType: file.storageType || file.StorageType || '',
+        accessUrl: file.accessUrl || file.accessURL || file.AccessURL || file.AccessUrl || '',
+        fileExt,
+      })
+    })
+    folderFiles.value = items
   } catch (e: any) {
     console.error('加载文件夹内容失败:', e)
     if (handleAccessExpired(e)) return
     Message.error(e?.message || t('share.getShareInfoFailed'))
   } finally {
     loadingFiles.value = false
+    nextTick(initVideoLazyLoad)
   }
 }
 
 async function navigateToFolder(folderId?: number, folderName?: string) {
   if (folderName === undefined) {
-    const pathIndex = folderPath.value.findIndex(item => item.id === folderId)
-    if (pathIndex !== -1) {
-      folderPath.value = folderPath.value.slice(0, pathIndex + 1)
-      currentFolderId.value = folderId
-    }
+    const pathIndex = folderPath.value.findIndex((item) => item.id === folderId)
+    if (pathIndex !== -1) folderPath.value = folderPath.value.slice(0, pathIndex + 1)
   } else {
     folderPath.value.push({ id: folderId, name: folderName })
-    currentFolderId.value = folderId
   }
-  await loadFolderContent(currentFolderId.value)
+  currentFolderId.value = folderId
+  await loadFolderContent(folderId)
 }
 
-function handlePreviewFile(file: any) {
+function openItem(item: ShareItem) {
+  if (item.type === 'folder') {
+    navigateToFolder(item.id, item.name)
+  } else if (canPreview(item.name)) {
+    handlePreviewFile(item)
+  } else {
+    handleDownloadFile(item)
+  }
+}
+
+function handlePreviewFile(file: ShareItem) {
   if (!canPreview(file.name)) {
     Message.warning(t('share.previewNotSupport'))
     return
   }
-
   previewFile.value = file
   previewType.value = getFileType(file.name)
-
-  const accessUrl = getAccessUrl(file)
-  // 只要有完整的访问URL（http/https开头），就直接使用，不依赖 storageType 判断
-  if (accessUrl && (accessUrl.startsWith('http://') || accessUrl.startsWith('https://'))) {
-    previewUrl.value = accessUrl
-  } else {
-    previewUrl.value = getFilePreviewUrl(shareCode.value, file.id, accessToken.value)
-  }
-
+  previewUrl.value = mediaUrl(file)
   previewVisible.value = true
 }
 
 function closePreview() {
-  try {
-    if (videoRef.value) {
-      videoRef.value.pause()
-      videoRef.value.currentTime = 0
-      videoRef.value.src = ''
-      videoRef.value.load()
+  for (const media of [videoRef.value, audioRef.value]) {
+    try {
+      if (media) {
+        media.pause()
+        media.removeAttribute('src')
+        media.load()
+      }
+    } catch (err) {
+      console.warn('关闭预览时清理媒体资源失败:', err)
     }
-
-    if (audioRef.value) {
-      audioRef.value.pause()
-      audioRef.value.currentTime = 0
-      audioRef.value.src = ''
-      audioRef.value.load()
-    }
-  } catch (error) {
-    console.warn('关闭预览时清理媒体资源失败:', error)
   }
-
   previewVisible.value = false
-
   nextTick(() => {
     previewFile.value = null
     previewType.value = 'unknown'
@@ -640,831 +683,714 @@ function closePreview() {
   })
 }
 
-function handleFileClick(file: any) {
-  if (canPreview(file.name)) {
-    handlePreviewFile(file)
-  } else {
-    handleDownloadFile(file)
-  }
-}
-
-async function handleDownloadFile(file: any) {
-  try {
-    // 先由后端校验并计入下载次数（达到上限会报错），有直链则直接下载
-    const { url } = await getShareDownloadUrl(shareCode.value, accessToken.value, file.id)
-    if (url) {
-      clickDownloadLink(url, file.name, true)
-    } else {
-      // 没有直链：走后端流式下载（该接口自己计数）
-      clickDownloadLink(getFileDownloadUrl(shareCode.value, file.id, accessToken.value), file.name, false)
-    }
-    Message.success('开始下载')
-  } catch (e: any) {
-    console.error('下载失败:', e)
-    if (handleAccessExpired(e)) return
-    Message.error(e?.message || '下载失败')
-  }
-}
+// 浏览器标签显示分享名称
+watch(resourceName, (name) => {
+  if (name) document.title = `${name} · ${SHARE_BRAND}`
+})
 
 onMounted(() => {
   if (!shareCode.value) {
     notFound.value = true
+    initialLoading.value = false
     return
   }
   loadShareInfo()
 })
 
 onUnmounted(() => {
-  if (videoObserver) {
-    videoObserver.disconnect()
-    videoObserver = null
-  }
+  videoObserver?.disconnect()
+  videoObserver = null
+  locale.value = previousLocale
 })
 </script>
 
 <style scoped>
-/* ========== 极简设计风格 - 参考图风格 ========== */
-
-:root {
-  --primary-color: var(--brand-blue);
-  --primary-hover: var(--brand-blue-hover);
-  --bg-page: var(--gray-50);
-  --bg-white: #ffffff;
-  --bg-card: var(--info-bg);
-  --text-primary: #1a1a1a;
-  --text-secondary: #666666;
-  --border-color: var(--border);
-  --border-focus: var(--brand-blue);
-}
-
-/* 语言切换开关 */
-.language-switcher {
-  position: fixed !important;
-  top: 8px !important;
-  right: 8px !important;
-  background: white !important;
-  border: 1px solid #e9ecef !important;
-  border-radius: 2px !important;
-  padding: 4px 8px !important;
-  z-index: 9999 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
-
-.language-label {
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  color: #333 !important;
-}
-
-.language-switch {
-  position: relative !important;
-  width: 36px !important;
-  height: 20px !important;
-  cursor: pointer !important;
-}
-
-.language-switch-slider {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  background: #e9ecef !important;
-  border-radius: 10px !important;
-  transition: background 0.2s ease !important;
-}
-
-.language-switch-slider.active {
-  background: var(--primary-color) !important;
-}
-
-.language-switch-thumb {
-  position: absolute !important;
-  top: 2px !important;
-  left: 2px !important;
-  width: 16px !important;
-  height: 16px !important;
-  background: white !important;
-  border-radius: 50% !important;
-  transition: transform 0.2s ease !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-}
-
-.language-switch-slider.active .language-switch-thumb {
-  transform: translateX(16px) !important;
-}
-
 .share-page {
+  --sp-bg: #f3f5f8;
+  --sp-card: #ffffff;
+  --sp-border: #e3e7ed;
+  --sp-text: #16191f;
+  --sp-sub: #5a6270;
+  --sp-accent: var(--brand-blue, #165dff);
   min-height: 100vh;
-  background: var(--bg-page) !important;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 0;
-  overflow-y: auto;
-}
-
-/* PC端密码页面 - 封面和内容同宽，加边框 */
-.share-page:not(:has(.verified-layout)) .share-container {
-  max-width: 800px;
-  width: 100%;
-  padding: 0 0 40px 0;
-  margin-top: 40px;
-  margin-bottom: 40px;
-  background: #ffffff;
-  border: 1px solid #dee2e6;
-}
-
-.share-page:not(:has(.verified-layout)) .cover-section {
-  max-width: 800px;
-  width: 100%;
-}
-
-.share-page:not(:has(.verified-layout)) .content-section {
-  max-width: 800px;
-  width: 100%;
-  padding: 0 16px;
-}
-
-/* 已验证时保持一致背景 */
-.share-page:has(.verified-layout) {
-  background: var(--bg-page) !important;
-}
-
-.share-container {
-  max-width: 800px;
-  width: 100%;
-  background: transparent;
-  margin: 0;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
+  background: var(--sp-bg);
+  color: var(--sp-text);
+  font-family: var(--font-family, system-ui, sans-serif);
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 0 16px 48px;
+  box-sizing: border-box;
 }
 
-/* 已验证时容器加宽 */
-.share-container.verified-layout {
-  max-width: 1200px;
+/* 顶栏 */
+.share-topbar {
   width: 100%;
-  padding: 40px;
-  align-items: stretch;
+  max-width: 1120px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0;
 }
 
-/* 封面区域（仅密码页面显示） */
-.cover-section {
-  width: 100%;
-  max-width: 100%;
-  height: auto;
+.share-brand {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.lang-switch,
+.view-switch {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 8px;
+  background: #e8ebf0;
+}
+
+.lang-switch button,
+.view-switch button {
+  min-width: 48px;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
   background: transparent;
-  position: relative;
+  color: var(--sp-sub);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.lang-switch button.on,
+.view-switch button.on {
+  background: #ffffff;
+  color: var(--sp-text);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 22, 35, 0.08);
+}
+
+/* 卡片 */
+.share-card {
+  width: 100%;
+  max-width: 720px;
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: 16px;
   overflow: hidden;
-  margin: 0 0 16px 0;
-  border-radius: 0;
+  box-shadow: 0 8px 24px rgba(15, 22, 35, 0.06);
 }
 
-.cover-section.has-cover {
-  background: transparent;
-}
-
-.cover-image {
+.cover {
+  display: block;
   width: 100%;
   height: auto;
-  object-fit: contain;
-  display: block;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #0f3b8c;
 }
 
-.cover-gradient {
-  display: none;
-}
-
-/* 内容区域 */
-.content-section {
-  padding: 0 16px;
-  width: 100%;
-  max-width: 800px;
-}
-
-/* 密码页面的内容左对齐 */
-.content-section:not(.verified-mode) {
+.gate-body {
+  padding: 24px 28px 28px;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  min-height: auto;
+  gap: 20px;
 }
 
-/* 已验证状态下（文件列表） */
-.content-section.verified-mode {
-  padding: 0;
-  max-width: 100%;
+.sharer {
+  font-size: 13px;
+  color: var(--sp-sub);
 }
 
-.resource-card {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  padding: 20px !important;
-  background: #f0f7ff !important;
-  border-radius: 4px !important;
-  border: 2px solid #b8d4f0 !important;
-  margin-bottom: 28px !important;
-  width: 100%;
-  max-width: 800px;
-  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.08) !important;
-}
-
-/* 文件列表中的 resource-card */
-.content-section.verified-mode .resource-card {
-  max-width: 100%;
-  margin-bottom: 20px;
-  background: var(--bg-card) !important;
-  border-color: #d6eaff !important;
+.resource-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: -8px;
 }
 
 .resource-icon {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 2px !important;
-  background: rgba(0, 123, 255, 0.1) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex-shrink: 0 !important;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 22px;
 }
 
-.resource-icon :deep(.arco-icon) {
-  width: 20px;
-  height: 20px;
-  color: var(--primary-color);
+.resource-icon.lg {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  font-size: 28px;
 }
 
-.resource-info {
-  flex: 1;
+.k-folder { background: #fff4e0; color: #b25e00; }
+.k-video { background: #fff1e8; color: #b4430a; }
+.k-image { background: #e8f0ff; color: #0e44c2; }
+.k-audio { background: #f2ecff; color: #5b3cc4; }
+.k-pdf { background: #fdecec; color: #b42318; }
+.k-doc { background: #eef0f3; color: #5a6270; }
+
+.resource-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
 .resource-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 4px;
+  font-size: 17px;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .resource-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 13px;
+  color: var(--sp-sub);
 }
 
-.form-section {
-  width: 100%;
-  max-width: 800px;
-}
-
-.form-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.password-input-wrapper {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 12px !important;
-  width: 100% !important;
-  align-items: stretch !important;
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-/* 输入框容器 - 让它自适应剩余空间 */
-.password-input-wrapper :deep(.arco-input-group-wrapper),
-.password-input-wrapper :deep(.arco-input-wrapper),
-.password-input-wrapper :deep(.arco-input-group) {
-  flex: 1 !important;
-  min-width: 0 !important;
-  width: auto !important;
-}
-
-/* 覆盖 Arco Design 密码输入框样式 */
-.password-input-wrapper :deep(.arco-input-wrapper) {
-  width: 100% !important;
-  padding: 0 !important;
-  border: 2px solid var(--border-color) !important;
-  border-radius: 0 !important;
-  transition: all 0.2s ease !important;
-}
-
-.password-input-wrapper :deep(.arco-input-wrapper.arco-input-focus) {
-  border-color: var(--border-focus) !important;
-}
-
-.password-input-wrapper :deep(.arco-input) {
-  height: 50px !important;
-  line-height: 50px !important;
-  font-size: 16px !important;
-}
-
-.password-input-wrapper :deep(.arco-input) {
-  padding: 10px 12px !important;
-  border: none !important;
-  border-radius: 2px !important;
-  font-size: 14px !important;
-  height: 40px !important;
-  line-height: 1.4 !important;
-  box-shadow: none !important;
-}
-
-.password-input-wrapper :deep(.arco-input:focus) {
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-/* 强制按钮样式 - 全屏宽度 */
-.password-input-wrapper > .submit-btn,
-.submit-btn.arco-btn.arco-btn-primary {
-  width: 100% !important;
-  min-width: 100% !important;
-  padding: 0 28px !important;
-  background-color: var(--primary-color) !important;
-    background: var(--primary-color) !important;
-  color: #ffffff !important;
-  border: none !important;
-  border-radius: 0 !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  white-space: nowrap !important;
-  height: 50px !important;
-  line-height: 50px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: relative !important;
-  z-index: 999 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-.password-input-wrapper > .submit-btn:hover,
-.submit-btn.arco-btn.arco-btn-primary:hover {
-  background-color: var(--primary-hover) !important;
-  background: var(--primary-hover) !important;
-}
-
-.submit-btn:hover {
-  background: var(--primary-hover) !important;
-}
-
-.error-text {
-  color: #dc3545;
-  font-size: 12px;
-  margin-top: 8px;
-  text-align: left;
-}
-
-/* 分享内容展示 */
-#filesPage {
+.code-form {
   display: flex;
   flex-direction: column;
-  width: 100%;
-}
-
-.action-section {
-  display: flex;
-  justify-content: flex-start;
-  margin-top: 0;
-  margin-bottom: 24px;
-  flex-shrink: 0;
-}
-
-.download-button {
-  padding: 0 32px !important;
-  background: var(--primary-color) !important;
-  color: white !important;
-  border: none !important;
-  border-radius: 2px !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  white-space: nowrap !important;
-  height: 40px !important;
-  line-height: 40px !important;
-}
-
-.download-button:hover {
-  background: var(--primary-hover) !important;
-}
-
-/* 文件夹内容 */
-.folder-content {
-  margin-top: 0;
-  border-top: none;
-  padding-top: 0;
-  width: 100%;
-}
-
-/* 面包屑导航 */
-.breadcrumb {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  padding: 10px 14px;
-  background: var(--bg-card);
-  border-radius: 2px;
-  border: 1px solid #d6eaff;
-  margin-bottom: 20px;
-  overflow-x: auto;
-  flex-wrap: nowrap;
-  flex-shrink: 0;
 }
 
-.breadcrumb :deep(.arco-breadcrumb) {
-  flex: 1;
-}
-
-.breadcrumb :deep(.arco-breadcrumb-item) {
+.code-label {
   font-size: 13px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  white-space: nowrap;
-  padding: 4px 8px;
-  border-radius: 2px;
-  transition: all 0.2s ease;
-}
-
-.breadcrumb :deep(.arco-breadcrumb-item:hover) {
-  background: rgba(0, 123, 255, 0.1);
-  color: var(--primary-color);
-}
-
-.breadcrumb :deep(.arco-breadcrumb-item.arco-breadcrumb-item-last) {
-  color: var(--text-primary);
   font-weight: 600;
 }
 
-.breadcrumb :deep(.arco-breadcrumb-item.arco-breadcrumb-item-last:hover) {
-  color: var(--primary-color);
-  cursor: pointer;
+.code-row {
+  display: flex;
+  gap: 10px;
 }
 
-/* 文件网格 */
-.file-grid {
-  display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important;
-  gap: 20px !important;
-  margin-top: 0 !important;
-  width: 100% !important;
+.code-input {
+  flex: 1;
+  min-width: 0;
 }
 
-.file-card {
-  background: #ffffff !important;
-  border: 2px solid #dee2e6 !important;
-  border-radius: 4px !important;
-  overflow: hidden !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+.code-input {
+  height: 48px;
+  border-radius: 10px;
 }
 
-.file-card:hover {
-  border-color: var(--brand-blue) !important;
-    box-shadow: 0 4px 12px rgba(22, 93, 255, 0.2) !important;
-  transform: translateY(-2px) !important;
+.code-input :deep(.arco-input) {
+  font-size: 16px;
+  letter-spacing: 0.08em;
 }
 
-.file-card.clickable {
-  cursor: pointer !important;
+.code-submit {
+  height: 48px;
+  min-width: 120px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
-.file-thumb {
-  width: 100% !important;
-  aspect-ratio: 16/9 !important;
-  background: linear-gradient(135deg, #f0f7ff 0%, #e3eef9 100%) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: relative !important;
-  overflow: hidden !important;
-  border-bottom: 1px solid #d0d7e0;
+.code-error {
+  font-size: 13px;
+  color: #b42318;
 }
 
-.file-thumb.video-preview {
-  aspect-ratio: 16/9;
+.code-hint {
+  font-size: 12px;
+  color: var(--sp-sub);
 }
 
-.file-thumb img,
-.file-thumb video {
+/* 状态页 */
+.state {
+  margin-top: 8vh;
+  padding: 48px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.state.slim {
+  margin-top: 0;
+  max-width: none;
+  box-shadow: none;
+}
+
+.state h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.state p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--sp-sub);
+  max-width: 420px;
+}
+
+.state-icon {
+  color: #e8590c;
+}
+
+.state-icon.muted {
+  color: #b8bec8;
+}
+
+/* 内容页 */
+.share-content {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
+  max-width: 1120px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.file-card:hover .file-thumb img {
-  transform: scale(1.02);
-}
-
-.file-card-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+.content-head {
   display: flex;
   align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  color: white;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px 24px;
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: 16px;
 }
 
-.file-card:hover .file-card-overlay {
-  opacity: 1;
+.head-text {
+  flex: 1 1 260px;
+  min-width: 0;
 }
 
-.file-thumb :deep(.arco-icon) {
-  width: 48px;
-  height: 48px;
-  color: var(--primary-color);
-  filter: drop-shadow(0 1px 2px rgba(0, 86, 179, 0.2));
-}
-
-.file-card-name {
-  padding: 12px;
-  font-size: 13px;
+.head-title {
+  margin: 0 0 4px;
+  font-size: 22px;
   font-weight: 600;
-  color: #1a1a1a;
-  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: #ffffff;
 }
 
-.file-card-actions {
+.head-meta {
   display: flex;
-  gap: 6px;
-  justify-content: center;
-  padding: 0 12px 12px;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 13px;
+  color: var(--sp-sub);
 }
 
-.file-card-actions :deep(.arco-btn) {
-  font-size: 11px !important;
-  height: 28px;
-  padding: 0 10px !important;
-  border-radius: 2px;
+.folder-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-height: 36px;
 }
 
-/* 错误状态 */
-.error-state {
-  text-align: center;
-  padding: 80px 40px;
+.crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 14px;
+  min-width: 0;
+}
+
+.crumb {
+  border: 0;
+  background: transparent;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font: inherit;
+  color: var(--sp-accent);
+  cursor: pointer;
+}
+
+.crumb:hover {
+  background: #e8f0ff;
+}
+
+.crumb.current {
+  color: var(--sp-text);
+  font-weight: 600;
+  cursor: default;
+}
+
+.crumb-sep {
+  color: #b8bec8;
+}
+
+/* 单视频内嵌 */
+.featured {
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.featured-video {
+  display: block;
   width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
+  max-height: 72vh;
+  aspect-ratio: 16 / 9;
+  background: #0f1623;
 }
 
-.error-state .error-icon {
-  width: 64px;
-  height: 64px;
-  background: rgba(220, 53, 69, 0.1);
-  border-radius: 50%;
+.featured-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+}
+
+.featured-text {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.featured-name {
+  font-size: 16px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.featured-meta {
+  font-size: 13px;
+  color: var(--sp-sub);
+  margin-top: 2px;
+}
+
+/* 网格 */
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.file-card {
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.file-card:hover {
+  border-color: #c8d3e6;
+  box-shadow: 0 6px 16px rgba(15, 22, 35, 0.08);
+}
+
+.thumb {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 0;
+  padding: 0;
+  background: #f5f6f8;
+  cursor: pointer;
+  overflow: hidden;
 }
 
-.error-state .error-icon :deep(.arco-icon) {
-  width: 32px;
-  height: 32px;
-  color: #dc3545;
+.thumb img,
+.thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
 }
 
-.error-state h2 {
+.thumb-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.thumb-icon.sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.play-badge {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background: rgba(15, 22, 35, 0.6);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 20px;
-  color: var(--text-primary);
-  margin-bottom: 12px;
-  font-weight: 600;
 }
 
-.error-state p {
-  color: var(--text-secondary);
+.file-name {
+  padding: 10px 12px 0;
   font-size: 14px;
-  line-height: 1.6;
+  font-weight: 500;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-all;
+  min-height: 39px;
 }
 
-/* 空文件夹 */
-.empty-folder {
-  text-align: center;
-  padding: 80px 40px;
-  grid-column: 1 / -1;
+.file-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 8px 12px;
+  font-size: 12px;
+  color: var(--sp-sub);
 }
 
-.empty-folder :deep(.arco-icon) {
-  font-size: 64px;
-  color: #dee2e6;
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sp-accent);
+  font-size: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.empty-folder p {
-  margin-top: 16px;
+.icon-btn:hover {
+  background: #e8f0ff;
+}
+
+/* 列表 */
+.file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--sp-card);
+  border: 1px solid var(--sp-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-top: 1px solid #eef0f3;
+}
+
+.file-row:first-child {
+  border-top: 0;
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  padding: 4px 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.row-name {
   font-size: 14px;
-  color: #6c757d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* 预览对话框 */
+.row-size {
+  width: 90px;
+  font-size: 13px;
+  color: var(--sp-sub);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.row-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.text-btn {
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sp-accent);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.text-btn:hover {
+  background: #e8f0ff;
+}
+
+/* 骨架屏 */
+.skeleton,
+.sk-line {
+  background: linear-gradient(90deg, #eef0f3 25%, #f6f7f9 50%, #eef0f3 75%);
+  background-size: 200% 100%;
+  animation: sk 1.2s ease-in-out infinite;
+}
+
+.cover.skeleton {
+  aspect-ratio: 16 / 9;
+}
+
+.sk-line {
+  height: 14px;
+  border-radius: 6px;
+}
+
+.file-card .sk-line {
+  margin: 12px;
+}
+
+.sk-line.w60 { width: 60%; }
+.sk-line.w40 { width: 40%; }
+.sk-line.h48 { height: 48px; border-radius: 10px; }
+
+@keyframes sk {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* 预览弹窗 */
 .preview-container {
   display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 300px;
 }
 
-.preview-image img {
+.preview-image {
   max-width: 100%;
-  max-height: 70vh;
+  max-height: 72vh;
   object-fit: contain;
 }
 
-.preview-video,
-.preview-audio,
+.preview-video {
+  width: 100%;
+  max-height: 72vh;
+  background: #0f1623;
+}
+
 .preview-pdf {
   width: 100%;
+  height: 72vh;
+  border: 0;
 }
 
 .preview-text {
-  max-height: 70vh;
+  width: 100%;
+  max-height: 72vh;
   overflow: auto;
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 2px;
-}
-
-.preview-text pre {
   margin: 0;
+  padding: 12px;
+  background: #f5f6f8;
+  border-radius: 8px;
   white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  line-height: 1.6;
+  word-break: break-all;
 }
 
-/* ========== 响应式优化 ========== */
-
-/* PC 端大屏幕 */
-@media (min-width: 1200px) {
-  .file-grid {
-    grid-template-columns: repeat(5, 1fr) !important;
-    gap: 24px !important;
-  }
+.preview-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
 }
 
-/* 平板端 */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .file-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 16px !important;
-  }
-
-  .share-container.verified-layout {
-    padding: 0 24px 24px;
-  }
-}
-
-/* 手机端 - 移动端全屏风格 */
-@media (max-width: 767px) {
+/* 手机 */
+@media (max-width: 640px) {
   .share-page {
-    padding: 0;
-    background: #f8f9fa !important;
+    padding: 0 12px 32px;
   }
 
-  .share-container {
-    max-width: 100%;
+  .share-topbar {
+    padding: 12px 0;
+  }
+
+  .share-card {
+    border-radius: 12px;
+  }
+
+  .gate-body {
+    padding: 20px 18px 24px;
+  }
+
+  .code-row {
+    flex-direction: column;
+  }
+
+  .code-submit {
     width: 100%;
-    margin: 0;
-    padding: 0;
-    background: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
   }
 
-  .share-container.verified-layout {
+  .content-head {
     padding: 16px;
+    gap: 12px;
   }
 
-  .cover-section {
-    max-width: 100%;
+  .content-head :deep(.arco-btn) {
     width: 100%;
-    margin: 0 0 16px 0;
-    border-radius: 0;
   }
 
-  .cover-section .cover-image {
-    width: 100%;
-    border-radius: 0;
-  }
-
-  .content-section {
-    max-width: 100%;
-    padding: 0 16px;
-  }
-
-  .resource-card {
-    max-width: 100%;
-    padding: 16px !important;
-    margin-bottom: 20px;
-  }
-
-  .password-input-wrapper {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
-  }
-
-  .password-input-wrapper :deep(.arco-input-wrapper) {
-    border-radius: 0 !important;
-    height: 50px !important;
-  }
-
-  .password-input-wrapper :deep(.arco-input) {
-    height: 50px !important;
-    line-height: 50px !important;
-    font-size: 16px !important;
-  }
-
-  .submit-btn {
-    width: 100% !important;
-    min-width: 100% !important;
-    height: 50px !important;
-    line-height: 50px !important;
-    border-radius: 0 !important;
-    font-size: 16px !important;
+  .head-title,
+  .resource-name {
+    font-size: 18px;
+    white-space: normal;
+    word-break: break-word;
   }
 
   .file-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
-  .file-card-name {
-    font-size: 12px;
-    padding: 10px;
+  .row-size {
+    display: none;
   }
 
-  .file-card-actions {
-    padding: 0 8px 8px;
-  }
-
-  .file-card-actions :deep(.arco-btn) {
-    font-size: 10px !important;
-    height: 26px;
-    padding: 0 8px !important;
-  }
-
-  .breadcrumb {
-    padding: 8px 10px;
-  }
-
-  .download-button {
+  .featured-bar :deep(.arco-btn) {
     width: 100%;
-  }
-
-  .form-label {
-    font-size: 14px !important;
-    margin-bottom: 12px !important;
   }
 }
 
-@media (max-width: 480px) {
-  .file-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-  }
-
-  .language-switcher {
-    top: 4px !important;
-    right: 4px !important;
-  }
-}
-
-@media (max-width: 360px) {
-  .file-grid {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .sk-line {
+    animation: none;
   }
 }
 </style>

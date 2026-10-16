@@ -658,10 +658,11 @@ export default {
   share: {
     title: '文件分享',
     password: {
-      label: '访问密码',
-      placeholder: '请输入访问密码',
+      label: '提取码',
+      placeholder: '请输入提取码',
+      hint: '提取码由分享者提供',
       required: '请输入访问密码',
-      error: '密码错误，请重试',
+      error: '提取码不正确，请重试',
       accessBtn: '访问'
     },
     verifying: '验证中...',
@@ -692,8 +693,26 @@ export default {
     getShareInfoFailed: '获取分享信息失败',
     previewNotSupport: '该文件类型不支持预览',
     error: {
-      passwordRequired: '请输入访问密码'
-    }
+      passwordRequired: '请输入提取码'
+    },
+    sharedBy: '{name} 分享给你',
+    meta: {
+      items: '{n} 个项目',
+      forever: '永久有效',
+      expires: '有效期至 {time}',
+      downloadsLeft: '剩余下载 {n} 次'
+    },
+    view: {
+      grid: '网格',
+      list: '列表'
+    },
+    downloadStarted: '开始下载',
+    downloadFailed: '下载失败',
+    expired: '访问已过期，请重新输入提取码',
+    language: '切换语言',
+    root: '根目录',
+    privateTitle: '私密分享',
+    privateLogin: '登录后访问'
   },
   player: {
     title: '播放器',

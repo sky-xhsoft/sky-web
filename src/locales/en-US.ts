@@ -656,10 +656,11 @@ export default {
   share: {
     title: 'File Share',
     password: {
-      label: 'Access Password',
-      placeholder: 'Enter access password',
+      label: 'Access code',
+      placeholder: 'Enter the access code',
+      hint: 'The access code is provided by the sharer',
       required: 'Please enter access password',
-      error: 'Incorrect password, please try again',
+      error: 'Incorrect access code, please try again',
       accessBtn: 'Access'
     },
     verifying: 'Verifying...',
@@ -690,8 +691,26 @@ export default {
     getShareInfoFailed: 'Failed to get share information',
     previewNotSupport: 'This file type does not support preview',
     error: {
-      passwordRequired: 'Please enter access password'
-    }
+      passwordRequired: 'Please enter the access code'
+    },
+    sharedBy: 'Shared by {name}',
+    meta: {
+      items: '{n} item | {n} items',
+      forever: 'No expiry',
+      expires: 'Expires {time}',
+      downloadsLeft: '{n} downloads left'
+    },
+    view: {
+      grid: 'Grid',
+      list: 'List'
+    },
+    downloadStarted: 'Download started',
+    downloadFailed: 'Download failed',
+    expired: 'Access expired, please enter the access code again',
+    language: 'Switch language',
+    root: 'Root',
+    privateTitle: 'Private share',
+    privateLogin: 'Sign in to view'
   },
   player: {
     title: 'Player',
