@@ -142,6 +142,7 @@ import {
   MODES, STEPS, SPEECH_FORM_KEY, buildSpeechTaskRule, defaultSpeechForm, isStep1Valid, langLabel, ruleToSpeechForm, validateSpeechFormDetail,
   type SpeechForm,
 } from './speechTask'
+import { minimaxVoiceName } from './minimaxVoices'
 
 // record：从直播间进入时的直播间；copyFrom：复制新建时的原任务名称与创建参数
 const props = defineProps<{ visible: boolean; record?: any; title?: string; okText?: string; copyFrom?: { name: string; rule: any } | null }>()
@@ -256,7 +257,7 @@ const isPastDate = (current?: Date) => !!current && dayjs(current).isBefore(dayj
 const summary = computed(() => {
   const mode = MODES.find((m) => m.value === form.mode)?.title || ''
   const delay = form.delay ? ` · 延迟 ${form.delay}s` : ''
-  const voice = form.mode === 'asr' ? '无' : form.voiceOn ? `同传声音 · ${form.voiceMode === 'fixed' ? '固定音色' : '自动复制'}` : '关闭'
+  const voice = form.mode === 'asr' ? '无' : form.mode === 'si' ? `替换原声 · ${form.voiceMode === 'fixed' ? `固定音色 · ${minimaxVoiceName(form.fixedVoice) || form.fixedVoice}` : '自动复制'}` : form.voiceOn ? '同传声音 · 自动复制' : '关闭'
   const sub = !form.subtitleOn ? '不显示' : form.mode === 'asr' ? `原文 · ${form.rows || '自适应'}${form.rows ? ' 行' : ''}` : `${form.subtitleFormat === 'both' ? '原文+译文' : '译文'} · ${form.rows || '自适应'}${form.rows ? ' 行' : ''}`
   const words = form.mode === 'asr' ? `热词 ${form.hotWords.length} · 易错词 ${form.replacePairs.length}` : `关键词 ${form.glossaryPairs.length} · 易错词 ${form.replacePairs.length}`
   return [

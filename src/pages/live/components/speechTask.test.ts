@@ -16,7 +16,7 @@ describe('buildSpeechTaskRule', () => {
     const r = buildSpeechTaskRule(base())
     expect(r.Pipe).toBe('si')
     expect(r.Delay).toBe(12)
-    expect(r.Extra).toEqual({ Separator: { HandleType: 0 }, AMix: { AudioEnhance: true } })
+    expect(r.Extra).toEqual({ Separator: { HandleType: 0, Separator: true }, AMix: { AudioEnhance: true, BGVolume: 1 } })
     expect(r.SI).toEqual({ LipSync: false })
     expect(r.RealTime).toEqual({ VoiceShow: true })
     expect(r.Factory).toEqual({ TTS: '', SID: '' })
@@ -28,29 +28,38 @@ describe('buildSpeechTaskRule', () => {
 
   it('声影同传：降噪、固定音色、口型、原文+译文、2 行、原文在下、词库', () => {
     const f = base()
-    Object.assign(f, { denoise: true, voiceMode: 'fixed', fixedVoice: 'tts_model:voice_id_123', lipSync: true, subtitleFormat: 'both', rows: 2, order: 'originalBottom', glossaryPairs: [{ from: '火山引擎', to: 'Volcengine' }, { from: '视频直播', to: 'Live' }], replacePairs: [{ from: 'Volcano', to: 'Volcengine' }] })
+    Object.assign(f, { denoise: true, voiceMode: 'fixed', fixedVoice: ' speaker_123 ', lipSync: true, subtitleFormat: 'both', rows: 2, order: 'originalBottom', glossaryPairs: [{ from: '火山引擎', to: 'Volcengine' }, { from: '视频直播', to: 'Live' }], replacePairs: [{ from: 'Volcano', to: 'Volcengine' }] })
     f.delay = suggestedDelay(f)
     const r = buildSpeechTaskRule(f)
     expect(r.Delay).toBe(20)
-    expect(r.Extra.Separator).toEqual({ HandleType: 1 })
+    expect(r.Extra.Separator).toEqual({ HandleType: 1, Separator: true })
     expect(r.SI).toEqual({ LipSync: true })
-    expect(r.Factory).toEqual({ TTS: 'tts_model', SID: 'voice_id_123' })
+    expect(r.Factory).toEqual({ ASR: 'sail', TTS: 'minimax', SID: 'speaker_123' })
     expect(r.Subtitle.Original).toMatchObject({ MaxRowNumber: 2, Hidden: false, ShowPriority: 0 })
     expect(r.Subtitle.Translation[0]).toMatchObject({ MaxRowNumber: 2, ShowPriority: 100 })
     expect(r.Subtitle.GlossaryMap).toEqual({ 火山引擎: 'Volcengine', 视频直播: 'Live' })
     expect(r.Subtitle.ReplaceMap).toEqual({ Volcano: 'Volcengine' })
   })
 
+  it('声影同传：同传声音固定开启，复制时不影响实时同传的原声音量', () => {
+    const r = buildSpeechTaskRule({ ...base(), voiceOn: false })
+    expect(r.RealTime).toEqual({ VoiceShow: true })
+    const f = ruleToSpeechForm(r, 'a')
+    expect(f.voiceOn).toBe(true)
+    expect(f.bgVolume).toBe(20)
+  })
+
   it('实时同传：原声叠加 / 仅保留翻译音频', () => {
     const f = { ...base(), mode: 'realtime' as const }
-    let r = buildSpeechTaskRule(f)
+    let r = buildSpeechTaskRule({ ...f, delay: suggestedDelay(f) })
     expect(r.Pipe).toBe('realtime')
-    expect(r.Delay).toBe(0)
+    expect(r.Delay).toBe(3)
+    expect(buildSpeechTaskRule({ ...f, delay: 8 }).Delay).toBe(8)
     expect(r.Extra).toEqual({ AMix: { AudioEnhance: true, BGVolume: 0.2 } })
     expect(r.RealTime).toEqual({ VoiceShow: true, Separator: false })
     expect(r.SI).toBeUndefined()
     r = buildSpeechTaskRule({ ...f, originalMode: 'translationOnly', denoise: true })
-    expect(r.Extra).toEqual({ AMix: { AudioEnhance: true, BGVolume: 0.2 }, Separator: { HandleType: 1 } })
+    expect(r.Extra).toEqual({ AMix: { AudioEnhance: true, BGVolume: 0.2 }, Separator: { HandleType: 1, Separator: true } })
     expect(r.RealTime).toEqual({ VoiceShow: true, Separator: true })
   })
 
@@ -65,9 +74,9 @@ describe('buildSpeechTaskRule', () => {
     expect(r.Subtitle.HotWords).toEqual(['火山引擎', '声影同传'])
     expect(r.Subtitle.ReplaceMap).toEqual({ Volcano: 'Volcengine' })
     expect(r.Subtitle.Original).toMatchObject({ MaxRowNumber: 2, Hidden: false, ShowPriority: 0 })
-    r = buildSpeechTaskRule({ ...f, outWordMode: 'stream' })
+    r = buildSpeechTaskRule({ ...f, outWordMode: 'stream', delay: 2 })
     expect(r.Pipe).toBe('realtime')
-    expect(r.Delay).toBe(0)
+    expect(r.Delay).toBe(2)
   })
 
   it('自适应行数为 0；关闭字幕时原文、译文均隐藏', () => {
@@ -89,8 +98,11 @@ describe('延迟与校验', () => {
   it('延迟范围与建议值', () => {
     expect(delayRangeOf({ mode: 'si', outWordMode: 'sentence' })).toEqual({ min: 1, max: 60, fixed: false })
     expect(delayRangeOf({ mode: 'asr', outWordMode: 'sentence' })).toEqual({ min: 0, max: 20, fixed: false })
-    expect(delayRangeOf({ mode: 'realtime', outWordMode: 'sentence' }).fixed).toBe(true)
-    expect(suggestedDelay({ mode: 'si', outWordMode: 'sentence', lipSync: false, voiceOn: false })).toBe(8)
+    expect(delayRangeOf({ mode: 'realtime', outWordMode: 'sentence' })).toEqual({ min: 0, max: 60, fixed: false })
+    expect(delayRangeOf({ mode: 'asr', outWordMode: 'stream' })).toEqual({ min: 0, max: 60, fixed: false })
+    expect(suggestedDelay({ mode: 'realtime', outWordMode: 'sentence', lipSync: false })).toBe(3)
+    expect(suggestedDelay({ mode: 'si', outWordMode: 'sentence', lipSync: false })).toBe(12)
+    expect(suggestedDelay({ mode: 'si', outWordMode: 'sentence', lipSync: true })).toBe(20)
     expect(pipeOf({ mode: 'asr', outWordMode: 'stream' })).toBe('realtime')
   })
 
@@ -100,7 +112,8 @@ describe('延迟与校验', () => {
     expect(validateSpeechForm({ ...base(), sourceUrl: 'http://x/a.m3u8' })).toContain('RTMP、FLV')
     expect(validateSpeechForm({ ...base(), sourceUrl: 'https://x/live/a.flv' })).toBeNull()
     expect(validateSpeechForm({ ...base(), targetUrl: 'http://x/a' })).toContain('RTMP')
-    expect(validateSpeechForm({ ...base(), voiceMode: 'fixed', fixedVoice: 'abc' })).toContain('xxx:yyy')
+    expect(validateSpeechForm({ ...base(), voiceMode: 'fixed', fixedVoice: ' ' })).toContain('SpeakerID')
+    expect(validateSpeechForm({ ...base(), voiceMode: 'fixed', fixedVoice: 'speaker_123' })).toBeNull()
     expect(validateSpeechForm({ ...base(), delay: 61 })).toContain('1-60')
     expect(validateSpeechForm({ ...base(), outputLang: 'zh' })).toContain('输出语言')
     expect(validateSpeechForm({ ...base(), replacePairs: [{ from: 'a', to: '' }] })).toContain('易错词')
@@ -129,10 +142,10 @@ describe('延迟与校验', () => {
 describe('复制新建：Rule 还原为表单', () => {
   it('还原后再组装的参数与原任务一致', () => {
     const cases: Partial<SpeechForm>[] = [
-      { denoise: true, voiceMode: 'fixed', fixedVoice: 'tts_model:voice_id_123', lipSync: true, delay: 20, subtitleFormat: 'both', rows: 2, order: 'originalBottom', glossaryPairs: [{ from: '火山引擎', to: 'Volcengine' }], replacePairs: [{ from: 'Volcano', to: 'Volcengine' }] },
-      { mode: 'realtime', delay: 0, originalMode: 'translationOnly', bgVolume: 35, rows: 0 },
+      { denoise: true, voiceMode: 'fixed', fixedVoice: 'speaker_123', lipSync: true, delay: 20, subtitleFormat: 'both', rows: 2, order: 'originalBottom', glossaryPairs: [{ from: '火山引擎', to: 'Volcengine' }], replacePairs: [{ from: 'Volcano', to: 'Volcengine' }] },
+      { mode: 'realtime', delay: 5, originalMode: 'translationOnly', bgVolume: 35, rows: 0 },
       { mode: 'asr', outWordMode: 'sentence', delay: 10, hotWords: ['火山引擎'], rows: 2 },
-      { mode: 'asr', outWordMode: 'stream', delay: 0 },
+      { mode: 'asr', outWordMode: 'stream', delay: 2 },
       { subtitleOn: false },
     ]
     for (const c of cases) {
@@ -162,5 +175,16 @@ describe('预览尺寸', () => {
     expect(checkCustomSize(50, 1050)).not.toBe('')
     expect(checkCustomSize(undefined, 1050)).not.toBe('')
     expect(checkCustomSize(8000, 1050)).not.toBe('')
+  })
+})
+
+describe('MiniMax 固定音色列表', () => {
+  it('按输出语言把对应分组排在最前，voice_id 不重复', async () => {
+    const { MINIMAX_VOICES, minimaxVoiceGroups, minimaxVoiceName } = await import('./minimaxVoices')
+    expect(new Set(MINIMAX_VOICES.map((v) => v.id)).size).toBe(MINIMAX_VOICES.length)
+    expect(minimaxVoiceGroups('en')[0].lang).toBe('英文')
+    expect(minimaxVoiceGroups('ja')[0].lang).toBe('日文')
+    expect(minimaxVoiceName('male-qn-qingse')).toBe('青涩青年音色')
+    expect(buildSpeechTaskRule({ ...base(), voiceMode: 'fixed', fixedVoice: 'male-qn-qingse' }).Factory).toEqual({ ASR: 'sail', TTS: 'minimax', SID: 'male-qn-qingse' })
   })
 })

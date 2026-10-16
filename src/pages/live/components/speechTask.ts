@@ -37,7 +37,7 @@ export interface SpeechForm {
   lipSync: boolean
   voiceOn: boolean
   voiceMode: 'auto' | 'fixed'
-  fixedVoice: string
+  fixedVoice: string // 固定音色 SpeakerID
   originalMode: 'mix' | 'translationOnly'
   bgVolume: number
   denoise: boolean
@@ -185,18 +185,18 @@ export const applyPreset = (st: SpeechStyle, i: number) => {
 export const textStroke = (color: string, w: number) =>
   [`${w}px 0`, `-${w}px 0`, `0 ${w}px`, `0 -${w}px`].map((o) => `${o} 0 ${color}`).join(', ')
 
-/** 播出延迟范围：声影同传 1-60；原文 ASR 整句 0-20；实时同传与实时流式固定为 0 */
+/** 播出延迟范围：声影同传 1-60；原文 ASR 整句 0-20；Pipe 为 realtime（实时同传、实时流式）0-60 */
 export const delayRangeOf = (f: Pick<SpeechForm, 'mode' | 'outWordMode'>) => {
   if (f.mode === 'si') return { min: 1, max: 60, fixed: false }
   if (f.mode === 'asr' && f.outWordMode === 'sentence') return { min: 0, max: 20, fixed: false }
-  return { min: 0, max: 0, fixed: true }
+  return { min: 0, max: 60, fixed: false }
 }
 
-/** 建议延迟：口型+声音+字幕 20s、声音+字幕 12s、仅字幕 8s；原文 ASR 整句 10s */
-export const suggestedDelay = (f: Pick<SpeechForm, 'mode' | 'outWordMode' | 'lipSync' | 'voiceOn'>) => {
-  if (f.mode === 'si') return f.lipSync ? 20 : f.voiceOn ? 12 : 8
+/** 建议延迟：声影同传 口型+声音+字幕 20s、声音+字幕 12s（si 同传声音不可关闭）；原文 ASR 整句 10s；realtime 3s（火山建议 2 或 3） */
+export const suggestedDelay = (f: Pick<SpeechForm, 'mode' | 'outWordMode' | 'lipSync'>) => {
+  if (f.mode === 'si') return f.lipSync ? 20 : 12
   if (f.mode === 'asr' && f.outWordMode === 'sentence') return 10
-  return 0
+  return 3
 }
 
 /** 火山 Pipe：声影同传 si；实时同传、原文 ASR 实时流式 realtime；原文 ASR 整句 mix */
@@ -260,6 +260,9 @@ const styleOut = (st: SpeechStyle, lang: string, rows: number, hidden: boolean, 
   }
 }
 
+/** 固定音色：火山技术支持给出的 Factory 格式，ASR/TTS 固定，SID 为 SpeakerID */
+export const fixedVoiceFactory = (speakerId: string) => ({ ASR: 'sail', TTS: 'minimax', SID: speakerId.trim() })
+
 /** 组装 CreateSpeechTask 的 Rule（与火山控制台提交的参数一致） */
 export const buildSpeechTaskRule = (f: SpeechForm) => {
   const [start, end] = f.timeRange || []
@@ -275,14 +278,16 @@ export const buildSpeechTaskRule = (f: SpeechForm) => {
   }
 
   if (f.mode === 'si') {
-    rule.Extra = { Separator: { HandleType: f.denoise ? 1 : 0 }, AMix: { AudioEnhance: f.audioEnhance } }
+    // si 同传声音固定开启并替换原声和背景音；Separator/BGVolume 按火山 si 请求示例照传。
+    // 实测（2026-10-16）si 下 Separator=true/false + BGVolume 均无原声和背景音（文档标注仅 realtime 生效）
+    rule.Extra = { Separator: { HandleType: f.denoise ? 1 : 0, Separator: true }, AMix: { AudioEnhance: f.audioEnhance, BGVolume: 1 } }
     rule.SI = { LipSync: f.lipSync }
-    rule.RealTime = { VoiceShow: f.voiceOn }
-    const [tts, sid] = f.voiceOn && f.voiceMode === 'fixed' ? f.fixedVoice.split(':') : ['', '']
-    rule.Factory = { TTS: (tts || '').trim(), SID: (sid || '').trim() }
+    rule.RealTime = { VoiceShow: true }
+    rule.Factory = f.voiceMode === 'fixed' ? fixedVoiceFactory(f.fixedVoice) : { TTS: '', SID: '' }
   } else if (f.mode === 'realtime') {
     const only = f.originalMode === 'translationOnly'
-    rule.Extra = { AMix: { AudioEnhance: f.audioEnhance, BGVolume: f.bgVolume / 100 }, ...(only ? { Separator: { HandleType: f.denoise ? 1 : 0 } } : {}) }
+    // 仅保留翻译音频：文档要求 Extra.Separator.Separator=true（降噪 HandleType 仅此时生效），控制台写在 RealTime.Separator，两处都传
+    rule.Extra = { AMix: { AudioEnhance: f.audioEnhance, BGVolume: f.bgVolume / 100 }, ...(only ? { Separator: { HandleType: f.denoise ? 1 : 0, Separator: true } } : {}) }
     rule.RealTime = { VoiceShow: f.voiceOn, Separator: only }
     rule.Factory = { TTS: '', SID: '' }
   } else {
@@ -354,7 +359,7 @@ const validateStep2 = (f: SpeechForm): string | null => {
   const range = delayRangeOf(f)
   if (!range.fixed && (!Number.isInteger(f.delay) || f.delay < range.min || f.delay > range.max)) return `播出延迟需在 ${range.min}-${range.max}s 之间`
   if (f.mode !== 'asr' && (!f.outputLang || f.outputLang === f.inputLang)) return '请选择与输入语言不同的输出语言'
-  if (f.mode === 'si' && f.voiceOn && f.voiceMode === 'fixed' && !/^[^:]+:[^:]+$/.test(f.fixedVoice.trim())) return '固定音色需为"xxx:yyy"格式，请用英文冒号分隔两段'
+  if (f.mode === 'si' && f.voiceMode === 'fixed' && !f.fixedVoice.trim()) return '请填写固定音色的 SpeakerID'
   return null
 }
 
@@ -449,16 +454,16 @@ export const ruleToSpeechForm = (rule: any, name: string): SpeechForm => {
   f.delay = typeof rule.Delay === 'number' ? rule.Delay : suggestedDelay(f)
   f.delayTouched = true
   f.lipSync = !!rule.SI?.LipSync
-  f.voiceOn = rule.RealTime ? rule.RealTime.VoiceShow !== false : f.mode !== 'asr'
-  if (rule.Factory?.TTS && rule.Factory?.SID) {
+  f.voiceOn = f.mode === 'si' || (rule.RealTime ? rule.RealTime.VoiceShow !== false : f.mode !== 'asr')
+  if (rule.Factory?.SID) {
     f.voiceMode = 'fixed'
-    f.fixedVoice = `${rule.Factory.TTS}:${rule.Factory.SID}`
+    f.fixedVoice = rule.Factory.SID
   }
   f.originalMode = rule.RealTime?.Separator ? 'translationOnly' : 'mix'
   f.denoise = rule.Extra?.Separator?.HandleType === 1
   if (rule.Extra?.AMix) {
     f.audioEnhance = rule.Extra.AMix.AudioEnhance !== false
-    if (typeof rule.Extra.AMix.BGVolume === 'number') f.bgVolume = Math.round(rule.Extra.AMix.BGVolume * 100)
+    if (f.mode !== 'si' && typeof rule.Extra.AMix.BGVolume === 'number') f.bgVolume = Math.round(rule.Extra.AMix.BGVolume * 100)
   }
 
   f.inputLang = orig.Language || f.inputLang

@@ -134,7 +134,7 @@ watch(tabs, (t) => {
 })
 const style = computed(() => (activeTab.value === 'orig' && tabs.value.length > 1 ? form.origStyle : form.transStyle))
 
-// 原文 ASR 切换出字方式时，播出延迟按建议值更新（实时流式固定为 0）
+// 原文 ASR 切换出字方式时，播出延迟按建议值更新（未手动改过时）
 const onOutWordChange = () => {
   if (delayRangeOf(form).fixed || !form.delayTouched) form.delay = suggestedDelay(form)
 }
